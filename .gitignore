@@ -1,0 +1,23 @@
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.perspectivev3
+!default.perspectivev3
+
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# macOS
+.DS_Store
+
+# Secrets
+*.env
+Secrets.plist

@@ -1,0 +1,86 @@
+# XcodeGen config — regenerate the Xcode project with: xcodegen generate
+#
+# Device signing: to run on a real iPhone or ship to TestFlight, put your Apple
+# Team ID below under settings.base.DEVELOPMENT_TEAM (Xcode > Settings >
+# Accounts shows it; team IDs are not secret). Setting it HERE makes it survive
+# project regeneration — picking the team inside Xcode instead gets wiped every
+# time xcodegen runs.
+#
+# The App Group (group.com.jpwilson.borkmarkr) must exist on your developer
+# account for the Share Extension to hand saves to the app. Xcode's automatic
+# signing creates it on first device build.
+name: borkmarkr
+options:
+  bundleIdPrefix: com.jpwilson
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: ""   # <- your Team ID here
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  borkmarkr:
+    type: application
+    platform: iOS
+    # Core/ holds the SwiftData model + taxonomy + categorizer and is compiled
+    # into BOTH targets — the Share Extension writes straight into the same
+    # App Group store the app reads.
+    sources: [App, Core]
+    dependencies:
+      - target: ShareExtension
+        embed: true
+    entitlements:
+      path: App/borkmarkr.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.jpwilson.borkmarkr
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: borkmarkr
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # Opening a saved link back out to its source app
+        LSApplicationQueriesSchemes:
+          - instagram
+          - twitter
+          - tiktok
+          - youtube
+
+  ShareExtension:
+    type: app-extension
+    platform: iOS
+    sources: [ShareExtension, Core]
+    settings:
+      base:
+        # Must nest under the app's identifier or the embed step fails.
+        PRODUCT_BUNDLE_IDENTIFIER: com.jpwilson.borkmarkr.ShareExtension
+    entitlements:
+      path: ShareExtension/ShareExtension.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.jpwilson.borkmarkr
+    info:
+      path: ShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Save to borkmarkr
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsWebPageWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
