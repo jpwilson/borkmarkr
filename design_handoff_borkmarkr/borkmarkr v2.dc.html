@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;}
+a{color:#B03A14;}a:hover{color:#FF5A2D;}
+[data-scroll]{scrollbar-width:none;-ms-overflow-style:none;}
+[data-scroll]::-webkit-scrollbar{display:none;}
+input,textarea,button{font-family:inherit;}
+input:focus,textarea:focus{outline:none;}
+@keyframes bm-sheet{from{transform:translateY(102%);}to{transform:translateY(0);}}
+@keyframes bm-scrim{from{opacity:0;}to{opacity:1;}}
+@keyframes bm-toast{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
+@keyframes bm-spin{to{transform:rotate(360deg);}}
+</style>
+</helmet>
+<div style="min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;padding:26px 0;box-sizing:border-box;background:radial-gradient(125% 80% at 50% 0%,#F2EDE4 0%,#E7DFD2 58%,#DDD2C0 100%);font-family:'Instrument Sans',system-ui,sans-serif;">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ statusDark }}" hint-size="402px,874px">
+
+<div ref="{{ rootRef }}" style="position:relative;height:100%;width:100%;overflow:hidden;isolation:isolate;background:#F6F3EE;color:#191510;font-family:'Instrument Sans',system-ui,sans-serif;--ac:#FF5A2D;--ac-dk:#E8451C;--ac-tint:#FFE7DE;--ac-deep:#AE3512;">
+
+<!-- ================= HOME / LIBRARY ================= -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Library" style="position:absolute;inset:0;display:flex;flex-direction:column;">
+  <div style="padding:52px 20px 0;flex-shrink:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="display:inline-flex;width:26px;height:26px;border-radius:9px;background:var(--ac,#FF5A2D);align-items:center;justify-content:center;transform:rotate(-6deg);box-shadow:0 3px 8px rgba(255,90,45,.35);"><span style="width:9px;height:13px;background:#fff;clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%);"></span></span>
+        <span style="font-family:'Bricolage Grotesque';font-weight:700;font-size:17px;letter-spacing:-.3px;">borkmarkr</span>
+      </div>
+      <button onClick="{{ onTabYou }}" style="width:34px;height:34px;border:none;border-radius:50%;cursor:pointer;background:linear-gradient(140deg,#FFC9A3,#FF8D6B);font-family:'Bricolage Grotesque';font-weight:700;color:#fff;font-size:13px;box-shadow:0 2px 8px rgba(25,21,16,.16);">J</button>
+    </div>
+    <div style="margin-top:18px;font-family:'Bricolage Grotesque';font-weight:800;font-size:32px;letter-spacing:-.8px;line-height:1;">Your library</div>
+    <div style="margin-top:5px;font-size:13.5px;color:#A39A8D;font-weight:500;">{{ libSubtitle }}</div>
+    <button onClick="{{ onOpenSearch }}" style="margin-top:14px;width:100%;height:46px;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #EAE4DA;border-radius:16px;padding:0 15px;cursor:pointer;color:#A39A8D;font-size:14.5px;text-align:left;box-shadow:0 1px 2px rgba(25,21,16,.03),0 8px 24px -12px rgba(25,21,16,.08);">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="#A39A8D" stroke-width="2"/><line x1="16.2" y1="16.2" x2="20.5" y2="20.5" stroke="#A39A8D" stroke-width="2" stroke-linecap="round"/></svg>
+      Search everything you saved
+    </button>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;padding:14px 20px 12px;flex-shrink:0;">
+    <div data-scroll style="flex:1;display:flex;gap:7px;overflow-x:auto;">
+      <sc-for list="{{ feedFilters }}" as="f" hint-placeholder-count="5">
+        <button onClick="{{ f.onClick }}" style="flex-shrink:0;height:33px;padding:0 14px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid;{{ f.style }};">{{ f.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;background:#ECE6DC;border-radius:12px;padding:3px;gap:2px;flex-shrink:0;">
+      <button onClick="{{ onCardsView }}" style="width:33px;height:28px;border:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;{{ viewCardsStyle }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="7.4" height="9.4" rx="2" fill="currentColor"/><rect x="13.1" y="3.5" width="7.4" height="6.4" rx="2" fill="currentColor"/><rect x="3.5" y="15" width="7.4" height="5.5" rx="2" fill="currentColor"/><rect x="13.1" y="12" width="7.4" height="8.5" rx="2" fill="currentColor"/></svg></button>
+      <button onClick="{{ onListView }}" style="width:33px;height:28px;border:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;{{ viewListStyle }};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+    </div>
+  </div>
+
+  <div data-scroll style="flex:1;overflow-y:auto;padding:2px 20px 128px;">
+    <sc-if value="{{ masonryOn }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;gap:11px;align-items:flex-start;">
+        <div style="flex:1;min-width:0;">
+        <sc-for list="{{ feedL }}" as="it" hint-placeholder-count="3">
+          <div style="break-inside:avoid;margin-bottom:11px;">
+            <!-- TEXT POST (X / Threads) -->
+            <sc-if value="{{ it.isText }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ it.onOpen }}" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:20px;padding:13px 13px 12px;cursor:pointer;box-shadow:0 1px 2px rgba(25,21,16,.03),0 10px 28px -14px rgba(25,21,16,.10);">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="width:22px;height:22px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:800;letter-spacing:.2px;flex-shrink:0;{{ it.platStyle }};">{{ it.platShort }}</span>
+                  <span style="font-size:11.5px;font-weight:700;color:#191510;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ it.author }}</span>
+                </div>
+                <div style="margin-top:9px;font-size:13px;line-height:1.5;color:#332C23;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;">{{ it.snippet }}</div>
+                <div style="margin-top:11px;display:flex;align-items:center;gap:6px;">
+                  <span style="height:22px;padding:0 9px;border-radius:999px;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.catName }}</span>
+                  <span style="font-size:10.5px;color:#A39A8D;font-weight:500;margin-left:auto;">{{ it.dateLabel }}</span>
+                  <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="width:16px;height:16px;border-radius:5px;background:#FFEFC2;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="width:7px;height:1.6px;background:#9A7B1A;box-shadow:0 2.6px 0 #9A7B1A;border-radius:2px;"></span></span></sc-if>
+                </div>
+              </button>
+            </sc-if>
+            <!-- MEDIA COVER (vertical / wide / pin / post) -->
+            <sc-if value="{{ it.isMedia }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ it.onOpen }}" style="display:block;width:100%;text-align:left;background:#fff;border:none;border-radius:20px;overflow:hidden;cursor:pointer;padding:0;box-shadow:0 1px 2px rgba(25,21,16,.04),0 12px 30px -14px rgba(25,21,16,.14);">
+                <div style="position:relative;{{ it.coverStyle }};">
+                  <div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 12% 0%,rgba(255,255,255,.16),transparent 60%),linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(10,6,2,.52) 100%);"></div>
+                  <span style="position:absolute;top:10px;left:10px;width:24px;height:24px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:800;letter-spacing:.2px;box-shadow:0 2px 6px rgba(0,0,0,.25);{{ it.platStyle }};">{{ it.platShort }}</span>
+                  <sc-if value="{{ it.isVideo }}" hint-placeholder-val="{{ true }}">
+                    <span style="position:absolute;top:10px;right:10px;height:20px;padding:0 7px;border-radius:7px;background:rgba(12,8,4,.55);backdrop-filter:blur(4px);color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px;"><span style="width:0;height:0;border-left:6px solid #fff;border-top:3.8px solid transparent;border-bottom:3.8px solid transparent;"></span>{{ it.dur }}</span>
+                  </sc-if>
+                  <div style="position:absolute;left:12px;right:12px;bottom:11px;color:#fff;font-weight:600;font-size:13.5px;line-height:1.3;letter-spacing:-.1px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 8px rgba(0,0,0,.35);">{{ it.title }}</div>
+                </div>
+                <div style="padding:9px 12px 11px;display:flex;align-items:center;gap:6px;">
+                  <span style="height:22px;padding:0 9px;border-radius:999px;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.sub }}</span>
+                  <span style="font-size:10.5px;color:#A39A8D;font-weight:500;margin-left:auto;white-space:nowrap;">{{ it.dateLabel }}</span>
+                  <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="width:16px;height:16px;border-radius:5px;background:#FFEFC2;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="width:7px;height:1.6px;background:#9A7B1A;box-shadow:0 2.6px 0 #9A7B1A;border-radius:2px;"></span></span></sc-if>
+                </div>
+              </button>
+            </sc-if>
+            <!-- ARTICLE (web) -->
+            <sc-if value="{{ it.isArticle }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ it.onOpen }}" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:20px;padding:13px;cursor:pointer;box-shadow:0 1px 2px rgba(25,21,16,.03),0 10px 28px -14px rgba(25,21,16,.10);">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="width:8px;height:8px;border-radius:3px;{{ it.dotStyle }};"></span>
+                  <span style="font-size:10.5px;font-weight:700;letter-spacing:.2px;color:#8A8072;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ it.author }}</span>
+                </div>
+                <div style="margin-top:8px;font-family:'Bricolage Grotesque';font-weight:600;font-size:14.5px;line-height:1.3;letter-spacing:-.2px;color:#191510;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{{ it.title }}</div>
+                <div style="margin-top:10px;display:flex;align-items:center;gap:6px;">
+                  <span style="height:22px;padding:0 9px;border-radius:999px;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.catName }}</span>
+                  <span style="font-size:10.5px;color:#A39A8D;font-weight:500;margin-left:auto;">{{ it.dateLabel }}</span>
+                  <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="width:16px;height:16px;border-radius:5px;background:#FFEFC2;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="width:7px;height:1.6px;background:#9A7B1A;box-shadow:0 2.6px 0 #9A7B1A;border-radius:2px;"></span></span></sc-if>
+                </div>
+              </button>
+            </sc-if>
+          </div>
+        </sc-for>
+        </div>
+        <div style="flex:1;min-width:0;">
+        <sc-for list="{{ feedR }}" as="it" hint-placeholder-count="3">
+          <div style="break-inside:avoid;margin-bottom:11px;">
+            <sc-if value="{{ it.isText }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ it.onOpen }}" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:20px;padding:13px 13px 12px;cursor:pointer;box-shadow:0 1px 2px rgba(25,21,16,.03),0 10px 28px -14px rgba(25,21,16,.10);">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="width:22px;height:22px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:800;letter-spacing:.2px;flex-shrink:0;{{ it.platStyle }};">{{ it.platShort }}</span>
+                  <span style="font-size:11.5px;font-weight:700;color:#191510;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ it.author }}</span>
+                </div>
+                <div style="margin-top:9px;font-size:13px;line-height:1.5;color:#332C23;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;">{{ it.snippet }}</div>
+                <div style="margin-top:11px;display:flex;align-items:center;gap:6px;">
+                  <span style="height:22px;padding:0 9px;border-radius:999px;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.catName }}</span>
+                  <span style="font-size:10.5px;color:#A39A8D;font-weight:500;margin-left:auto;">{{ it.dateLabel }}</span>
+                  <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="width:16px;height:16px;border-radius:5px;background:#FFEFC2;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="width:7px;height:1.6px;background:#9A7B1A;box-shadow:0 2.6px 0 #9A7B1A;border-radius:2px;"></span></span></sc-if>
+                </div>
+              </button>
+            </sc-if>
+            <sc-if value="{{ it.isMedia }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ it.onOpen }}" style="display:block;width:100%;text-align:left;background:#fff;border:none;border-radius:20px;overflow:hidden;cursor:pointer;padding:0;box-shadow:0 1px 2px rgba(25,21,16,.04),0 12px 30px -14px rgba(25,21,16,.14);">
+                <div style="position:relative;{{ it.coverStyle }};">
+                  <div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 12% 0%,rgba(255,255,255,.16),transparent 60%),linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(10,6,2,.52) 100%);"></div>
+                  <span style="position:absolute;top:10px;left:10px;width:24px;height:24px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:800;letter-spacing:.2px;box-shadow:0 2px 6px rgba(0,0,0,.25);{{ it.platStyle }};">{{ it.platShort }}</span>
+                  <sc-if value="{{ it.isVideo }}" hint-placeholder-val="{{ true }}">
+                    <span style="position:absolute;top:10px;right:10px;height:20px;padding:0 7px;border-radius:7px;background:rgba(12,8,4,.55);backdrop-filter:blur(4px);color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px;"><span style="width:0;height:0;border-left:6px solid #fff;border-top:3.8px solid transparent;border-bottom:3.8px solid transparent;"></span>{{ it.dur }}</span>
+                  </sc-if>
+                  <div style="position:absolute;left:12px;right:12px;bottom:11px;color:#fff;font-weight:600;font-size:13.5px;line-height:1.3;letter-spacing:-.1px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 8px rgba(0,0,0,.35);">{{ it.title }}</div>
+                </div>
+                <div style="padding:9px 12px 11px;display:flex;align-items:center;gap:6px;">
+                  <span style="height:22px;padding:0 9px;border-radius:999px;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.sub }}</span>
+                  <span style="font-size:10.5px;color:#A39A8D;font-weight:500;margin-left:auto;white-space:nowrap;">{{ it.dateLabel }}</span>
+                  <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="width:16px;height:16px;border-radius:5px;background:#FFEFC2;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="width:7px;height:1.6px;background:#9A7B1A;box-shadow:0 2.6px 0 #9A7B1A;border-radius:2px;"></span></span></sc-if>
+                </div>
+              </button>
+            </sc-if>
+            <sc-if value="{{ it.isArticle }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ it.onOpen }}" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:20px;padding:13px;cursor:pointer;box-shadow:0 1px 2px rgba(25,21,16,.03),0 10px 28px -14px rgba(25,21,16,.10);">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="width:8px;height:8px;border-radius:3px;{{ it.dotStyle }};"></span>
+                  <span style="font-size:10.5px;font-weight:700;letter-spacing:.2px;color:#8A8072;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ it.author }}</span>
+                </div>
+                <div style="margin-top:8px;font-family:'Bricolage Grotesque';font-weight:600;font-size:14.5px;line-height:1.3;letter-spacing:-.2px;color:#191510;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{{ it.title }}</div>
+                <div style="margin-top:10px;display:flex;align-items:center;gap:6px;">
+                  <span style="height:22px;padding:0 9px;border-radius:999px;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.catName }}</span>
+                  <span style="font-size:10.5px;color:#A39A8D;font-weight:500;margin-left:auto;">{{ it.dateLabel }}</span>
+                  <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="width:16px;height:16px;border-radius:5px;background:#FFEFC2;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="width:7px;height:1.6px;background:#9A7B1A;box-shadow:0 2.6px 0 #9A7B1A;border-radius:2px;"></span></span></sc-if>
+                </div>
+              </button>
+            </sc-if>
+          </div>
+        </sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ listOn }}" hint-placeholder-val="{{ false }}">
+      <sc-for list="{{ feed }}" as="it" hint-placeholder-count="6">
+        <button onClick="{{ it.onOpen }}" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:10px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 2px rgba(25,21,16,.03);">
+          <div style="position:relative;width:58px;height:58px;border-radius:14px;flex-shrink:0;overflow:hidden;{{ it.thumbStyle }};">
+            <sc-if value="{{ it.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;"><span style="margin-left:2px;width:0;height:0;border-left:6px solid #191510;border-top:4px solid transparent;border-bottom:4px solid transparent;"></span></span></sc-if>
+            <sc-if value="{{ it.isText }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque';font-weight:800;font-size:17px;color:#fff;">&#8220;</span></sc-if>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="width:18px;height:18px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:800;flex-shrink:0;{{ it.platStyle }};">{{ it.platShort }}</span>
+              <span style="font-size:11px;color:#A39A8D;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ it.author }}</span>
+              <span style="font-size:11px;color:#C6BEB1;font-weight:500;margin-left:auto;flex-shrink:0;">{{ it.dateLabel }}</span>
+            </div>
+            <div style="margin-top:3px;font-weight:600;font-size:13.5px;color:#191510;line-height:1.32;letter-spacing:-.1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ it.listTitle }}</div>
+            <div style="margin-top:5px;display:flex;align-items:center;gap:6px;">
+              <span style="height:20px;padding:0 8px;border-radius:999px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.catSubLabel }}</span>
+              <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:#B58A14;font-weight:700;">note</span></sc-if>
+            </div>
+          </div>
+        </button>
+      </sc-for>
+    </sc-if>
+    <sc-if value="{{ feedEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:56px 30px;color:#A39A8D;">
+        <div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:17px;color:#6E655A;margin-bottom:5px;">Nothing from here yet</div>
+        <div style="font-size:13px;line-height:1.5;">Tap <b style="color:var(--ac,#FF5A2D)">+</b> and paste a link to start your library.</div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= BROWSE ================= -->
+<sc-if value="{{ isBrowseRoot }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Browse" style="position:absolute;inset:0;display:flex;flex-direction:column;">
+  <div style="padding:56px 20px 0;flex-shrink:0;">
+    <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:32px;letter-spacing:-.8px;line-height:1;">Browse</div>
+    <div style="margin-top:5px;font-size:13.5px;color:#A39A8D;font-weight:500;">Two ways into everything you saved</div>
+    <div style="margin-top:14px;display:flex;background:#ECE6DC;border-radius:14px;padding:3px;gap:3px;">
+      <button onClick="{{ onAxisTopics }}" style="flex:1;height:36px;border:none;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:700;{{ axisTopicsStyle }};">Topics</button>
+      <button onClick="{{ onAxisSources }}" style="flex:1;height:36px;border:none;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:700;{{ axisSourcesStyle }};">Sources</button>
+    </div>
+  </div>
+
+  <sc-if value="{{ axisTopics }}" hint-placeholder-val="{{ true }}">
+    <div data-scroll style="flex:1;overflow-y:auto;padding:16px 20px 128px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;">
+        <sc-for list="{{ cats }}" as="c" hint-placeholder-count="8">
+          <button onClick="{{ c.onClick }}" style="position:relative;overflow:hidden;border:none;cursor:pointer;text-align:left;border-radius:20px;padding:14px;height:96px;display:flex;flex-direction:column;justify-content:space-between;{{ c.tileStyle }};">
+            <span style="position:absolute;right:-18px;top:-18px;width:64px;height:64px;border-radius:50%;{{ c.dotStyle }};"></span>
+            <div style="position:relative;display:flex;align-items:baseline;gap:4px;"><span style="font-family:'Bricolage Grotesque';font-weight:800;font-size:24px;line-height:1;{{ c.deepStyle }};">{{ c.count }}</span><span style="font-size:10px;font-weight:700;opacity:.55;{{ c.deepStyle }};">saves</span></div>
+            <div style="position:relative;font-size:13.5px;font-weight:700;letter-spacing:-.1px;line-height:1.15;{{ c.deepStyle }};">{{ c.name }}</div>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ axisSources }}" hint-placeholder-val="{{ false }}">
+    <div data-scroll style="flex:1;overflow-y:auto;padding:16px 20px 128px;">
+      <sc-for list="{{ sources }}" as="s" hint-placeholder-count="6">
+        <button onClick="{{ s.onClick }}" style="display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 2px rgba(25,21,16,.03);">
+          <span style="width:44px;height:44px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;letter-spacing:.3px;flex-shrink:0;{{ s.badgeStyle }};">{{ s.short }}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:15px;letter-spacing:-.2px;color:#191510;">{{ s.name }}</div>
+            <div style="font-size:12px;color:#A39A8D;margin-top:1px;">{{ s.meta }}</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0;align-items:center;">
+            <sc-for list="{{ s.swatches }}" as="w" hint-placeholder-count="3"><span style="width:16px;height:24px;border-radius:5px;{{ w.style }};"></span></sc-for>
+            <span style="display:inline-block;width:7px;height:7px;border-top:2px solid #C6BEB1;border-right:2px solid #C6BEB1;transform:rotate(45deg);margin-left:6px;"></span>
+          </div>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ================= TOPIC (CATEGORY) PAGE ================= -->
+<sc-if value="{{ isCatPage }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Topic" style="position:absolute;inset:0;display:flex;flex-direction:column;">
+  <div style="padding:52px 16px 14px;flex-shrink:0;{{ cat.headerStyle }};">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <button onClick="{{ cat.onBack }}" style="width:36px;height:36px;border:none;border-radius:50%;background:rgba(255,255,255,.72);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(25,21,16,.08);"><span style="display:inline-block;width:9px;height:9px;border-left:2.4px solid #191510;border-bottom:2.4px solid #191510;transform:rotate(45deg);margin-left:3px;"></span></button>
+      <button onClick="{{ cat.onShare }}" style="height:36px;padding:0 15px;border:none;border-radius:999px;background:#191510;color:#fff;cursor:pointer;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="12" r="2.4" stroke="#fff" stroke-width="2"/><circle cx="18" cy="6" r="2.4" stroke="#fff" stroke-width="2"/><circle cx="18" cy="18" r="2.4" stroke="#fff" stroke-width="2"/><line x1="8.1" y1="10.9" x2="15.9" y2="7.1" stroke="#fff" stroke-width="2"/><line x1="8.1" y1="13.1" x2="15.9" y2="16.9" stroke="#fff" stroke-width="2"/></svg>Share</button>
+    </div>
+    <div style="margin-top:13px;display:flex;align-items:baseline;gap:9px;">
+      <span style="font-family:'Bricolage Grotesque';font-weight:800;font-size:28px;letter-spacing:-.6px;{{ cat.deepStyle }};">{{ cat.name }}</span>
+      <span style="font-size:12.5px;font-weight:700;opacity:.6;{{ cat.deepStyle }};">{{ cat.countLabel }}</span>
+    </div>
+    <div data-scroll style="display:flex;gap:7px;overflow-x:auto;margin-top:11px;">
+      <sc-for list="{{ cat.subs }}" as="s" hint-placeholder-count="5">
+        <button onClick="{{ s.onClick }}" style="flex-shrink:0;height:31px;padding:0 13px;border-radius:999px;border:1px solid;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;{{ s.style }};">{{ s.name }} <span style="opacity:.5;">{{ s.count }}</span></button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="padding:11px 16px 2px;flex-shrink:0;display:flex;align-items:center;gap:7px;">
+    <span style="font-size:10px;font-weight:800;letter-spacing:.6px;color:#A39A8D;text-transform:uppercase;flex-shrink:0;">From</span>
+    <div data-scroll style="display:flex;gap:6px;overflow-x:auto;flex:1;">
+      <sc-for list="{{ cat.plats }}" as="p" hint-placeholder-count="5">
+        <button onClick="{{ p.onClick }}" style="flex-shrink:0;height:28px;padding:0 11px;border-radius:999px;border:1px solid;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;{{ p.style }};">{{ p.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <sc-if value="{{ cat.hasTags }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:9px 16px 0;flex-shrink:0;display:flex;align-items:center;gap:7px;">
+      <span style="font-size:10px;font-weight:800;letter-spacing:.6px;color:#A39A8D;text-transform:uppercase;flex-shrink:0;">Refine</span>
+      <div data-scroll style="display:flex;gap:6px;overflow-x:auto;flex:1;">
+        <sc-for list="{{ cat.tags }}" as="t" hint-placeholder-count="4">
+          <button onClick="{{ t.onClick }}" style="flex-shrink:0;height:28px;padding:0 11px;border-radius:999px;border:1px dashed;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;{{ t.style }};">#{{ t.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  <div data-scroll style="flex:1;overflow-y:auto;padding:12px 16px 128px;">
+    <sc-for list="{{ cat.feed }}" as="it" hint-placeholder-count="4">
+      <button onClick="{{ it.onOpen }}" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:10px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 2px rgba(25,21,16,.03);">
+        <div style="position:relative;width:58px;height:58px;border-radius:14px;flex-shrink:0;overflow:hidden;{{ it.thumbStyle }};">
+          <sc-if value="{{ it.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;"><span style="margin-left:2px;width:0;height:0;border-left:6px solid #191510;border-top:4px solid transparent;border-bottom:4px solid transparent;"></span></span></sc-if>
+          <sc-if value="{{ it.isText }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque';font-weight:800;font-size:17px;color:#fff;">&#8220;</span></sc-if>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:18px;height:18px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:800;flex-shrink:0;{{ it.platStyle }};">{{ it.platShort }}</span>
+            <span style="font-size:11px;color:#A39A8D;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ it.author }}</span>
+            <span style="font-size:11px;color:#C6BEB1;font-weight:500;margin-left:auto;flex-shrink:0;">{{ it.dateLabel }}</span>
+          </div>
+          <div style="margin-top:3px;font-weight:600;font-size:13.5px;color:#191510;line-height:1.32;letter-spacing:-.1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ it.listTitle }}</div>
+          <div style="margin-top:5px;display:flex;align-items:center;gap:6px;">
+            <span style="height:20px;padding:0 8px;border-radius:999px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.sub }}</span>
+            <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:#B58A14;font-weight:700;">note</span></sc-if>
+          </div>
+        </div>
+      </button>
+    </sc-for>
+    <sc-if value="{{ cat.empty }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:44px 30px;color:#A39A8D;"><div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:16px;color:#6E655A;margin-bottom:4px;">No matches here</div><div style="font-size:13px;">Try a different source or clear the refine tag.</div></div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= SOURCE PAGE ================= -->
+<sc-if value="{{ isSourcePage }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Source" style="position:absolute;inset:0;display:flex;flex-direction:column;">
+  <div style="padding:52px 16px 16px;flex-shrink:0;{{ src.headerStyle }};">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <button onClick="{{ src.onBack }}" style="width:36px;height:36px;border:none;border-radius:50%;background:rgba(255,255,255,.16);cursor:pointer;display:flex;align-items:center;justify-content:center;"><span style="display:inline-block;width:9px;height:9px;border-left:2.4px solid #fff;border-bottom:2.4px solid #fff;transform:rotate(45deg);margin-left:3px;"></span></button>
+      <span style="height:24px;padding:0 10px;border-radius:999px;background:rgba(255,255,255,.14);color:rgba(255,255,255,.85);font-size:11px;font-weight:700;display:inline-flex;align-items:center;">{{ src.countLabel }}</span>
+    </div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:11px;">
+      <span style="width:46px;height:46px;border-radius:15px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;letter-spacing:.3px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);">{{ src.short }}</span>
+      <div>
+        <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:26px;letter-spacing:-.5px;color:#fff;line-height:1.05;">{{ src.name }}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.6);font-weight:500;margin-top:2px;">{{ src.sub }}</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:11px 16px 2px;flex-shrink:0;display:flex;align-items:center;gap:7px;">
+    <span style="font-size:10px;font-weight:800;letter-spacing:.6px;color:#A39A8D;text-transform:uppercase;flex-shrink:0;">Topic</span>
+    <div data-scroll style="display:flex;gap:6px;overflow-x:auto;flex:1;">
+      <sc-for list="{{ src.topics }}" as="t" hint-placeholder-count="5">
+        <button onClick="{{ t.onClick }}" style="flex-shrink:0;height:28px;padding:0 11px;border-radius:999px;border:1px solid;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;{{ t.style }};">{{ t.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div data-scroll style="flex:1;overflow-y:auto;padding:12px 16px 128px;">
+    <sc-for list="{{ src.feed }}" as="it" hint-placeholder-count="4">
+      <button onClick="{{ it.onOpen }}" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:10px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 2px rgba(25,21,16,.03);">
+        <div style="position:relative;width:58px;height:58px;border-radius:14px;flex-shrink:0;overflow:hidden;{{ it.thumbStyle }};">
+          <sc-if value="{{ it.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;"><span style="margin-left:2px;width:0;height:0;border-left:6px solid #191510;border-top:4px solid transparent;border-bottom:4px solid transparent;"></span></span></sc-if>
+          <sc-if value="{{ it.isText }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque';font-weight:800;font-size:17px;color:#fff;">&#8220;</span></sc-if>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:#A39A8D;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ it.author }}</span>
+            <span style="font-size:11px;color:#C6BEB1;font-weight:500;margin-left:auto;flex-shrink:0;">{{ it.dateLabel }}</span>
+          </div>
+          <div style="margin-top:3px;font-weight:600;font-size:13.5px;color:#191510;line-height:1.32;letter-spacing:-.1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ it.listTitle }}</div>
+          <div style="margin-top:5px;display:flex;align-items:center;gap:6px;">
+            <span style="height:20px;padding:0 8px;border-radius:999px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.catSubLabel }}</span>
+            <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:#B58A14;font-weight:700;">note</span></sc-if>
+          </div>
+        </div>
+      </button>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= SEARCH ================= -->
+<sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Search" style="position:absolute;inset:0;display:flex;flex-direction:column;">
+  <div style="padding:56px 20px 4px;flex-shrink:0;">
+    <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:32px;letter-spacing:-.8px;line-height:1;margin-bottom:13px;">Search</div>
+    <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--ac,#FF5A2D);border-radius:16px;padding:0 14px;height:48px;box-shadow:0 2px 12px rgba(255,90,45,.10);">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="#A39A8D" stroke-width="2"/><line x1="16.2" y1="16.2" x2="20.5" y2="20.5" stroke="#A39A8D" stroke-width="2" stroke-linecap="round"/></svg>
+      <input value="{{ query }}" onInput="{{ onQuery }}" placeholder="Titles, tags, people, topics…" style="flex:1;border:none;background:none;font-size:15px;color:#191510;min-width:0;">
+      <sc-if value="{{ searchHasInput }}" hint-placeholder-val="{{ false }}"><button onClick="{{ onClearSearch }}" style="border:none;background:#EEE8DE;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="#6E655A" stroke-width="2.8" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="#6E655A" stroke-width="2.8" stroke-linecap="round"/></svg></button></sc-if>
+    </div>
+  </div>
+  <div data-scroll style="flex:1;overflow-y:auto;padding:14px 20px 128px;">
+    <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#A39A8D;margin:2px 0 8px;">Source</div>
+    <div data-scroll style="display:flex;gap:6px;overflow-x:auto;margin-bottom:13px;">
+      <sc-for list="{{ sPlatformChips }}" as="p" hint-placeholder-count="6">
+        <button onClick="{{ p.onClick }}" style="flex-shrink:0;height:30px;padding:0 12px;border-radius:999px;border:1px solid;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;{{ p.style }};">{{ p.label }}</button>
+      </sc-for>
+    </div>
+    <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#A39A8D;margin:0 0 8px;">Topic</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+      <sc-for list="{{ sCatChips }}" as="c" hint-placeholder-count="10">
+        <button onClick="{{ c.onClick }}" style="height:30px;padding:0 12px;border-radius:999px;border:1px solid;font-size:11.5px;font-weight:700;cursor:pointer;{{ c.style }};">{{ c.label }}</button>
+      </sc-for>
+    </div>
+    <sc-if value="{{ searchHasInput }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:12.5px;color:#A39A8D;font-weight:600;margin:14px 0 10px;">{{ searchResultCount }} results</div>
+      <sc-for list="{{ searchResults }}" as="it" hint-placeholder-count="0">
+        <button onClick="{{ it.onOpen }}" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:10px;margin-bottom:9px;cursor:pointer;">
+          <div style="position:relative;width:52px;height:52px;border-radius:13px;flex-shrink:0;overflow:hidden;{{ it.thumbStyle }};">
+            <sc-if value="{{ it.isText }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque';font-weight:800;font-size:15px;color:#fff;">&#8220;</span></sc-if>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:17px;height:17px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;flex-shrink:0;{{ it.platStyle }};">{{ it.platShort }}</span><span style="font-size:10.5px;color:#A39A8D;">{{ it.dateLabel }}</span></div>
+            <div style="margin-top:3px;font-weight:600;font-size:13px;color:#191510;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ it.listTitle }}</div>
+            <div style="margin-top:4px;display:flex;gap:6px;align-items:center;"><span style="height:19px;padding:0 8px;border-radius:999px;font-size:9.5px;font-weight:700;display:inline-flex;align-items:center;{{ it.chipStyle }};">{{ it.catSubLabel }}</span></div>
+          </div>
+        </button>
+      </sc-for>
+      <sc-if value="{{ searchEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;padding:38px 20px;color:#A39A8D;"><div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:16px;color:#6E655A;margin-bottom:4px;">No matches</div><div style="font-size:13px;">Try a different word or clear the filters.</div></div>
+      </sc-if>
+    </sc-if>
+    <sc-if value="{{ searchIdle }}" hint-placeholder-val="{{ true }}">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#A39A8D;margin:16px 0 9px;">Recent</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;">
+        <sc-for list="{{ recentChips }}" as="r" hint-placeholder-count="5">
+          <button onClick="{{ r.onClick }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid #EAE4DA;background:#fff;color:#6E655A;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:7px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#C6BEB1" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#C6BEB1" stroke-width="2" stroke-linecap="round"/></svg>{{ r.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= YOU ================= -->
+<sc-if value="{{ isYou }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="You" style="position:absolute;inset:0;display:flex;flex-direction:column;">
+  <div data-scroll style="flex:1;overflow-y:auto;padding:56px 20px 128px;">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(140deg,#FFC9A3,#FF8D6B);display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque';font-weight:800;color:#fff;font-size:22px;box-shadow:0 3px 12px rgba(25,21,16,.16);">J</div>
+      <div><div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:22px;letter-spacing:-.4px;">Jordan</div><div style="font-size:13px;color:#A39A8D;">@jordan.saves</div></div>
+    </div>
+    <div style="display:flex;gap:9px;margin-bottom:24px;">
+      <div style="flex:1;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:13px;text-align:center;"><div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:23px;color:var(--ac,#FF5A2D);">{{ statSaved }}</div><div style="font-size:10.5px;color:#A39A8D;font-weight:700;margin-top:1px;">saved</div></div>
+      <div style="flex:1;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:13px;text-align:center;"><div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:23px;color:#191510;">{{ statCats }}</div><div style="font-size:10.5px;color:#A39A8D;font-weight:700;margin-top:1px;">topics</div></div>
+      <div style="flex:1;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:13px;text-align:center;"><div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:23px;color:#191510;">{{ statWeek }}</div><div style="font-size:10.5px;color:#A39A8D;font-weight:700;margin-top:1px;">this week</div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;"><div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:17px;letter-spacing:-.3px;">Collections</div><span style="font-size:12px;color:#A39A8D;">curated &amp; shareable</span></div>
+    <sc-for list="{{ collections }}" as="c" hint-placeholder-count="4">
+      <button onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:12px;margin-bottom:9px;cursor:pointer;">
+        <span style="width:40px;height:40px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;{{ c.dotStyle }};"><span style="width:12px;height:16px;background:currentColor;clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%);opacity:.85;"></span></span>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:14.5px;letter-spacing:-.1px;color:#191510;">{{ c.name }}</div><div style="font-size:11.5px;color:#A39A8D;margin-top:1px;">{{ c.countLabel }} · {{ c.visLabel }}</div></div>
+        <span style="display:inline-block;width:7px;height:7px;border-top:2px solid #C6BEB1;border-right:2px solid #C6BEB1;transform:rotate(45deg);"></span>
+      </button>
+    </sc-for>
+    <div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:17px;letter-spacing:-.3px;margin:24px 0 11px;">Help &amp; setup</div>
+    <button onClick="{{ onOpenHowto }}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:12px;margin-bottom:9px;cursor:pointer;">
+      <span style="width:40px;height:40px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--ac-tint,#FFE7DE);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 14V4m0 0L8.5 7.5M12 4l3.5 3.5" stroke="var(--ac,#FF5A2D)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13v5a2 2 0 002 2h10a2 2 0 002-2v-5" stroke="var(--ac,#FF5A2D)" stroke-width="2" stroke-linecap="round"/></svg></span>
+      <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:14.5px;color:#191510;">Save from other apps</div><div style="font-size:11.5px;color:#A39A8D;margin-top:1px;">Use the share sheet anywhere</div></div>
+      <span style="display:inline-block;width:7px;height:7px;border-top:2px solid #C6BEB1;border-right:2px solid #C6BEB1;transform:rotate(45deg);"></span>
+    </button>
+    <button onClick="{{ onReplayTour }}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:12px;cursor:pointer;">
+      <span style="width:40px;height:40px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#EEE8DE;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 11.5a8 8 0 10-2.2 5.8M20 6.5v5h-5" stroke="#6E655A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:14.5px;color:#191510;">Replay welcome tour</div><div style="font-size:11.5px;color:#A39A8D;margin-top:1px;">See the intro again</div></div>
+      <span style="display:inline-block;width:7px;height:7px;border-top:2px solid #C6BEB1;border-right:2px solid #C6BEB1;transform:rotate(45deg);"></span>
+    </button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= FLOATING TAB DOCK ================= -->
+<nav style="position:absolute;left:14px;right:14px;bottom:14px;z-index:30;display:flex;align-items:center;justify-content:space-around;height:64px;padding:0 6px;background:rgba(255,255,255,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(234,228,218,.9);border-radius:24px;box-shadow:0 18px 44px -12px rgba(25,21,16,.30),0 2px 8px rgba(25,21,16,.06);">
+  <button onClick="{{ onTabHome }}" style="flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;{{ tabHomeStyle }};"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6.5 4h11a2 2 0 012 2v13.2a.8.8 0 01-1.24.67L12 16l-6.26 3.87A.8.8 0 014.5 19.2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span style="font-size:9.5px;font-weight:700;">Library</span></button>
+  <button onClick="{{ onTabBrowse }}" style="flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;{{ tabBrowseStyle }};"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="7" height="7" rx="2.2" stroke="currentColor" stroke-width="2"/><rect x="13" y="4" width="7" height="7" rx="2.2" stroke="currentColor" stroke-width="2"/><rect x="4" y="13" width="7" height="7" rx="2.2" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="7" height="7" rx="2.2" stroke="currentColor" stroke-width="2"/></svg><span style="font-size:9.5px;font-weight:700;">Browse</span></button>
+  <button onClick="{{ onOpenAdd }}" style="flex:1;background:none;border:none;cursor:pointer;display:flex;justify-content:center;padding:0;"><span style="width:50px;height:50px;border-radius:17px;background:var(--ac,#FF5A2D);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(255,90,45,.45);margin-top:-24px;border:3px solid #F6F3EE;"><svg width="24" height="24" viewBox="0 0 24 24"><line x1="12" y1="5.5" x2="12" y2="18.5" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/><line x1="5.5" y1="12" x2="18.5" y2="12" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></svg></span></button>
+  <button onClick="{{ onTabSearch }}" style="flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;{{ tabSearchStyle }};"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"/><line x1="16.2" y1="16.2" x2="20.5" y2="20.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span style="font-size:9.5px;font-weight:700;">Search</span></button>
+  <button onClick="{{ onTabYou }}" style="flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;{{ tabYouStyle }};"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="4" stroke="currentColor" stroke-width="2"/><path d="M4.8 20a7.6 7.6 0 0114.4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span style="font-size:9.5px;font-weight:700;">You</span></button>
+</nav>
+
+<!-- ================= ADD SHEET ================= -->
+<sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Add link" style="position:absolute;inset:0;z-index:42;">
+  <div onClick="{{ onCloseOverlay }}" style="position:absolute;inset:0;background:rgba(20,15,10,.46);animation:bm-scrim .25s ease;"></div>
+  <div onClick="{{ stop }}" style="position:absolute;left:0;right:0;bottom:0;background:#F6F3EE;border-radius:30px 30px 0 0;box-shadow:0 -10px 44px rgba(25,21,16,.26);max-height:93%;display:flex;flex-direction:column;animation:bm-sheet .3s cubic-bezier(.22,1,.36,1);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:center;padding:10px 0 4px;"><span style="width:36px;height:5px;border-radius:99px;background:#DBD2C4;"></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;">
+      <div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;letter-spacing:-.3px;">Add a save</div>
+      <button onClick="{{ onCloseOverlay }}" style="width:30px;height:30px;border:none;border-radius:50%;background:#EEE8DE;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="#6E655A" stroke-width="2.6" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="#6E655A" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+    </div>
+    <div data-scroll style="overflow-y:auto;padding:0 20px 20px;">
+      <sc-if value="{{ addPaste }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #EAE4DA;border-radius:16px;padding:0 13px;height:50px;margin-bottom:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M9 15l6-6M10 6l1-1a4 4 0 015.6 5.6l-1 1M14 18l-1 1a4 4 0 01-5.6-5.6l1-1" stroke="#A39A8D" stroke-width="2" stroke-linecap="round"/></svg>
+          <input value="{{ addUrl }}" onInput="{{ onAddUrl }}" placeholder="Paste any link…" style="flex:1;border:none;background:none;font-size:15px;color:#191510;min-width:0;">
+        </div>
+        <button onClick="{{ onSubmitUrl }}" style="width:100%;height:50px;border:none;border-radius:16px;background:var(--ac,#FF5A2D);color:#fff;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(255,90,45,.32);{{ continueStyle }};">Fetch preview</button>
+        <button onClick="{{ onOpenHowto }}" style="width:100%;margin-top:12px;border:none;background:none;color:var(--ac-deep,#AE3512);font-size:12.5px;font-weight:700;cursor:pointer;">Saving from another app? See how →</button>
+        <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#A39A8D;margin:20px 0 10px;">Or try one</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <sc-for list="{{ samples }}" as="s" hint-placeholder-count="4">
+            <button onClick="{{ s.onClick }}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:14px;padding:11px 12px;cursor:pointer;">
+              <span style="width:26px;height:26px;border-radius:8px;font-size:8.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;letter-spacing:.2px;flex-shrink:0;{{ s.platStyle }};">{{ s.platShort }}</span>
+              <span style="flex:1;font-size:13px;font-weight:600;color:#332C23;min-width:0;">{{ s.label }}</span>
+              <span style="display:inline-block;width:7px;height:7px;border-top:2px solid #C6BEB1;border-right:2px solid #C6BEB1;transform:rotate(45deg);flex-shrink:0;"></span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ addLoading }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:46px 0 54px;gap:15px;">
+          <span style="width:38px;height:38px;border-radius:50%;border:3.5px solid #EEE8DE;border-top-color:var(--ac,#FF5A2D);animation:bm-spin .8s linear infinite;"></span>
+          <div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:16px;color:#6E655A;">Reading the link…</div>
+          <div style="font-size:12.5px;color:#A39A8D;">Pulling the preview &amp; sorting it for you</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ addDetails }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:12px;background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:11px;margin-bottom:13px;">
+          <div style="position:relative;width:68px;height:68px;border-radius:14px;flex-shrink:0;overflow:hidden;{{ pv.thumbStyle }};">
+            <sc-if value="{{ pv.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;"><span style="margin-left:2px;width:0;height:0;border-left:7px solid #191510;border-top:4.5px solid transparent;border-bottom:4.5px solid transparent;"></span></span></sc-if>
+            <sc-if value="{{ pv.isText }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque';font-weight:800;font-size:19px;color:#fff;">&#8220;</span></sc-if>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <span style="width:22px;height:22px;border-radius:7px;font-size:8px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;{{ pv.platStyle }};">{{ pv.platShort }}</span>
+            <div style="margin-top:5px;font-weight:600;font-size:13.5px;color:#191510;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ pv.title }}</div>
+            <div style="margin-top:3px;font-size:11.5px;color:#A39A8D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ pv.author }}</div>
+          </div>
+        </div>
+        <div style="background:linear-gradient(165deg,#FFF3ED,#FFEDE4);border:1px solid #FFD9C8;border-radius:18px;padding:14px;margin-bottom:13px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" fill="var(--ac,#FF5A2D)"/><circle cx="18.5" cy="17.5" r="2" fill="var(--ac,#FF5A2D)" opacity=".55"/></svg>
+            <span style="font-size:12.5px;font-weight:800;color:var(--ac-deep,#AE3512);letter-spacing:.1px;">Sorted for you</span>
+            <span style="margin-left:auto;font-size:11px;color:#C68D77;font-weight:600;">tap to change</span>
+          </div>
+          <button onClick="{{ onOpenPicker }}" style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;border:none;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:11px;{{ addCatChipStyle }};">{{ addCatLabel }} <span style="display:inline-block;width:6px;height:6px;border-bottom:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg);margin-top:-3px;opacity:.7;"></span></button>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+            <sc-for list="{{ addTagChips }}" as="t" hint-placeholder-count="3">
+              <span style="height:28px;padding:0 6px 0 11px;border-radius:999px;background:#fff;border:1px solid #F2D9CB;color:#6E655A;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;">#{{ t.label }}<button onClick="{{ t.onRemove }}" style="border:none;background:#F4E6DC;border-radius:50%;width:17px;height:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="8" height="8" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="#9C8E80" stroke-width="3" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="#9C8E80" stroke-width="3" stroke-linecap="round"/></svg></button></span>
+            </sc-for>
+            <input value="{{ addTagDraft }}" onInput="{{ onTagDraft }}" onKeyDown="{{ onTagKey }}" placeholder="+ tag" style="height:28px;width:72px;border:1px dashed #E4C4B2;border-radius:999px;background:none;font-size:12px;color:#6E655A;padding:0 11px;">
+          </div>
+        </div>
+        <sc-if value="{{ addNoteOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid #EAE4DA;border-radius:18px;padding:13px;margin-bottom:13px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;"><span style="font-size:13px;font-weight:700;color:#191510;">Your note</span><input type="date" value="{{ addNoteDate }}" onInput="{{ onAddNoteDate }}" style="border:1px solid #EAE4DA;border-radius:10px;padding:5px 8px;font-size:12px;color:#6E655A;background:#F6F3EE;"></div>
+            <textarea value="{{ addNote }}" onInput="{{ onAddNote }}" placeholder="Why are you saving this? What to remember…" style="width:100%;min-height:60px;border:none;background:none;resize:none;font-size:13.5px;color:#191510;line-height:1.5;"></textarea>
+          </div>
+        </sc-if>
+        <sc-if value="{{ addNoteClosed }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ onToggleNote }}" style="width:100%;height:44px;border:1.5px dashed #D7CDBD;border-radius:16px;background:none;color:#8A8072;font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:13px;">+ Add a note</button>
+        </sc-if>
+        <button onClick="{{ onSaveAdd }}" style="width:100%;height:52px;border:none;border-radius:17px;background:var(--ac,#FF5A2D);color:#fff;font-size:15.5px;font-weight:700;cursor:pointer;box-shadow:0 8px 22px rgba(255,90,45,.34);">Save to borkmarkr</button>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= CATEGORY PICKER ================= -->
+<sc-if value="{{ catPickerOpen }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Pick topic" style="position:absolute;inset:0;z-index:44;">
+  <div onClick="{{ onClosePicker }}" style="position:absolute;inset:0;background:rgba(20,15,10,.46);animation:bm-scrim .25s ease;"></div>
+  <div onClick="{{ stop }}" style="position:absolute;left:0;right:0;bottom:0;background:#F6F3EE;border-radius:30px 30px 0 0;box-shadow:0 -10px 44px rgba(25,21,16,.26);max-height:88%;display:flex;flex-direction:column;animation:bm-sheet .3s cubic-bezier(.22,1,.36,1);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:center;padding:10px 0 4px;"><span style="width:36px;height:5px;border-radius:99px;background:#DBD2C4;"></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 10px;"><div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:18px;letter-spacing:-.3px;">Choose a topic</div><button onClick="{{ onClosePicker }}" style="width:30px;height:30px;border:none;border-radius:50%;background:#EEE8DE;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="#6E655A" stroke-width="2.6" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="#6E655A" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
+    <div data-scroll style="overflow-y:auto;padding:0 16px 24px;">
+      <sc-for list="{{ pickerCats }}" as="c" hint-placeholder-count="8">
+        <div style="margin-bottom:7px;">
+          <button onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#fff;border:1px solid #EAE4DA;border-radius:14px;padding:11px 13px;cursor:pointer;">
+            <span style="width:13px;height:13px;border-radius:5px;{{ c.dotStyle }};"></span>
+            <span style="flex:1;font-size:14.5px;font-weight:700;color:#191510;">{{ c.name }}</span>
+            <span style="font-size:12px;color:#A39A8D;font-weight:600;">{{ c.count }}</span>
+            <span style="display:inline-block;width:7px;height:7px;border-bottom:2px solid #C6BEB1;border-right:2px solid #C6BEB1;{{ c.arrowStyle }};"></span>
+          </button>
+          <sc-if value="{{ c.expanded }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:7px;flex-wrap:wrap;padding:10px 4px 4px;">
+              <sc-for list="{{ c.subs }}" as="s" hint-placeholder-count="5">
+                <button onClick="{{ s.onClick }}" style="height:32px;padding:0 13px;border-radius:999px;border:none;font-size:12.5px;font-weight:700;cursor:pointer;{{ s.style }};">{{ s.name }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= DETAIL ================= -->
+<sc-if value="{{ detailOpen }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Saved item" style="position:absolute;inset:0;z-index:42;">
+  <div onClick="{{ onCloseOverlay }}" style="position:absolute;inset:0;background:rgba(20,15,10,.46);animation:bm-scrim .25s ease;"></div>
+  <div onClick="{{ stop }}" style="position:absolute;left:0;right:0;bottom:0;top:36px;background:#F6F3EE;border-radius:30px 30px 0 0;box-shadow:0 -10px 44px rgba(25,21,16,.26);display:flex;flex-direction:column;animation:bm-sheet .32s cubic-bezier(.22,1,.36,1);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;flex-shrink:0;">
+      <button onClick="{{ onCloseOverlay }}" style="width:34px;height:34px;border:none;border-radius:50%;background:#EEE8DE;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span style="display:inline-block;width:9px;height:9px;border-bottom:2.4px solid #6E655A;border-right:2.4px solid #6E655A;transform:rotate(45deg);margin-top:-4px;"></span></button>
+      <button onClick="{{ det.onShare }}" style="width:34px;height:34px;border:none;border-radius:50%;background:#EEE8DE;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="12" r="2.4" stroke="#6E655A" stroke-width="2"/><circle cx="18" cy="6" r="2.4" stroke="#6E655A" stroke-width="2"/><circle cx="18" cy="18" r="2.4" stroke="#6E655A" stroke-width="2"/><line x1="8.1" y1="10.9" x2="15.9" y2="7.1" stroke="#6E655A" stroke-width="2"/><line x1="8.1" y1="13.1" x2="15.9" y2="16.9" stroke="#6E655A" stroke-width="2"/></svg></button>
+    </div>
+    <div data-scroll style="flex:1;overflow-y:auto;padding:4px 20px 120px;">
+      <sc-if value="{{ det.isText }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fff;border:1px solid #EAE4DA;border-radius:20px;padding:16px;margin-bottom:15px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;{{ det.platStyle }};">{{ det.platShort }}</span>
+            <span style="font-size:13px;font-weight:700;">{{ det.author }}</span>
+          </div>
+          <div style="margin-top:11px;font-size:15px;line-height:1.55;color:#332C23;">{{ det.snippet }}</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ det.isMediaOrArticle }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative;height:200px;border-radius:20px;overflow:hidden;margin-bottom:15px;{{ det.coverStyle }};">
+          <div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 12% 0%,rgba(255,255,255,.16),transparent 60%),linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(10,6,2,.5) 100%);"></div>
+          <span style="position:absolute;top:12px;left:12px;width:26px;height:26px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.25);{{ det.platStyle }};">{{ det.platShort }}</span>
+          <sc-if value="{{ det.isVideo }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.28);"><span style="margin-left:4px;width:0;height:0;border-left:15px solid #191510;border-top:9.5px solid transparent;border-bottom:9.5px solid transparent;"></span></span>
+            <span style="position:absolute;bottom:12px;right:12px;height:22px;padding:0 8px;border-radius:7px;background:rgba(12,8,4,.6);color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;">{{ det.dur }}</span>
+          </sc-if>
+        </div>
+      </sc-if>
+      <div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:20px;line-height:1.25;letter-spacing:-.3px;color:#191510;">{{ det.title }}</div>
+      <div style="margin-top:5px;font-size:13px;color:#A39A8D;">{{ det.authorLine }}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin:14px 0 4px;flex-wrap:wrap;">
+        <button onClick="{{ det.onCat }}" style="height:28px;padding:0 12px;border-radius:999px;border:none;cursor:pointer;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;{{ det.chipStyle }};">{{ det.catName }}</button>
+        <span style="display:inline-block;width:6px;height:6px;border-top:2px solid #C6BEB1;border-right:2px solid #C6BEB1;transform:rotate(45deg);"></span>
+        <span style="font-size:13px;font-weight:600;color:#6E655A;">{{ det.sub }}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+        <sc-for list="{{ det.tagChips }}" as="t" hint-placeholder-count="3"><span style="height:25px;padding:0 10px;border-radius:999px;background:#EEE8DE;color:#8A8072;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;">#{{ t.label }}</span></sc-for>
+      </div>
+      <sc-if value="{{ det.hasNote }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;background:linear-gradient(180deg,#FFFBEA,#FFF5D8);border:1px solid #F0E0AC;border-radius:17px;padding:13px 14px;">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;"><span style="width:18px;height:18px;border-radius:6px;background:#FFE7A0;display:inline-flex;align-items:center;justify-content:center;"><span style="width:8px;height:2px;background:#9A7B1A;box-shadow:0 3px 0 #9A7B1A;border-radius:2px;"></span></span><span style="font-size:11px;font-weight:800;color:#8A6D14;letter-spacing:.4px;">YOUR NOTE</span><span style="margin-left:auto;font-size:11px;color:#B79A4A;font-weight:600;">{{ det.noteDateLabel }}</span></div>
+          <div style="font-size:14px;line-height:1.55;color:#5C4E25;">{{ det.noteText }}</div>
+          <button onClick="{{ det.onStartNote }}" style="margin-top:9px;border:none;background:none;color:#9A7B1A;font-size:12px;font-weight:700;cursor:pointer;padding:0;">Edit note</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ detailNoteEdit }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;background:#fff;border:1px solid #EAE4DA;border-radius:17px;padding:13px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;"><span style="font-size:13px;font-weight:700;color:#191510;">{{ noteEditTitle }}</span><input type="date" value="{{ dNoteDate }}" onInput="{{ onDNoteDate }}" style="border:1px solid #EAE4DA;border-radius:10px;padding:5px 8px;font-size:12px;color:#6E655A;background:#F6F3EE;"></div>
+          <textarea value="{{ dNoteDraft }}" onInput="{{ onDNoteDraft }}" placeholder="Write your note…" style="width:100%;min-height:62px;border:none;background:none;resize:none;font-size:13.5px;color:#191510;line-height:1.5;"></textarea>
+          <button onClick="{{ onSaveNote }}" style="margin-top:6px;width:100%;height:42px;border:none;border-radius:13px;background:var(--ac,#FF5A2D);color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;">Save note</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ detailNoNote }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ det.onStartNote }}" style="margin-top:16px;width:100%;height:46px;border:1.5px dashed #D7CDBD;border-radius:16px;background:none;color:#8A8072;font-size:13.5px;font-weight:600;cursor:pointer;">+ Add a note</button>
+      </sc-if>
+      <div style="margin-top:18px;font-size:12px;color:#A39A8D;">{{ det.savedLine }}</div>
+    </div>
+    <div style="flex-shrink:0;display:flex;gap:10px;padding:12px 20px 26px;background:#F6F3EE;border-top:1px solid #EAE4DA;">
+      <button onClick="{{ det.onDelete }}" style="width:50px;height:50px;border:1px solid #EAE4DA;border-radius:16px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 7h14M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2M7 7l1 13a1 1 0 001 1h6a1 1 0 001-1l1-13" stroke="#C2545A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button onClick="{{ det.onOpen }}" style="flex:1;height:50px;border:none;border-radius:16px;background:#191510;color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">Open original <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M8 16L16 8M16 8H10M16 8v6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= SHARE ================= -->
+<sc-if value="{{ shareOpen }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Share" style="position:absolute;inset:0;z-index:43;">
+  <div onClick="{{ onCloseOverlay }}" style="position:absolute;inset:0;background:rgba(20,15,10,.46);animation:bm-scrim .25s ease;"></div>
+  <div onClick="{{ stop }}" style="position:absolute;left:0;right:0;bottom:0;background:#F6F3EE;border-radius:30px 30px 0 0;box-shadow:0 -10px 44px rgba(25,21,16,.26);max-height:90%;display:flex;flex-direction:column;animation:bm-sheet .3s cubic-bezier(.22,1,.36,1);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:center;padding:10px 0 4px;"><span style="width:36px;height:5px;border-radius:99px;background:#DBD2C4;"></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 4px;"><div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;letter-spacing:-.3px;">{{ sh.title }}</div><button onClick="{{ onCloseOverlay }}" style="width:30px;height:30px;border:none;border-radius:50%;background:#EEE8DE;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="#6E655A" stroke-width="2.6" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="#6E655A" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
+    <div data-scroll style="overflow-y:auto;padding:8px 20px 26px;">
+      <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #EAE4DA;border-radius:17px;padding:11px;margin-bottom:15px;">
+        <span style="width:44px;height:44px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;{{ sh.iconStyle }};"><span style="width:14px;height:18px;background:currentColor;clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%);opacity:.85;"></span></span>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:14px;color:#191510;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ sh.subtitle }}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #EAE4DA;border-radius:16px;padding:13px 14px;margin-bottom:10px;">
+        <div><div style="font-size:13.5px;font-weight:700;color:#191510;">Anyone with the link</div><div style="font-size:11.5px;color:#A39A8D;margin-top:1px;">{{ sh.linkSub }}</div></div>
+        <button onClick="{{ onToggleLink }}" style="width:48px;height:28px;border-radius:999px;border:none;cursor:pointer;position:relative;{{ sh.toggleStyle }};"><span style="position:absolute;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);{{ sh.knobStyle }};"></span></button>
+      </div>
+      <sc-if value="{{ sh.link }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:8px;background:#EEE8DE;border-radius:14px;padding:5px 5px 5px 14px;margin-bottom:16px;">
+          <span style="flex:1;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#6E655A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ sh.url }}</span>
+          <button onClick="{{ onCopyLink }}" style="height:36px;padding:0 14px;border:none;border-radius:11px;background:var(--ac,#FF5A2D);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">Copy</button>
+        </div>
+      </sc-if>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#A39A8D;margin:4px 0 12px;">Send to</div>
+      <div style="display:flex;gap:14px;margin-bottom:20px;overflow-x:auto;" data-scroll>
+        <sc-for list="{{ people }}" as="p" hint-placeholder-count="5">
+          <button onClick="{{ p.onClick }}" style="border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;width:54px;">
+            <span style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque';font-weight:700;color:#5C4E3E;font-size:15px;{{ p.style }};">{{ p.initials }}</span>
+            <span style="font-size:11px;color:#6E655A;font-weight:600;white-space:nowrap;">{{ p.name }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:9px;">
+        <button onClick="{{ onCopyLink }}" style="flex:1;height:48px;border:1px solid #EAE4DA;border-radius:16px;background:#fff;color:#332C23;font-size:13px;font-weight:700;cursor:pointer;">Copy link</button>
+        <button onClick="{{ onShareDone }}" style="flex:1;height:48px;border:none;border-radius:16px;background:var(--ac,#FF5A2D);color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(255,90,45,.3);">Share now</button>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= HOW TO SAVE ================= -->
+<sc-if value="{{ howtoOpen }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="How to save" style="position:absolute;inset:0;z-index:50;">
+  <div onClick="{{ onCloseHowto }}" style="position:absolute;inset:0;background:rgba(20,15,10,.46);animation:bm-scrim .25s ease;"></div>
+  <div onClick="{{ stop }}" style="position:absolute;left:0;right:0;bottom:0;background:#F6F3EE;border-radius:30px 30px 0 0;box-shadow:0 -10px 44px rgba(25,21,16,.26);max-height:93%;display:flex;flex-direction:column;animation:bm-sheet .3s cubic-bezier(.22,1,.36,1);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:center;padding:10px 0 4px;"><span style="width:36px;height:5px;border-radius:99px;background:#DBD2C4;"></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 8px;"><div style="font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;letter-spacing:-.3px;">Save from any app</div><button onClick="{{ onCloseHowto }}" style="width:30px;height:30px;border:none;border-radius:50%;background:#EEE8DE;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="#6E655A" stroke-width="2.6" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="#6E655A" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
+    <div data-scroll style="overflow-y:auto;padding:4px 20px 26px;">
+      <div style="width:100%;background:#fff;border:1px solid #EAE4DA;border-radius:20px;box-shadow:0 10px 28px rgba(25,21,16,.08);overflow:hidden;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid #F1EBE1;">
+          <span style="width:38px;height:38px;border-radius:12px;background:linear-gradient(140deg,#F5DCE7,#fff);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="width:20px;height:20px;border-radius:7px;background:linear-gradient(135deg,#7B3FE4,#DB2E7A 55%,#FF7A3D);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7.5px;font-weight:800;">IG</span></span>
+          <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:700;color:#191510;">Reel · 5-min mobility flow</div><div style="font-size:11px;color:#A39A8D;">@movewithpriya</div></div>
+          <span style="font-size:11px;font-weight:700;color:var(--ac,#FF5A2D);white-space:nowrap;">Share ↑</span>
+        </div>
+        <div style="padding:14px;background:#F3EEE6;">
+          <div style="display:flex;gap:13px;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
+              <span style="width:50px;height:50px;border-radius:16px;background:var(--ac,#FF5A2D);display:flex;align-items:center;justify-content:center;box-shadow:0 7px 16px rgba(255,90,45,.4);"><span style="width:16px;height:21px;background:#fff;clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%);"></span></span>
+              <span style="font-size:10px;font-weight:800;color:#191510;">borkmarkr</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;opacity:.4;"><span style="width:50px;height:50px;border-radius:16px;background:#DED4C4;"></span><span style="font-size:10px;color:#A39A8D;">Messages</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;opacity:.4;"><span style="width:50px;height:50px;border-radius:16px;background:#DED4C4;"></span><span style="font-size:10px;color:#A39A8D;">Copy</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;opacity:.4;"><span style="width:50px;height:50px;border-radius:16px;background:#DED4C4;"></span><span style="font-size:10px;color:#A39A8D;">More</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:13px;align-items:flex-start;"><span style="width:27px;height:27px;border-radius:50%;background:var(--ac,#FF5A2D);color:#fff;font-family:'Bricolage Grotesque';font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span><div><div style="font-size:14.5px;font-weight:700;color:#191510;">Find something worth keeping</div><div style="font-size:13px;color:#8A8072;line-height:1.45;margin-top:2px;">A post, reel, video, thread or article — any app, any browser.</div></div></div>
+        <div style="display:flex;gap:13px;align-items:flex-start;"><span style="width:27px;height:27px;border-radius:50%;background:var(--ac,#FF5A2D);color:#fff;font-family:'Bricolage Grotesque';font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span><div><div style="font-size:14.5px;font-weight:700;color:#191510;">Tap Share → borkmarkr</div><div style="font-size:13px;color:#8A8072;line-height:1.45;margin-top:2px;">borkmarkr appears in every share sheet once installed.</div></div></div>
+        <div style="display:flex;gap:13px;align-items:flex-start;"><span style="width:27px;height:27px;border-radius:50%;background:var(--ac,#FF5A2D);color:#fff;font-family:'Bricolage Grotesque';font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span><div><div style="font-size:14.5px;font-weight:700;color:#191510;">Done — saved &amp; sorted</div><div style="font-size:13px;color:#8A8072;line-height:1.45;margin-top:2px;">We grab the preview and file it in your taxonomy. Add a note any time.</div></div></div>
+      </div>
+      <button onClick="{{ onCloseHowto }}" style="margin-top:22px;width:100%;height:50px;border:none;border-radius:16px;background:#191510;color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;">Got it</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= ONBOARDING ================= -->
+<sc-if value="{{ onboardingOpen }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Welcome" style="position:absolute;inset:0;z-index:90;background:#F6F3EE;display:flex;flex-direction:column;">
+  <div style="padding:54px 22px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="display:inline-flex;width:24px;height:24px;border-radius:8px;background:var(--ac,#FF5A2D);align-items:center;justify-content:center;transform:rotate(-6deg);"><span style="width:8px;height:12px;background:#fff;clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%);"></span></span>
+      <span style="font-family:'Bricolage Grotesque';font-weight:700;font-size:16px;">borkmarkr</span>
+    </div>
+    <sc-if value="{{ obShowNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ onObSkip }}" style="border:none;background:none;color:#A39A8D;font-size:13.5px;font-weight:700;cursor:pointer;">Skip</button></sc-if>
+  </div>
+  <div data-scroll style="flex:1;overflow-y:auto;padding:6px 26px 10px;display:flex;flex-direction:column;">
+    <sc-if value="{{ ob0 }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:0;">
+        <div style="position:relative;width:150px;height:150px;margin-bottom:26px;display:flex;align-items:center;justify-content:center;">
+          <span style="position:absolute;inset:8px;border-radius:36px;background:var(--ac-tint,#FFE7DE);transform:rotate(9deg);"></span>
+          <span style="position:absolute;inset:8px;border-radius:36px;background:var(--ac,#FF5A2D);opacity:.13;transform:rotate(-8deg);"></span>
+          <span style="position:relative;display:inline-flex;width:78px;height:78px;border-radius:26px;background:var(--ac,#FF5A2D);align-items:center;justify-content:center;box-shadow:0 16px 34px rgba(255,90,45,.4);transform:rotate(-6deg);"><span style="width:26px;height:34px;background:#fff;clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%);"></span></span>
+        </div>
+        <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:31px;line-height:1.1;letter-spacing:-.8px;color:#191510;">Everything you save,<br>finally in one place.</div>
+        <div style="margin-top:13px;font-size:15px;line-height:1.55;color:#8A8072;max-width:300px;">Pull links from every app you scroll — and actually find them again.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:24px;max-width:280px;">
+          <sc-for list="{{ obPlatforms }}" as="p" hint-placeholder-count="8"><span style="height:30px;padding:0 11px;border-radius:10px;font-size:10.5px;font-weight:800;letter-spacing:.3px;display:inline-flex;align-items:center;{{ p.style }};">{{ p.short }}</span></sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ ob1 }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;">
+        <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:28px;line-height:1.12;letter-spacing:-.6px;color:#191510;text-align:center;">Save from any app<br>in two taps.</div>
+        <div style="margin-top:10px;font-size:14.5px;line-height:1.5;color:#8A8072;text-align:center;">Tap <b style="color:#191510;">Share</b> on any post, then pick borkmarkr.</div>
+        <div style="margin:22px auto 0;width:100%;max-width:312px;background:#fff;border:1px solid #EAE4DA;border-radius:22px;box-shadow:0 18px 40px rgba(25,21,16,.13);overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid #F1EBE1;">
+            <span style="width:38px;height:38px;border-radius:12px;background:linear-gradient(140deg,#F5DCE7,#fff);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="width:20px;height:20px;border-radius:7px;background:linear-gradient(135deg,#7B3FE4,#DB2E7A 55%,#FF7A3D);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7.5px;font-weight:800;">IG</span></span>
+            <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:700;color:#191510;">Reel · 5-min mobility flow</div><div style="font-size:11px;color:#A39A8D;">@movewithpriya</div></div>
+            <span style="font-size:11px;font-weight:700;color:var(--ac,#FF5A2D);white-space:nowrap;">Share ↑</span>
+          </div>
+          <div style="padding:14px;background:#F3EEE6;">
+            <div style="display:flex;gap:13px;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
+                <span style="width:50px;height:50px;border-radius:16px;background:var(--ac,#FF5A2D);display:flex;align-items:center;justify-content:center;box-shadow:0 7px 16px rgba(255,90,45,.4);"><span style="width:16px;height:21px;background:#fff;clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%);"></span></span>
+                <span style="font-size:10px;font-weight:800;color:#191510;">borkmarkr</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;opacity:.4;"><span style="width:50px;height:50px;border-radius:16px;background:#DED4C4;"></span><span style="font-size:10px;color:#A39A8D;">Messages</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;opacity:.4;"><span style="width:50px;height:50px;border-radius:16px;background:#DED4C4;"></span><span style="font-size:10px;color:#A39A8D;">Copy</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;opacity:.4;"><span style="width:50px;height:50px;border-radius:16px;background:#DED4C4;"></span><span style="font-size:10px;color:#A39A8D;">More</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ ob2 }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;">
+        <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:28px;line-height:1.12;letter-spacing:-.6px;color:#191510;text-align:center;">It sorts itself.</div>
+        <div style="margin-top:10px;font-size:14.5px;line-height:1.5;color:#8A8072;text-align:center;">Every save is filed into a deep topic tree — and by the app it came from. Browse either way.</div>
+        <div style="margin:24px auto 0;width:100%;max-width:300px;">
+          <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #EAE4DA;border-radius:13px;padding:11px 13px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:#8A8072;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--ac,#FF5A2D);flex-shrink:0;"></span>tiktok.com/@physio…/back-fix
+          </div>
+          <div style="display:flex;justify-content:center;padding:9px 0;"><span style="display:inline-block;width:10px;height:10px;border-right:2.5px solid var(--ac,#FF5A2D);border-bottom:2.5px solid var(--ac,#FF5A2D);transform:rotate(45deg);"></span></div>
+          <div style="background:linear-gradient(165deg,#FFF3ED,#FFEDE4);border:1px solid #FFD9C8;border-radius:18px;padding:14px;">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:11px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" fill="var(--ac,#FF5A2D)"/></svg><span style="font-size:12px;font-weight:800;color:var(--ac-deep,#AE3512);">Sorted for you</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;">
+              <span style="height:30px;padding:0 13px;border-radius:999px;background:hsl(150,55%,92%);color:hsl(150,45%,30%);font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;">Fitness › Mobility</span>
+              <span style="height:28px;padding:0 11px;border-radius:999px;background:#fff;border:1px solid #F2D9CB;color:#6E655A;font-size:12px;font-weight:600;display:inline-flex;align-items:center;">#back</span>
+              <span style="height:28px;padding:0 11px;border-radius:999px;background:#fff;border:1px solid #F2D9CB;color:#6E655A;font-size:12px;font-weight:600;display:inline-flex;align-items:center;">#TikTok</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ ob3 }}" hint-placeholder-val="{{ false }}">
+      <div style="padding-top:8px;">
+        <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:28px;line-height:1.12;letter-spacing:-.6px;color:#191510;text-align:center;">Make it yours.</div>
+        <div style="margin-top:8px;font-size:14px;line-height:1.5;color:#8A8072;text-align:center;">Pick an accent and a few things you're into.</div>
+        <div style="display:flex;justify-content:center;gap:18px;margin:24px 0 4px;">
+          <sc-for list="{{ obColors }}" as="c" hint-placeholder-count="4">
+            <button onClick="{{ c.onClick }}" style="width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;{{ c.style }};"></button>
+          </sc-for>
+        </div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#A39A8D;margin:22px 0 12px;text-align:center;">A few interests</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+          <sc-for list="{{ obInterestChips }}" as="c" hint-placeholder-count="10"><button onClick="{{ c.onClick }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid;font-size:13px;font-weight:600;cursor:pointer;{{ c.style }};">{{ c.name }}</button></sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  <div style="flex-shrink:0;padding:8px 24px 30px;">
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:15px;">
+      <sc-for list="{{ obDots }}" as="d" hint-placeholder-count="4"><span style="height:7px;border-radius:99px;{{ d.style }};"></span></sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <sc-if value="{{ obBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ onObBack }}" style="height:52px;padding:0 22px;border:1px solid #E2D9CA;border-radius:17px;background:#fff;color:#6E655A;font-size:14.5px;font-weight:700;cursor:pointer;">Back</button></sc-if>
+      <sc-if value="{{ obShowNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ onObNext }}" style="flex:1;height:52px;border:none;border-radius:17px;background:var(--ac,#FF5A2D);color:#fff;font-size:15.5px;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(255,90,45,.34);">Continue</button></sc-if>
+      <sc-if value="{{ ob3 }}" hint-placeholder-val="{{ false }}"><button onClick="{{ onObDone }}" style="flex:1;height:52px;border:none;border-radius:17px;background:var(--ac,#FF5A2D);color:#fff;font-size:15.5px;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(255,90,45,.34);">Get started</button></sc-if>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= TOAST ================= -->
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;bottom:96px;left:50%;transform:translateX(-50%);z-index:60;background:#191510;color:#fff;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:700;box-shadow:0 12px 30px rgba(0,0,0,.3);display:flex;align-items:center;gap:8px;white-space:nowrap;animation:bm-toast .26s cubic-bezier(.22,1,.36,1);">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="#7BE3A4" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    {{ toast }}
+  </div>
+</sc-if>
+
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:468,&quot;height&quot;:928},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#FF5A2D&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#FF5A2D&quot;,&quot;#7C5CFC&quot;,&quot;#2E8CF0&quot;,&quot;#1FA971&quot;],&quot;section&quot;:&quot;Brand&quot;},&quot;onboarding&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Brand&quot;},&quot;feedDensity&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;cards&quot;,&quot;options&quot;:[&quot;cards&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feed&quot;},&quot;defaultTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;home&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;browse&quot;,&quot;search&quot;,&quot;you&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feed&quot;}}">
+class Component extends DCLogic {
+  rootRef = React.createRef();
+  now = '2026-08-02';
+  PLAT = {
+    x:        { name:'X',         short:'X',   sub:'Posts & threads',      style:'background:#0F1014;color:#fff',  header:'linear-gradient(160deg,#17181D,#000)' },
+    instagram:{ name:'Instagram', short:'IG',  sub:'Reels & posts',        style:'background:linear-gradient(135deg,#7B3FE4,#DB2E7A 55%,#FF7A3D);color:#fff', header:'linear-gradient(150deg,#7B3FE4,#DB2E7A 55%,#FF7A3D)' },
+    tiktok:   { name:'TikTok',    short:'TT',  sub:'Clips',                style:'background:#0D0E12;color:#5CE8E4', header:'linear-gradient(160deg,#17181D,#000)' },
+    youtube:  { name:'YouTube',   short:'YT',  sub:'Videos',               style:'background:#CC1B2B;color:#fff',  header:'linear-gradient(160deg,#B3121F,#5E0A12)' },
+    shorts:   { name:'Shorts',    short:'SH',  sub:'Short videos',         style:'background:#D5202F;color:#fff',  header:'linear-gradient(160deg,#C11723,#5E0A12)' },
+    pinterest:{ name:'Pinterest', short:'PIN', sub:'Pins & boards',        style:'background:#B8121F;color:#fff',  header:'linear-gradient(160deg,#A50F1B,#4E070D)' },
+    threads:  { name:'Threads',   short:'TH',  sub:'Text posts',           style:'background:#141416;color:#fff',  header:'linear-gradient(160deg,#1B1B1E,#000)' },
+    web:      { name:'Web',       short:'WWW', sub:'Articles & pages',     style:'background:#48505C;color:#fff',  header:'linear-gradient(160deg,#3E4550,#20242B)' },
+  };
+  PLAT_ORDER = ['x','instagram','tiktok','youtube','shorts','threads','pinterest','web'];
+  CATS = [
+    {key:'fitness',      name:'Fitness',       hue:150, subs:['Running','Strength','Mobility','Stretching','Yoga','HIIT','Recovery','Home workouts','Cardio','Calisthenics','Warm-ups','Form tips']},
+    {key:'health',       name:'Health',        hue:352, subs:['Conditions','Medications','Symptoms','Sleep','Mental health','Gut health','Heart & BP','Diabetes','Pain relief',"Women's health","Men's health","Kids' health",'Dental','Skin','Immunity','Supplements']},
+    {key:'wellness',     name:'Wellness',      hue:270, subs:['Morning routines','Affirmations','Meditation','Breathwork','Habits','Journaling','Gratitude','Self-care','Mindfulness','Evening routines']},
+    {key:'food',         name:'Food',          hue:36,  subs:['Healthy recipes','Quick meals','Meal prep','Baking','Nutrition','High-protein','Vegetarian','Desserts','Snacks','Drinks','Air fryer','Budget meals']},
+    {key:'sports',       name:'Sports',        hue:210, subs:['Football','Basketball','Soccer','Running','Cycling','Tennis','Golf','Combat sports','Highlights','Analysis','Gear']},
+    {key:'money',        name:'Money',         hue:168, subs:['Investing','Budgeting','Saving','Side hustles','Crypto','Stocks','Real estate','Taxes','Retirement','Credit']},
+    {key:'learning',     name:'Learning',      hue:246, subs:['Languages','Science','History','Math','How-to','Homeschool','Study tips','Coding','Geography','Philosophy']},
+    {key:'home',         name:'Home & DIY',    hue:26,  subs:['Organization','Repairs','Decor','Gardening','Cleaning','Renovation','Storage','Plants','Furniture','DIY projects']},
+    {key:'tech',         name:'Tech',          hue:192, subs:['AI','Gadgets','Coding','Apps','Phones','Software tips','Cybersecurity','Smart home','Reviews','Tutorials']},
+    {key:'funny',        name:'Funny',         hue:46,  subs:['Memes','Clips','Animals','Fails','Stand-up','Pranks','Wholesome','Skits']},
+    {key:'beliefs',      name:'Beliefs',       hue:300, subs:['Religion','Philosophy','Conspiracies','Spirituality','Ethics','History takes','Big questions']},
+    {key:'travel',       name:'Travel',        hue:200, subs:['Destinations','Tips','Food spots','Budget travel','Itineraries','Hotels','Flights','Packing','Hidden gems','Road trips']},
+    {key:'style',        name:'Style',         hue:326, subs:['Outfits','Grooming','Hair','Skincare','Makeup','Accessories','Capsule wardrobe','Streetwear','Shoes']},
+    {key:'parenting',    name:'Parenting',     hue:130, subs:['Activities','Education','Health','Newborn','Toddlers','Discipline','Sleep training','Meals','Crafts','School']},
+    {key:'work',         name:'Work',          hue:232, subs:['Career','Resume','Interviews','Leadership','Remote work','Productivity','Networking','Negotiation','Skills']},
+    {key:'business',     name:'Business',      hue:178, subs:['Marketing','Startups','Sales','Branding','Operations','Finance','Hiring','Strategy','E-commerce']},
+    {key:'art',          name:'Art & Design',  hue:8,   subs:['Drawing','Painting','Design','Illustration','Typography','Color','Sculpture','Digital art','Inspiration']},
+    {key:'music',        name:'Music',         hue:284, subs:['Production','Theory','Guitar','Piano','Singing','Mixing','Playlists','Gear','Artists']},
+    {key:'gaming',       name:'Gaming',        hue:258, subs:['Guides','Reviews','Builds','Speedruns','News','Esports','Retro','Mods']},
+    {key:'nature',       name:'Nature',        hue:100, subs:['Hiking','Camping','Wildlife','Plants','Stargazing','Conservation','Fishing','Foraging']},
+    {key:'pets',         name:'Pets',          hue:18,  subs:['Dogs','Cats','Training','Health','Nutrition','Grooming','Behavior','Adoption']},
+    {key:'relationships',name:'Relationships', hue:338, subs:['Dating','Marriage','Communication','Friendship','Breakups','Boundaries','Family']},
+    {key:'news',         name:'News',          hue:220, subs:['World','Politics','Business','Tech','Science','Sports','Local','Explainers']},
+    {key:'science',      name:'Science',       hue:186, subs:['Space','Biology','Physics','Psychology','Environment','Medicine','Discoveries','Explainers']},
+  ];
+  ACCENTS = {
+    '#FF5A2D': { ac:'#FF5A2D', dk:'#E8451C', tint:'#FFE7DE', deep:'#AE3512' },
+    '#7C5CFC': { ac:'#7C5CFC', dk:'#6A47F0', tint:'#ECE7FF', deep:'#5538C9' },
+    '#2E8CF0': { ac:'#2E8CF0', dk:'#1F77D6', tint:'#E2F0FF', deep:'#1E66B8' },
+    '#1FA971': { ac:'#1FA971', dk:'#178A5C', tint:'#DFF4EA', deep:'#147A52' },
+  };
+  SAMPLES = [
+    { url:'tiktok.com/@physio.jane/video/7390', label:'TikTok · the 3 stretches that fixed my back', platform:'tiktok',
+      preview:{ platform:'tiktok', title:'The 3 stretches that fixed my lower back', author:'@physio.jane', kind:'clip', dur:'1:08', cat:'fitness', sub:'Mobility', tags:['back','stretch','daily'] } },
+    { url:'x.com/sleepdoc/status/180233', label:'X · a simple wind-down routine for deep sleep', platform:'x',
+      preview:{ platform:'x', title:'Thread: a simple wind-down routine for deeper sleep', author:'@sleepdoc', kind:'thread', dur:'', cat:'health', sub:'Sleep', tags:['sleep','routine'], text:'Most people ruin their sleep in the 90 minutes before bed. Here is the exact wind-down I give my patients — 7 steps, zero supplements:' } },
+    { url:'youtube.com/shorts/aZ9k', label:'Shorts · 5-ingredient high-protein dinner', platform:'shorts',
+      preview:{ platform:'shorts', title:'5-ingredient high-protein dinner in 12 minutes', author:'@macrofriendly', kind:'short', dur:'0:51', cat:'food', sub:'High-protein', tags:['dinner','easy'] } },
+    { url:'instagram.com/reel/C8x', label:'Instagram · my 10-minute calm morning routine', platform:'instagram',
+      preview:{ platform:'instagram', title:'My 10-minute calm morning routine', author:'@calm.mornings', kind:'reel', dur:'0:39', cat:'wellness', sub:'Morning routines', tags:['morning','habits'] } },
+  ];
+  PEOPLE = [
+    { id:'mum', name:'Mum', initials:'M', color:'#F2B5A0' },
+    { id:'alex', name:'Alex', initials:'A', color:'#A9C7F0' },
+    { id:'sam', name:'Sam', initials:'S', color:'#B7E0C2' },
+    { id:'lee', name:'Dr. Lee', initials:'DL', color:'#D9C2EF' },
+    { id:'run', name:'Run Club', initials:'RC', color:'#F5D99A' },
+  ];
+  COLLECTIONS = [
+    { name:'Marathon prep', cat:'fitness', count:6, vis:'3 people' },
+    { name:'Healthy dinners', cat:'food', count:9, vis:'Public link' },
+    { name:"Mum's meds", cat:'health', count:4, vis:'1 person' },
+    { name:'Funny stuff', cat:'funny', count:12, vis:'Private' },
+  ];
+  state = {
+    onboarding:(()=>{ try{ return localStorage.getItem('bork_onboarded_v2') ? null : 0; }catch(e){ return 0; } })(),
+    accent:'#FF5A2D', obInterests:[], howto:false,
+    tab:'home', overlay:null, view:'cards', feedFilter:'all',
+    browseAxis:'topics', catKey:null, catSub:'all', catPlat:'all', catTag:null, srcKey:null, srcTopic:'all',
+    activeId:null, query:'', sPlatforms:[], sCats:[],
+    addStep:'paste', addUrl:'', addPreview:null, addCat:null, addSub:null, addTags:[], addTagDraft:'',
+    addNoteOpen:false, addNote:'', addNoteDate:'2026-08-02',
+    pickerCat:null, shareTarget:null, shareLink:true, sharePeople:[],
+    detailNoteEdit:false, dNoteDraft:'', dNoteDate:'2026-08-02',
+    toast:null, seq:100,
+    items:[
+      { id:'i1', platform:'tiktok', title:'5-minute hip mobility flow you can do at your desk', author:'@movewithpriya', cat:'fitness', sub:'Mobility', tags:['hips','desk','marathoners'], date:'2026-07-31', kind:'clip', dur:'5:12', note:{text:'Do this before long sitting sessions — actually helps the lower back stiffness.', date:'2026-07-31'} },
+      { id:'i2', platform:'x', title:'What magnesium glycinate actually does for sleep', author:'@hubermanclips', cat:'health', sub:'Sleep', tags:['magnesium','supplements'], date:'2026-07-30', kind:'thread', dur:'', text:'Magnesium glycinate is the most over-recommended and least understood sleep supplement. A short thread on what the studies actually show — dosage, timing, and who it does nothing for. 🧵' },
+      { id:'i3', platform:'youtube', title:'I tried the 30g protein breakfast for 30 days — here is what happened', author:'Nutrition by Sam', cat:'food', sub:'Nutrition', tags:['protein','breakfast'], date:'2026-07-29', kind:'video', dur:'12:48' },
+      { id:'i4', platform:'instagram', title:'4 stretches for tight hamstrings after long runs', author:'@yoga.with.lena', cat:'fitness', sub:'Stretching', tags:['hamstrings','marathoners'], date:'2026-07-28', kind:'reel', dur:'0:48' },
+      { id:'i5', platform:'shorts', title:'High-protein overnight oats — 38g protein', author:'@quickmacros', cat:'food', sub:'High-protein', tags:['mealprep','oats'], date:'2026-07-27', kind:'short', dur:'0:42', note:{text:'Make Sunday night for the week. Sub almond milk + frozen berries.', date:'2026-07-27'} },
+      { id:'i6', platform:'threads', title:'The real timeline of 2008 nobody talks about', author:'@macromusings', cat:'beliefs', sub:'History takes', tags:['finance','history'], date:'2026-07-26', kind:'thread', dur:'', text:'Everyone blames the banks for 2008. Almost nobody talks about the 2004 SEC rule change that made the whole thing legal. Let me walk you through the actual sequence of events —' },
+      { id:'i7', platform:'youtube', title:'How compound interest actually builds wealth (simple)', author:'Two Cents', cat:'money', sub:'Investing', tags:['compound','basics'], date:'2026-07-25', kind:'video', dur:'9:21' },
+      { id:'i8', platform:'instagram', title:'The morning routine that fixed my anxiety', author:'@calm.daily', cat:'wellness', sub:'Morning routines', tags:['habits','anxiety'], date:'2026-07-24', kind:'reel', dur:'1:04' },
+      { id:'i9', platform:'tiktok', title:'The funniest dog zoomies compilation of 2026', author:'@goodboys', cat:'funny', sub:'Animals', tags:['dogs'], date:'2026-07-23', kind:'clip', dur:'0:31' },
+      { id:'i10', platform:'web', title:'The complete guide to deloading for runners', author:'marathonhandbook.com', cat:'fitness', sub:'Running', tags:['deload','recovery','marathoners'], date:'2026-07-21', kind:'article', dur:'' },
+      { id:'i11', platform:'pinterest', title:'Small kitchen organization ideas that actually work', author:'thehomeedit', cat:'home', sub:'Organization', tags:['kitchen','storage'], date:'2026-07-19', kind:'pin', dur:'' },
+      { id:'i12', platform:'x', title:'Every common ibuprofen mistake, from a pharmacist', author:'@pharmacy.notes', cat:'health', sub:'Medications', tags:['ibuprofen','dosage'], date:'2026-07-18', kind:'thread', dur:'', text:'I have been a pharmacist for 14 years. These are the 6 ibuprofen mistakes I see every single week — and two of them can put you in hospital. Save this one:', note:{text:'Max 1200mg/day OTC, take with food. NOT with the blood pressure meds.', date:'2026-07-18'} },
+      { id:'i13', platform:'shorts', title:'60-second box breathing to calm down fast', author:'@breathe.co', cat:'wellness', sub:'Breathwork', tags:['breathing','stress'], date:'2026-07-16', kind:'short', dur:'0:58' },
+      { id:'i14', platform:'youtube', title:'Learn any language faster with this one method', author:'Languant', cat:'learning', sub:'Languages', tags:['method','immersion'], date:'2026-07-14', kind:'video', dur:'14:02' },
+      { id:'i15', platform:'instagram', title:'5 toddler activities for rainy days', author:'@busytoddler', cat:'parenting', sub:'Toddlers', tags:['indoor','activities'], date:'2026-07-12', kind:'post', dur:'' },
+      { id:'i16', platform:'tiktok', title:'The stretch that fixed my knee pain in 2 weeks', author:'@physio.dan', cat:'fitness', sub:'Mobility', tags:['knee','pain'], date:'2026-07-10', kind:'clip', dur:'1:22' },
+      { id:'i17', platform:'threads', title:'Stoicism rules I actually use every day', author:'@dailystoic', cat:'beliefs', sub:'Philosophy', tags:['stoicism','mindset'], date:'2026-07-08', kind:'thread', dur:'', text:'Marcus Aurelius never wrote for an audience. Meditations was his private journal. That is exactly why it works — 9 rules from it I actually use, no fluff:' },
+      { id:'i18', platform:'youtube', title:'Sheet-pan salmon & veg in 20 minutes', author:'Pick Up Limes', cat:'food', sub:'Quick meals', tags:['salmon','dinner'], date:'2026-07-05', kind:'video', dur:'8:15' },
+      { id:'i19', platform:'web', title:"A beginner's guide to zone 2 cardio", author:'peterattia.com', cat:'fitness', sub:'Cardio', tags:['zone2','base','marathoners'], date:'2026-07-03', kind:'article', dur:'' },
+      { id:'i20', platform:'instagram', title:'Affirmations to start your day grounded', author:'@mindset.daily', cat:'wellness', sub:'Affirmations', tags:['morning'], date:'2026-07-01', kind:'post', dur:'' },
+      { id:'i21', platform:'x', title:'How I run 100km weeks without getting injured', author:'@ultra.coach', cat:'fitness', sub:'Running', tags:['volume','marathoners','injury'], date:'2026-06-28', kind:'thread', dur:'', text:'I coach 40 amateur marathoners. The ones who stay healthy all do the same 5 boring things. None of them involve buying anything. Thread:' },
+      { id:'i22', platform:'pinterest', title:'Capsule wardrobe formulas for fall', author:'stylebook', cat:'style', sub:'Capsule wardrobe', tags:['fall','outfits'], date:'2026-06-26', kind:'pin', dur:'' },
+      { id:'i23', platform:'tiktok', title:'POV: your dog hears the treat jar open', author:'@goldenhours', cat:'funny', sub:'Animals', tags:['dogs'], date:'2026-06-24', kind:'clip', dur:'0:19' },
+      { id:'i24', platform:'youtube', title:'James Webb just found something weird in a dead galaxy', author:'Dr. Becky', cat:'science', sub:'Space', tags:['jwst','galaxies'], date:'2026-06-21', kind:'video', dur:'16:40' },
+      { id:'i25', platform:'shorts', title:'The 20-5-3 rule for time outside', author:'@outliveclips', cat:'wellness', sub:'Habits', tags:['nature','routine'], date:'2026-06-18', kind:'short', dur:'0:47' },
+      { id:'i26', platform:'web', title:'Why sourdough is easier than you think', author:'seriouseats.com', cat:'food', sub:'Baking', tags:['sourdough','bread'], date:'2026-06-15', kind:'article', dur:'' },
+    ],
+  };
+
+  componentDidMount(){
+    const p=this.props||{};
+    const patch={ accent:this.ACCENTS[p.accent]?p.accent:'#FF5A2D' };
+    if(p.onboarding===false) patch.onboarding=null;
+    if(p.defaultTab&&p.defaultTab!=='home') patch.tab=p.defaultTab;
+    if(p.feedDensity) patch.view=p.feedDensity;
+    this.setState(patch,()=>this.applyAccent());
+  }
+  componentDidUpdate(prev){ if((prev||{}).accent!==(this.props||{}).accent&&this.ACCENTS[(this.props||{}).accent]) this.setAccent((this.props||{}).accent); }
+  applyAccent(){
+    const set=this.ACCENTS[this.state.accent]||this.ACCENTS['#FF5A2D'];
+    const el=this.rootRef.current;
+    if(el){ el.style.setProperty('--ac',set.ac); el.style.setProperty('--ac-dk',set.dk); el.style.setProperty('--ac-tint',set.tint); el.style.setProperty('--ac-deep',set.deep); }
+  }
+  setAccent(hex){ this.setState({accent:hex},()=>this.applyAccent()); }
+  obNext(){ this.setState(s=>({onboarding:Math.min(3,(s.onboarding||0)+1)})); }
+  obBack(){ this.setState(s=>({onboarding:Math.max(0,(s.onboarding||0)-1)})); }
+  finishOnboarding(){ try{ localStorage.setItem('bork_onboarded_v2','1'); }catch(e){} this.setState({onboarding:null}); }
+  replayTour(){ this.setState({onboarding:0,overlay:null,howto:false,tab:'home'}); }
+  toggleInterest(k){ this.setState(s=>({obInterests:s.obInterests.includes(k)?s.obInterests.filter(x=>x!==k):s.obInterests.concat(k)})); }
+
+  catBy(k){ return this.CATS.find(c=>c.key===k)||this.CATS[0]; }
+  tint(c){ return `hsl(${c.hue},55%,92%)`; }
+  deep(c){ return `hsl(${c.hue},46%,31%)`; }
+  cover(c){ return `background:linear-gradient(155deg,hsl(${c.hue},52%,44%),hsl(${c.hue},60%,22%))`; }
+  MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  diffDays(d){ const t=new Date(this.now+'T12:00:00'); const x=new Date(d+'T12:00:00'); return Math.round((t-x)/86400000); }
+  dateLabel(d){ const n=this.diffDays(d); if(n<=0)return 'Today'; if(n===1)return 'Yesterday'; if(n<7)return n+'d'; const x=new Date(d+'T12:00:00'); return this.MON[x.getMonth()]+' '+x.getDate(); }
+  fmtDate(d){ const x=new Date(d+'T12:00:00'); return this.MON[x.getMonth()]+' '+x.getDate()+', '+x.getFullYear(); }
+  showToast(m){ if(this._t)clearTimeout(this._t); this.setState({toast:m}); this._t=setTimeout(()=>this.setState({toast:null}),2100); }
+
+  coverH(it){ if(it.kind==='clip'||it.kind==='reel'||it.kind==='short')return 200; if(it.kind==='video')return 118; if(it.kind==='pin')return 176; if(it.kind==='post')return 148; return 0; }
+  decorate(it){
+    const p=this.PLAT[it.platform], c=this.catBy(it.cat);
+    const isText=!!it.text&&(it.platform==='x'||it.platform==='threads');
+    const isArticle=it.kind==='article';
+    const isMedia=!isText&&!isArticle;
+    return { id:it.id, title:it.title, listTitle:it.title, author:it.author, sub:it.sub, snippet:it.text||'',
+      catSubLabel:c.name+' · '+it.sub,
+      platShort:p.short, platName:p.name, platStyle:p.style,
+      catName:c.name, chipStyle:`background:${this.tint(c)};color:${this.deep(c)}`,
+      dotStyle:`background:hsl(${c.hue},50%,52%)`,
+      coverStyle:`height:${this.coverH(it)}px;${this.cover(c)}`,
+      thumbStyle: isText? `background:linear-gradient(155deg,#2A2C33,#111318)` : this.cover(c),
+      dateLabel:this.dateLabel(it.date), isVideo:!!it.dur, dur:it.dur, kind:it.kind, hasNote:!!it.note,
+      isText, isArticle, isMedia,
+      onOpen:()=>this.openDetail(it.id) };
+  }
+
+  setTab(t){ const s={tab:t,overlay:null}; if(t==='browse'){s.catKey=null;s.srcKey=null;} this.setState(s); }
+  openCat(k){ this.setState({tab:'browse',browseAxis:'topics',catKey:k,catSub:'all',catPlat:'all',catTag:null,srcKey:null,overlay:null}); }
+  openSrc(k){ this.setState({tab:'browse',browseAxis:'sources',srcKey:k,srcTopic:'all',catKey:null,overlay:null}); }
+  openDetail(id){ this.setState({overlay:'detail',activeId:id,detailNoteEdit:false}); }
+  openAdd(){ this.setState({overlay:'add',addStep:'paste',addUrl:'',addPreview:null,addCat:null,addSub:null,addTags:[],addTagDraft:'',addNote:'',addNoteOpen:false,addNoteDate:this.now}); }
+  openShare(t){ this.setState({overlay:'share',shareTarget:t,shareLink:true,sharePeople:[]}); }
+  close(){ this.setState({overlay:null}); }
+  openHowto(){ this.setState({howto:true}); }
+  closeHowto(){ this.setState({howto:false}); }
+
+  toggleSP(p){ this.setState(s=>({sPlatforms:s.sPlatforms.includes(p)?s.sPlatforms.filter(x=>x!==p):s.sPlatforms.concat(p)})); }
+  toggleSC(c){ this.setState(s=>({sCats:s.sCats.includes(c)?s.sCats.filter(x=>x!==c):s.sCats.concat(c)})); }
+  clearSearch(){ this.setState({query:'',sPlatforms:[],sCats:[]}); }
+
+  detectPreview(u){
+    const url=u.toLowerCase(); let pf='web';
+    if(url.includes('tiktok'))pf='tiktok';
+    else if(url.includes('/shorts/'))pf='shorts';
+    else if(url.includes('instagram')||url.includes('ig.me'))pf='instagram';
+    else if(url.includes('youtube')||url.includes('youtu.be'))pf='youtube';
+    else if(url.includes('x.com')||url.includes('twitter'))pf='x';
+    else if(url.includes('threads'))pf='threads';
+    else if(url.includes('pinterest')||url.includes('pin.it'))pf='pinterest';
+    const km={tiktok:'clip',instagram:'reel',shorts:'short',youtube:'video',x:'thread',threads:'thread',pinterest:'pin',web:'article'};
+    const has=(...w)=>w.some(x=>url.includes(x));
+    let cat='learning',sub='How-to',tags=['saved'];
+    if(has('stretch','mobility','workout','fitness','run','gym','squat','knee')){cat='fitness';sub='Mobility';tags=['fitness'];}
+    else if(has('recipe','protein','meal','cook','food','dinner')){cat='food';sub='Healthy recipes';tags=['recipe'];}
+    else if(has('sleep','med','health','doctor','symptom','anxiety')){cat='health';sub='Conditions';tags=['health'];}
+    else if(has('invest','money','stock','budget','finance')){cat='money';sub='Investing';tags=['money'];}
+    else if(has('meditat','morning','habit','calm','breath')){cat='wellness';sub='Habits';tags=['wellness'];}
+    const host=(u.replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0])||'link';
+    const title=pf==='web'?('Article from '+host):('Saved '+km[pf]+' from '+this.PLAT[pf].name);
+    return { platform:pf, title, author:host, kind:km[pf], dur:'', cat, sub, tags };
+  }
+  submitUrl(){ const u=this.state.addUrl.trim(); if(u.length<4)return; this.setState({addStep:'loading'});
+    setTimeout(()=>{ const pre=this.detectPreview(u); this.setState({addStep:'details',addPreview:pre,addCat:pre.cat,addSub:pre.sub,addTags:pre.tags.slice(),addNoteOpen:false,addNote:''}); },950); }
+  pickSample(i){ const s=this.SAMPLES[i]; this.setState({addUrl:s.url,addStep:'loading'});
+    setTimeout(()=>{ const pre=s.preview; this.setState({addStep:'details',addPreview:pre,addCat:pre.cat,addSub:pre.sub,addTags:pre.tags.slice(),addNoteOpen:false,addNote:''}); },950); }
+  openPicker(){ this.setState({overlay:'catPicker',pickerCat:this.state.addCat}); }
+  pickCat(k){ this.setState(s=>({pickerCat:s.pickerCat===k?null:k})); }
+  pickSub(k,sub){ this.setState({addCat:k,addSub:sub,overlay:'add'}); }
+  closePicker(){ this.setState({overlay:'add'}); }
+  addTag(){ const t=this.state.addTagDraft.trim().replace(/^#/,''); if(!t)return; this.setState(s=>({addTags:s.addTags.includes(t)?s.addTags:s.addTags.concat(t),addTagDraft:''})); }
+  removeTag(i){ this.setState(s=>({addTags:s.addTags.filter((_,j)=>j!==i)})); }
+  onTagKey(e){ if(e.key==='Enter'){e.preventDefault();this.addTag();} }
+  toggleNote(){ this.setState(s=>({addNoteOpen:!s.addNoteOpen})); }
+  saveAdd(){ const p=this.state.addPreview; if(!p)return; const id='n'+(this.state.seq+1);
+    const note=(this.state.addNoteOpen&&this.state.addNote.trim())?{text:this.state.addNote.trim(),date:this.state.addNoteDate}:null;
+    const item={ id, platform:p.platform, title:p.title, author:p.author, cat:this.state.addCat, sub:this.state.addSub, tags:this.state.addTags.slice(), date:this.now, kind:p.kind, dur:p.dur, text:p.text||'', note };
+    this.setState(s=>({ items:[item].concat(s.items), seq:s.seq+1, overlay:null, tab:'home', feedFilter:'all', addStep:'paste', addUrl:'', addPreview:null }));
+    this.showToast('Saved to '+this.catBy(item.cat).name+' › '+item.sub); }
+
+  startNote(){ const A=this.state.items.find(i=>i.id===this.state.activeId); this.setState({detailNoteEdit:true,dNoteDraft:A&&A.note?A.note.text:'',dNoteDate:A&&A.note?A.note.date:this.now}); }
+  saveNote(){ const id=this.state.activeId; const txt=this.state.dNoteDraft.trim(); const date=this.state.dNoteDate;
+    this.setState(s=>({items:s.items.map(i=>i.id===id?{...i,note:txt?{text:txt,date}:null}:i),detailNoteEdit:false})); this.showToast('Note saved'); }
+  deleteItem(){ const id=this.state.activeId; this.setState(s=>({items:s.items.filter(i=>i.id!==id),overlay:null})); this.showToast('Removed'); }
+  openOriginal(){ this.showToast('Opening original link…'); }
+  toggleLink(){ this.setState(s=>({shareLink:!s.shareLink})); }
+  copyLink(){ this.showToast('Link copied to clipboard'); }
+  togglePerson(id){ this.setState(s=>({sharePeople:s.sharePeople.includes(id)?s.sharePeople.filter(x=>x!==id):s.sharePeople.concat(id)})); }
+  shareDone(){ const n=this.state.sharePeople.length; this.close(); this.showToast(n?('Shared with '+n+(n>1?' people':' person')):'Shared'); }
+  slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+
+  renderVals(){
+    const S=this.state;
+    const counts={}; S.items.forEach(i=>counts[i.cat]=(counts[i.cat]||0)+1);
+    const dark='background:#191510;color:#fff;border-color:#191510';
+    const lite='background:#fff;color:#6E655A;border-color:#EAE4DA';
+
+    const flist=S.feedFilter==='all'?S.items:S.items.filter(i=>i.platform===S.feedFilter);
+    const feedAll=flist.map(i=>this.decorate(i));
+    const present=this.PLAT_ORDER.filter(p=>S.items.some(i=>i.platform===p));
+    const feedFilters=[{k:'all',l:'All'}].concat(present.map(p=>({k:p,l:this.PLAT[p].name}))).map(f=>({label:f.l,onClick:()=>this.setState({feedFilter:f.k}),style:f.k===S.feedFilter?dark:lite}));
+
+    const pref=new Set(S.obInterests||[]);
+    const cats=this.CATS.map(c=>({key:c.key,name:c.name,count:counts[c.key]||0,fav:pref.has(c.key),tileStyle:`background:${this.tint(c)}`,deepStyle:`color:${this.deep(c)}`,dotStyle:`background:${this.deep(c)};opacity:.12`,onClick:()=>this.openCat(c.key)})).sort((a,b)=>((b.fav&&b.count>0)-(a.fav&&a.count>0))||(b.count-a.count)||(a.name<b.name?-1:1));
+
+    const sources=this.PLAT_ORDER.map(p=>{ const inP=S.items.filter(i=>i.platform===p); if(!inP.length)return null;
+      const topCats=[...new Set(inP.map(i=>i.cat))].slice(0,3);
+      return { short:this.PLAT[p].short, name:this.PLAT[p].name, badgeStyle:this.PLAT[p].style,
+        meta:inP.length+(inP.length>1?' saves':' save')+' · '+topCats.map(k=>this.catBy(k).name).join(', '),
+        swatches:inP.slice(0,3).map(i=>({style:this.cover(this.catBy(i.cat))})),
+        onClick:()=>this.openSrc(p) }; }).filter(Boolean);
+
+    let cat=null;
+    if(S.catKey){ const c=this.catBy(S.catKey); const inCat=S.items.filter(i=>i.cat===c.key);
+      const sc={}; inCat.forEach(i=>sc[i.sub]=(sc[i.sub]||0)+1);
+      const subDefs=[{k:'all',n:'All',ct:inCat.length}].concat(c.subs.filter(s=>sc[s]).map(s=>({k:s,n:s,ct:sc[s]})));
+      const subs=subDefs.map(s=>({name:s.n,count:s.ct,onClick:()=>this.setState({catSub:s.k,catTag:null}),style:s.k===S.catSub?dark:'background:rgba(255,255,255,.72);color:#191510;border-color:transparent'}));
+      const scoped=inCat.filter(i=>S.catSub==='all'||i.sub===S.catSub);
+      const platsPresent=this.PLAT_ORDER.filter(p=>scoped.some(i=>i.platform===p));
+      const plats=[{k:'all',l:'All sources'}].concat(platsPresent.map(p=>({k:p,l:this.PLAT[p].name}))).map(p=>({label:p.l,onClick:()=>this.setState({catPlat:p.k}),style:p.k===S.catPlat?dark:lite}));
+      const tagCount={}; scoped.forEach(i=>(i.tags||[]).forEach(t=>tagCount[t]=(tagCount[t]||0)+1));
+      const topTags=Object.keys(tagCount).filter(t=>tagCount[t]>=2).sort((a,b)=>tagCount[b]-tagCount[a]).slice(0,6);
+      const tags=topTags.map(t=>({label:t,onClick:()=>this.setState(s=>({catTag:s.catTag===t?null:t})),style:S.catTag===t?`background:${this.deep(c)};color:#fff;border-color:${this.deep(c)}`:`background:none;color:#6E655A;border-color:#D7CDBD`}));
+      const feed=scoped.filter(i=>(S.catPlat==='all'||i.platform===S.catPlat)&&(!S.catTag||(i.tags||[]).includes(S.catTag))).map(i=>this.decorate(i));
+      cat={ name:c.name, countLabel:inCat.length+' saves', headerStyle:`background:linear-gradient(180deg,${this.tint(c)},hsl(${c.hue},55%,95%))`, deepStyle:`color:${this.deep(c)}`,
+        subs, plats, hasTags:S.catSub!=='all'&&tags.length>0, tags, feed, empty:feed.length===0,
+        onShare:()=>this.openShare({type:'collection',name:c.name+(S.catSub!=='all'?' › '+S.catSub:''),cat:c.key,count:feed.length}),
+        onBack:()=>this.setState({catKey:null}) }; }
+
+    let src=null;
+    if(S.srcKey){ const P=this.PLAT[S.srcKey]; const inP=S.items.filter(i=>i.platform===S.srcKey);
+      const catsPresent=[...new Set(inP.map(i=>i.cat))];
+      const topics=[{k:'all',l:'All topics'}].concat(catsPresent.map(k=>({k,l:this.catBy(k).name}))).map(t=>({label:t.l,onClick:()=>this.setState({srcTopic:t.k}),style:t.k===S.srcTopic?dark:(t.k==='all'?lite:`background:${this.tint(this.catBy(t.k))};color:${this.deep(this.catBy(t.k))};border-color:transparent`)}));
+      const feed=inP.filter(i=>S.srcTopic==='all'||i.cat===S.srcTopic).map(i=>this.decorate(i));
+      src={ short:P.short, name:P.name, sub:P.sub, countLabel:inP.length+' saves', headerStyle:`background:${P.header}`, topics, feed, onBack:()=>this.setState({srcKey:null}) }; }
+
+    const q=S.query.trim().toLowerCase();
+    const sPlatformChips=this.PLAT_ORDER.map(p=>({label:this.PLAT[p].name,onClick:()=>this.toggleSP(p),style:S.sPlatforms.includes(p)?dark:lite}));
+    const sCatChips=this.CATS.filter(c=>counts[c.key]).map(c=>({label:c.name,onClick:()=>this.toggleSC(c.key),style:S.sCats.includes(c.key)?`background:${this.deep(c)};color:#fff;border-color:${this.deep(c)}`:`background:${this.tint(c)};color:${this.deep(c)};border-color:transparent`}));
+    let res=S.items;
+    if(q) res=res.filter(i=>(i.title+' '+i.author+' '+(i.text||'')+' '+this.catBy(i.cat).name+' '+i.sub+' '+(i.tags||[]).join(' ')).toLowerCase().includes(q));
+    if(S.sPlatforms.length) res=res.filter(i=>S.sPlatforms.includes(i.platform));
+    if(S.sCats.length) res=res.filter(i=>S.sCats.includes(i.cat));
+    const searchHasInput=q!==''||S.sPlatforms.length>0||S.sCats.length>0;
+    const searchResults=res.map(i=>this.decorate(i));
+    const recentChips=['mobility','protein','magnesium','marathoners','morning routine'].map(t=>({label:t,onClick:()=>this.setState({query:t})}));
+
+    const statWeek=S.items.filter(i=>this.diffDays(i.date)<7).length;
+    const collections=this.COLLECTIONS.map(c=>{ const cc=this.catBy(c.cat); return { name:c.name, countLabel:c.count+' saves', visLabel:c.vis, dotStyle:`background:${this.tint(cc)};color:${this.deep(cc)}`, onClick:()=>this.openShare({type:'collection',name:c.name,cat:c.cat,count:c.count}) }; });
+
+    let pv=null;
+    if(S.addPreview){ const p=this.PLAT[S.addPreview.platform], c=this.catBy(S.addPreview.cat);
+      pv={ title:S.addPreview.title, author:S.addPreview.author, platShort:p.short, platStyle:p.style, thumbStyle:(S.addPreview.text?'background:linear-gradient(155deg,#2A2C33,#111318)':this.cover(c)), isVideo:!!S.addPreview.dur, isText:!!S.addPreview.text }; }
+    const addCatC=S.addCat?this.catBy(S.addCat):null;
+    const addCatLabel=addCatC?(addCatC.name+(S.addSub?' › '+S.addSub:'')):'Pick a topic';
+    const addCatChipStyle=addCatC?`background:${this.tint(addCatC)};color:${this.deep(addCatC)}`:'background:#fff;color:#6E655A';
+    const samples=this.SAMPLES.map((s,i)=>({label:s.label,platShort:this.PLAT[s.platform].short,platStyle:this.PLAT[s.platform].style,onClick:()=>this.pickSample(i)}));
+    const addTagChips=S.addTags.map((t,i)=>({label:t,onRemove:()=>this.removeTag(i)}));
+    const continueStyle=S.addUrl.trim().length>3?'':'opacity:.45;pointer-events:none';
+
+    const pickerCats=this.CATS.map(c=>({name:c.name,count:counts[c.key]||0,expanded:S.pickerCat===c.key,dotStyle:`background:${this.tint(c)};border:1px solid ${this.deep(c)}33`,arrowStyle:S.pickerCat===c.key?'transform:rotate(45deg)':'transform:rotate(-45deg)',onClick:()=>this.pickCat(c.key),subs:c.subs.map(s=>({name:s,onClick:()=>this.pickSub(c.key,s),style:`background:${this.tint(c)};color:${this.deep(c)}`}))}));
+
+    let det=null; const A=S.items.find(i=>i.id===S.activeId);
+    if(A){ const d=this.decorate(A); det={...d, coverStyle:this.cover(this.catBy(A.cat)), isMediaOrArticle:!d.isText,
+      tagChips:(A.tags||[]).map(t=>({label:t})), hasNote:!!A.note, noteText:A.note?A.note.text:'', noteDateLabel:A.note?this.fmtDate(A.note.date):'',
+      onShare:()=>this.openShare({type:'item',id:A.id}), onStartNote:()=>this.startNote(), onDelete:()=>this.deleteItem(), onOpen:()=>this.openOriginal(), onCat:()=>this.openCat(A.cat) };
+      det.authorLine=det.author+' · '+det.platName;
+      det.savedLine='Saved '+det.dateLabel+' · from '+det.platName; }
+    const detailNoNote=!!det&&!det.hasNote&&!S.detailNoteEdit;
+    const noteEditTitle=(det&&det.hasNote)?'Edit note':'New note';
+
+    let sh=null;
+    if(S.shareTarget){ const knob=S.shareLink?'left:23px':'left:3px'; const tog=S.shareLink?'background:var(--ac,#FF5A2D)':'background:#DBD2C4';
+      if(S.shareTarget.type==='item'){ const it=S.items.find(i=>i.id===S.shareTarget.id); const c=this.catBy(it?it.cat:'fitness');
+        sh={ title:'Share this save', subtitle:it?it.title:'', url:'bork.mr/s/'+(it?it.id:'x'), link:S.shareLink, linkSub:S.shareLink?'Link sharing is on':'Only people you pick', iconStyle:`background:${this.tint(c)};color:${this.deep(c)}`, toggleStyle:tog, knobStyle:knob }; }
+      else { const c=this.catBy(S.shareTarget.cat);
+        sh={ title:'Share collection', subtitle:S.shareTarget.count+' saves · '+S.shareTarget.name, url:'bork.mr/c/'+this.slug(S.shareTarget.name), link:S.shareLink, linkSub:S.shareLink?'Anyone with the link can view':'Only people you pick', iconStyle:`background:${this.tint(c)};color:${this.deep(c)}`, toggleStyle:tog, knobStyle:knob }; } }
+    const people=this.PEOPLE.map(p=>({initials:p.initials,name:p.name,onClick:()=>this.togglePerson(p.id),style:S.sharePeople.includes(p.id)?`background:${p.color};box-shadow:0 0 0 3px var(--ac,#FF5A2D)`:`background:${p.color}`}));
+
+    return {
+      rootRef:this.rootRef, stop:(e)=>e.stopPropagation(),
+      statusDark:S.tab==='browse'&&!!S.srcKey,
+      isHome:S.tab==='home', isSearch:S.tab==='search', isYou:S.tab==='you',
+      isBrowseRoot:S.tab==='browse'&&!S.catKey&&!S.srcKey,
+      isCatPage:S.tab==='browse'&&!!S.catKey,
+      isSourcePage:S.tab==='browse'&&!!S.srcKey,
+      axisTopics:S.browseAxis==='topics', axisSources:S.browseAxis==='sources',
+      onAxisTopics:()=>this.setState({browseAxis:'topics'}), onAxisSources:()=>this.setState({browseAxis:'sources'}),
+      axisTopicsStyle:S.browseAxis==='topics'?'background:#fff;color:#191510;box-shadow:0 1px 3px rgba(25,21,16,.10)':'background:transparent;color:#8A8072',
+      axisSourcesStyle:S.browseAxis==='sources'?'background:#fff;color:#191510;box-shadow:0 1px 3px rgba(25,21,16,.10)':'background:transparent;color:#8A8072',
+      onTabHome:()=>this.setTab('home'), onTabBrowse:()=>this.setTab('browse'), onTabSearch:()=>this.setTab('search'), onTabYou:()=>this.setTab('you'),
+      onOpenAdd:()=>this.openAdd(), onOpenSearch:()=>this.setTab('search'), onCloseOverlay:()=>this.close(),
+      tabHomeStyle:`color:${S.tab==='home'?'var(--ac,#FF5A2D)':'#A39A8D'}`,
+      tabBrowseStyle:`color:${S.tab==='browse'?'var(--ac,#FF5A2D)':'#A39A8D'}`,
+      tabSearchStyle:`color:${S.tab==='search'?'var(--ac,#FF5A2D)':'#A39A8D'}`,
+      tabYouStyle:`color:${S.tab==='you'?'var(--ac,#FF5A2D)':'#A39A8D'}`,
+      libSubtitle:S.items.length+' saves · '+present.length+' apps · '+Object.keys(counts).length+' topics',
+      feedFilters, feed:feedAll, feedL:feedAll.filter((_,i)=>i%2===0), feedR:feedAll.filter((_,i)=>i%2===1), feedEmpty:flist.length===0,
+      masonryOn:S.view==='cards', listOn:S.view==='compact',
+      onCardsView:()=>this.setState({view:'cards'}), onListView:()=>this.setState({view:'compact'}),
+      viewCardsStyle:S.view==='cards'?'background:#fff;color:#191510;box-shadow:0 1px 2px rgba(0,0,0,.08)':'background:transparent;color:#A39A8D',
+      viewListStyle:S.view==='compact'?'background:#fff;color:#191510;box-shadow:0 1px 2px rgba(0,0,0,.08)':'background:transparent;color:#A39A8D',
+      cats, sources, cat, src,
+      query:S.query, onQuery:(e)=>this.setState({query:e.target.value}), onClearSearch:()=>this.clearSearch(),
+      sPlatformChips, sCatChips, searchHasInput, searchIdle:!searchHasInput, searchResults, searchResultCount:res.length, searchEmpty:searchHasInput&&res.length===0, recentChips,
+      statSaved:S.items.length, statCats:Object.keys(counts).length, statWeek, collections,
+      addPaste:S.addStep==='paste', addLoading:S.addStep==='loading', addDetails:S.addStep==='details',
+      addUrl:S.addUrl, onAddUrl:(e)=>this.setState({addUrl:e.target.value}), onSubmitUrl:()=>this.submitUrl(), continueStyle, samples,
+      pv, addCatLabel, addCatChipStyle, onOpenPicker:()=>this.openPicker(),
+      addTagChips, addTagDraft:S.addTagDraft, onTagDraft:(e)=>this.setState({addTagDraft:e.target.value}), onTagKey:(e)=>this.onTagKey(e),
+      addNoteOpen:S.addNoteOpen, addNoteClosed:!S.addNoteOpen, onToggleNote:()=>this.toggleNote(), addNote:S.addNote, onAddNote:(e)=>this.setState({addNote:e.target.value}), addNoteDate:S.addNoteDate, onAddNoteDate:(e)=>this.setState({addNoteDate:e.target.value}),
+      onSaveAdd:()=>this.saveAdd(),
+      pickerCats, onClosePicker:()=>this.closePicker(),
+      addOpen:S.overlay==='add', detailOpen:S.overlay==='detail', shareOpen:S.overlay==='share', catPickerOpen:S.overlay==='catPicker',
+      det, detailNoteEdit:S.detailNoteEdit, detailNoNote, noteEditTitle, dNoteDraft:S.dNoteDraft, onDNoteDraft:(e)=>this.setState({dNoteDraft:e.target.value}), dNoteDate:S.dNoteDate, onDNoteDate:(e)=>this.setState({dNoteDate:e.target.value}), onSaveNote:()=>this.saveNote(),
+      sh, people, onToggleLink:()=>this.toggleLink(), onCopyLink:()=>this.copyLink(), onShareDone:()=>this.shareDone(),
+      onboardingOpen:S.onboarding!==null&&S.onboarding!==undefined,
+      ob0:S.onboarding===0, ob1:S.onboarding===1, ob2:S.onboarding===2, ob3:S.onboarding===3,
+      obBack:(S.onboarding||0)>0, obShowNext:(S.onboarding!=null)&&S.onboarding<3,
+      obDots:[0,1,2,3].map(i=>({style:i===S.onboarding?'width:20px;background:var(--ac,#FF5A2D)':'width:7px;background:#DBD2C4'})),
+      obPlatforms:this.PLAT_ORDER.map(p=>({short:this.PLAT[p].short,style:this.PLAT[p].style})),
+      obColors:Object.keys(this.ACCENTS).map(hex=>{ const sel=S.accent===hex; return { onClick:()=>this.setAccent(hex), style:`background:${hex};transform:${sel?'scale(1.08)':'scale(1)'};box-shadow:${sel?`0 0 0 3px #F6F3EE,0 0 0 6px ${hex}`:'0 0 0 1px rgba(25,21,16,.12)'}` }; }),
+      obInterestChips:this.CATS.slice(0,14).map(c=>({name:c.name,onClick:()=>this.toggleInterest(c.key),style:S.obInterests.includes(c.key)?`background:${this.deep(c)};color:#fff;border-color:${this.deep(c)}`:`background:${this.tint(c)};color:${this.deep(c)};border-color:transparent`})),
+      onObNext:()=>this.obNext(), onObBack:()=>this.obBack(), onObSkip:()=>this.finishOnboarding(), onObDone:()=>this.finishOnboarding(),
+      howtoOpen:S.howto, onOpenHowto:()=>this.openHowto(), onCloseHowto:()=>this.closeHowto(), onReplayTour:()=>this.replayTour(),
+      toast:S.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

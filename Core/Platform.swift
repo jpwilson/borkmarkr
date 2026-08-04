@@ -1,79 +1,137 @@
 import Foundation
 
-/// Where a saved link came from. Detected from the URL host so the user never
-/// has to tell us — the brief's "that is information that's kept".
+/// The eight sources borkmarkr knows about. One of the two browse axes —
+/// see `Taxonomy` for the other.
 enum Platform: String, Codable, CaseIterable, Sendable {
-    case instagram, x, threads, youtube, youtubeShorts, tiktok, pinterest, reddit, web
+    case x, instagram, tiktok, youtube, shorts, threads, pinterest, web
 
-    var label: String {
+    /// Display order used everywhere platforms are listed.
+    static let ordered: [Platform] = [.x, .instagram, .tiktok, .youtube, .shorts, .threads, .pinterest, .web]
+
+    var name: String {
         switch self {
-        case .instagram: "Instagram"
         case .x: "X"
-        case .threads: "Threads"
-        case .youtube: "YouTube"
-        case .youtubeShorts: "Shorts"
+        case .instagram: "Instagram"
         case .tiktok: "TikTok"
+        case .youtube: "YouTube"
+        case .shorts: "Shorts"
+        case .threads: "Threads"
         case .pinterest: "Pinterest"
-        case .reddit: "Reddit"
         case .web: "Web"
         }
     }
 
-    /// SF Symbol standing in for each platform's mark — Apple forbids shipping
-    /// third-party logos without licence, and these read clearly enough.
-    var symbol: String {
+    /// Short badge label — the small rounded square on every card.
+    var short: String {
         switch self {
-        case .instagram: "camera"
-        case .x: "bird"
-        case .threads: "at"
-        case .youtube, .youtubeShorts: "play.rectangle"
-        case .tiktok: "music.note"
-        case .pinterest: "pin"
-        case .reddit: "bubble.left.and.bubble.right"
-        case .web: "globe"
+        case .x: "X"
+        case .instagram: "IG"
+        case .tiktok: "TT"
+        case .youtube: "YT"
+        case .shorts: "SH"
+        case .threads: "TH"
+        case .pinterest: "PIN"
+        case .web: "WWW"
         }
     }
 
-    /// Hex tint used for the source chip.
-    var tintHex: String {
+    /// Descriptor shown under the name on Browse › Sources.
+    var descriptor: String {
         switch self {
-        case .instagram: "E1306C"
-        case .x: "111111"
-        case .threads: "444444"
-        case .youtube, .youtubeShorts: "FF0033"
-        case .tiktok: "00C2CB"
-        case .pinterest: "E60023"
-        case .reddit: "FF4500"
-        case .web: "7A7A7A"
+        case .x: "Posts & threads"
+        case .instagram: "Reels & posts"
+        case .tiktok: "Clips"
+        case .youtube: "Videos"
+        case .shorts: "Short videos"
+        case .threads: "Text posts"
+        case .pinterest: "Pins & boards"
+        case .web: "Articles & pages"
         }
     }
 
-    /// Best-effort detection from a URL. Unknown hosts fall back to `.web`,
-    /// which is a legitimate outcome, not a failure.
+    /// The kind of item this platform produces by default.
+    var defaultKind: ItemKind {
+        switch self {
+        case .tiktok: .clip
+        case .instagram: .reel
+        case .shorts: .short
+        case .youtube: .video
+        case .x, .threads: .thread
+        case .pinterest: .pin
+        case .web: .article
+        }
+    }
+
+    /// Text posts only render as text cards on X and Threads — an Instagram
+    /// caption is not a post body.
+    var carriesTextPosts: Bool { self == .x || self == .threads }
+
+    /// Detects the source from the URL's **host**, not a substring of the whole
+    /// URL.
+    ///
+    /// The prototype's `detectPreview` does `url.includes('x.com')` against the
+    /// entire lowercased URL, which files `netflix.com`, `max.com` and
+    /// `sfx.com` as X, and any URL with "threads" anywhere in its path — e.g.
+    /// `reddit.com/r/sewing/comments/threads_vs_cord` — as Threads. Matching
+    /// the registrable host fixes that class of bug outright.
+    ///
+    /// Ordering still matters within YouTube: `/shorts/` must be checked before
+    /// falling through to `.youtube`, or every Short files as a full video and
+    /// gets the wrong card height.
     static func detect(from url: URL) -> Platform {
         guard var host = url.host?.lowercased() else { return .web }
-        if host.hasPrefix("www.") { host.removeFirst(4) }
-        if host.hasPrefix("m.") { host.removeFirst(2) }
+        for prefix in ["www.", "m.", "mobile.", "vm.", "vt."] where host.hasPrefix(prefix) {
+            host.removeFirst(prefix.count)
+            break
+        }
 
         let path = url.path.lowercased()
 
         switch host {
+        case "tiktok.com", "tiktok.net":
+            return .tiktok
         case "instagram.com", "instagr.am", "ig.me":
             return .instagram
+        case "youtube.com", "youtu.be", "music.youtube.com":
+            return path.hasPrefix("/shorts/") ? .shorts : .youtube
         case "x.com", "twitter.com", "t.co":
             return .x
         case "threads.net", "threads.com":
             return .threads
-        case "youtube.com", "youtu.be", "music.youtube.com":
-            return path.contains("/shorts/") ? .youtubeShorts : .youtube
-        case "tiktok.com", "vm.tiktok.com", "vt.tiktok.com":
-            return .tiktok
         case "pinterest.com", "pin.it":
             return .pinterest
-        case "reddit.com", "redd.it":
-            return .reddit
         default:
+            // Country domains: instagram.com.br, pinterest.co.uk, x.com.au…
+            let labels = host.split(separator: ".")
+            if labels.count >= 2 {
+                let root = labels[labels.count > 2 ? labels.count - 3 : 0]
+                switch root {
+                case "tiktok": return .tiktok
+                case "instagram": return .instagram
+                case "youtube": return path.hasPrefix("/shorts/") ? .shorts : .youtube
+                case "twitter": return .x
+                case "pinterest": return .pinterest
+                default: break
+                }
+            }
             return .web
+        }
+    }
+}
+
+/// Content type. Drives which card shape an item gets in the masonry feed and
+/// how tall its cover is.
+enum ItemKind: String, Codable, CaseIterable, Sendable {
+    case clip, reel, short, video, thread, pin, article, post
+
+    /// Media cover height in points. 0 means "not a media card".
+    var coverHeight: CGFloat {
+        switch self {
+        case .clip, .reel, .short: 200
+        case .video: 118
+        case .pin: 176
+        case .post: 148
+        case .thread, .article: 0
         }
     }
 }

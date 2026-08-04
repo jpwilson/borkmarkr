@@ -1,16 +1,17 @@
 import UIKit
 import UniformTypeIdentifiers
-import SwiftData
 
-/// The whole point of the app: you're in Instagram, you tap Share, you pick
-/// borkmarkr, it's saved. No app switch, no paste, no friction.
+/// The primary way things get into borkmarkr: you're in Instagram, you tap
+/// Share, you pick borkmarkr, it's saved.
 ///
-/// Deliberately writes straight into the shared App Group store and dismisses.
-/// Categorising happens later in the app — the brief was explicit that saving
-/// must never be blocked by organising.
+/// **Engineering deviation.** v1 opened the SwiftData container here and wrote
+/// directly. This queues a JSON draft into the App Group inbox instead and
+/// exits — see `Store` for why. Practically it also matters because share
+/// extensions run under a hard memory cap (~120MB) and are killed without
+/// warning: booting a full persistent store to save one URL is both risky and
+/// slow, and the user is staring at a spinner over someone else's app while it
+/// happens.
 final class ShareViewController: UIViewController {
-
-    private let container = Store.make()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,29 +23,23 @@ final class ShareViewController: UIViewController {
         guard
             let item = extensionContext?.inputItems.first as? NSExtensionItem,
             let providers = item.attachments, !providers.isEmpty
-        else {
-            return finish(message: nil)
-        }
+        else { return finish(message: nil) }
 
-        // A shared post usually arrives as a URL, but some apps hand over plain
-        // text with the link embedded, so we try both.
         Task { @MainActor in
-            let contextTitle = (item.attributedContentText?.string).flatMap {
-                $0.isEmpty ? nil : $0
-            }
+            // Caption text, when the source app supplies it.
+            let caption = item.attributedContentText?.string
 
             for provider in providers {
                 if let url = await Self.loadURL(from: provider) {
-                    save(url: url, sharedText: contextTitle)
-                    return
+                    return save(url: url, caption: caption)
                 }
             }
 
+            // Some apps hand over plain text with the link embedded.
             for provider in providers {
                 if let text = await Self.loadText(from: provider),
                    let url = Self.firstURL(in: text) {
-                    save(url: url, sharedText: text)
-                    return
+                    return save(url: url, caption: text)
                 }
             }
 
@@ -53,57 +48,57 @@ final class ShareViewController: UIViewController {
     }
 
     @MainActor
-    private func save(url: URL, sharedText: String?) {
-        let title = Self.title(from: sharedText, url: url)
-        let suggestion = Categorizer.suggest(url: url, title: title)
+    private func save(url: URL, caption: String?) {
+        let platform = Platform.detect(from: url)
+        let title = Self.title(from: caption, url: url)
+
+        // X and Threads carry real post bodies; elsewhere the caption is just a
+        // caption and shouldn't turn the card into a text post.
+        let body: String? = platform.carriesTextPosts ? Self.cleanBody(caption) : nil
+        let suggestion = Categorizer.suggest(url: url, title: title, text: body)
+
+        let draft = BookmarkDraft(
+            url: url,
+            title: title,
+            author: Categorizer.fallbackAuthor(for: url),
+            platform: platform,
+            kind: platform.defaultKind,
+            categoryID: suggestion.categoryID,
+            subcategory: suggestion.subcategory,
+            tags: suggestion.tags,
+            text: body,
+            isUnread: true
+        )
 
         do {
-            try Store.save(
-                url: url,
-                title: title,
-                categoryID: suggestion.categoryID,
-                subcategory: suggestion.subcategory,
-                tags: suggestion.tags,
-                isUnread: true,
-                in: container.mainContext
-            )
+            try Store.enqueue(draft)
             finish(message: "Saved to borkmarkr")
         } catch {
             finish(message: "Couldn't save")
         }
     }
 
-    /// Prefer the text the source app handed us (usually the caption), falling
-    /// back to a title derived from the URL slug.
-    private static func title(from sharedText: String?, url: URL) -> String {
-        if let sharedText {
-            // Strip any URL out of the caption so the title isn't just the link.
-            let withoutURLs = sharedText
+    private static func title(from caption: String?, url: URL) -> String {
+        if let caption {
+            let withoutURLs = caption
                 .components(separatedBy: .whitespacesAndNewlines)
                 .filter { !$0.lowercased().hasPrefix("http") }
                 .joined(separator: " ")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if withoutURLs.count > 3 {
-                return String(withoutURLs.prefix(140))
-            }
+            if withoutURLs.count > 3 { return String(withoutURLs.prefix(140)) }
         }
+        return Categorizer.fallbackTitle(for: url)
+    }
 
-        let slug = url.pathComponents
-            .filter { $0 != "/" && !$0.isEmpty }
-            .last { $0.count > 3 && !$0.allSatisfy(\.isNumber) }
-
-        guard let slug else { return Platform.detect(from: url).label + " link" }
-        return slug
-            .replacingOccurrences(of: "-", with: " ")
-            .replacingOccurrences(of: "_", with: " ")
-            .capitalized
+    private static func cleanBody(_ caption: String?) -> String? {
+        guard let caption else { return nil }
+        let cleaned = caption.trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.count > 3 ? cleaned : nil
     }
 
     private static func firstURL(in text: String) -> URL? {
-        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
-            return nil
-        }
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        else { return nil }
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         return detector.firstMatch(in: text, range: range)?.url
     }
@@ -126,8 +121,8 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    /// Brief confirmation then dismiss — a share extension that lingers is a
-    /// share extension people stop using.
+    /// Brief confirmation, then out of the way. A share extension that lingers
+    /// is one people stop using.
     @MainActor
     private func finish(message: String?) {
         guard let message else {
@@ -135,7 +130,7 @@ final class ShareViewController: UIViewController {
             return
         }
 
-        let toast = ToastView(text: message)
+        let toast = ToastLabel(text: message)
         toast.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(toast)
         NSLayoutConstraint.activate([
@@ -144,16 +139,16 @@ final class ShareViewController: UIViewController {
         ])
 
         Task {
-            try? await Task.sleep(for: .milliseconds(650))
+            try? await Task.sleep(for: .milliseconds(600))
             extensionContext?.completeRequest(returningItems: nil)
         }
     }
 }
 
-private final class ToastView: UIView {
+private final class ToastLabel: UIView {
     init(text: String) {
         super.init(frame: .zero)
-        backgroundColor = UIColor(white: 0.08, alpha: 0.92)
+        backgroundColor = UIColor(white: 0.08, alpha: 0.94)
         layer.cornerRadius = 16
         layer.cornerCurve = .continuous
 

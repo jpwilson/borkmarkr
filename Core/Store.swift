@@ -1,12 +1,21 @@
 import Foundation
 import SwiftData
 
-/// The single SwiftData container, living in the App Group so the Share
-/// Extension and the app are reading and writing the same file.
+/// Persistence.
 ///
-/// If the App Group isn't provisioned yet (fresh clone, no Team ID set), we
-/// fall back to a local store so the app still runs in the Simulator — saves
-/// from the share sheet just won't show up until signing is sorted.
+/// **Engineering deviation from the handoff.** The obvious design — and what v1
+/// did — is to let the Share Extension open the same SwiftData container as the
+/// app and write straight into it. That works right up until both processes are
+/// alive at once (the app in the background, the extension launched from
+/// Instagram), where two independent writers on one SQLite store risks
+/// corruption and lost writes. Core Data's multi-process story has always been
+/// fragile and SwiftData inherits it.
+///
+/// So the extension never touches the database. It appends a small JSON file to
+/// an **inbox** directory in the App Group, then exits. The app drains that
+/// inbox on launch and on foreground. Single writer, atomic file writes, no
+/// coordination needed, and a crash mid-save loses at most one pending item —
+/// which is still sitting in the inbox to be picked up next launch.
 enum Store {
     static let appGroupID = "group.com.jpwilson.borkmarkr"
 
@@ -14,7 +23,7 @@ enum Store {
     static let shared: ModelContainer = make()
 
     static func make() -> ModelContainer {
-        let schema = Schema([Bookmark.self])
+        let schema = Schema([Bookmark.self, BookmarkCollection.self])
 
         if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) != nil {
             let config = ModelConfiguration(schema: schema, groupContainer: .identifier(appGroupID))
@@ -23,60 +32,127 @@ enum Store {
             }
         }
 
+        // No App Group yet (fresh clone, signing not set up) — still run, so the
+        // app is usable in the Simulator. Shared saves just won't arrive.
         let local = ModelConfiguration(schema: schema)
         do {
             return try ModelContainer(for: schema, configurations: local)
         } catch {
-            // A container we cannot open at all is unrecoverable — every screen
-            // depends on it, so failing loudly here beats a silently empty app.
             fatalError("Could not open the borkmarkr store: \(error)")
         }
     }
 
-    /// Insert-or-update used by both the app's Add flow and the Share
-    /// Extension. Re-saving a link you already have updates it in place rather
-    /// than creating a second copy.
-    @discardableResult
-    static func save(
-        url: URL,
-        title: String,
-        author: String? = nil,
-        categoryID: String? = nil,
-        subcategory: String? = nil,
-        tags: [String] = [],
-        note: String? = nil,
-        noteDate: Date? = nil,
-        isUnread: Bool = false,
-        in context: ModelContext
-    ) throws -> Bookmark {
-        let id = Bookmark.stableID(for: url)
-        let existing = try context.fetch(
-            FetchDescriptor<Bookmark>(predicate: #Predicate { $0.id == id })
-        ).first
+    // MARK: - Writing
 
-        if let existing {
-            if !title.isEmpty { existing.title = title }
-            if let author { existing.author = author }
-            if let categoryID { existing.categoryID = categoryID }
-            if let subcategory { existing.subcategory = subcategory }
-            if !tags.isEmpty {
-                existing.tags = Array(Set(existing.tags + tags)).sorted()
+    /// Insert-or-update. Re-saving a link you already have enriches it in place
+    /// rather than creating a second copy.
+    @discardableResult
+    static func save(_ draft: BookmarkDraft, in context: ModelContext) throws -> Bookmark {
+        let id = Bookmark.stableID(for: draft.url)
+        var descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+
+        if let existing = try context.fetch(descriptor).first {
+            if !draft.title.isEmpty { existing.title = draft.title }
+            if let author = draft.author { existing.author = author }
+            if let categoryID = draft.categoryID { existing.categoryID = categoryID }
+            if let subcategory = draft.subcategory { existing.subcategory = subcategory }
+            if !draft.tags.isEmpty {
+                existing.tags = Array(Set(existing.tags + draft.tags)).sorted()
             }
-            if let note { existing.note = note }
-            if let noteDate { existing.noteDate = noteDate }
-            existing.isArchived = false
-            if isUnread { existing.isUnread = true }
+            if let text = draft.text { existing.text = text }
+            if let duration = draft.durationSeconds { existing.durationSeconds = duration }
+            if let note = draft.noteText { existing.noteText = note; existing.noteDate = draft.noteDate }
+            existing.deletedAt = nil
+            if draft.isUnread { existing.isUnread = true }
+            existing.touch()
             try context.save()
             return existing
         }
 
         let bookmark = Bookmark(
-            url: url, title: title, author: author,
-            categoryID: categoryID, subcategory: subcategory,
-            tags: tags, note: note, noteDate: noteDate, isUnread: isUnread
+            url: draft.url, title: draft.title, author: draft.author,
+            platform: draft.platform, kind: draft.kind,
+            categoryID: draft.categoryID, subcategory: draft.subcategory,
+            tags: draft.tags, text: draft.text, durationSeconds: draft.durationSeconds,
+            noteText: draft.noteText, noteDate: draft.noteDate,
+            isUnread: draft.isUnread
         )
         context.insert(bookmark)
         try context.save()
         return bookmark
     }
+
+    // MARK: - Share Extension inbox
+
+    private static var inboxURL: URL? {
+        guard let container = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupID) else { return nil }
+        return container.appendingPathComponent("inbox", isDirectory: true)
+    }
+
+    /// Called by the Share Extension. Writes atomically and returns quickly —
+    /// extensions are memory-capped (~120MB) and killed without ceremony, so
+    /// this does the least work possible.
+    static func enqueue(_ draft: BookmarkDraft) throws {
+        guard let inboxURL else { throw StoreError.noAppGroup }
+        try FileManager.default.createDirectory(at: inboxURL, withIntermediateDirectories: true)
+
+        // Name by stable ID hash so the same link shared twice before a drain
+        // overwrites rather than queuing twice.
+        let name = String(Bookmark.stableID(for: draft.url).hashValue.magnitude) + ".json"
+        let data = try JSONEncoder().encode(draft)
+        try data.write(to: inboxURL.appendingPathComponent(name), options: .atomic)
+    }
+
+    /// Called by the app on launch and foreground. Drains every queued draft
+    /// into the store, deleting each file only after its save commits.
+    @discardableResult
+    @MainActor
+    static func drainInbox(into context: ModelContext) -> Int {
+        guard let inboxURL,
+              let files = try? FileManager.default.contentsOfDirectory(
+                at: inboxURL, includingPropertiesForKeys: [.creationDateKey]
+              )
+        else { return 0 }
+
+        var saved = 0
+        for file in files where file.pathExtension == "json" {
+            guard
+                let data = try? Data(contentsOf: file),
+                let draft = try? JSONDecoder().decode(BookmarkDraft.self, from: data)
+            else {
+                // Unreadable payload will never become readable — drop it
+                // rather than retrying forever on every launch.
+                try? FileManager.default.removeItem(at: file)
+                continue
+            }
+
+            if (try? save(draft, in: context)) != nil {
+                try? FileManager.default.removeItem(at: file)
+                saved += 1
+            }
+        }
+        return saved
+    }
+
+    enum StoreError: Error { case noAppGroup }
+}
+
+/// What the extension queues and the Add flow submits. Codable so it can cross
+/// the process boundary as JSON.
+struct BookmarkDraft: Codable, Sendable {
+    var url: URL
+    var title: String
+    var author: String?
+    var platform: Platform?
+    var kind: ItemKind?
+    var categoryID: String?
+    var subcategory: String?
+    var tags: [String] = []
+    var text: String?
+    var durationSeconds: Int?
+    var noteText: String?
+    var noteDate: Date?
+    var isUnread: Bool = false
 }
