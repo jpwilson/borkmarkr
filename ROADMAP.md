@@ -1,0 +1,188 @@
+# borkmarkr — what makes this big
+
+Written 2026-08-08, after building v1 and v2. This is an engineering view of the
+product, not a pitch. The honest version of what stands between this app and the
+scale JP wants.
+
+---
+
+## The insight is right
+
+From the original brief:
+
+> "nearly everybody is on multiple social media networks and they see interesting
+> stuff but they either click like but then they've got hundreds or thousands of
+> likes that they're not titled or organized or categorized so they don't know
+> how to search through them and they don't know how to share them or share the
+> right ones with the right people"
+
+That's two distinct problems — **recall** and **sharing** — on top of a real,
+enormous behaviour. Every platform's save feature is a write-only graveyard. Nobody
+has built the layer above them because each platform actively resists it.
+
+The product currently solves *filing*. It doesn't yet solve either of the two
+problems in the brief. That's the gap.
+
+---
+
+## The three things that decide whether this gets big
+
+### 1. Cold start — bulk import is the wedge
+
+**This is the single highest-leverage unbuilt feature.**
+
+Today borkmarkr starts empty and you add one link at a time. But the brief's own
+premise is that the user *already has thousands of saves*. A new user's first
+session should not be "save your first link" — it should be **"import the 1,400
+things you already saved and finally see them."**
+
+That moment — 0 → 1,400 items, instantly categorised, suddenly searchable — is
+the product. It's the demo that makes someone tell a friend. Without it, every
+user spends weeks before the library is dense enough to be worth opening.
+
+Every platform is legally required to give users their data:
+
+| Source | Route | What you get |
+|---|---|---|
+| X / Twitter | Data archive (`data/like.js`, bookmarks) | URLs, post text, dates |
+| Instagram | Download Your Information → `saved_posts.json` | Saved post URLs, timestamps |
+| TikTok | Data export → `Favorite Videos` | URLs + dates |
+| YouTube | Google Takeout → Watch Later, playlists CSV | Video IDs, titles |
+| Pinterest | Data export | Pin URLs, board names |
+| Safari/Chrome | Bookmarks HTML | URLs + titles + folders |
+
+These are user-initiated GDPR/CCPA exports — no API keys, no scraping, no ToS
+problem, and no platform can shut it off. The user drops the zip into the app and
+the existing categoriser does the rest. That last part matters: the taxonomy work
+already done is what turns a dump of 1,400 URLs into something navigable.
+
+**Build cost:** one importer per format, a file-picker flow, a progress screen,
+and a review step. A week, and it can ship incrementally — one platform at a time,
+starting with whichever JP personally has the most saves in.
+
+### 2. Recall — search has to feel like memory
+
+The brief says people "don't know how to search through them". Keyword search
+doesn't fix that, because **nobody remembers the words**. They remember *"that
+thing about the guy who fixed his back"* — and the actual title was "5-minute hip
+mobility flow".
+
+Semantic search closes that gap, and a first version is implemented on-device
+(`App/SemanticIndex.swift`) — no network, no API key, no cost.
+
+**Measured, it is only partly there.** Apple's `NLEmbedding.sentenceEmbedding`
+turned out to be unusable for this (it ranked a hip-mobility clip above a
+car-detailing video for "how do I make my car look new"). Averaged *word*
+vectors do far better — 5 correct out of 7 natural-language queries — but they
+fail when one strong token dominates the average: "what should I eat in the
+morning" matches *morning routine* over *protein breakfast*.
+
+So it ships as a **"Related" strip below exact results**, never as primary
+search. Getting this to genuine precision needs a real sentence transformer via
+Core ML (~90MB bundled, still offline and free) or a hosted embedding API. That
+is the right investment **after** bulk import, because it's only worth it once
+there are thousands of items to search — and it's a real moat when it works.
+
+The natural extension is question-answering over your own library: *"what did I
+save about sleep?"* → the three most relevant items, not a keyword match. That's
+where an LLM earns its place; not in categorisation, which the offline scorer
+already handles well enough.
+
+### 3. Sharing — the growth loop, not a feature
+
+The friend feed is currently scoped as "nice to have, post-launch". It is
+actually **the entire distribution strategy**, and it should be sequenced as such
+once the app is being used daily.
+
+Consider the mechanics: a shared collection is a URL. `bork.mr/c/marathon-prep`
+is a page of 40 hand-curated links on one topic, made by a real person. That is:
+
+- **A viral loop** — every share is an invitation from a trusted source.
+- **An SEO asset** — curated link collections on specific topics are exactly what
+  search engines reward, and they're generated by users for free.
+- **The retention hook for the curator** — people maintain things other people
+  look at.
+
+The schema is already written (`supabase/migrations/0001_init.sql`,
+private-by-default with RLS). What's missing is auth, sync, and the public
+collection page. Note the last one implies a **web surface**, not just iOS —
+shared links have to open for people who don't have the app. That's the moment
+Supabase becomes clearly correct over CloudKit.
+
+---
+
+## What's missing that's less obvious
+
+**Resurfacing.** A save that's never seen again may as well not exist. "You saved
+this 7 months ago" / a weekly digest / surfacing by context is what turns a filing
+cabinet into a habit. Cheap to build, disproportionate effect on retention — and
+it's the difference between an app people install and an app people open.
+
+**Real link previews.** Gradient covers are honest placeholders but a wall of
+them reads as unfinished. YouTube oEmbed works today, no key. Open Graph scraping
+covers most of the web. Instagram and TikTok are the hard ones — their oEmbed
+endpoints now require app review. Partial coverage still transforms the feed.
+
+**Multi-note-per-item.** The model allows one note. People revisit a save months
+later with a second thought. Small model change, better done before there's data
+to migrate.
+
+**Duplicate merge across platforms.** The same YouTube video saved from Shorts
+and from the main app are different URLs. URL normalisation handles query junk,
+not cross-surface identity.
+
+---
+
+## Money
+
+Memory says the target is $200 MRR as the focus trigger. The structure that fits
+this product:
+
+- **Free** — up to ~100 saves, all categories, local only. Enough to prove value;
+  the ceiling bites exactly when the app has become useful.
+- **Pro, ~$4/mo or $30/yr** — unlimited saves, bulk import, semantic search,
+  sync, shared collections.
+- The import feature is the natural paywall: someone importing 1,400 items has
+  already demonstrated they're the target customer, and they hit the free ceiling
+  in the same breath.
+
+$200 MRR ≈ 50 subscribers. That's reachable from one good shared collection.
+
+**Don't** monetise the sharing itself — that's the growth engine and should stay
+frictionless in both directions.
+
+---
+
+## Risks worth naming
+
+**Platform dependency.** Nothing here scrapes or automates the platforms, which
+is the right call — it's all user-initiated exports and user-pasted links. Stay
+there. The moment the product depends on an Instagram API, Instagram owns the
+roadmap.
+
+**App Store review.** A bookmark manager is uncontroversial. Bulk-importing
+another platform's data is still fine — it's the user's own data, user-initiated.
+Displaying fetched thumbnails at scale is the greyer area.
+
+**Scope.** The taxonomy is 50 categories and 612 subcategories. That's a strength
+for filing and a liability for the *sharing* surface, where a public page needs a
+short, human name — not "Fitness › Mobility › #marathoners".
+
+---
+
+## Suggested sequence
+
+1. **Now** — use it daily on device. Nothing replaces that signal.
+2. **Paid membership** → App Group → share extension. Without this the core
+   acquisition path doesn't exist.
+3. **Bulk import**, starting with whichever platform has the most saves. This is
+   the wedge.
+4. **Semantic search** polish + resurfacing. Makes the imported library feel alive
+   rather than archived.
+5. **Supabase auth + sync + public collection pages** (project name `bookmarker`).
+   Only now, when there's something worth sharing.
+6. **Paywall** once import + search + sharing are all real.
+
+The ordering matters: sharing an empty library is worthless, and syncing a library
+nobody uses is engineering for its own sake. Density first, then recall, then
+distribution.

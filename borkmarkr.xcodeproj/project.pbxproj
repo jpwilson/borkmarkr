@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0527F5B223F18D031184513B /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1547735EA275A76D8C7A99DD /* LibraryView.swift */; };
+		07A3E5E75659299B8276A81D /* SemanticIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */; };
 		0AFAB03D05E50963DBFED9C7 /* BrowseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3FABFC1A9084B9C0360A43C /* BrowseView.swift */; };
 		11EE1F809FD619D4460AEFA7 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 94FAEE4CF56506B42CB4F371 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1E2D4C78836B0733DBCA1CA9 /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990CE9B08FEB9BF177C21611 /* Platform.swift */; };
@@ -86,6 +87,7 @@
 		C28995D31AAC20CABE2409DA /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		C711BD3A0E1046941AB2AD33 /* AddSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSheet.swift; sourceTree = "<group>"; };
 		D3FABFC1A9084B9C0360A43C /* BrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseView.swift; sourceTree = "<group>"; };
+		DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
 		F91794C010FF35E650EB340F /* borkmarkr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = borkmarkr.entitlements; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -131,6 +133,7 @@
 				0B848D80BD44CBC109D6C602 /* DebugSeed.swift */,
 				0C34F5782F5C8CE42FCA779B /* Info.plist */,
 				C1CA06BC436065B1A852B227 /* RootView.swift */,
+				DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */,
 				BA8CEE91D89E2D173C22AD21 /* Components */,
 				C68779537C81C72108BA8E40 /* DesignSystem */,
 				BC96D25B9518A72B1B6EC24F /* Screens */,
@@ -277,6 +280,7 @@
 				8A3961190102DEA781DA0DE9 /* Platform.swift in Sources */,
 				479D2D8E66358814CD4DC70B /* RootView.swift in Sources */,
 				FD05C7AA7B54AD7614A26410 /* SearchView.swift in Sources */,
+				07A3E5E75659299B8276A81D /* SemanticIndex.swift in Sources */,
 				437A31C7D71F12BACDF1A23E /* SourcePage.swift in Sources */,
 				478AC008ED03817412776254 /* Store.swift in Sources */,
 				79ED586D9F3A1651B2A5EFED /* Taxonomy.swift in Sources */,
