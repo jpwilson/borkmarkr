@@ -31,6 +31,7 @@ settings:
     # change re-enables share-sheet saving.
     DEVELOPMENT_TEAM: 7RUN765V47
     TARGETED_DEVICE_FAMILY: "1"
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "0.1.0"
