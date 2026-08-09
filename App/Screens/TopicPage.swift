@@ -13,6 +13,9 @@ struct TopicPage: View {
     )
     private var all: [Bookmark]
 
+    @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
+    private var customSubtopics: [CustomSubtopic]
+
     @State private var sub: String?
     @State private var source: Platform?
     @State private var tag: String?
@@ -31,9 +34,12 @@ struct TopicPage: View {
         }
     }
 
+    /// Includes subtopics you added yourself, so a custom one you filed into
+    /// shows up here rather than vanishing from the chips.
     private var presentSubs: [(name: String, count: Int)] {
         let counts = Dictionary(grouping: inCategory.compactMap(\.subcategory)) { $0 }.mapValues(\.count)
-        return category.subs.compactMap { name in
+        let merged = MergedTaxonomy(custom: customSubtopics)
+        return merged.subs(for: category).compactMap { name in
             counts[name].map { (name, $0) }
         }
     }

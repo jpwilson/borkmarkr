@@ -555,16 +555,53 @@ struct TopicPickerSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accent) private var accent
+    @Environment(\.modelContext) private var context
+
+    @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
+    private var customSubtopics: [CustomSubtopic]
+
     @State private var expanded: String?
     @State private var filter = ""
+    @State private var newSubtopicTopic: Topic?
+    @State private var newSubtopicName = ""
+
+    private var merged: MergedTaxonomy { MergedTaxonomy(custom: customSubtopics) }
+
+    private var trimmedFilter: String {
+        filter.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     private var shown: [Topic] {
-        let needle = filter.trimmingCharacters(in: .whitespaces).lowercased()
+        let needle = trimmedFilter.lowercased()
         guard !needle.isEmpty else { return Taxonomy.all }
-        return Taxonomy.all.filter {
-            $0.name.lowercased().contains(needle)
-                || $0.subs.contains { $0.lowercased().contains(needle) }
+        return Taxonomy.all.filter { topic in
+            topic.name.lowercased().contains(needle)
+                || merged.subs(for: topic).contains { $0.lowercased().contains(needle) }
         }
+    }
+
+    /// True when what you've typed doesn't already exist under `topic` — the
+    /// cue to offer adding it.
+    private func canAdd(_ name: String, to topic: Topic) -> Bool {
+        let candidate = name.lowercased()
+        guard candidate.count >= 2 else { return false }
+        return !merged.subs(for: topic).contains { $0.lowercased() == candidate }
+    }
+
+    private func addSubtopic(_ raw: String, to topic: Topic) {
+        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        // Title-case the first letter only; "Trail running" not "Trail Running",
+        // matching how the built-ins are written.
+        let formatted = name.prefix(1).uppercased() + name.dropFirst()
+
+        context.insert(CustomSubtopic(categoryID: topic.id, name: formatted))
+        try? context.save()
+
+        categoryID = topic.id
+        subcategory = formatted
+        Haptics.success()
+        dismiss()
     }
 
     var body: some View {
@@ -584,7 +621,7 @@ struct TopicPickerSheet: View {
                                         .font(Typo.ui(14.5, .semibold))
                                         .foregroundStyle(Tokens.ink)
                                     Spacer()
-                                    Text("\(topic.subs.count)")
+                                    Text("\(merged.subs(for: topic).count)")
                                         .font(Typo.ui(11.5, .medium))
                                         .foregroundStyle(Tokens.inkMeta)
                                     Image(systemName: expanded == topic.id ? "chevron.up" : "chevron.right")
@@ -595,11 +632,24 @@ struct TopicPickerSheet: View {
                             .buttonStyle(.plain)
 
                             if expanded == topic.id {
-                                FlowChips(items: topic.subs) { sub in
+                                FlowChips(items: merged.subs(for: topic)) { sub in
                                     categoryID = topic.id
                                     subcategory = sub
                                     dismiss()
                                 } tint: { topic.palette }
+
+                                // Add what you searched for, or anything, right
+                                // where you noticed it was missing.
+                                if canAdd(trimmedFilter, to: topic), !trimmedFilter.isEmpty {
+                                    addButton(label: "Add \u{201C}\(trimmedFilter)\u{201D}", topic: topic) {
+                                        addSubtopic(trimmedFilter, to: topic)
+                                    }
+                                } else {
+                                    addButton(label: "Add a subtopic", topic: topic) {
+                                        newSubtopicTopic = topic
+                                        newSubtopicName = trimmedFilter
+                                    }
+                                }
                             }
                         }
                         .padding(13)
@@ -617,9 +667,40 @@ struct TopicPickerSheet: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+            .alert("New subtopic",
+                   isPresented: Binding(get: { newSubtopicTopic != nil },
+                                        set: { if !$0 { newSubtopicTopic = nil } })) {
+                TextField("Name", text: $newSubtopicName)
+                Button("Add") {
+                    if let topic = newSubtopicTopic { addSubtopic(newSubtopicName, to: topic) }
+                    newSubtopicTopic = nil
+                    newSubtopicName = ""
+                }
+                Button("Cancel", role: .cancel) {
+                    newSubtopicTopic = nil
+                    newSubtopicName = ""
+                }
+            } message: {
+                Text(newSubtopicTopic.map { "Added under \($0.name)." } ?? "")
+            }
         }
         .presentationDetents([.large])
         .presentationCornerRadius(Tokens.sheetRadius)
+    }
+
+    private func addButton(label: String, topic: Topic, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: "plus.circle.fill").font(.system(size: 12, weight: .semibold))
+                Text(label)
+                    .font(Typo.ui(12.5, .semibold))
+                    .lineLimit(1)
+                Spacer()
+            }
+            .foregroundStyle(topic.palette.deep)
+            .padding(.top, 4)
+        }
+        .buttonStyle(.plain)
     }
 }
 

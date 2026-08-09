@@ -23,7 +23,7 @@ enum Store {
     static let shared: ModelContainer = make()
 
     static func make() -> ModelContainer {
-        let schema = Schema([Bookmark.self, BookmarkCollection.self])
+        let schema = Schema([Bookmark.self, BookmarkCollection.self, Mission.self, CustomSubtopic.self])
 
         if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) != nil {
             let config = ModelConfiguration(schema: schema, groupContainer: .identifier(appGroupID))
