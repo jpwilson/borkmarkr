@@ -1,9 +1,9 @@
-// Supabase connection details.
+// Supabase connection details for the `bookmarker` project.
 //
-// The anon key is PUBLIC by design — row-level security in the database is what
-// protects data, not the secrecy of this string. Safe to commit.
+// The publishable key is PUBLIC by design — row-level security in the database
+// is what protects data, not the secrecy of this string. Safe to commit, and it
+// ships inside the app binary anyway where anyone can extract it.
 //
-// Empty until the Supabase project exists; the app checks and simply stays
-// local-only (no sign-in offered) rather than failing.
-SUPABASE_URL =
-SUPABASE_ANON_KEY =
+// A SECRET key (service_role) must NEVER appear here or anywhere in the app.
+SUPABASE_URL = https:/$()/pcjuxnhqxyfvgagnblzv.supabase.co
+SUPABASE_ANON_KEY = sb_publishable_z0wBO4NZrMW3T0ZywSDfJA_UoFRHMKb

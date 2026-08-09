@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// Three steps: paste → reading → details.
 ///
@@ -16,6 +17,9 @@ struct AddSheet: View {
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+
+    @Query(filter: #Predicate<Bookmark> { $0.deletedAt == nil })
+    private var allBookmarks: [Bookmark]
 
     enum Step { case paste, reading, details }
 
@@ -38,6 +42,8 @@ struct AddSheet: View {
     /// present it as a fact or as something to fill in.
     @State private var titleWasFetched = false
     @State private var editingTitle = false
+    @State private var clipboardURL: URL?
+    @FocusState private var urlFocused: Bool
 
     private var parsedURL: URL? {
         let trimmed = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -86,6 +92,11 @@ struct AddSheet: View {
 
     // MARK: Step 1 — paste
 
+    /// No "Fetch preview" button. Paste a link and it just goes — a button
+    /// that only ever has one sensible outcome is a step, not a choice.
+    ///
+    /// Also offers whatever's on the clipboard, since you almost always got
+    /// here by copying a link somewhere else.
     private var pasteStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -94,24 +105,38 @@ struct AddSheet: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
+                    .focused($urlFocused)
                     .padding(14)
                     .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Tokens.hairline, lineWidth: 1)
+                            .stroke(parsedURL != nil ? accent.base.opacity(0.5) : Tokens.hairline,
+                                    lineWidth: parsedURL != nil ? 1.5 : 1)
                     )
 
-                Button(action: submit) {
-                    Text("Fetch preview")
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(parsedURL == nil ? Tokens.grabber : accent.base,
-                                    in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
+                if let clipboard = clipboardURL, urlText.isEmpty {
+                    Button {
+                        urlText = clipboard.absoluteString
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "doc.on.clipboard").font(.system(size: 12, weight: .semibold))
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("Paste from clipboard")
+                                    .font(Typo.ui(13, .semibold))
+                                    .foregroundStyle(Tokens.ink)
+                                Text(clipboard.host ?? clipboard.absoluteString)
+                                    .font(Typo.mono(11))
+                                    .foregroundStyle(Tokens.inkMeta)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                        }
+                        .foregroundStyle(accent.deep)
+                        .padding(13)
+                        .cardSurface(radius: 16)
+                    }
+                    .buttonStyle(PressableStyle())
                 }
-                .buttonStyle(.plain)
-                .disabled(parsedURL == nil)
 
                 HStack(spacing: 6) {
                     Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))
@@ -122,6 +147,27 @@ struct AddSheet: View {
             }
             .padding(18)
         }
+        .onAppear {
+            urlFocused = true
+            clipboardURL = Self.readClipboard()
+        }
+        // Debounced so it fires once you've finished pasting, not on every
+        // character of a typed URL.
+        .task(id: urlText) {
+            guard parsedURL != nil, step == .paste else { return }
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled, step == .paste else { return }
+            submit()
+        }
+    }
+
+    private static func readClipboard() -> URL? {
+        guard UIPasteboard.general.hasURLs || UIPasteboard.general.hasStrings else { return nil }
+        let raw = UIPasteboard.general.url?.absoluteString
+            ?? UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? ""
+        guard raw.hasPrefix("http"), let url = URL(string: raw), url.host != nil else { return nil }
+        return url
     }
 
     // MARK: Step 2 — reading
@@ -274,6 +320,45 @@ struct AddSheet: View {
             .padding(.vertical, 9)
             .background(Tokens.surface, in: Capsule())
             .overlay(Capsule().stroke(Tokens.hairline, lineWidth: 1))
+
+            if !tagSuggestions.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(tagSuggestions, id: \.self) { suggestion in
+                            Button {
+                                tagDraft = suggestion
+                                commitTag()
+                            } label: {
+                                Text("#\(suggestion)")
+                                    .font(Typo.ui(11.5, .semibold))
+                                    .foregroundStyle(Tokens.inkSecondary)
+                                    .padding(.horizontal, 9).padding(.vertical, 5)
+                                    .background(Tokens.mutedControl, in: Capsule())
+                            }
+                            .buttonStyle(ChipStyle())
+                        }
+                    }
+                }
+            }
+
+            // When a tag clearly belongs somewhere in the taxonomy and nothing
+            // is chosen yet, offer it rather than silently filing it.
+            if let placement = tagPlacement {
+                Button {
+                    categoryID = placement.categoryID
+                    subcategory = placement.subcategory
+                    Haptics.tap()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.turn.down.right").font(.system(size: 10, weight: .bold))
+                        Text("File under \(placement.label)?")
+                            .font(Typo.ui(12, .semibold))
+                        Spacer()
+                    }
+                    .foregroundStyle(accent.deep)
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(15)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -390,6 +475,36 @@ struct AddSheet: View {
 
             withAnimation(.easeOut(duration: 0.22)) { step = .details }
         }
+    }
+
+    /// Your own tags, ranked by how often you've used them, filtered by what
+    /// you're typing. Suggesting tags you've never used would just be the
+    /// taxonomy again.
+    private var tagSuggestions: [String] {
+        let draft = tagDraft.trimmingCharacters(in: .whitespaces).lowercased()
+        var counts: [String: Int] = [:]
+        for bookmark in allBookmarks {
+            for tag in bookmark.tags where !tags.contains(tag) {
+                counts[tag, default: 0] += 1
+            }
+        }
+        return counts
+            .filter { draft.isEmpty ? true : $0.key.hasPrefix(draft) }
+            .sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
+            .prefix(6)
+            .map(\.key)
+    }
+
+    /// Where the tags you've added would place this in the taxonomy — e.g.
+    /// "fighting" lands on Sports › Combat sports. Uses the same offline
+    /// classifier as the URL, run over the tag words instead.
+    private var tagPlacement: (categoryID: String, subcategory: String?, label: String)? {
+        guard categoryID == nil, !tags.isEmpty else { return nil }
+        guard let url = parsedURL else { return nil }
+        let suggestion = Categorizer.suggest(url: url, title: tags.joined(separator: " "))
+        guard let id = suggestion.categoryID, let topic = Taxonomy.category(id: id) else { return nil }
+        let label = suggestion.subcategory.map { "\(topic.name) › \($0)" } ?? topic.name
+        return (id, suggestion.subcategory, label)
     }
 
     private func commitTag() {

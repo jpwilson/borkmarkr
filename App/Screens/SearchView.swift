@@ -53,9 +53,18 @@ struct SearchView: View {
         return Platform.ordered.filter { used.contains($0) }
     }
 
+    /// Every topic, with the ones you actually have borks in first.
+    ///
+    /// Showing only used topics made Search feel broken: you'd go looking for
+    /// "Cars" and it simply wasn't there, with no way to tell whether you had
+    /// nothing filed under it or the app had lost it. Browse is the "what do I
+    /// have" screen; Search is the "find anything" screen, and it should offer
+    /// the whole vocabulary.
     private var presentTopics: [Topic] {
         let used = Set(all.compactMap(\.categoryID))
-        return Taxonomy.all.filter { used.contains($0.id) }
+        let mine = Taxonomy.all.filter { used.contains($0.id) }
+        let rest = Taxonomy.all.filter { !used.contains($0.id) }
+        return mine + rest
     }
 
     var body: some View {

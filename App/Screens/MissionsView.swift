@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Missions — what you're trying to become, and the borks that serve it.
+/// Side quests — what you're working on, and the borks that serve it.
 struct MissionsView: View {
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
@@ -35,7 +35,7 @@ struct MissionsView: View {
                 Button { creating = true } label: {
                     HStack(spacing: 7) {
                         Image(systemName: "plus")
-                        Text("New mission").font(Typo.ui(13.5, .semibold))
+                        Text("New side quest").font(Typo.ui(13.5, .semibold))
                     }
                     .foregroundStyle(Tokens.inkSecondary)
                     .frame(maxWidth: .infinity)
@@ -60,18 +60,18 @@ struct MissionsView: View {
     private var empty: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("What are you trying to become?")
+                Text("What are you working on?")
                     .font(Typo.display(19, .heavy))
                     .foregroundStyle(Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("A faster runner. A morning person. Someone who actually cooks. Attach the borks that help, and tick it off daily.")
+                Text("Becoming a faster runner. Deciding which minivan. Planning a trip. Gather the borks that help — add a daily habit only if it needs one.")
                     .font(Typo.ui(13.5))
                     .foregroundStyle(Tokens.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             Button { creating = true } label: {
-                Text("Start a mission")
+                Text("Start a side quest")
                     .font(Typo.ui(14.5, .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -230,8 +230,8 @@ struct NewMissionSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    field(label: "I WANT TO…", placeholder: "Become a faster runner", text: $title)
-                    field(label: "DAILY HABIT (OPTIONAL)", placeholder: "Run or drill", text: $habit)
+                    field(label: "WORKING ON", placeholder: "Becoming a faster runner · Which minivan to buy", text: $title)
+                    field(label: "DAILY HABIT — ONLY IF IT NEEDS ONE", placeholder: "Run or drill — leave blank for research", text: $habit)
 
                     Button { showingPicker = true } label: {
                         HStack {
@@ -247,7 +247,7 @@ struct NewMissionSheet: View {
                     }
                     .buttonStyle(.plain)
 
-                    Text("OR START FROM ONE OF THESE")
+                    Text("OR PICK ONE")
                         .font(Typo.ui(10, .heavy)).tracking(0.6)
                         .foregroundStyle(Tokens.mutedHeading)
 
@@ -274,7 +274,7 @@ struct NewMissionSheet: View {
                 .padding(18)
             }
             .background(Tokens.paper)
-            .navigationTitle("New mission")
+            .navigationTitle("New side quest")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

@@ -18,7 +18,7 @@ struct BrowseView: View {
             switch self {
             case .topics: "Topics"
             case .sources: "Sources"
-            case .missions: "Missions"
+            case .missions: "Quests"
             }
         }
     }

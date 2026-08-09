@@ -155,14 +155,44 @@ private extension String {
         return value.isEmpty ? nil : value
     }
 
-    /// Titles routinely arrive as `Fitness &amp; Health &#8212; Guide`.
+    /// Titles routinely arrive as `Fitness &amp; Health &#8212; Guide`, and
+    /// Instagram in particular emits hex entities: `&#x201c;I&#x2019;m
+    /// stronger&#x201d;`. Handling only the named set left that raw on screen.
+    ///
+    /// So: named entities first, then *any* numeric (`&#8217;`) or hex
+    /// (`&#x2019;`) reference by code point, rather than an ever-growing lookup
+    /// table that's always missing the one you just hit.
     var decodedHTMLEntities: String {
         var out = self
         let named = ["&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"",
-                     "&#39;": "'", "&apos;": "'", "&nbsp;": " ", "&#8217;": "’",
-                     "&#8212;": "—", "&#8211;": "–", "&hellip;": "…"]
+                     "&apos;": "'", "&nbsp;": " ", "&hellip;": "…",
+                     "&mdash;": "—", "&ndash;": "–", "&rsquo;": "’",
+                     "&lsquo;": "‘", "&ldquo;": "“", "&rdquo;": "”"]
         for (entity, replacement) in named {
             out = out.replacingOccurrences(of: entity, with: replacement)
+        }
+
+        guard out.contains("&#"),
+              let regex = try? NSRegularExpression(pattern: "&#([xX]?)([0-9a-fA-F]+);")
+        else { return out }
+
+        // Replace back-to-front so earlier ranges stay valid.
+        let range = NSRange(out.startIndex..<out.endIndex, in: out)
+        for match in regex.matches(in: out, range: range).reversed() {
+            guard
+                let full = Range(match.range, in: out),
+                let prefixRange = Range(match.range(at: 1), in: out),
+                let digitsRange = Range(match.range(at: 2), in: out)
+            else { continue }
+
+            let isHex = !out[prefixRange].isEmpty
+            let digits = String(out[digitsRange])
+            guard
+                let value = UInt32(digits, radix: isHex ? 16 : 10),
+                let scalar = Unicode.Scalar(value)
+            else { continue }
+
+            out.replaceSubrange(full, with: String(Character(scalar)))
         }
         return out
     }
