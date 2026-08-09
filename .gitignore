@@ -25,3 +25,6 @@ Secrets.plist
 # Supabase
 supabase/.temp/
 supabase/.branches/
+
+# Local Supabase credentials (anon key is public, but keep local overrides out)
+Config.local.xcconfig

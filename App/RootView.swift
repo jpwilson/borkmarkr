@@ -35,6 +35,7 @@ struct RootView: View {
     @State private var tab: AppTab = .library
     @State private var showingAdd = false
     @State private var toast: String?
+    @StateObject private var account = Account()
 
     /// Deep-link target when a category chip is tapped from a detail sheet.
     @State private var pendingTopic: String?
@@ -53,7 +54,7 @@ struct RootView: View {
                 case .library: LibraryView(onAdd: { showingAdd = true })
                 case .browse: BrowseView(interests: interests, pendingTopic: $pendingTopic)
                 case .search: SearchView()
-                case .you: YouView(onReplayTour: { hasOnboarded = false })
+                case .you: YouView(onReplayTour: { hasOnboarded = false }, account: account)
                 }
             }
             .environment(\.accent, accent)
@@ -96,11 +97,15 @@ struct RootView: View {
             }
             #endif
             drain()
+            Task { await account.sync(context: context) }
         }
         .onChange(of: scenePhase) { _, phase in
             // The Share Extension queues saves while we're backgrounded; pick
             // them up the moment we're visible again.
-            if phase == .active { drain() }
+            if phase == .active {
+                drain()
+                Task { await account.sync(context: context) }
+            }
         }
         .onChange(of: pendingTopic) { _, value in
             if value != nil { tab = .browse }

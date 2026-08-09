@@ -16,6 +16,10 @@ options:
     iOS: "17.0"
   createIntermediateGroups: true
 
+configFiles:
+  Debug: Config.xcconfig
+  Release: Config.xcconfig
+
 settings:
   base:
     # Personal (free) team, so builds work today. Free teams cannot provision
@@ -43,11 +47,11 @@ targets:
     dependencies:
       - target: ShareExtension
         embed: true
-    # entitlements:                       # <- uncomment with the paid team
-    #   path: App/borkmarkr.entitlements
-    #   properties:
-    #     com.apple.security.application-groups:
-    #       - group.com.jpwilson.borkmarkr
+    entitlements:
+      path: App/borkmarkr.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.jpwilson.borkmarkr
     info:
       path: App/Info.plist
       properties:
@@ -55,6 +59,8 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
+        SupabaseURL: $(SUPABASE_URL)
+        SupabaseAnonKey: $(SUPABASE_ANON_KEY)
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         # Opening a saved link back out to its source app
@@ -72,11 +78,11 @@ targets:
       base:
         # Must nest under the app's identifier or the embed step fails.
         PRODUCT_BUNDLE_IDENTIFIER: com.jpwilson.borkmarkr.ShareExtension
-    # entitlements:                       # <- uncomment with the paid team
-    #   path: ShareExtension/ShareExtension.entitlements
-    #   properties:
-    #     com.apple.security.application-groups:
-    #       - group.com.jpwilson.borkmarkr
+    entitlements:
+      path: ShareExtension/ShareExtension.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.jpwilson.borkmarkr
     info:
       path: ShareExtension/Info.plist
       properties:

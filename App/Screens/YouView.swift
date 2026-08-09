@@ -3,6 +3,7 @@ import SwiftData
 
 struct YouView: View {
     let onReplayTour: () -> Void
+    @ObservedObject var account: Account
 
     @Environment(\.accent) private var accent
     @AppStorage("accentKey") private var accentKey = AccentRamp.fallback.key
@@ -16,6 +17,7 @@ struct YouView: View {
 
     @State private var showingHowTo = false
     @State private var showingImport = false
+    @State private var showingAuth = false
 
     private var thisWeek: Int {
         let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
@@ -26,6 +28,7 @@ struct YouView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 profile
+                accountCard
                 stats
                 importHint
                 shareHint
@@ -42,6 +45,9 @@ struct YouView: View {
         }
         .sheet(isPresented: $showingImport) {
             ImportSheet { _ in }.environment(\.accent, accent)
+        }
+        .sheet(isPresented: $showingAuth) {
+            AuthSheet(account: account).environment(\.accent, accent)
         }
     }
 
@@ -62,6 +68,61 @@ struct YouView: View {
             Spacer()
         }
         .padding(.top, 12)
+    }
+
+    /// Signed-out is the honest default state, and it says plainly what that
+    /// means rather than hiding it behind a "Sign in" button with no context.
+    @ViewBuilder
+    private var accountCard: some View {
+        if account.isSignedIn {
+            HStack(spacing: 11) {
+                Image(systemName: "checkmark.icloud.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(accent.base)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(account.email ?? "Signed in")
+                        .font(Typo.ui(13.5, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                        .lineLimit(1)
+                    Text(account.isSyncing ? "Syncing…"
+                         : account.lastSynced.map { "Backed up \(RelativeDate.label(for: $0).lowercased())" }
+                            ?? "Waiting to back up")
+                        .font(Typo.ui(11.5, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                }
+                Spacer()
+                Button("Sign out") { account.signOut() }
+                    .font(Typo.ui(12.5, .semibold))
+                    .foregroundStyle(Tokens.destructive)
+            }
+            .padding(14)
+            .cardSurface(radius: 18)
+        } else {
+            Button { showingAuth = true } label: {
+                HStack(spacing: 11) {
+                    Image(systemName: "icloud.slash")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Tokens.inkSecondary)
+                        .frame(width: 34, height: 34)
+                        .background(Tokens.mutedControl, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Only on this phone")
+                            .font(Typo.ui(14, .bold))
+                            .foregroundStyle(Tokens.ink)
+                        Text("Sign in to back up and sync your borks")
+                            .font(Typo.ui(12, .medium))
+                            .foregroundStyle(Tokens.inkMeta)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Tokens.inkFaint)
+                }
+                .padding(14)
+                .cardSurface(radius: 18)
+            }
+            .buttonStyle(PressableStyle())
+        }
     }
 
     private var stats: some View {

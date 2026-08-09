@@ -1,0 +1,9 @@
+// Supabase connection details.
+//
+// The anon key is PUBLIC by design — row-level security in the database is what
+// protects data, not the secrecy of this string. Safe to commit.
+//
+// Empty until the Supabase project exists; the app checks and simply stays
+// local-only (no sign-in offered) rather than failing.
+SUPABASE_URL =
+SUPABASE_ANON_KEY =
