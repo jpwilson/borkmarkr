@@ -32,6 +32,12 @@ struct AddSheet: View {
     @State private var noteDate = Date.now
     @State private var showingPicker = false
     @State private var error: String?
+    @State private var imageURL: URL?
+    @State private var duration: Int?
+    /// Whether the title came from the page or was generated. Drives whether we
+    /// present it as a fact or as something to fill in.
+    @State private var titleWasFetched = false
+    @State private var editingTitle = false
 
     private var parsedURL: URL? {
         let trimmed = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -146,25 +152,59 @@ struct AddSheet: View {
         }
     }
 
+    /// The actual card you're about to save — thumbnail, real title, author.
+    /// This is the confirmation: you see the thing, not a form about the thing.
     @ViewBuilder
     private var previewRow: some View {
         if let url = parsedURL {
             let platform = Platform.detect(from: url)
-            HStack(spacing: 11) {
-                PlatformBadge(platform: platform, size: 40)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(platform.name)
-                        .font(Typo.ui(14, .bold))
-                        .foregroundStyle(Tokens.ink)
-                    Text(url.host ?? "")
-                        .font(Typo.mono(11))
-                        .foregroundStyle(Tokens.inkMeta)
-                        .lineLimit(1)
+            let palette = Taxonomy.category(id: categoryID)?.palette ?? NeutralPalette.value
+
+            VStack(alignment: .leading, spacing: 0) {
+                ZStack(alignment: .topLeading) {
+                    CoverImage(url: imageURL, palette: palette)
+                        .frame(height: 150)
+                        .clipped()
+                    HStack(alignment: .top) {
+                        PlatformBadge(platform: platform, size: 24)
+                        Spacer()
+                        if let duration {
+                            let label = String(format: "%d:%02d", duration / 60, duration % 60)
+                            HStack(spacing: 3) {
+                                Image(systemName: "play.fill").font(.system(size: 7, weight: .black))
+                                Text(label).font(Typo.ui(10.5, .bold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 7).padding(.vertical, 4)
+                            .background(.ultraThinMaterial, in: Capsule())
+                            .environment(\.colorScheme, .dark)
+                        }
+                    }
+                    .padding(10)
                 }
-                Spacer()
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title.isEmpty ? "Untitled" : title)
+                        .font(Typo.display(15, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+                    HStack(spacing: 5) {
+                        Text(author ?? url.host ?? platform.name)
+                            .font(Typo.ui(11.5, .medium))
+                            .foregroundStyle(Tokens.inkMeta)
+                            .lineLimit(1)
+                        if !titleWasFetched {
+                            Text("· couldn't read the page")
+                                .font(Typo.ui(11))
+                                .foregroundStyle(Tokens.inkFaint)
+                        }
+                    }
+                }
+                .padding(13)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(13)
-            .cardSurface(radius: 16)
+            .cardSurface(radius: 18)
         }
     }
 
@@ -244,7 +284,30 @@ struct AddSheet: View {
         )
     }
 
+    /// Collapsed by default. The whole point is that you don't type — this is
+    /// here for the times the fetched title is wrong, not as a step in the flow.
+    @ViewBuilder
     private var titleField: some View {
+        if editingTitle {
+            titleEditor
+        } else {
+            Button {
+                withAnimation(.easeOut(duration: 0.18)) { editingTitle = true }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "pencil").font(.system(size: 11, weight: .semibold))
+                    Text(titleWasFetched ? "Edit title" : "Write a title")
+                        .font(Typo.ui(13, .semibold))
+                    Spacer()
+                }
+                .foregroundStyle(Tokens.inkSecondary)
+                .padding(.vertical, 4)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var titleEditor: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text("TITLE")
                 .font(Typo.ui(10, .heavy)).tracking(0.6)
@@ -285,7 +348,7 @@ struct AddSheet: View {
 
     private var saveButton: some View {
         Button(action: save) {
-            Text("Save to borkmarkr")
+            Text(Copy.saveVerb)
                 .font(Typo.ui(15, .bold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -298,17 +361,34 @@ struct AddSheet: View {
 
     // MARK: Actions
 
+    /// One tap. Paste the link, we read the page, everything comes back filled
+    /// in — you only touch it if you disagree.
     private func submit() {
         guard let url = parsedURL else { return }
         step = .reading
+
         Task { @MainActor in
-            let suggestion = Categorizer.suggest(url: url, title: "")
+            // Real fetch: oEmbed for YouTube, Open Graph for most of the web.
+            let preview = await LinkPreview.fetch(for: url)
+
+            imageURL = preview.imageURL
+            duration = preview.durationSeconds
+            author = preview.author ?? Categorizer.fallbackAuthor(for: url)
+
+            // A real page title, or nothing — never a routing word dressed up
+            // as a description.
+            let fetchedTitle = preview.title
+            title = fetchedTitle ?? Categorizer.fallbackTitle(for: url)
+            titleWasFetched = fetchedTitle != nil
+
+            // Categorise against the real title when we have one; a genuine
+            // headline is a far better signal than a URL slug.
+            let suggestion = Categorizer.suggest(url: url, title: title)
             categoryID = suggestion.categoryID
             subcategory = suggestion.subcategory
             tags = suggestion.tags
-            title = Categorizer.fallbackTitle(for: url)
-            author = Categorizer.fallbackAuthor(for: url)
-            withAnimation(.easeOut(duration: 0.2)) { step = .details }
+
+            withAnimation(.easeOut(duration: 0.22)) { step = .details }
         }
     }
 
@@ -328,13 +408,17 @@ struct AddSheet: View {
             ? Categorizer.fallbackTitle(for: url)
             : title
 
-        let draft = BookmarkDraft(
+        var draft = BookmarkDraft(
             url: url, title: finalTitle, author: author,
             platform: Platform.detect(from: url), kind: nil,
             categoryID: categoryID, subcategory: subcategory, tags: tags,
+            durationSeconds: duration,
             noteText: noteOpen && !note.isEmpty ? note : nil,
             noteDate: noteOpen && !note.isEmpty ? noteDate : nil
         )
+
+        draft.imageURLString = imageURL?.absoluteString
+        draft.previewFetched = true
 
         do {
             try Store.save(draft, in: context)

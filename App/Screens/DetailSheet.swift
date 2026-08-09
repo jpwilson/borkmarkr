@@ -15,6 +15,8 @@ struct DetailSheet: View {
     @State private var draftNote = ""
     @State private var draftDate = Date.now
     @State private var confirmingDelete = false
+    @State private var editingTitle = false
+    @State private var draftTitle = ""
 
     private var palette: CategoryPalette {
         bookmark.category?.palette ?? NeutralPalette.value
@@ -78,13 +80,9 @@ struct DetailSheet: View {
             .cardSurface()
         } else {
             ZStack(alignment: .topLeading) {
-                LinearGradient(colors: [palette.coverTop, palette.coverBottom],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .overlay(
-                        RadialGradient(colors: [.white.opacity(0.16), .clear],
-                                       center: .topLeading, startRadius: 0, endRadius: 220)
-                    )
+                CoverImage(url: bookmark.imageURL, palette: palette)
                     .frame(height: 200)
+                    .clipped()
 
                 PlatformBadge(platform: bookmark.platform, size: 26)
                     .padding(12)
@@ -114,16 +112,64 @@ struct DetailSheet: View {
         }
     }
 
+    @ViewBuilder
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(bookmark.title)
-                .font(Typo.display(20, .bold))
-                .foregroundStyle(Tokens.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            Text([bookmark.author, bookmark.platform.name].compactMap { $0 }.joined(separator: " · "))
-                .font(Typo.ui(12.5, .medium))
-                .foregroundStyle(Tokens.inkMeta)
+            if editingTitle {
+                TextField("Title", text: $draftTitle, axis: .vertical)
+                    .font(Typo.display(20, .bold))
+                    .foregroundStyle(Tokens.ink)
+                    .textFieldStyle(.plain)
+                HStack {
+                    Button("Cancel") { editingTitle = false }
+                        .font(Typo.ui(13, .semibold))
+                    Spacer()
+                    Button("Save", action: commitTitle)
+                        .font(Typo.ui(13, .bold))
+                }
+            } else {
+                // Tap the title to fix it. A fetched title is usually right but
+                // not always, and a brk you can't correct is a brk you distrust.
+                Button {
+                    draftTitle = bookmark.title
+                    withAnimation(.easeOut(duration: 0.15)) { editingTitle = true }
+                } label: {
+                    HStack(alignment: .top, spacing: 7) {
+                        Text(bookmark.title)
+                            .font(Typo.display(20, .bold))
+                            .foregroundStyle(Tokens.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.leading)
+                        Image(systemName: "pencil")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Tokens.inkFaint)
+                            .padding(.top, 6)
+                        Spacer(minLength: 0)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
+            HStack(spacing: 6) {
+                Text([bookmark.author, bookmark.platform.name].compactMap { $0 }.joined(separator: " · "))
+                    .font(Typo.ui(12.5, .medium))
+                    .foregroundStyle(Tokens.inkMeta)
+                if bookmark.openCount > 0 {
+                    Text("· opened \(bookmark.openCount)×")
+                        .font(Typo.ui(12, .medium))
+                        .foregroundStyle(accent.deep)
+                }
+            }
         }
+    }
+
+    private func commitTitle() {
+        let cleaned = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { editingTitle = false; return }
+        bookmark.title = cleaned
+        bookmark.touch()
+        try? context.save()
+        editingTitle = false
     }
 
     @ViewBuilder
@@ -274,7 +320,12 @@ struct DetailSheet: View {
             .buttonStyle(.plain)
 
             Button {
-                if let url = bookmark.url { openURL(url) }
+                guard let url = bookmark.url else { return }
+                // Records that you actually went back to this. Without it the
+                // library is as blind as the platform bookmarks it replaces.
+                bookmark.markOpened()
+                try? context.save()
+                openURL(url)
             } label: {
                 HStack(spacing: 7) {
                     Text("Open original").font(Typo.ui(15, .bold))

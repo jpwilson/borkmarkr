@@ -212,24 +212,54 @@ enum Categorizer {
         )
     }
 
-    /// Readable title from a URL slug, used when no caption came through.
+    /// Readable title from a URL, used only until real metadata arrives.
+    ///
+    /// Earlier this took the last path component longer than three characters,
+    /// which on `x.com/levelsio/status/123` produced the title **"Status"** —
+    /// a routing word presented as if it described the post. Worse than blank,
+    /// because it looks deliberate.
+    ///
+    /// Now: routing segments are excluded outright, a real hyphenated slug wins
+    /// if there is one, and otherwise we say something honest about where it
+    /// came from rather than inventing a subject.
     static func fallbackTitle(for url: URL) -> String {
         let platform = Platform.detect(from: url)
-        let slug = url.pathComponents
-            .filter { $0 != "/" && !$0.isEmpty }
-            .last { $0.count > 3 && !$0.allSatisfy(\.isNumber) }
+        let segments = url.pathComponents.filter { $0 != "/" && !$0.isEmpty }
 
-        guard let slug else {
-            let host = (url.host ?? "").replacingOccurrences(of: "www.", with: "")
-            return platform == .web && !host.isEmpty
-                ? "Article from \(host)"
-                : "Saved \(platform.defaultKind.rawValue) from \(platform.name)"
+        // A hyphen/underscore almost always means a human-readable slug.
+        if let slug = segments.last(where: { seg in
+            (seg.contains("-") || seg.contains("_"))
+                && seg.count > 6
+                && !urlNoise.contains(seg.lowercased())
+        }) {
+            return slug
+                .replacingOccurrences(of: "-", with: " ")
+                .replacingOccurrences(of: "_", with: " ")
+                .replacingOccurrences(of: ".html", with: "")
+                .capitalized
         }
 
-        return slug
-            .replacingOccurrences(of: "-", with: " ")
-            .replacingOccurrences(of: "_", with: " ")
-            .capitalized
+        // Social posts: name the author, which is the one thing the URL does
+        // reliably tell us.
+        if let handle = segments.first(where: { $0.hasPrefix("@") })
+            ?? segments.first(where: { seg in
+                seg.count > 1
+                    && !urlNoise.contains(seg.lowercased())
+                    && !seg.allSatisfy(\.isNumber)
+                    && platform != .web
+            }) {
+            let clean = handle.hasPrefix("@") ? handle : "@\(handle)"
+            return "\(clean) on \(platform.name)"
+        }
+
+        let host = (url.host ?? "").replacingOccurrences(of: "www.", with: "")
+        return host.isEmpty ? "Untitled brk" : "Link from \(host)"
+    }
+
+    /// True when the title is one we generated rather than one that came from
+    /// the page or the user — i.e. safe to overwrite once real metadata lands.
+    static func isDerivedTitle(_ title: String, for url: URL) -> Bool {
+        title.isEmpty || title == fallbackTitle(for: url)
     }
 
     /// Author is a handle for social posts, a hostname for the web.

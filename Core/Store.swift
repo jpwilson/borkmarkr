@@ -63,6 +63,8 @@ enum Store {
             if let text = draft.text { existing.text = text }
             if let duration = draft.durationSeconds { existing.durationSeconds = duration }
             if let note = draft.noteText { existing.noteText = note; existing.noteDate = draft.noteDate }
+            if let image = draft.imageURLString { existing.imageURLString = image }
+            if draft.previewFetched { existing.previewFetchedAt = .now }
             existing.deletedAt = nil
             if draft.isUnread { existing.isUnread = true }
             existing.touch()
@@ -78,6 +80,9 @@ enum Store {
             noteText: draft.noteText, noteDate: draft.noteDate,
             isUnread: draft.isUnread
         )
+        bookmark.imageURLString = draft.imageURLString
+        if draft.previewFetched { bookmark.previewFetchedAt = .now }
+        bookmark.rebuildSearchBlob()
         context.insert(bookmark)
         try context.save()
         return bookmark
@@ -155,4 +160,8 @@ struct BookmarkDraft: Codable, Sendable {
     var noteText: String?
     var noteDate: Date?
     var isUnread: Bool = false
+    var imageURLString: String?
+    /// Set when the Add flow already fetched metadata, so the background
+    /// fetcher doesn't immediately go and do it again.
+    var previewFetched: Bool = false
 }

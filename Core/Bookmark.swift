@@ -43,6 +43,19 @@ final class Bookmark {
     var noteText: String?
     var noteDate: Date?
 
+    /// Real thumbnail from oEmbed/Open Graph. Nil until fetched, or forever if
+    /// the platform doesn't publish one — the gradient cover is the fallback.
+    var imageURLString: String?
+    /// When we last tried, so a failed fetch isn't retried on every scroll.
+    var previewFetchedAt: Date?
+
+    /// Usage signal. Platform bookmarks are write-only graveyards precisely
+    /// because nothing records whether you ever went back to a thing — these
+    /// three fields are what make "surface what I actually revisit", "never
+    /// opened", and time-of-day insights possible later.
+    var openCount: Int = 0
+    var lastOpenedAt: Date?
+
     var savedAt: Date
     var updatedAt: Date
 
@@ -99,7 +112,21 @@ final class Bookmark {
     // MARK: - Derived
 
     var url: URL? { URL(string: urlString) }
+    var imageURL: URL? { imageURLString.flatMap(URL.init(string:)) }
     var platform: Platform { Platform(rawValue: platformRaw) ?? .web }
+
+    /// True when we've never tried, or tried long enough ago that a retry is
+    /// reasonable (pages gain OG tags; CDN thumbnails expire).
+    var needsPreview: Bool {
+        guard imageURLString == nil else { return false }
+        guard let previewFetchedAt else { return true }
+        return Date.now.timeIntervalSince(previewFetchedAt) > 60 * 60 * 24 * 7
+    }
+
+    func markOpened() {
+        openCount += 1
+        lastOpenedAt = .now
+    }
     var kind: ItemKind { ItemKind(rawValue: kindRaw) ?? .article }
     var category: Topic? { Taxonomy.category(id: categoryID) }
     var hasNote: Bool { !(noteText ?? "").isEmpty }

@@ -18,7 +18,14 @@ options:
 
 settings:
   base:
-    DEVELOPMENT_TEAM: AN6ZL34LC9
+    # Personal (free) team, so builds work today. Free teams cannot provision
+    # App Groups, so the group entitlement is commented out below — which means
+    # the Share Extension installs but cannot hand saves to the app.
+    #
+    # WHEN THE PAID MEMBERSHIP IS ACTIVE: switch this to the paid Team ID and
+    # uncomment BOTH `com.apple.security.application-groups` blocks. That single
+    # change re-enables share-sheet saving.
+    DEVELOPMENT_TEAM: 7RUN765V47
     TARGETED_DEVICE_FAMILY: "1"
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "6.0"
@@ -36,11 +43,11 @@ targets:
     dependencies:
       - target: ShareExtension
         embed: true
-    entitlements:
-      path: App/borkmarkr.entitlements
-      properties:
-        com.apple.security.application-groups:
-          - group.com.jpwilson.borkmarkr
+    # entitlements:                       # <- uncomment with the paid team
+    #   path: App/borkmarkr.entitlements
+    #   properties:
+    #     com.apple.security.application-groups:
+    #       - group.com.jpwilson.borkmarkr
     info:
       path: App/Info.plist
       properties:
@@ -65,11 +72,11 @@ targets:
       base:
         # Must nest under the app's identifier or the embed step fails.
         PRODUCT_BUNDLE_IDENTIFIER: com.jpwilson.borkmarkr.ShareExtension
-    entitlements:
-      path: ShareExtension/ShareExtension.entitlements
-      properties:
-        com.apple.security.application-groups:
-          - group.com.jpwilson.borkmarkr
+    # entitlements:                       # <- uncomment with the paid team
+    #   path: ShareExtension/ShareExtension.entitlements
+    #   properties:
+    #     com.apple.security.application-groups:
+    #       - group.com.jpwilson.borkmarkr
     info:
       path: ShareExtension/Info.plist
       properties:

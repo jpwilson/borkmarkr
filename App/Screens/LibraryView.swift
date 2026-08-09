@@ -18,6 +18,7 @@ struct LibraryView: View {
 
     @State private var sourceFilter: Platform?
     @State private var detail: Bookmark?
+    @StateObject private var previews = PreviewFetcher()
 
     private var visible: [Bookmark] {
         guard let sourceFilter else { return bookmarks }
@@ -30,10 +31,10 @@ struct LibraryView: View {
     }
 
     private var statsLine: String {
-        let saves = bookmarks.count
+        let brks = bookmarks.count
         let apps = Set(bookmarks.map(\.platform)).count
         let topics = Set(bookmarks.compactMap(\.categoryID)).count
-        return "\(saves) save\(saves == 1 ? "" : "s") · \(apps) app\(apps == 1 ? "" : "s") · \(topics) topic\(topics == 1 ? "" : "s")"
+        return "\(brks) \(Copy.brks(brks)) · \(apps) app\(apps == 1 ? "" : "s") · \(topics) topic\(topics == 1 ? "" : "s")"
     }
 
     var body: some View {
@@ -52,6 +53,11 @@ struct LibraryView: View {
                 .environment(\.accent, accent)
         }
         .onAppear(perform: markRead)
+        // Fill in real titles and thumbnails for anything still missing them.
+        // Keyed on count so a fresh batch of brks triggers another pass.
+        .task(id: bookmarks.count) {
+            await previews.fetchMissing(for: bookmarks, in: context)
+        }
     }
 
     private var header: some View {
@@ -95,7 +101,7 @@ struct LibraryView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Tokens.inkFaint)
-            Text("Search everything you saved")
+            Text("Search everything you've brk'd")
                 .font(Typo.ui(14))
                 .foregroundStyle(Tokens.inkMeta)
             Spacer()
@@ -183,33 +189,31 @@ struct LibraryView: View {
             }
             .padding(.horizontal, 18)
         } else {
-            GeometryReader { geo in
-                let columnWidth = (geo.size.width - 36 - 12) / 2
-                MasonryVStack(
-                    items: visible,
-                    spacing: 12,
-                    estimatedHeight: { BookmarkCard.estimatedHeight(for: $0, columnWidth: columnWidth) }
-                ) { bookmark in
-                    Button { detail = bookmark } label: {
-                        BookmarkCard(bookmark: bookmark)
-                    }
-                    .buttonStyle(.plain)
+            // No GeometryReader here. An earlier version wrapped this in one
+            // with a guessed `.frame(height:)`, which broke the layout outright
+            // — GeometryReader claims the whole proposal regardless of content,
+            // so with a short feed the cards were drawn over the filter row
+            // above them. MasonryVStack is an HStack of two LazyVStacks and
+            // already sizes to its content; it just needed to be left alone.
+            MasonryVStack(
+                items: visible,
+                spacing: 12,
+                estimatedHeight: { BookmarkCard.estimatedHeight(for: $0, columnWidth: Self.columnWidth) }
+            ) { bookmark in
+                Button { detail = bookmark } label: {
+                    BookmarkCard(bookmark: bookmark)
                 }
-                .padding(.horizontal, 18)
+                .buttonStyle(.plain)
             }
-            .frame(height: masonryHeight)
+            .padding(.horizontal, 18)
         }
     }
 
-    /// GeometryReader needs an explicit height inside a ScrollView. Estimate
-    /// the taller column and add slack — over-estimating costs empty space,
-    /// under-estimating clips cards, so this errs high.
-    private var masonryHeight: CGFloat {
-        let columnWidth: CGFloat = 170
-        let total = visible.reduce(CGFloat.zero) {
-            $0 + BookmarkCard.estimatedHeight(for: $1, columnWidth: columnWidth) + 12
-        }
-        return total / 2 + 240
+    /// Only feeds the height *estimate* that balances the two columns, so an
+    /// approximation from screen width is plenty — it never sets a real frame.
+    private static var columnWidth: CGFloat {
+        let screen = UIScreen.main.bounds.width
+        return (screen - 36 - 12) / 2
     }
 
     private func markRead() {

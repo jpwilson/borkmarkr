@@ -1,5 +1,41 @@
 import SwiftUI
 
+/// A real thumbnail when we have one, the category-hue gradient when we don't.
+///
+/// The gradient isn't a placeholder to be embarrassed about — Instagram and
+/// TikTok don't publish metadata to unauthenticated requests, so for those it's
+/// permanent. It stays deliberately handsome for that reason, and the image
+/// cross-fades in when it does arrive rather than popping.
+struct CoverImage: View {
+    let url: URL?
+    let palette: CategoryPalette
+
+    var body: some View {
+        ZStack {
+            gradient
+            if let url {
+                AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.22))) { phase in
+                    if case .success(let image) = phase {
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .transition(.opacity)
+                    }
+                }
+            }
+        }
+    }
+
+    private var gradient: some View {
+        LinearGradient(colors: [palette.coverTop, palette.coverBottom],
+                       startPoint: .topLeading, endPoint: .bottomTrailing)
+            .overlay(
+                RadialGradient(colors: [.white.opacity(0.16), .clear],
+                               center: .topLeading, startRadius: 0, endRadius: 180)
+            )
+    }
+}
+
 /// Platform badge — small rounded square, 7.5–12px/800 label.
 struct PlatformBadge: View {
     let platform: Platform
@@ -112,14 +148,9 @@ struct BookmarkCard: View {
     private var mediaCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topLeading) {
-                LinearGradient(colors: [palette.coverTop, palette.coverBottom],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                CoverImage(url: bookmark.imageURL, palette: palette)
                     .overlay(
-                        RadialGradient(colors: [.white.opacity(0.16), .clear],
-                                       center: .topLeading, startRadius: 0, endRadius: 180)
-                    )
-                    .overlay(
-                        LinearGradient(colors: [.clear, Color(hex: "0A0602").opacity(0.52)],
+                        LinearGradient(colors: [.clear, Color(hex: "0A0602").opacity(0.62)],
                                        startPoint: .center, endPoint: .bottom)
                     )
                     .frame(height: bookmark.coverHeight)
@@ -165,6 +196,19 @@ struct BookmarkCard: View {
     // MARK: Article — web
 
     private var articleCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Articles get a cover too when the page publishes an og:image —
+            // a wall of text-only cards is exactly the flat look we're avoiding.
+            if bookmark.imageURL != nil {
+                CoverImage(url: bookmark.imageURL, palette: palette)
+                    .frame(height: 112)
+                    .clipped()
+            }
+            articleBody
+        }
+    }
+
+    private var articleBody: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 6) {
                 Circle().fill(palette.dot).frame(width: 7, height: 7)
@@ -243,19 +287,19 @@ struct BookmarkRow: View {
     var body: some View {
         HStack(spacing: 11) {
             ZStack {
-                if bookmark.isTextPost {
+                if bookmark.isTextPost && bookmark.imageURL == nil {
                     LinearGradient(colors: [Color(hex: "2A2C33"), Color(hex: "111318")],
                                    startPoint: .topLeading, endPoint: .bottomTrailing)
                     Image(systemName: "quote.opening")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white.opacity(0.55))
                 } else {
-                    LinearGradient(colors: [palette.coverTop, palette.coverBottom],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                    CoverImage(url: bookmark.imageURL, palette: palette)
                     if bookmark.isVideo {
                         Image(systemName: "play.fill")
                             .font(.system(size: 13, weight: .black))
                             .foregroundStyle(.white.opacity(0.9))
+                            .shadow(color: .black.opacity(0.4), radius: 3)
                     }
                 }
             }
