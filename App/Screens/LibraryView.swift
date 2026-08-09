@@ -137,7 +137,10 @@ struct LibraryView: View {
     }
 
     private func chip(_ label: String, active: Bool, tap: @escaping () -> Void) -> some View {
-        Button(action: tap) {
+        Button {
+            Haptics.tap()
+            withAnimation(Motion.snap) { tap() }
+        } label: {
             Text(label)
                 .font(Typo.ui(12.5, .semibold))
                 .foregroundStyle(active ? .white : Tokens.inkSecondary)
@@ -147,7 +150,7 @@ struct LibraryView: View {
                 .overlay(Capsule().stroke(active ? .clear : Tokens.hairline, lineWidth: 1))
                 .tappableChip()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChipStyle())
     }
 
     private var densityToggle: some View {
@@ -184,7 +187,7 @@ struct LibraryView: View {
                     Button { detail = bookmark } label: {
                         BookmarkRow(bookmark: bookmark)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressableStyle())
                 }
             }
             .padding(.horizontal, 18)
@@ -203,7 +206,7 @@ struct LibraryView: View {
                 Button { detail = bookmark } label: {
                     BookmarkCard(bookmark: bookmark)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableStyle())
             }
             .padding(.horizontal, 18)
         }

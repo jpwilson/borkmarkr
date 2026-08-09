@@ -15,6 +15,7 @@ struct YouView: View {
     private var collections: [BookmarkCollection]
 
     @State private var showingHowTo = false
+    @State private var showingImport = false
 
     private var thisWeek: Int {
         let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
@@ -26,6 +27,7 @@ struct YouView: View {
             VStack(alignment: .leading, spacing: 18) {
                 profile
                 stats
+                importHint
                 shareHint
                 if !collections.isEmpty { collectionsBlock }
                 appearance
@@ -37,6 +39,9 @@ struct YouView: View {
         .background(Tokens.paper)
         .sheet(isPresented: $showingHowTo) {
             HowToSheet().environment(\.accent, accent)
+        }
+        .sheet(isPresented: $showingImport) {
+            ImportSheet { _ in }.environment(\.accent, accent)
         }
     }
 
@@ -79,6 +84,35 @@ struct YouView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .cardSurface(radius: 18)
+    }
+
+    /// The cold-start fix, given prominence: most people arrive with thousands
+    /// of saves already sitting in other apps.
+    private var importHint: some View {
+        Button { showingImport = true } label: {
+            HStack(spacing: 11) {
+                Image(systemName: "square.and.arrow.down")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(Tokens.ink, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Import what you've already saved")
+                        .font(Typo.ui(14, .bold))
+                        .foregroundStyle(Tokens.ink)
+                    Text("X, Instagram, TikTok, YouTube, browser bookmarks")
+                        .font(Typo.ui(12, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Tokens.inkFaint)
+            }
+            .padding(14)
+            .cardSurface(radius: 18)
+        }
+        .buttonStyle(PressableStyle())
     }
 
     private var shareHint: some View {

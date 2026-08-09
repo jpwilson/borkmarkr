@@ -13,8 +13,14 @@ struct BrowseView: View {
     @State private var path = NavigationPath()
 
     enum Axis: String, CaseIterable {
-        case topics, sources
-        var title: String { self == .topics ? "Topics" : "Sources" }
+        case topics, sources, missions
+        var title: String {
+            switch self {
+            case .topics: "Topics"
+            case .sources: "Sources"
+            case .missions: "Missions"
+            }
+        }
     }
 
     @Query(
@@ -36,7 +42,11 @@ struct BrowseView: View {
 
                     segmented
 
-                    if axis == .topics { topicsGrid } else { sourcesList }
+                    switch axis {
+                    case .topics: topicsGrid
+                    case .sources: sourcesList
+                    case .missions: MissionsView()
+                    }
                 }
                 .padding(.bottom, 120)
             }
