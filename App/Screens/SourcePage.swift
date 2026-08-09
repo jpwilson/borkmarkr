@@ -53,7 +53,7 @@ struct SourcePage: View {
             HStack {
                 PlatformBadge(platform: platform, size: 46)
                 Spacer()
-                Text(Copy.countedBrks(inSource.count))
+                Text(Copy.countedBorks(inSource.count))
                     .font(Typo.ui(12, .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 11)

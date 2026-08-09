@@ -31,10 +31,10 @@ struct LibraryView: View {
     }
 
     private var statsLine: String {
-        let brks = bookmarks.count
+        let borks = bookmarks.count
         let apps = Set(bookmarks.map(\.platform)).count
         let topics = Set(bookmarks.compactMap(\.categoryID)).count
-        return "\(brks) \(Copy.brks(brks)) · \(apps) app\(apps == 1 ? "" : "s") · \(topics) topic\(topics == 1 ? "" : "s")"
+        return "\(borks) \(Copy.borks(borks)) · \(apps) app\(apps == 1 ? "" : "s") · \(topics) topic\(topics == 1 ? "" : "s")"
     }
 
     var body: some View {
@@ -101,7 +101,7 @@ struct LibraryView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Tokens.inkFaint)
-            Text("Search everything you've brk'd")
+            Text(Copy.searchPlaceholder)
                 .font(Typo.ui(14))
                 .foregroundStyle(Tokens.inkMeta)
             Spacer()

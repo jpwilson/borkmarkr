@@ -82,7 +82,7 @@ struct TopicPage: View {
                         .font(Typo.display(28, .heavy))
                         .tracking(-0.6)
                         .foregroundStyle(category.palette.deep)
-                    Text(Copy.countedBrks(inCategory.count))
+                    Text(Copy.countedBorks(inCategory.count))
                         .font(Typo.ui(12.5, .medium))
                         .foregroundStyle(category.palette.deep.opacity(0.75))
                 }

@@ -181,7 +181,7 @@ struct ImportSheet: View {
             }
 
             Button(action: runImport) {
-                Text("Import \(Copy.countedBrks(outcome.candidates.count))")
+                Text("Import \(Copy.countedBorks(outcome.candidates.count))")
                     .font(Typo.ui(15.5, .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -201,7 +201,7 @@ struct ImportSheet: View {
             ProgressView(value: progress)
                 .tint(accent.base)
                 .padding(.horizontal, 40)
-            Text("Filing \(Copy.countedBrks(outcome.candidates.count))…")
+            Text("Filing \(Copy.countedBorks(outcome.candidates.count))…")
                 .font(Typo.ui(14, .semibold))
                 .foregroundStyle(Tokens.inkSecondary)
             Text("Titles and thumbnails fill in afterwards.")
@@ -216,7 +216,7 @@ struct ImportSheet: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 46))
                 .foregroundStyle(accent.base)
-            Text("\(Copy.countedBrks(imported)) imported")
+            Text("\(Copy.countedBorks(imported)) imported")
                 .font(Typo.display(21, .heavy))
                 .foregroundStyle(Tokens.ink)
             Text("They're sorted into topics already. Titles and thumbnails will keep filling in while you browse.")

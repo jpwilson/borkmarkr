@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Missions — what you're trying to become, and the brks that serve it.
+/// Missions — what you're trying to become, and the borks that serve it.
 struct MissionsView: View {
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
@@ -64,7 +64,7 @@ struct MissionsView: View {
                     .font(Typo.display(19, .heavy))
                     .foregroundStyle(Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("A faster runner. A morning person. Someone who actually cooks. Attach the brks that help, and tick it off daily.")
+                Text("A faster runner. A morning person. Someone who actually cooks. Attach the borks that help, and tick it off daily.")
                     .font(Typo.ui(13.5))
                     .foregroundStyle(Tokens.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -120,7 +120,7 @@ private struct MissionCard: View {
                                     .padding(.horizontal, 8).padding(.vertical, 3)
                                     .background(palette.tint, in: Capsule())
                             }
-                            Text("\(mission.bookmarkIDs.count) \(Copy.brks(mission.bookmarkIDs.count))")
+                            Text("\(mission.bookmarkIDs.count) \(Copy.borks(mission.bookmarkIDs.count))")
                                 .font(Typo.ui(11.5, .medium))
                                 .foregroundStyle(Tokens.inkMeta)
                         }
@@ -354,7 +354,7 @@ struct MissionDetailSheet: View {
 
                     section("ATTACHED", count: attached.count)
                     if attached.isEmpty {
-                        Text("Nothing attached yet. Pull in the brks that actually help.")
+                        Text("Nothing attached yet. Pull in the borks that actually help.")
                             .font(Typo.ui(13))
                             .foregroundStyle(Tokens.inkSecondary)
                     } else {

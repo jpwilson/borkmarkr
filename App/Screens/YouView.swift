@@ -66,7 +66,7 @@ struct YouView: View {
 
     private var stats: some View {
         HStack(spacing: 10) {
-            statTile("\(bookmarks.count)", "brks")
+            statTile("\(bookmarks.count)", "borks")
             statTile("\(Set(bookmarks.compactMap(\.categoryID)).count)", "topics")
             statTile("\(thisWeek)", "this week")
         }
@@ -163,7 +163,7 @@ struct YouView: View {
                         Text(collection.name)
                             .font(Typo.ui(14, .semibold))
                             .foregroundStyle(Tokens.ink)
-                        Text(Copy.countedBrks(collection.count))
+                        Text(Copy.countedBorks(collection.count))
                             .font(Typo.ui(11.5, .medium))
                             .foregroundStyle(Tokens.inkMeta)
                     }
