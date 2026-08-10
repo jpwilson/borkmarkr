@@ -56,6 +56,7 @@
 		EE7D84676997EFB8049226B7 /* AuthSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF909279FB420B93DF4052F /* AuthSheet.swift */; };
 		FBB12614782641CF156F0DDF /* CustomSubtopic.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E2561707E17515E4370A4C /* CustomSubtopic.swift */; };
 		FD05C7AA7B54AD7614A26410 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDEAAC2448C326E2BE87817 /* SearchView.swift */; };
+		FEA2BEEA8FF522D12E774522 /* ScreenshotDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01FDBE763C913D9F86D91E3 /* ScreenshotDefaults.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -109,6 +110,7 @@
 		9883626D300D557C8B8F2061 /* YouView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouView.swift; sourceTree = "<group>"; };
 		990CE9B08FEB9BF177C21611 /* Platform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Platform.swift; sourceTree = "<group>"; };
 		A40712F07BE93C8B2F47CACA /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
+		B01FDBE763C913D9F86D91E3 /* ScreenshotDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDefaults.swift; sourceTree = "<group>"; };
 		B61EA7E6AEBDAC784261C9AD /* Bookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bookmark.swift; sourceTree = "<group>"; };
 		B6EFED0D5A77564B19E2159D /* LinkPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkPreview.swift; sourceTree = "<group>"; };
 		BADA1DD4A470DDE392E9E348 /* Masonry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Masonry.swift; sourceTree = "<group>"; };
@@ -125,7 +127,7 @@
 		DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
 		F91794C010FF35E650EB340F /* borkmarkr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = borkmarkr.entitlements; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_80698AC2-91BC-403D-913E-DA14ED22D13F" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_35A0F9BE-2E09-4892-84BC-8A1F31B8929C" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -179,6 +181,7 @@
 				0C34F5782F5C8CE42FCA779B /* Info.plist */,
 				3DF1F7D7C8F1A3D71B054BBB /* PreviewFetcher.swift */,
 				C1CA06BC436065B1A852B227 /* RootView.swift */,
+				B01FDBE763C913D9F86D91E3 /* ScreenshotDefaults.swift */,
 				DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */,
 				BA8CEE91D89E2D173C22AD21 /* Components */,
 				C68779537C81C72108BA8E40 /* DesignSystem */,
@@ -233,10 +236,10 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		"TEMP_47A695FA-FEB2-462B-9898-602C242D5EFD" /* borkmarkr */ = {
+		"TEMP_5D939332-2FA3-44CF-BABE-12CCE533B07A" /* borkmarkr */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_80698AC2-91BC-403D-913E-DA14ED22D13F" /* Config.xcconfig */,
+				"TEMP_35A0F9BE-2E09-4892-84BC-8A1F31B8929C" /* Config.xcconfig */,
 			);
 			path = borkmarkr;
 			sourceTree = "<group>";
@@ -360,6 +363,7 @@
 				8A3961190102DEA781DA0DE9 /* Platform.swift in Sources */,
 				E4AD70612CDCF96B4CA5E4AC /* PreviewFetcher.swift in Sources */,
 				479D2D8E66358814CD4DC70B /* RootView.swift in Sources */,
+				FEA2BEEA8FF522D12E774522 /* ScreenshotDefaults.swift in Sources */,
 				FD05C7AA7B54AD7614A26410 /* SearchView.swift in Sources */,
 				07A3E5E75659299B8276A81D /* SemanticIndex.swift in Sources */,
 				D7089D86A614BA58428D49DF /* SmartCategorizer.swift in Sources */,
@@ -406,7 +410,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_80698AC2-91BC-403D-913E-DA14ED22D13F" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_35A0F9BE-2E09-4892-84BC-8A1F31B8929C" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -493,7 +497,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_80698AC2-91BC-403D-913E-DA14ED22D13F" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_35A0F9BE-2E09-4892-84BC-8A1F31B8929C" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;

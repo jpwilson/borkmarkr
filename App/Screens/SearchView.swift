@@ -17,8 +17,8 @@ struct SearchView: View {
     )
     private var all: [Bookmark]
 
-    @State private var query = ""
-    @State private var debounced = ""
+    @State private var query = ScreenshotDefaults.searchQuery
+    @State private var debounced = ScreenshotDefaults.searchQuery
     @State private var sources: Set<Platform> = []
     @State private var topics: Set<String> = []
     @State private var recents: [String] = []
