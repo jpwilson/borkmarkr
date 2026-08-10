@@ -15,8 +15,9 @@ borkmarkr
 
 **Subtitle** (30 char max — this is the line under the name in search)
 ```
-Save links from every app
+All your links, in one place
 ```
+*(28 chars. Alternative if you prefer the source emphasis: `Save links from every app`.)*
 
 **Category** · Primary: `Productivity` · Secondary: `Utilities`
 
@@ -51,6 +52,8 @@ Everything you save on Instagram, X, TikTok and YouTube ends up in one library y
 You save things everywhere. A reel on Instagram, a thread on X, a clip on TikTok, a video on YouTube. Then you never find any of it again.
 
 Every app has its own saved list. None of them are titled, sorted or searchable. borkmarkr is the one library that sits above all of them.
+
+Put simply: it's a good way to organise all your useful links, from every app, in one place.
 
 SAVE FROM ANYWHERE
 Tap Share in any app and pick borkmarkr. The link is saved with its title, the account that posted it and a thumbnail. Or paste a link straight into the app.
@@ -146,6 +149,25 @@ This is a preconfigured review-only account.
 - Used for tracking: **No**
 - Purpose: **App Functionality** only
 
+### Sharing — what to declare, and when
+
+**Today: nothing extra.** The only sharing in the build is iOS's own share
+sheet — you tap Share and *you* send a link or a plain-text list somewhere.
+That's the user acting through the system, not the app collecting or
+transmitting anything, and Apple doesn't ask you to declare it.
+
+**When the friend feed ships, this changes** and both this label and the
+privacy policy must be updated on the same day:
+- User Content stays *Linked to the user*, but you must also tick that it is
+  **shared with other users**.
+- The policy needs a paragraph: which links become visible, to whom, that it
+  only ever happens when the owner explicitly grants access, and how to revoke.
+
+Worth being precise about what's shared even then: **the link and its title,
+not the post**. Someone opening a shared collection gets a list of links that
+take them to Instagram or YouTube. No content of anyone's is copied, stored or
+republished — which is exactly why this stays a low-risk feature.
+
 **Everything else** → Not Collected. Specifically say **No** to:
 Identifiers, Usage Data, Diagnostics, Location, Contacts, Browsing History,
 Search History, Purchases, Financial Info, Health, Sensitive Info.
@@ -186,8 +208,16 @@ notes — "no account required" already covers the requirement on its own.
 
 ## Screenshots
 
-Required: 6.9" iPhone (1320 × 2868). Use your own device with a real library —
-an empty app makes a bad first screenshot.
+Required: 6.9" iPhone — **1320 × 2868**, which is exactly what your iPhone 17
+Pro Max produces. So: screenshot on your phone (side button + volume up),
+AirDrop them to the Mac, upload. No editing, no mockup tool, no resizing.
+
+Three practical notes:
+- Apple accepts as few as one, but 3–5 is normal. You can reorder them later.
+- Check nothing personal is on screen — a real saved link with your name, or a
+  notification banner mid-screenshot.
+- Use a library with real content. An empty app is a bad first impression, and
+  the first screenshot is most of the decision.
 
 Worth capturing, in this order:
 1. **Library** with a full masonry feed — the visual signature
