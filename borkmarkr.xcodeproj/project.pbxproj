@@ -122,7 +122,7 @@
 		DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
 		F91794C010FF35E650EB340F /* borkmarkr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = borkmarkr.entitlements; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_BDAE11B1-41FA-4E96-AA7F-4D4B0F4EB085" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_F43990C7-6235-409A-B1CD-ADE6924180FD" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -229,10 +229,10 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		"TEMP_AD82BFA7-747A-420A-9E19-375B09021FA3" /* borkmarkr */ = {
+		"TEMP_B7256F30-0D77-4567-BB5A-8A7661D98D0C" /* borkmarkr */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_BDAE11B1-41FA-4E96-AA7F-4D4B0F4EB085" /* Config.xcconfig */,
+				"TEMP_F43990C7-6235-409A-B1CD-ADE6924180FD" /* Config.xcconfig */,
 			);
 			path = borkmarkr;
 			sourceTree = "<group>";
@@ -400,7 +400,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_BDAE11B1-41FA-4E96-AA7F-4D4B0F4EB085" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_F43990C7-6235-409A-B1CD-ADE6924180FD" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -455,7 +455,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -487,7 +487,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_BDAE11B1-41FA-4E96-AA7F-4D4B0F4EB085" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_F43990C7-6235-409A-B1CD-ADE6924180FD" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -536,7 +536,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

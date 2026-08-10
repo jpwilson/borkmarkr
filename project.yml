@@ -22,19 +22,12 @@ configFiles:
 
 settings:
   base:
-    # Personal (free) team, so builds work today. Free teams cannot provision
-    # App Groups, so the group entitlement is commented out below — which means
-    # the Share Extension installs but cannot hand saves to the app.
-    #
-    # WHEN THE PAID MEMBERSHIP IS ACTIVE: switch this to the paid Team ID and
-    # uncomment BOTH `com.apple.security.application-groups` blocks. That single
-    # change re-enables share-sheet saving.
     DEVELOPMENT_TEAM: 7RUN765V47
     TARGETED_DEVICE_FAMILY: "1"
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
