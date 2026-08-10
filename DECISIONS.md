@@ -109,6 +109,42 @@ are added; a curated hint layer covers only the phrases people actually write
 that no label contains. Includes light stemming (both sides), so "stretches"
 matches "Stretching" and "detailed" matches "Detailing".
 
+**AI categorisation is a second pass, not the first one.** The keyword categoriser
+still runs first on every save: it's instant, free, works offline and signed out,
+and handles most links. The model is called only when that pass came back empty or
+on thin evidence (`Suggestion.isConfident`), and only when signed in. Three reasons
+that ordering rather than "always ask the model":
+
+1. **Saving must never wait on the network** — the core product rule. The offline
+   answer is on screen before the request is even sent, and the sheet is fully
+   interactive; the AI result arrives and updates a chip, or doesn't.
+2. **Cost tracks the hard cases.** ~2.2k input tokens per call on Haiku is about a
+   quarter of a cent. Paying that on every save is roughly $25 per 10,000 saves;
+   paying it only on the fall-through is a fraction of that, for the same
+   user-visible quality — the easy links were already right.
+3. **Every failure mode is already handled.** Signed out, offline, quota spent, key
+   unset, server down, taxonomy drift — all of them mean "keep the offline answer",
+   which is a working answer, not an error state.
+
+**The Anthropic key is server-side, and that is not negotiable.** It lives in a
+Supabase Edge Function's environment. A key shipped inside an iOS binary is a key
+published to everyone who downloads the app — `strings` on an `.ipa` is all it
+takes — and the bill lands on the developer. The app authenticates with the user's
+own Supabase JWT and never sees the key.
+
+**Spend is bounded server-side, not by client behaviour.** A per-user daily quota
+(`ai_quota_consume`) is consumed *before* the model is called, and fails closed:
+anonymous callers are denied at the grant level, and if the quota check itself
+errors the function skips the model rather than risk an unmetered call. A public
+anon key plus a retry loop is otherwise all it takes to spend someone else's money.
+
+**The model's answer is validated against the app's own taxonomy.** The function
+embeds a generated copy of the taxonomy (`Scripts/gen_taxonomy_ts.py`), which can
+drift from the app across a redeploy-without-release. So `SmartCategorizer` drops
+topic IDs this build doesn't have and case-matches subtopics against the real list.
+Drift degrades to "not filed" rather than to a bookmark filed under a category that
+doesn't exist and is invisible in Browse.
+
 ---
 
 ## Known gaps

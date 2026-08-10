@@ -25,6 +25,23 @@ enum Categorizer {
         var categoryID: String?
         var subcategory: String?
         var tags: [String]
+
+        /// Weight of the keyword evidence behind `categoryID`. Zero when
+        /// nothing matched. Exposed so callers can tell "I'm sure this is
+        /// Fitness" from "one short word happened to line up", which is the
+        /// difference between showing the answer and asking a better one.
+        var score: Int = 0
+
+        /// Above this, the offline answer is worth trusting on its own.
+        ///
+        /// Calibrated against the matcher weights: a subcategory match scores
+        /// `phrase.count + 6`, halved when it only appears in the URL. So the
+        /// shortest possible single title match ("Bags" → 11) sits below this
+        /// and a URL-only match (5) well below, while a real headline match or
+        /// two independent signals clear it comfortably.
+        static let confidentScore = 14
+
+        var isConfident: Bool { categoryID != nil && score >= Self.confidentScore }
     }
 
     // MARK: - Curated signals
@@ -208,7 +225,8 @@ enum Categorizer {
         return Suggestion(
             categoryID: bestCategory,
             subcategory: subScores[bestCategory]?.sub,
-            tags: topTags + [platform.name.lowercased()]
+            tags: topTags + [platform.name.lowercased()],
+            score: bestScore
         )
     }
 

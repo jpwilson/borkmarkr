@@ -161,6 +161,28 @@ enum Supabase {
         return try await send(request)
     }
 
+    // MARK: - Edge Functions
+
+    /// Calls an Edge Function as the signed-in user.
+    ///
+    /// Functions are where anything needing a secret lives — the app never
+    /// holds a key it shouldn't. `Data` in and out for the same `Sendable`
+    /// reason as `upsert`.
+    static func invoke(function: String, bodyJSON: Data,
+                       session: Session, timeout: TimeInterval = 12) async throws -> Data {
+        guard let config = Config.current else { throw Failure.notConfigured }
+
+        var request = URLRequest(url: config.url.appendingPathComponent("functions/v1/\(function)"))
+        request.httpMethod = "POST"
+        request.setValue(config.anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = bodyJSON
+        request.timeoutInterval = timeout
+
+        return try await send(request)
+    }
+
     // MARK: - Plumbing
 
     private static func post(path: String, body: [String: Any],

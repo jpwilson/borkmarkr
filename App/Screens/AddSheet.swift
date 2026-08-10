@@ -13,6 +13,9 @@ import UIKit
 struct AddSheet: View {
     var initialURL: URL?
     let onSaved: (String) -> Void
+    /// Only used to reach AI categorisation, which needs a signed-in session.
+    /// Optional so the sheet still works in previews and when signed out.
+    var account: Account?
 
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
@@ -474,6 +477,42 @@ struct AddSheet: View {
             tags = suggestion.tags
 
             withAnimation(.easeOut(duration: 0.22)) { step = .details }
+
+            // The offline answer is already on screen and editable. If it came
+            // back empty or thin, ask the model — but never make the user wait
+            // for it, and never let it overwrite a choice they've since made.
+            await refineCategory(url: url, offline: suggestion)
+        }
+    }
+
+    /// Second-pass categorisation for the links keyword matching can't place.
+    ///
+    /// Runs after the sheet is already interactive, so the cost is a chip
+    /// changing under a thumb that hasn't moved yet rather than a spinner.
+    /// Silent on every failure: signed out, offline, quota spent, server down —
+    /// all of them just leave the offline answer where it is.
+    private func refineCategory(url: URL, offline: Categorizer.Suggestion) async {
+        guard !offline.isConfident else { return }
+        guard let account, let session = await account.currentSession() else { return }
+
+        guard let better = await SmartCategorizer.suggest(
+            url: url,
+            title: title,
+            author: author,
+            tags: tags.filter { !offline.tags.contains($0) },
+            session: session
+        ) else { return }
+
+        // The user may have picked a topic themselves while this was in
+        // flight. Their choice wins — always.
+        guard categoryID == offline.categoryID, subcategory == offline.subcategory else { return }
+
+        withAnimation(.easeOut(duration: 0.2)) {
+            categoryID = better.categoryID
+            subcategory = better.subcategory
+            // Merge rather than replace: tags the user typed in the meantime
+            // stay, and the platform tag isn't duplicated.
+            for tag in better.tags where !tags.contains(tag) { tags.append(tag) }
         }
     }
 

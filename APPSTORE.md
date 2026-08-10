@@ -118,6 +118,9 @@ HOW TO TEST SAVING
 TESTING THE SHARE EXTENSION (optional)
 In Safari or another app, tap Share, then More, and enable "borkmarkr". Sharing a link saves it directly.
 
+AUTOMATIC FILING
+Links are sorted into topics on-device by keyword matching. For links that can't be placed that way, a signed-in user's link URL and title are sent to our server, which asks a language model (Anthropic Claude) for a suggested topic. The suggestion is shown to the user and can be changed before saving. Signed-out users get on-device filing only. No API key ships in the app; the call is made server-side.
+
 TESTING SIGN-IN (optional)
 Sign-in uses a six-digit code sent by email — no password. If you wish to test it, use:
   Email: appreview@borkmarkr.app
@@ -148,6 +151,17 @@ This is a preconfigured review-only account.
 - Linked to the user: **Yes**
 - Used for tracking: **No**
 - Purpose: **App Functionality** only
+
+### Automatic filing — already covered above
+
+The AI topic suggestion sends a signed-in user's link URL and title to Anthropic
+via our own server. That's **User Content, used for App Functionality**, which
+is exactly what's already ticked — Anthropic is a service provider acting on our
+behalf, not a party we share data *with* in Apple's sense, and none of it is
+used for tracking or advertising. So there is nothing extra to tick here.
+
+It does need to be in the privacy policy, and it is: see the "Automatic filing"
+section at `docs/privacy.html`.
 
 ### Sharing — what to declare, and when
 
@@ -188,11 +202,25 @@ rating on its own and answering No would be untrue.
 
 ---
 
-## Before you submit — the one thing that needs doing
+## Before you submit — the things only you can do
 
-The review account above only works once a fixed test code is configured, or
-the reviewer cannot receive the email. In the Supabase dashboard:
+**1. Anthropic API key** (optional — the app ships fine without it)
 
+AI topic suggestion is dark until a key is set. Supabase dashboard →
+**Edge Functions → categorize → Secrets**, or:
+```
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+```
+Get the key at console.anthropic.com. Nothing else needs it, and it never
+leaves the server — do not put it in `Config.xcconfig`, the app, or the repo.
+
+Until it's set, every save falls back to on-device filing, which is the same
+behaviour signed-out users get. Nothing breaks, nothing errors.
+
+**2. Review test code** (needed only if you keep the sign-in paragraph)
+
+The review account only works once a fixed test code is configured, or the
+reviewer cannot receive the email. Supabase dashboard →
 **Authentication → Sign In / Providers → Email → Test OTPs**, add:
 ```
 appreview@borkmarkr.app = 123456

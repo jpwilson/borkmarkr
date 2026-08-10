@@ -75,7 +75,7 @@ struct RootView: View {
             AddSheet(onSaved: { message in
                 showToast(message)
                 tab = .library
-            })
+            }, account: account)
             .environment(\.accent, accent)
         }
         .fullScreenCover(isPresented: .constant(!hasOnboarded)) {

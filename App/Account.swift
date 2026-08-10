@@ -49,6 +49,17 @@ final class Account: ObservableObject {
         UserDefaults.standard.removeObject(forKey: lastSyncKey)
     }
 
+    /// A session with a usable access token, or `nil`.
+    ///
+    /// For callers that want the network *if* it's available and should quietly
+    /// do without otherwise — AI categorisation, not sync. Signed out, a failed
+    /// refresh and an expired refresh token all look the same from here on
+    /// purpose: there is nothing for the caller to do differently.
+    func currentSession() async -> Supabase.Session? {
+        guard session != nil else { return nil }
+        return try? await validSession()
+    }
+
     /// Refreshes silently when the access token is close to expiry.
     private func validSession() async throws -> Supabase.Session {
         guard var current = session else { throw Supabase.Failure.notConfigured }
