@@ -146,7 +146,25 @@ struct TabDock: View {
             .frame(height: 64)
             .background(
                 RoundedRectangle(cornerRadius: Tokens.dockRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    // Paper UNDER the glass, not instead of it.
+                    //
+                    // `.ultraThinMaterial` alone takes its lightness from
+                    // whatever is behind it, and the feed scrolls behind the
+                    // dock. Over a dark media cover the material went dark too
+                    // and the inactive tabs — `inkFaint` on nothing — vanished
+                    // completely: a screenshot of the Library caught "Browse"
+                    // as an invisible gap between Library and the + button.
+                    //
+                    // An opaque fill would fix the contrast and kill the depth.
+                    // A near-opaque paper layer beneath the material keeps the
+                    // translucency reading as glass while pinning the effective
+                    // background light, so contrast no longer depends on what
+                    // the user happens to have scrolled to.
+                    .fill(Tokens.paper.opacity(0.82))
+                    .background(
+                        RoundedRectangle(cornerRadius: Tokens.dockRadius, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                    )
                     .overlay(
                         RoundedRectangle(cornerRadius: Tokens.dockRadius, style: .continuous)
                             .stroke(Tokens.hairline, lineWidth: 1)
@@ -180,7 +198,10 @@ struct TabDock: View {
                 Text(target.title)
                     .font(Typo.ui(9.5, .semibold))
             }
-            .foregroundStyle(tab == target ? accent.base : Tokens.inkFaint)
+            // `inkFaint` is a decorative grey — 2.4:1 on paper, and this is a
+            // primary navigation control, not a hint. `inkSecondary` reads as
+            // clearly unselected while staying legible.
+            .foregroundStyle(tab == target ? accent.base : Tokens.inkSecondary)
             .frame(maxWidth: .infinity)
             .frame(height: 64)
             .contentShape(Rectangle())
