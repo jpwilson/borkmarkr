@@ -109,10 +109,10 @@ struct BookmarkCard: View {
         Group {
             if bookmark.isTextPost {
                 textCard
-            } else if bookmark.isArticle {
-                articleCard
-            } else {
+            } else if bookmark.isMedia {
                 mediaCard
+            } else {
+                articleCard
             }
         }
         .cardSurface(strong: bookmark.isMedia)
@@ -121,7 +121,7 @@ struct BookmarkCard: View {
     // MARK: Text post — X / Threads
 
     private var textCard: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 PlatformBadge(platform: bookmark.platform, size: 20)
                 Text(bookmark.author ?? bookmark.platform.name)
@@ -130,30 +130,30 @@ struct BookmarkCard: View {
                     .lineLimit(1)
             }
 
-            Text(bookmark.text ?? bookmark.title)
-                .font(Typo.ui(13, .regular))
+            Text(bookmark.text ?? bookmark.displayTitle)
+                .font(Typo.ui(13.5, .regular))
                 .foregroundStyle(Tokens.bodyOnWhite)
-                .lineLimit(6)
+                .lineLimit(8)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
 
             footer(label: bookmark.category?.name)
         }
-        .padding(12)
+        .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Media cover — TikTok / IG / Shorts / YouTube / Pinterest
 
+    /// Title sits *under* the cover, not painted on it. Overlay titles with
+    /// `fixedSize` escaped a fixed-height ZStack and drew on the next card —
+    /// that's the squash the Library was showing.
     private var mediaCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topLeading) {
                 CoverImage(url: bookmark.imageURL, palette: palette)
-                    .overlay(
-                        LinearGradient(colors: [.clear, Color(hex: "0A0602").opacity(0.62)],
-                                       startPoint: .center, endPoint: .bottom)
-                    )
                     .frame(height: bookmark.coverHeight)
+                    .frame(maxWidth: .infinity)
                     .clipped()
 
                 HStack(alignment: .top) {
@@ -172,24 +172,22 @@ struct BookmarkCard: View {
                     }
                 }
                 .padding(9)
-
-                VStack {
-                    Spacer()
-                    Text(bookmark.title)
-                        .font(Typo.ui(13.5, .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(11)
-                .frame(height: bookmark.coverHeight, alignment: .bottom)
             }
             .frame(height: bookmark.coverHeight)
+            .frame(maxWidth: .infinity)
+            .clipped()
 
-            footer(label: bookmark.subcategory ?? bookmark.category?.name)
-                .padding(11)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(bookmark.displayTitle)
+                    .font(Typo.ui(13.5, .semibold))
+                    .foregroundStyle(Tokens.ink)
+                    .lineLimit(3)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                footer(label: bookmark.subcategory ?? bookmark.category?.name)
+            }
+            .padding(11)
         }
     }
 
@@ -219,7 +217,7 @@ struct BookmarkCard: View {
                     .lineLimit(1)
             }
 
-            Text(bookmark.title)
+            Text(bookmark.displayTitle)
                 .font(Typo.display(14.5, .semibold))
                 .foregroundStyle(Tokens.ink)
                 .lineLimit(3)
@@ -257,21 +255,25 @@ struct BookmarkCard: View {
     /// has to rank cards against each other, not match the final frame.
     static func estimatedHeight(for bookmark: Bookmark, columnWidth: CGFloat) -> CGFloat {
         let footerHeight: CGFloat = 30
+        let title = bookmark.displayTitle
 
         if bookmark.isTextPost {
-            let body = bookmark.text ?? bookmark.title
-            let charsPerLine = max(1, Int(columnWidth / 6.6))
-            let lines = min(6, max(1, Int(ceil(Double(body.count) / Double(charsPerLine)))))
-            return 24 + CGFloat(lines) * 17 + footerHeight + 24
+            let body = bookmark.text ?? title
+            let charsPerLine = max(1, Int(columnWidth / 7.2))
+            let lines = min(8, max(1, Int(ceil(Double(body.count) / Double(charsPerLine)))))
+            return 26 + CGFloat(lines) * 18 + footerHeight + 26
         }
 
-        if bookmark.isArticle {
-            let charsPerLine = max(1, Int(columnWidth / 7.4))
-            let lines = min(3, max(1, Int(ceil(Double(bookmark.title.count) / Double(charsPerLine)))))
-            return 22 + CGFloat(lines) * 19 + footerHeight + 24
+        if bookmark.isMedia {
+            let charsPerLine = max(1, Int(columnWidth / 7.2))
+            let lines = min(3, max(1, Int(ceil(Double(title.count) / Double(charsPerLine)))))
+            return bookmark.coverHeight + 11 + CGFloat(lines) * 18 + footerHeight + 11
         }
 
-        return bookmark.coverHeight + footerHeight + 22
+        let charsPerLine = max(1, Int(columnWidth / 7.4))
+        let lines = min(3, max(1, Int(ceil(Double(title.count) / Double(charsPerLine)))))
+        let cover: CGFloat = bookmark.imageURL != nil ? 112 : 0
+        return cover + 22 + CGFloat(lines) * 19 + footerHeight + 24
     }
 }
 
@@ -321,7 +323,7 @@ struct BookmarkRow: View {
                         .foregroundStyle(Tokens.inkMeta)
                 }
 
-                Text(bookmark.title)
+                Text(bookmark.displayTitle)
                     .font(Typo.ui(13.5, .semibold))
                     .foregroundStyle(Tokens.ink)
                     .lineLimit(2)

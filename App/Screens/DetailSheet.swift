@@ -17,6 +17,8 @@ struct DetailSheet: View {
     @State private var confirmingDelete = false
     @State private var editingTitle = false
     @State private var draftTitle = ""
+    @State private var showingPicker = false
+    @State private var tagDraft = ""
 
     private var palette: CategoryPalette {
         bookmark.category?.palette ?? NeutralPalette.value
@@ -29,7 +31,7 @@ struct DetailSheet: View {
                     hero
                     titleBlock
                     breadcrumb
-                    if !bookmark.tags.isEmpty { tagRow }
+                    tagEditor
                     noteBlock
                     savedLine
                 }
@@ -58,6 +60,23 @@ struct DetailSheet: View {
         } message: {
             Text("It's removed from borkmarkr. The original post isn't touched.")
         }
+        .sheet(isPresented: $showingPicker) {
+            TopicPickerSheet(
+                categoryID: Binding(
+                    get: { bookmark.categoryID },
+                    set: { bookmark.categoryID = $0 }
+                ),
+                subcategory: Binding(
+                    get: { bookmark.subcategory },
+                    set: { bookmark.subcategory = $0 }
+                )
+            )
+            .environment(\.accent, accent)
+            .onDisappear {
+                bookmark.touch()
+                try? context.save()
+            }
+        }
     }
 
     @ViewBuilder
@@ -70,7 +89,7 @@ struct DetailSheet: View {
                         .font(Typo.ui(13, .semibold))
                         .foregroundStyle(Tokens.inkSecondary)
                 }
-                Text(bookmark.text ?? "")
+                Text(bookmark.text ?? bookmark.title)
                     .font(Typo.ui(15))
                     .foregroundStyle(Tokens.bodyOnWhite)
                     .fixedSize(horizontal: false, vertical: true)
@@ -174,47 +193,92 @@ struct DetailSheet: View {
 
     @ViewBuilder
     private var breadcrumb: some View {
-        if let category = bookmark.category {
+        Button { showingPicker = true } label: {
             HStack(spacing: 6) {
-                // Tapping the category jumps to its Topic page, per the spec.
-                NavigationLink {
-                    TopicPage(category: category)
-                } label: {
+                if let category = bookmark.category {
                     Text(category.name)
                         .font(Typo.ui(12.5, .semibold))
                         .foregroundStyle(palette.deep)
                         .padding(.horizontal, 11)
                         .padding(.vertical, 6)
                         .background(palette.tint, in: Capsule())
+                    if let sub = bookmark.subcategory {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(Tokens.inkFaint)
+                        Text(sub)
+                            .font(Typo.ui(12.5, .semibold))
+                            .foregroundStyle(Tokens.inkSecondary)
+                    }
+                } else {
+                    Image(systemName: "folder.badge.plus")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("File under a topic")
+                        .font(Typo.ui(13, .semibold))
                 }
-                .buttonStyle(.plain)
-
-                if let sub = bookmark.subcategory {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(Tokens.inkFaint)
-                    Text(sub)
-                        .font(Typo.ui(12.5, .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
-                }
+                Image(systemName: "pencil")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Tokens.inkFaint)
                 Spacer()
             }
+            .foregroundStyle(Tokens.inkSecondary)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var tagEditor: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !bookmark.tags.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(bookmark.tags, id: \.self) { tag in
+                            Button {
+                                bookmark.tags = bookmark.tags.filter { $0 != tag }
+                                bookmark.touch()
+                                try? context.save()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text("#\(tag)").font(Typo.ui(11.5, .semibold))
+                                    Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                                }
+                                .foregroundStyle(Tokens.inkSecondary)
+                                .padding(.horizontal, 9)
+                                .padding(.vertical, 5)
+                                .background(Tokens.mutedControl, in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+
+            HStack(spacing: 8) {
+                TextField("+ tag", text: $tagDraft)
+                    .font(Typo.ui(13))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .onSubmit(commitTag)
+                Button("Add", action: commitTag)
+                    .font(Typo.ui(12.5, .semibold))
+                    .disabled(tagDraft.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Tokens.surface, in: Capsule())
+            .overlay(Capsule().stroke(Tokens.hairline, lineWidth: 1))
         }
     }
 
-    private var tagRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(bookmark.tags, id: \.self) { tag in
-                    Text("#\(tag)")
-                        .font(Typo.ui(11.5, .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
-                        .background(Tokens.mutedControl, in: Capsule())
-                }
-            }
-        }
+    private func commitTag() {
+        let cleaned = tagDraft
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "#", with: "")
+            .lowercased()
+        guard !cleaned.isEmpty, !bookmark.tags.contains(cleaned) else { tagDraft = ""; return }
+        bookmark.tags = bookmark.tags + [cleaned]
+        bookmark.touch()
+        try? context.save()
+        tagDraft = ""
     }
 
     @ViewBuilder

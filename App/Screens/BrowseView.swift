@@ -29,6 +29,19 @@ struct BrowseView: View {
     )
     private var bookmarks: [Bookmark]
 
+    @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
+    private var customTopics: [CustomTopic]
+    @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
+    private var customSubtopics: [CustomSubtopic]
+
+    @State private var showingPicker = false
+    @State private var pickerCategory: String?
+    @State private var pickerSub: String?
+
+    private var merged: MergedTaxonomy {
+        MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
+    }
+
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
@@ -52,9 +65,15 @@ struct BrowseView: View {
             }
             .background(Tokens.paper)
             .navigationDestination(for: String.self) { categoryID in
-                if let category = Taxonomy.category(id: categoryID) {
+                if categoryID == "__uncategorised__" {
+                    UncategorisedPage()
+                } else if let category = merged.topic(id: categoryID) {
                     TopicPage(category: category)
                 }
+            }
+            .sheet(isPresented: $showingPicker) {
+                TopicPickerSheet(categoryID: $pickerCategory, subcategory: $pickerSub)
+                    .environment(\.accent, accent)
             }
             .navigationDestination(for: Platform.self) { platform in
                 SourcePage(platform: platform)
@@ -96,11 +115,13 @@ struct BrowseView: View {
     }
 
     /// User's onboarding interests (that have saves) first, then count desc.
+    /// Custom topics you created show even when empty, so they don't vanish
+    /// the moment you add them.
     private var usedCategories: [Topic] {
         let counts = topicCounts
         let interestSet = Set(interests)
-        return Taxonomy.all
-            .filter { (counts[$0.id] ?? 0) > 0 }
+        return merged.allTopics
+            .filter { (counts[$0.id] ?? 0) > 0 || merged.isCustomTopic($0.id) }
             .sorted { a, b in
                 let ai = interestSet.contains(a.id), bi = interestSet.contains(b.id)
                 if ai != bi { return ai }
@@ -115,7 +136,19 @@ struct BrowseView: View {
     @ViewBuilder
     private var topicsGrid: some View {
         if usedCategories.isEmpty && uncategorisedCount == 0 {
-            emptyAxis(symbol: "square.grid.2x2", text: "Topics appear as you save")
+            VStack(spacing: 18) {
+                emptyAxis(symbol: "square.grid.2x2", text: "Topics appear as you save")
+                Button {
+                    pickerCategory = nil
+                    pickerSub = nil
+                    showingPicker = true
+                } label: {
+                    Text("Or add a topic now")
+                        .font(Typo.ui(14, .semibold))
+                        .foregroundStyle(accent.deep)
+                }
+                .buttonStyle(.plain)
+            }
         } else {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
                       spacing: 12) {
@@ -125,6 +158,25 @@ struct BrowseView: View {
                     }
                     .buttonStyle(.plain)
                 }
+
+                Button {
+                    pickerCategory = nil
+                    pickerSub = nil
+                    showingPicker = true
+                } label: {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                        Text("New topic")
+                            .font(Typo.ui(14.5, .bold))
+                    }
+                    .foregroundStyle(accent.deep)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(15)
+                    .frame(height: 128, alignment: .topLeading)
+                    .background(accent.tint, in: RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous))
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 18)
 

@@ -308,9 +308,24 @@ enum Taxonomy {
         uniqueKeysWithValues: all.map { ($0.id, $0) }
     )
 
+    /// User-created topics, installed by `MergedTaxonomy` whenever the custom
+    /// rows are loaded. Kept here so `Bookmark.category` still works without
+    /// every call site threading a merge.
+    private static let extrasLock = NSLock()
+    nonisolated(unsafe) private static var extras: [String: Topic] = [:]
+
+    static func installCustomTopics(_ topics: [Topic]) {
+        extrasLock.lock()
+        extras = Dictionary(uniqueKeysWithValues: topics.map { ($0.id, $0) })
+        extrasLock.unlock()
+    }
+
     static func category(id: String?) -> Topic? {
         guard let id else { return nil }
-        return index[id]
+        if let hit = index[id] { return hit }
+        extrasLock.lock()
+        defer { extrasLock.unlock() }
+        return extras[id]
     }
 
     /// Every category, sorted so the user's onboarding interests float to the

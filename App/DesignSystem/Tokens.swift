@@ -203,12 +203,11 @@ struct CardSurface: ViewModifier {
     var strong: Bool = false
 
     func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         content
-            .background(Tokens.surface, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .stroke(Tokens.hairline, lineWidth: 1)
-            )
+            .clipShape(shape)
+            .background(Tokens.surface, in: shape)
+            .overlay(shape.stroke(Tokens.hairline, lineWidth: 1))
             .shadow(color: Color(hex: "191510").opacity(0.03), radius: 2, y: 1)
             .shadow(color: Color(hex: "191510").opacity(strong ? 0.14 : 0.10), radius: 14, y: 10)
     }

@@ -131,15 +131,31 @@ final class Bookmark {
     var category: Topic? { Taxonomy.category(id: categoryID) }
     var hasNote: Bool { !(noteText ?? "").isEmpty }
 
-    /// Text card if there's a post body AND the platform actually carries text
-    /// posts. An Instagram caption is not a post body.
-    var isTextPost: Bool {
-        !(text ?? "").isEmpty && platform.carriesTextPosts
-    }
+    /// X and Threads are always text cards. A pasted x.com link often has no
+    /// post body — only a title — and treating that as media produced a
+    /// 0-height cover with the title overflowing onto the card below.
+    var isTextPost: Bool { platform.carriesTextPosts }
 
     var isArticle: Bool { kind == .article && !isTextPost }
-    var isMedia: Bool { !isTextPost && !isArticle }
+    /// Media covers have a real height. `.thread` and `.article` report 0, so
+    /// they must not take the media path or the card collapses.
+    var isMedia: Bool { !isTextPost && !isArticle && kind.coverHeight > 0 }
     var isVideo: Bool { durationSeconds != nil }
+
+    /// Title shown on cards. Instagram's og:title is
+    /// `"Name on Instagram: \"caption\""` — using that raw makes every IG card
+    /// a three-line crush. Prefer the caption; fall back to the name.
+    var displayTitle: String {
+        let raw = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard platform == .instagram else { return raw }
+        guard let range = raw.range(of: " on Instagram:", options: .caseInsensitive) else {
+            return raw
+        }
+        var caption = String(raw[range.upperBound...])
+            .trimmingCharacters(in: CharacterSet(charactersIn: " \"“”"))
+        if caption.count >= 6 { return caption }
+        return String(raw[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+    }
 
     /// "M:SS" for display. Formatting lives here, not in storage.
     var durationLabel: String? {

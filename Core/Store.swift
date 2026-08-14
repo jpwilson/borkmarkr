@@ -23,7 +23,7 @@ enum Store {
     static let shared: ModelContainer = make()
 
     static func make() -> ModelContainer {
-        let schema = Schema([Bookmark.self, BookmarkCollection.self, Mission.self, CustomSubtopic.self])
+        let schema = Schema([Bookmark.self, BookmarkCollection.self, Mission.self, CustomSubtopic.self, CustomTopic.self])
 
         if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) != nil {
             let config = ModelConfiguration(schema: schema, groupContainer: .identifier(appGroupID))
@@ -142,6 +142,69 @@ enum Store {
     }
 
     enum StoreError: Error { case noAppGroup }
+
+    // MARK: - Taxonomy edits
+
+    /// Rename a custom topic. The id stays put so every bork filed under it
+    /// stays filed; only the label changes. Search blobs refresh because the
+    /// category name lives in them.
+    static func renameTopic(_ topic: CustomTopic, to raw: String, in context: ModelContext) {
+        let name = TaxonomyName.formatted(raw)
+        guard !name.isEmpty, name != topic.name else { return }
+        topic.name = name
+        topic.updatedAt = .now
+        retouchBookmarks(categoryID: topic.id, in: context)
+        try? context.save()
+    }
+
+    /// Soft-delete a custom topic and unfile its borks — they go to
+    /// "Not filed yet" rather than pointing at a name that no longer exists.
+    static func deleteTopic(_ topic: CustomTopic, in context: ModelContext) {
+        topic.deletedAt = .now
+        topic.updatedAt = .now
+        let id = topic.id
+        for bookmark in bookmarks(categoryID: id, in: context) {
+            bookmark.categoryID = nil
+            bookmark.subcategory = nil
+            bookmark.touch()
+        }
+        try? context.save()
+    }
+
+    static func renameSubtopic(_ entry: CustomSubtopic, to raw: String, in context: ModelContext) {
+        let name = TaxonomyName.formatted(raw)
+        guard !name.isEmpty, name.caseInsensitiveCompare(entry.name) != .orderedSame else { return }
+        let old = entry.name
+        let topicID = entry.categoryID
+        entry.name = name
+        for bookmark in bookmarks(categoryID: topicID, in: context) where bookmark.subcategory == old {
+            bookmark.subcategory = name
+            bookmark.touch()
+        }
+        try? context.save()
+    }
+
+    static func deleteSubtopic(_ entry: CustomSubtopic, in context: ModelContext) {
+        entry.deletedAt = .now
+        let old = entry.name
+        let topicID = entry.categoryID
+        for bookmark in bookmarks(categoryID: topicID, in: context) where bookmark.subcategory == old {
+            bookmark.subcategory = nil
+            bookmark.touch()
+        }
+        try? context.save()
+    }
+
+    private static func bookmarks(categoryID: String, in context: ModelContext) -> [Bookmark] {
+        let descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate { $0.deletedAt == nil })
+        return ((try? context.fetch(descriptor)) ?? []).filter { $0.categoryID == categoryID }
+    }
+
+    private static func retouchBookmarks(categoryID: String, in context: ModelContext) {
+        for bookmark in bookmarks(categoryID: categoryID, in: context) {
+            bookmark.touch()
+        }
+    }
 }
 
 /// What the extension queues and the Add flow submits. Codable so it can cross

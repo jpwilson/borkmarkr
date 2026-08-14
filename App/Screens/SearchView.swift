@@ -27,6 +27,11 @@ struct SearchView: View {
     @StateObject private var semantic = SemanticIndex()
     @State private var related: [SemanticIndex.Hit] = []
 
+    @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
+    private var customTopics: [CustomTopic]
+    @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
+    private var customSubtopics: [CustomSubtopic]
+
     private var isFiltering: Bool {
         !debounced.isEmpty || !sources.isEmpty || !topics.isEmpty
     }
@@ -62,8 +67,9 @@ struct SearchView: View {
     /// the whole vocabulary.
     private var presentTopics: [Topic] {
         let used = Set(all.compactMap(\.categoryID))
-        let mine = Taxonomy.all.filter { used.contains($0.id) }
-        let rest = Taxonomy.all.filter { !used.contains($0.id) }
+        let merged = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
+        let mine = merged.allTopics.filter { used.contains($0.id) }
+        let rest = merged.allTopics.filter { !used.contains($0.id) }
         return mine + rest
     }
 

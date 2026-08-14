@@ -15,6 +15,11 @@ struct SourcePage: View {
     @State private var topic: String?
     @State private var detail: Bookmark?
 
+    @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
+    private var customTopics: [CustomTopic]
+    @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
+    private var customSubtopics: [CustomSubtopic]
+
     private var inSource: [Bookmark] { all.filter { $0.platform == platform } }
 
     private var visible: [Bookmark] {
@@ -24,7 +29,7 @@ struct SourcePage: View {
 
     private var presentTopics: [Topic] {
         let counts = Dictionary(grouping: inSource.compactMap(\.categoryID)) { $0 }.mapValues(\.count)
-        return Taxonomy.all
+        return MergedTaxonomy(topics: customTopics, subtopics: customSubtopics).allTopics
             .filter { (counts[$0.id] ?? 0) > 0 }
             .sorted { (counts[$0.id] ?? 0) > (counts[$1.id] ?? 0) }
     }

@@ -37,6 +37,11 @@ struct RootView: View {
     @State private var toast: String?
     @StateObject private var account = Account()
 
+    @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
+    private var customTopics: [CustomTopic]
+    @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
+    private var customSubtopics: [CustomSubtopic]
+
     /// Deep-link target when a category chip is tapped from a detail sheet.
     @State private var pendingTopic: String?
 
@@ -89,6 +94,7 @@ struct RootView: View {
             .environment(\.accent, accent)
         }
         .onAppear {
+            _ = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
             if let saved = AppTab(rawValue: startingTabRaw) { tab = saved }
             #if DEBUG
             if DebugSeed.isRequested {

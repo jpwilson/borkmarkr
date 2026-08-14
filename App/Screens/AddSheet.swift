@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// Three steps: paste → reading → details.
 ///
@@ -44,6 +45,7 @@ struct AddSheet: View {
     /// present it as a fact or as something to fill in.
     @State private var titleWasFetched = false
     @State private var editingTitle = false
+    @State private var clipboardHasLink = false
     @FocusState private var urlFocused: Bool
 
     private var parsedURL: URL? {
@@ -96,10 +98,10 @@ struct AddSheet: View {
     /// No "Fetch preview" button. Paste a link and it just goes — a button
     /// that only ever has one sensible outcome is a step, not a choice.
     ///
-    /// We never read the system pasteboard ourselves. Peeking at it on appear
-    /// is what produced the "borkmarkr would like to paste" prompt on every
-    /// tap of +, including when you were about to type. Paste into the field
-    /// (keyboard bar or long-press) is a system gesture and does not prompt.
+    /// Clipboard *detection* uses `detectPatterns`, which does not read
+    /// contents and does not prompt. Reading the URL happens only when you
+    /// tap the chip — a user gesture, so iOS does not ask again. Peeking on
+    /// appear is what produced "borkmarkr would like to paste" on every +.
     private var pasteStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -117,6 +119,28 @@ struct AddSheet: View {
                                     lineWidth: parsedURL != nil ? 1.5 : 1)
                     )
 
+                if clipboardHasLink, urlText.isEmpty {
+                    Button(action: pasteFromClipboard) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "doc.on.clipboard")
+                                .font(.system(size: 12, weight: .semibold))
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("Paste the copied link")
+                                    .font(Typo.ui(13, .semibold))
+                                    .foregroundStyle(Tokens.ink)
+                                Text("From the app you just copied")
+                                    .font(Typo.ui(11.5))
+                                    .foregroundStyle(Tokens.inkMeta)
+                            }
+                            Spacer()
+                        }
+                        .foregroundStyle(accent.deep)
+                        .padding(13)
+                        .cardSurface(radius: 16)
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+
                 HStack(spacing: 6) {
                     Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))
                     Text("Saving from another app? Use the share sheet.")
@@ -126,9 +150,8 @@ struct AddSheet: View {
             }
             .padding(18)
         }
-        .onAppear {
-            urlFocused = true
-        }
+        .onAppear { urlFocused = true }
+        .task { clipboardHasLink = await detectClipboardLink() }
         // Debounced so it fires once you've finished pasting, not on every
         // character of a typed URL.
         .task(id: urlText) {
@@ -137,6 +160,45 @@ struct AddSheet: View {
             guard !Task.isCancelled, step == .paste else { return }
             submit()
         }
+    }
+
+    /// Pattern detection only — never reads the pasteboard contents.
+    private func detectClipboardLink() async -> Bool {
+        await withCheckedContinuation { continuation in
+            UIPasteboard.general.detectPatterns(for: [.probableWebURL]) { result in
+                switch result {
+                case .success(let patterns):
+                    continuation.resume(returning: patterns.contains(.probableWebURL))
+                case .failure:
+                    continuation.resume(returning: false)
+                }
+            }
+        }
+    }
+
+    /// User-tapped read. iOS treats this as a paste gesture and does not
+    /// show the permission banner.
+    private func pasteFromClipboard() {
+        let raw = UIPasteboard.general.url?.absoluteString
+            ?? UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? ""
+        guard let url = firstURL(in: raw) else { return }
+        urlText = url.absoluteString
+    }
+
+    private func firstURL(in raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("http"), let url = URL(string: trimmed), url.host != nil {
+            return url
+        }
+        let withScheme = trimmed.contains("://") ? trimmed : "https://\(trimmed)"
+        if let url = URL(string: withScheme), url.host?.contains(".") == true {
+            return url
+        }
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        else { return nil }
+        let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+        return detector.firstMatch(in: trimmed, range: range)?.url
     }
 
     // MARK: Step 2 — reading
@@ -549,225 +611,6 @@ struct AddSheet: View {
             onSaved("Saved to \(where_)")
         } catch {
             self.error = error.localizedDescription
-        }
-    }
-}
-
-/// All 50 topics; expand one to pick a subcategory.
-struct TopicPickerSheet: View {
-    @Binding var categoryID: String?
-    @Binding var subcategory: String?
-
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.accent) private var accent
-    @Environment(\.modelContext) private var context
-
-    @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
-    private var customSubtopics: [CustomSubtopic]
-
-    @State private var expanded: String?
-    @State private var filter = ""
-    @State private var newSubtopicTopic: Topic?
-    @State private var newSubtopicName = ""
-
-    private var merged: MergedTaxonomy { MergedTaxonomy(custom: customSubtopics) }
-
-    private var trimmedFilter: String {
-        filter.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var shown: [Topic] {
-        let needle = trimmedFilter.lowercased()
-        guard !needle.isEmpty else { return Taxonomy.all }
-        return Taxonomy.all.filter { topic in
-            topic.name.lowercased().contains(needle)
-                || merged.subs(for: topic).contains { $0.lowercased().contains(needle) }
-        }
-    }
-
-    /// True when what you've typed doesn't already exist under `topic` — the
-    /// cue to offer adding it.
-    private func canAdd(_ name: String, to topic: Topic) -> Bool {
-        let candidate = name.lowercased()
-        guard candidate.count >= 2 else { return false }
-        return !merged.subs(for: topic).contains { $0.lowercased() == candidate }
-    }
-
-    private func addSubtopic(_ raw: String, to topic: Topic) {
-        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return }
-        // Title-case the first letter only; "Trail running" not "Trail Running",
-        // matching how the built-ins are written.
-        let formatted = name.prefix(1).uppercased() + name.dropFirst()
-
-        context.insert(CustomSubtopic(categoryID: topic.id, name: formatted))
-        try? context.save()
-
-        categoryID = topic.id
-        subcategory = formatted
-        Haptics.success()
-        dismiss()
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    ForEach(shown) { topic in
-                        VStack(alignment: .leading, spacing: 9) {
-                            Button {
-                                withAnimation(.easeOut(duration: 0.18)) {
-                                    expanded = expanded == topic.id ? nil : topic.id
-                                }
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Circle().fill(topic.palette.dot).frame(width: 10, height: 10)
-                                    Text(topic.name)
-                                        .font(Typo.ui(14.5, .semibold))
-                                        .foregroundStyle(Tokens.ink)
-                                    Spacer()
-                                    Text("\(merged.subs(for: topic).count)")
-                                        .font(Typo.ui(11.5, .medium))
-                                        .foregroundStyle(Tokens.inkMeta)
-                                    Image(systemName: expanded == topic.id ? "chevron.up" : "chevron.right")
-                                        .font(.system(size: 10, weight: .bold))
-                                        .foregroundStyle(Tokens.inkFaint)
-                                }
-                            }
-                            .buttonStyle(.plain)
-
-                            if expanded == topic.id {
-                                FlowChips(items: merged.subs(for: topic)) { sub in
-                                    categoryID = topic.id
-                                    subcategory = sub
-                                    dismiss()
-                                } tint: { topic.palette }
-
-                                // Add what you searched for, or anything, right
-                                // where you noticed it was missing.
-                                if canAdd(trimmedFilter, to: topic), !trimmedFilter.isEmpty {
-                                    addButton(label: "Add \u{201C}\(trimmedFilter)\u{201D}", topic: topic) {
-                                        addSubtopic(trimmedFilter, to: topic)
-                                    }
-                                } else {
-                                    addButton(label: "Add a subtopic", topic: topic) {
-                                        newSubtopicTopic = topic
-                                        newSubtopicName = trimmedFilter
-                                    }
-                                }
-                            }
-                        }
-                        .padding(13)
-                        .cardSurface(radius: 16)
-                    }
-                }
-                .padding(18)
-            }
-            .background(Tokens.paper)
-            .navigationTitle("Pick a topic")
-            .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $filter, prompt: "Find a topic")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
-            .alert("New subtopic",
-                   isPresented: Binding(get: { newSubtopicTopic != nil },
-                                        set: { if !$0 { newSubtopicTopic = nil } })) {
-                TextField("Name", text: $newSubtopicName)
-                Button("Add") {
-                    if let topic = newSubtopicTopic { addSubtopic(newSubtopicName, to: topic) }
-                    newSubtopicTopic = nil
-                    newSubtopicName = ""
-                }
-                Button("Cancel", role: .cancel) {
-                    newSubtopicTopic = nil
-                    newSubtopicName = ""
-                }
-            } message: {
-                Text(newSubtopicTopic.map { "Added under \($0.name)." } ?? "")
-            }
-        }
-        .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
-    }
-
-    private func addButton(label: String, topic: Topic, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: "plus.circle.fill").font(.system(size: 12, weight: .semibold))
-                Text(label)
-                    .font(Typo.ui(12.5, .semibold))
-                    .lineLimit(1)
-                Spacer()
-            }
-            .foregroundStyle(topic.palette.deep)
-            .padding(.top, 4)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-/// Wrapping chip row — subcategory lists run long and a horizontal scroller
-/// hides most of them.
-struct FlowChips: View {
-    let items: [String]
-    let onPick: (String) -> Void
-    let tint: () -> CategoryPalette
-
-    var body: some View {
-        let palette = tint()
-        FlowLayout(spacing: 6) {
-            ForEach(items, id: \.self) { item in
-                Button { onPick(item) } label: {
-                    Text(item)
-                        .font(Typo.ui(12, .semibold))
-                        .foregroundStyle(palette.deep)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(palette.tint, in: Capsule())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-}
-
-/// Minimal flow layout — SwiftUI has no built-in wrapping stack.
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 6
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0
-
-        for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
-            if x + size.width > maxWidth, x > 0 {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-        }
-        return CGSize(width: maxWidth, height: y + rowHeight)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
-
-        for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
-            if x + size.width > bounds.maxX, x > bounds.minX {
-                x = bounds.minX
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
         }
     }
 }

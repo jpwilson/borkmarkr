@@ -13,8 +13,13 @@ struct TopicPage: View {
     )
     private var all: [Bookmark]
 
+    @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
+    private var customTopics: [CustomTopic]
     @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
     private var customSubtopics: [CustomSubtopic]
+    @Environment(\.modelContext) private var context
+    @State private var renameDraft = ""
+    @State private var renaming = false
 
     @State private var sub: String?
     @State private var source: Platform?
@@ -38,7 +43,7 @@ struct TopicPage: View {
     /// shows up here rather than vanishing from the chips.
     private var presentSubs: [(name: String, count: Int)] {
         let counts = Dictionary(grouping: inCategory.compactMap(\.subcategory)) { $0 }.mapValues(\.count)
-        let merged = MergedTaxonomy(custom: customSubtopics)
+        let merged = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
         return merged.subs(for: category).compactMap { name in
             counts[name].map { (name, $0) }
         }
@@ -78,16 +83,38 @@ struct TopicPage: View {
             ToolbarItem(placement: .principal) { EmptyView() }
         }
         .sheet(item: $detail) { DetailSheet(bookmark: $0).environment(\.accent, accent) }
+        .alert("Rename topic", isPresented: $renaming) {
+            TextField("Name", text: $renameDraft)
+            Button("Save") {
+                if let entry = customTopics.first(where: { $0.id == category.id }) {
+                    Store.renameTopic(entry, to: renameDraft, in: context)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(category.name)
-                        .font(Typo.display(28, .heavy))
-                        .tracking(-0.6)
-                        .foregroundStyle(category.palette.deep)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(customTopics.first(where: { $0.id == category.id })?.name ?? category.name)
+                            .font(Typo.display(28, .heavy))
+                            .tracking(-0.6)
+                            .foregroundStyle(category.palette.deep)
+                        if let entry = customTopics.first(where: { $0.id == category.id }) {
+                            Button {
+                                renameDraft = entry.name
+                                renaming = true
+                            } label: {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(category.palette.deep.opacity(0.7))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                     Text(Copy.countedBorks(inCategory.count))
                         .font(Typo.ui(12.5, .medium))
                         .foregroundStyle(category.palette.deep.opacity(0.75))
