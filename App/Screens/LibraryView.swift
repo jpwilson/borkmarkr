@@ -188,6 +188,7 @@ struct LibraryView: View {
                         BookmarkRow(bookmark: bookmark)
                     }
                     .buttonStyle(PressableStyle())
+                    .frame(maxWidth: .infinity)
                 }
             }
             .padding(.horizontal, 18)
@@ -207,6 +208,7 @@ struct LibraryView: View {
                     BookmarkCard(bookmark: bookmark)
                 }
                 .buttonStyle(PressableStyle())
+                .frame(maxWidth: .infinity, alignment: .top)
             }
             .padding(.horizontal, 18)
         }

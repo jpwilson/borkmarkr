@@ -18,12 +18,17 @@ struct CoverImage: View {
                     if case .success(let image) = phase {
                         image
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .scaledToFill()
                             .transition(.opacity)
                     }
                 }
             }
         }
+        // The bitmap must not decide layout width. `.fill` on a loose
+        // proposal adopts the image's pixel size and the card blows out
+        // of its masonry column, painting over the neighbour.
+        .frame(maxWidth: .infinity)
+        .clipped()
     }
 
     private var gradient: some View {
@@ -115,6 +120,7 @@ struct BookmarkCard: View {
                 articleCard
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .cardSurface(strong: bookmark.isMedia)
     }
 
