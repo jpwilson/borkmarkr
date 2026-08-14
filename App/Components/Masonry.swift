@@ -48,13 +48,19 @@ struct MasonryVStack<Item: Identifiable, Content: View>: View {
 
     var body: some View {
         let split = columns
+        // Eager VStacks, not LazyVStack. This view already lives inside
+        // Library's ScrollView; a nested lazy stack is not the scroll
+        // container, so SwiftUI proposes unbounded height, the lazy stack
+        // under-reports, and cards paint on top of each other.
         HStack(alignment: .top, spacing: spacing) {
-            LazyVStack(spacing: spacing) {
+            VStack(spacing: spacing) {
                 ForEach(split.left) { content($0) }
             }
-            LazyVStack(spacing: spacing) {
+            .frame(maxWidth: .infinity, alignment: .top)
+            VStack(spacing: spacing) {
                 ForEach(split.right) { content($0) }
             }
+            .frame(maxWidth: .infinity, alignment: .top)
         }
     }
 }
