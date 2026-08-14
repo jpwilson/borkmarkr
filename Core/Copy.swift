@@ -21,4 +21,19 @@ enum Copy {
 
     static let saveVerb = "Bork it"
     static let searchPlaceholder = "Search everything you've borked"
+
+    /// The human noun for a Mission. Code stays `Mission` (schema); UI says journey.
+    static func journeys(_ count: Int) -> String {
+        count == 1 ? "journey" : "journeys"
+    }
+
+    static func countedJourneys(_ count: Int) -> String {
+        "\(count) \(journeys(count))"
+    }
+
+    static let journeyWord = "journey"
+    static let newJourney = "New journey"
+    static let startJourney = "Start a journey"
+    static let whatWorkingOn = "What are you working on?"
+    static let journeysHeading = "Your journeys"
 }

@@ -21,6 +21,7 @@ struct SearchView: View {
     @State private var debounced = ScreenshotDefaults.searchQuery
     @State private var sources: Set<Platform> = []
     @State private var topics: Set<String> = []
+    @State private var journeyFilter: Set<String> = []
     @State private var recents: [String] = []
     @State private var detail: Bookmark?
 
@@ -32,8 +33,14 @@ struct SearchView: View {
     @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
     private var customSubtopics: [CustomSubtopic]
 
+    @Query(
+        filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
+        sort: \Mission.createdAt, order: .reverse
+    )
+    private var journeys: [Mission]
+
     private var isFiltering: Bool {
-        !debounced.isEmpty || !sources.isEmpty || !topics.isEmpty
+        !debounced.isEmpty || !sources.isEmpty || !topics.isEmpty || !journeyFilter.isEmpty
     }
 
     private var results: [Bookmark] {
@@ -43,13 +50,30 @@ struct SearchView: View {
             .lowercased()
             .folding(options: .diacriticInsensitive, locale: .current)
 
+        let journeyNameHits: Set<String> = {
+            guard !needle.isEmpty else { return [] }
+            return Set(
+                journeys
+                    .filter { $0.title.lowercased().contains(needle) }
+                    .flatMap(\.bookmarkIDs)
+            )
+        }()
+
+        let onSelectedJourneys: Set<String> = {
+            guard !journeyFilter.isEmpty else { return [] }
+            return Set(
+                journeys.filter { journeyFilter.contains($0.id) }.flatMap(\.bookmarkIDs)
+            )
+        }()
+
         return all.filter { item in
             if !sources.isEmpty && !sources.contains(item.platform) { return false }
             if !topics.isEmpty {
                 guard let id = item.categoryID, topics.contains(id) else { return false }
             }
+            if !journeyFilter.isEmpty && !onSelectedJourneys.contains(item.id) { return false }
             guard !needle.isEmpty else { return true }
-            return item.searchBlob.contains(needle)
+            return item.searchBlob.contains(needle) || journeyNameHits.contains(item.id)
         }
     }
 
@@ -77,8 +101,8 @@ struct SearchView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Search")
-                    .font(Typo.display(32, .heavy))
-                    .tracking(-0.8)
+                    .font(Typo.display(34, .heavy))
+                    .tracking(-1.0)
                     .foregroundStyle(Tokens.ink)
                     .padding(.horizontal, 18)
                     .padding(.top, 12)
@@ -93,6 +117,20 @@ struct SearchView: View {
                                        tint: Color(hex: "48505C")) {
                                 if sources.contains(platform) { sources.remove(platform) }
                                 else { sources.insert(platform) }
+                            }
+                        }
+                    }
+                }
+
+                if !journeys.isEmpty {
+                    chipRow(title: "JOURNEY") {
+                        ForEach(journeys) { journey in
+                            toggleChip(journey.title,
+                                       active: journeyFilter.contains(journey.id),
+                                       tint: (journey.topic?.palette ?? NeutralPalette.value).deep,
+                                       bg: (journey.topic?.palette ?? NeutralPalette.value).tint) {
+                                if journeyFilter.contains(journey.id) { journeyFilter.remove(journey.id) }
+                                else { journeyFilter.insert(journey.id) }
                             }
                         }
                     }

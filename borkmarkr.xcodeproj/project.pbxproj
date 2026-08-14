@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		005DF40BC3D8446E4B5F59B3 /* InstrumentSans.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 12F62DAE672E2912C8F0FA4E /* InstrumentSans.ttf */; };
 		0527F5B223F18D031184513B /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1547735EA275A76D8C7A99DD /* LibraryView.swift */; };
 		07A3E5E75659299B8276A81D /* SemanticIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */; };
 		0AC0D391E574FE8B1E535F43 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C24641D23CFCE82884ADCC9D /* Assets.xcassets */; };
@@ -34,6 +35,8 @@
 		771A3966315044603565F689 /* SmartCategorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0810F447AD16FAB04860D7 /* SmartCategorizer.swift */; };
 		79ED586D9F3A1651B2A5EFED /* Taxonomy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE014EBD9BA08565B958C19 /* Taxonomy.swift */; };
 		7AEA8A6D3D9118042EE24570 /* Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9A4FF54E48152CE4B77CA8 /* Account.swift */; };
+		7D64378D5E0051A662637352 /* BricolageGrotesque.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1981AC6274873C530D232125 /* BricolageGrotesque.ttf */; };
+		83FF2D3187383946A71C64B2 /* JourneyViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDBB7054C8299B44B29CB0DD /* JourneyViews.swift */; };
 		8A3961190102DEA781DA0DE9 /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990CE9B08FEB9BF177C21611 /* Platform.swift */; };
 		8B843833C0C1B90013657263 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292B159D7B2467224C46A761 /* Supabase.swift */; };
 		8E09E7953F3242F92A276127 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292B159D7B2467224C46A761 /* Supabase.swift */; };
@@ -87,7 +90,9 @@
 /* Begin PBXFileReference section */
 		0B848D80BD44CBC109D6C602 /* DebugSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSeed.swift; sourceTree = "<group>"; };
 		0C34F5782F5C8CE42FCA779B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		12F62DAE672E2912C8F0FA4E /* InstrumentSans.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = InstrumentSans.ttf; sourceTree = "<group>"; };
 		1547735EA275A76D8C7A99DD /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		1981AC6274873C530D232125 /* BricolageGrotesque.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BricolageGrotesque.ttf; sourceTree = "<group>"; };
 		1B9A4FF54E48152CE4B77CA8 /* Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account.swift; sourceTree = "<group>"; };
 		1F93E7A1E9CEFD4F91EB5D0B /* Categorizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Categorizer.swift; sourceTree = "<group>"; };
 		206AF2993B64DBD0939AA40B /* BorkmarkrApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorkmarkrApp.swift; sourceTree = "<group>"; };
@@ -127,9 +132,10 @@
 		D0E2561707E17515E4370A4C /* CustomSubtopic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSubtopic.swift; sourceTree = "<group>"; };
 		D3FABFC1A9084B9C0360A43C /* BrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseView.swift; sourceTree = "<group>"; };
 		DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
+		EDBB7054C8299B44B29CB0DD /* JourneyViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViews.swift; sourceTree = "<group>"; };
 		F91794C010FF35E650EB340F /* borkmarkr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = borkmarkr.entitlements; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_9498E044-EC6A-47DC-A1F0-866D1348008A" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_D3B7AD47-0296-4CC3-B951-56108D6816C8" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -162,6 +168,15 @@
 			path = Core;
 			sourceTree = "<group>";
 		};
+		8EDF8BE3CA28326A227F5DBD /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				1981AC6274873C530D232125 /* BricolageGrotesque.ttf */,
+				12F62DAE672E2912C8F0FA4E /* InstrumentSans.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 		95851C7C5B6307B97B4A0BA0 = {
 			isa = PBXGroup;
 			children = (
@@ -187,6 +202,7 @@
 				DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */,
 				BA8CEE91D89E2D173C22AD21 /* Components */,
 				C68779537C81C72108BA8E40 /* DesignSystem */,
+				8EDF8BE3CA28326A227F5DBD /* Fonts */,
 				BC96D25B9518A72B1B6EC24F /* Screens */,
 			);
 			path = App;
@@ -196,6 +212,7 @@
 			isa = PBXGroup;
 			children = (
 				7EA1C66CA0BA94A77F47942D /* Cards.swift */,
+				EDBB7054C8299B44B29CB0DD /* JourneyViews.swift */,
 				BADA1DD4A470DDE392E9E348 /* Masonry.swift */,
 			);
 			path = Components;
@@ -239,10 +256,10 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		"TEMP_34581D94-6453-41BA-A31B-1C59053B3B92" /* borkmarkr */ = {
+		"TEMP_F0111CB2-B7AD-4F23-B4CC-97BFECA9B5F3" /* borkmarkr */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_9498E044-EC6A-47DC-A1F0-866D1348008A" /* Config.xcconfig */,
+				"TEMP_D3B7AD47-0296-4CC3-B951-56108D6816C8" /* Config.xcconfig */,
 			);
 			path = borkmarkr;
 			sourceTree = "<group>";
@@ -332,6 +349,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				0AC0D391E574FE8B1E535F43 /* Assets.xcassets in Resources */,
+				7D64378D5E0051A662637352 /* BricolageGrotesque.ttf in Resources */,
+				005DF40BC3D8446E4B5F59B3 /* InstrumentSans.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,6 +375,7 @@
 				E0AAF5B400F21B8F35C87F16 /* DetailSheet.swift in Sources */,
 				EA4274450968EFD91AD5617A /* ImportSheet.swift in Sources */,
 				3A11A2A53692AD245251E721 /* Importers.swift in Sources */,
+				83FF2D3187383946A71C64B2 /* JourneyViews.swift in Sources */,
 				0527F5B223F18D031184513B /* LibraryView.swift in Sources */,
 				964A772F380819487AC6886F /* LinkPreview.swift in Sources */,
 				8F5FE92CDC2DC339F92B2535 /* Masonry.swift in Sources */,
@@ -414,7 +434,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_9498E044-EC6A-47DC-A1F0-866D1348008A" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_D3B7AD47-0296-4CC3-B951-56108D6816C8" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -501,7 +521,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_9498E044-EC6A-47DC-A1F0-866D1348008A" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_D3B7AD47-0296-4CC3-B951-56108D6816C8" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;

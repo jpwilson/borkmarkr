@@ -61,7 +61,7 @@ struct YouView: View {
                 Text("You")
                     .font(Typo.display(22, .heavy))
                     .foregroundStyle(Tokens.ink)
-                Text("Everything you save, in one place")
+                Text("Library, journeys, and the knobs")
                     .font(Typo.ui(12.5, .medium))
                     .foregroundStyle(Tokens.inkMeta)
             }

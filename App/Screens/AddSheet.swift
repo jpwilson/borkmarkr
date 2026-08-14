@@ -24,6 +24,12 @@ struct AddSheet: View {
     @Query(filter: #Predicate<Bookmark> { $0.deletedAt == nil })
     private var allBookmarks: [Bookmark]
 
+    @Query(
+        filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
+        sort: \Mission.createdAt, order: .reverse
+    )
+    private var journeys: [Mission]
+
     enum Step { case paste, reading, details }
 
     @State private var step = Step.paste
@@ -46,6 +52,8 @@ struct AddSheet: View {
     @State private var titleWasFetched = false
     @State private var editingTitle = false
     @State private var clipboardHasLink = false
+    @State private var selectedJourneyIDs: Set<String> = []
+    @State private var showingNewJourney = false
     @FocusState private var urlFocused: Bool
 
     private var parsedURL: URL? {
@@ -84,6 +92,9 @@ struct AddSheet: View {
         .sheet(isPresented: $showingPicker) {
             TopicPickerSheet(categoryID: $categoryID, subcategory: $subcategory)
                 .environment(\.accent, accent)
+        }
+        .sheet(isPresented: $showingNewJourney) {
+            NewMissionSheet().environment(\.accent, accent)
         }
         .onAppear {
             if let initialURL, urlText.isEmpty {
@@ -220,6 +231,7 @@ struct AddSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 previewRow
                 sortedForYou
+                journeyAttach
                 titleField
                 noteSection
                 saveButton
@@ -398,6 +410,49 @@ struct AddSheet: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(accent.base.opacity(0.25), lineWidth: 1)
         )
+    }
+
+    private var journeyAttach: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("ALSO ON A JOURNEY")
+                .font(Typo.ui(10, .heavy)).tracking(0.6)
+                .foregroundStyle(Tokens.mutedHeading)
+            Text("Optional. Topics file what this is. A journey is why you kept it.")
+                .font(Typo.ui(12))
+                .foregroundStyle(Tokens.inkMeta)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
+                    ForEach(journeys) { journey in
+                        let on = selectedJourneyIDs.contains(journey.id)
+                        Button {
+                            if on { selectedJourneyIDs.remove(journey.id) }
+                            else { selectedJourneyIDs.insert(journey.id) }
+                        } label: {
+                            Text(journey.title)
+                                .font(Typo.ui(12, .semibold))
+                                .foregroundStyle(on ? .white : Tokens.inkSecondary)
+                                .padding(.horizontal, 11)
+                                .padding(.vertical, 7)
+                                .background(on ? accent.base : Tokens.mutedControl, in: Capsule())
+                        }
+                        .buttonStyle(ChipStyle())
+                    }
+                    Button { showingNewJourney = true } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus").font(.system(size: 10, weight: .bold))
+                            Text(Copy.newJourney)
+                                .font(Typo.ui(12, .semibold))
+                        }
+                        .foregroundStyle(accent.deep)
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 7)
+                        .overlay(Capsule().strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 
     /// Collapsed by default. The whole point is that you don't type — this is
@@ -603,7 +658,13 @@ struct AddSheet: View {
         draft.previewFetched = true
 
         do {
-            try Store.save(draft, in: context)
+            let saved = try Store.save(draft, in: context)
+            if !selectedJourneyIDs.isEmpty {
+                for journey in journeys where selectedJourneyIDs.contains(journey.id) {
+                    journey.attach(saved.id)
+                }
+                try? context.save()
+            }
             let where_ = Taxonomy.category(id: categoryID).map { category in
                 subcategory.map { "\(category.name) › \($0)" } ?? category.name
             } ?? "your library"

@@ -1,7 +1,10 @@
 import SwiftUI
 import SwiftData
 
-/// Side quests — what you're working on, and the borks that serve it.
+/// Journeys — what you're working on, and the borks that serve it.
+///
+/// Code type is still `Mission`. The UI noun is journey. A journey is a reason
+/// (become / decide / explore), not a topic. Topics file what a thing *is*.
 struct MissionsView: View {
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
@@ -12,8 +15,16 @@ struct MissionsView: View {
     )
     private var missions: [Mission]
 
+    @Query(filter: #Predicate<Bookmark> { $0.deletedAt == nil })
+    private var bookmarks: [Bookmark]
+
     @State private var creating = false
+    @State private var pendingSeed: Mission.Seed?
     @State private var open: Mission?
+
+    private var seeds: [Mission.Seed] {
+        Mission.suggested(from: bookmarks, existing: missions)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -31,47 +42,90 @@ struct MissionsView: View {
                         open = mission
                     }
                 }
-
-                Button { creating = true } label: {
-                    HStack(spacing: 7) {
-                        Image(systemName: "plus")
-                        Text("New side quest").font(Typo.ui(13.5, .semibold))
-                    }
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                    )
-                }
-                .buttonStyle(.plain)
             }
+
+            if !seeds.isEmpty {
+                Text("FROM YOUR LIBRARY")
+                    .font(Typo.ui(10, .heavy)).tracking(0.6)
+                    .foregroundStyle(Tokens.mutedHeading)
+                    .padding(.top, missions.isEmpty ? 4 : 8)
+
+                ForEach(seeds) { seed in
+                    Button { accept(seed) } label: {
+                        HStack(alignment: .top, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(seed.title)
+                                    .font(Typo.display(16, .bold))
+                                    .foregroundStyle(Tokens.ink)
+                                Text(seed.blurb)
+                                    .font(Typo.ui(12.5))
+                                    .foregroundStyle(Tokens.inkSecondary)
+                            }
+                            Spacer()
+                            Text("Start")
+                                .font(Typo.ui(13, .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 7)
+                                .background(accent.base, in: Capsule())
+                        }
+                        .padding(14)
+                        .cardSurface(radius: 18)
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+            }
+
+            Button { creating = true } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "plus")
+                    Text(Copy.newJourney).font(Typo.ui(13.5, .semibold))
+                }
+                .foregroundStyle(Tokens.inkSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                )
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 18)
         .sheet(isPresented: $creating) {
-            NewMissionSheet().environment(\.accent, accent)
+            NewMissionSheet(seed: pendingSeed)
+                .environment(\.accent, accent)
+                .onDisappear { pendingSeed = nil }
         }
         .sheet(item: $open) { mission in
             MissionDetailSheet(mission: mission).environment(\.accent, accent)
         }
     }
 
+    private func accept(_ seed: Mission.Seed) {
+        let journey = Mission(title: seed.title, categoryID: seed.categoryID)
+        journey.bookmarkIDs = seed.bookmarkIDs
+        context.insert(journey)
+        try? context.save()
+        Haptics.success()
+        open = journey
+    }
+
     private var empty: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("What are you working on?")
-                    .font(Typo.display(19, .heavy))
+                Text(Copy.whatWorkingOn)
+                    .font(Typo.display(20, .heavy))
                     .foregroundStyle(Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Becoming a faster runner. Deciding which minivan. Planning a trip. Gather the borks that help — add a daily habit only if it needs one.")
+                Text("Become a faster runner. Decide on a van. Get into pottery. A journey is why you kept the links — a side quest, not another folder.")
                     .font(Typo.ui(13.5))
                     .foregroundStyle(Tokens.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             Button { creating = true } label: {
-                Text("Start a side quest")
+                Text(Copy.startJourney)
                     .font(Typo.ui(14.5, .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -108,7 +162,7 @@ private struct MissionCard: View {
                 HStack(alignment: .top, spacing: 10) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(mission.title)
-                            .font(Typo.display(17, .bold))
+                            .font(Typo.display(18, .bold))
                             .foregroundStyle(Tokens.ink)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
@@ -118,9 +172,9 @@ private struct MissionCard: View {
                                     .font(Typo.ui(11, .semibold))
                                     .foregroundStyle(palette.deep)
                                     .padding(.horizontal, 8).padding(.vertical, 3)
-                                    .background(palette.tint, in: Capsule())
+                                    .background(Color.white.opacity(0.55), in: Capsule())
                             }
-                            Text("\(mission.bookmarkIDs.count) \(Copy.borks(mission.bookmarkIDs.count))")
+                            Text(Copy.countedBorks(mission.bookmarkIDs.count))
                                 .font(Typo.ui(11.5, .medium))
                                 .foregroundStyle(Tokens.inkMeta)
                         }
@@ -147,9 +201,17 @@ private struct MissionCard: View {
                     WeekStrip(mission: mission, tint: accent.base)
                 }
             }
-            .padding(15)
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .cardSurface(radius: 20)
+            .background(
+                LinearGradient(colors: [palette.tint, palette.tint.opacity(0.35)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing),
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(palette.deep.opacity(0.12), lineWidth: 1)
+            )
         }
         .buttonStyle(PressableStyle())
     }
@@ -217,6 +279,9 @@ private struct WeekStrip: View {
 // MARK: - Create
 
 struct NewMissionSheet: View {
+    var seed: Mission.Seed? = nil
+    var seedIDs: [String] = []
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
@@ -230,8 +295,8 @@ struct NewMissionSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    field(label: "WORKING ON", placeholder: "Becoming a faster runner · Which minivan to buy", text: $title)
-                    field(label: "DAILY HABIT — ONLY IF IT NEEDS ONE", placeholder: "Run or drill — leave blank for research", text: $habit)
+                    field(label: "WORKING ON", placeholder: "Become a faster runner · Which minivan · Learn pottery", text: $title)
+                    field(label: "DAILY HABIT — ONLY IF IT NEEDS ONE", placeholder: "Leave blank for research or exploring", text: $habit)
 
                     Button { showingPicker = true } label: {
                         HStack {
@@ -274,7 +339,7 @@ struct NewMissionSheet: View {
                 .padding(18)
             }
             .background(Tokens.paper)
-            .navigationTitle("New side quest")
+            .navigationTitle(Copy.newJourney)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -282,6 +347,12 @@ struct NewMissionSheet: View {
                     Button("Create", action: create)
                         .fontWeight(.bold)
                         .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .onAppear {
+                if let seed {
+                    title = seed.title
+                    categoryID = seed.categoryID
                 }
             }
             .sheet(isPresented: $showingPicker) {
@@ -311,6 +382,7 @@ struct NewMissionSheet: View {
             categoryID: categoryID,
             habitName: habit.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         )
+        mission.bookmarkIDs = seed?.bookmarkIDs ?? seedIDs
         context.insert(mission)
         try? context.save()
         Haptics.success()
@@ -352,7 +424,7 @@ struct MissionDetailSheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     if mission.hasHabit { habitBlock }
 
-                    section("ATTACHED", count: attached.count)
+                    section("ON THIS JOURNEY", count: attached.count)
                     if attached.isEmpty {
                         Text("Nothing attached yet. Pull in the borks that actually help.")
                             .font(Typo.ui(13))
@@ -399,12 +471,17 @@ struct MissionDetailSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .destructive) {
-                        mission.deletedAt = .now
-                        try? context.save()
-                        dismiss()
-                    } label: {
-                        Image(systemName: "trash")
+                    HStack(spacing: 14) {
+                        ShareLink(item: mission.shareText(from: allBookmarks)) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        Button(role: .destructive) {
+                            mission.deletedAt = .now
+                            try? context.save()
+                            dismiss()
+                        } label: {
+                            Image(systemName: "trash")
+                        }
                     }
                 }
             }

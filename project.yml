@@ -57,6 +57,9 @@ targets:
         SupabaseAnonKey: $(SUPABASE_ANON_KEY)
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        UIAppFonts:
+          - BricolageGrotesque.ttf
+          - InstrumentSans.ttf
         # Opening a saved link back out to its source app
         LSApplicationQueriesSchemes:
           - instagram

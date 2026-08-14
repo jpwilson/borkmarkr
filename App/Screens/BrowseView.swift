@@ -9,18 +9,23 @@ struct BrowseView: View {
     @Binding var pendingTopic: String?
 
     @Environment(\.accent) private var accent
-    @State private var axis = Axis.topics
+    @AppStorage("browseAxis") private var axisRaw = Axis.topics.rawValue
     @State private var path = NavigationPath()
 
     enum Axis: String, CaseIterable {
-        case topics, sources, missions
+        case topics, sources, journeys
         var title: String {
             switch self {
             case .topics: "Topics"
             case .sources: "Sources"
-            case .missions: "Quests"
+            case .journeys: "Journeys"
             }
         }
+    }
+
+    private var axis: Axis {
+        get { Axis(rawValue: axisRaw) ?? .topics }
+        nonmutating set { axisRaw = newValue.rawValue }
     }
 
     @Query(
@@ -47,8 +52,8 @@ struct BrowseView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Browse")
-                        .font(Typo.display(32, .heavy))
-                        .tracking(-0.8)
+                        .font(Typo.display(34, .heavy))
+                        .tracking(-1.0)
                         .foregroundStyle(Tokens.ink)
                         .padding(.horizontal, 18)
                         .padding(.top, 12)
@@ -58,7 +63,7 @@ struct BrowseView: View {
                     switch axis {
                     case .topics: topicsGrid
                     case .sources: sourcesList
-                    case .missions: MissionsView()
+                    case .journeys: MissionsView()
                     }
                 }
                 .padding(.bottom, 120)

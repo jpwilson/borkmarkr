@@ -103,6 +103,92 @@ final class Mission {
         return completedDays.filter { $0 >= cutoff }.count
     }
 
+    func attach(_ bookmarkID: String) {
+        guard !bookmarkIDs.contains(bookmarkID) else { return }
+        bookmarkIDs.append(bookmarkID)
+        updatedAt = .now
+    }
+
+    func detach(_ bookmarkID: String) {
+        bookmarkIDs.removeAll { $0 == bookmarkID }
+        updatedAt = .now
+    }
+
+    func contains(_ bookmarkID: String) -> Bool {
+        bookmarkIDs.contains(bookmarkID)
+    }
+
+    /// A journey goes quiet when nothing on it has been opened or saved recently.
+    func isQuiet(among bookmarks: [Bookmark], days: Int = 14) -> Bool {
+        let attached = bookmarks.filter { bookmarkIDs.contains($0.id) }
+        guard attached.count >= 1 else { return false }
+        let calendar = Calendar.current
+        guard let cutoff = calendar.date(byAdding: .day, value: -days, to: calendar.startOfDay(for: .now))
+        else { return false }
+        if createdAt > cutoff { return false }
+        let lastTouch = attached.compactMap { $0.lastOpenedAt ?? $0.savedAt }.max() ?? createdAt
+        return lastTouch < cutoff
+    }
+
+    func shareText(from bookmarks: [Bookmark]) -> String {
+        let items = bookmarks.filter { bookmarkIDs.contains($0.id) }
+        let lines = items.prefix(50).map { "• \($0.displayTitle)\n  \($0.urlString)" }
+        let body = lines.isEmpty ? "Nothing attached yet." : lines.joined(separator: "\n\n")
+        return "\(title) — a journey from borkmarkr\n\n\(body)"
+    }
+
+    /// A suggested journey, named from *their* library — not from a catalogue.
+    struct Seed: Identifiable, Hashable {
+        var id: String { (categoryID ?? "none") + "|" + title.lowercased() }
+        var title: String
+        var categoryID: String?
+        var bookmarkIDs: [String]
+        var blurb: String
+    }
+
+    /// Cluster the library into 2–3 journey names. Topic/subtopic piles only —
+    /// we never invent a taxonomy of journeys. Existing journeys occupy a topic
+    /// so we do not suggest a second "Get into Fitness".
+    static func suggested(from bookmarks: [Bookmark], existing: [Mission], limit: Int = 3) -> [Seed] {
+        let live = bookmarks.filter { $0.deletedAt == nil }
+        let takenTopics = Set(existing.compactMap(\.categoryID))
+        let takenIDs = Set(existing.flatMap(\.bookmarkIDs))
+
+        var byTopic: [String: [Bookmark]] = [:]
+        for item in live {
+            guard let id = item.categoryID else { continue }
+            byTopic[id, default: []].append(item)
+        }
+
+        var seeds: [Seed] = []
+        for (topicID, items) in byTopic {
+            guard items.count >= 3, !takenTopics.contains(topicID) else { continue }
+            let unused = items.filter { !takenIDs.contains($0.id) }
+            guard unused.count >= 3 else { continue }
+
+            let topicName = Taxonomy.category(id: topicID)?.name ?? "this"
+            let subCounts = Dictionary(grouping: unused.compactMap(\.subcategory)) { $0 }.mapValues(\.count)
+            let dominant = subCounts.max { $0.value < $1.value }
+            let title: String
+            if let dominant, dominant.value * 2 >= unused.count {
+                title = "Get into \(dominant.key.lowercased())"
+            } else {
+                title = "Get into \(topicName.lowercased())"
+            }
+            seeds.append(Seed(
+                title: title,
+                categoryID: topicID,
+                bookmarkIDs: unused.map(\.id),
+                blurb: "\(unused.count) \(Copy.borks(unused.count)) already in your library"
+            ))
+        }
+
+        return seeds
+            .sorted { $0.bookmarkIDs.count > $1.bookmarkIDs.count }
+            .prefix(limit)
+            .map { $0 }
+    }
+
     /// Suggestions offered when creating a mission — phrased the way people
     /// actually say them.
     static let templates: [(title: String, habit: String, categoryID: String)] = [

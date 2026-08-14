@@ -36,6 +36,7 @@ struct RootView: View {
     @State private var showingAdd = false
     @State private var toast: String?
     @StateObject private var account = Account()
+    @AppStorage("browseAxis") private var browseAxis = "topics"
 
     @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
     private var customTopics: [CustomTopic]
@@ -56,7 +57,14 @@ struct RootView: View {
 
             Group {
                 switch tab {
-                case .library: LibraryView(onAdd: { showingAdd = true })
+                case .library: LibraryView(
+                    onAdd: { showingAdd = true },
+                    onSearch: { tab = .search },
+                    onSeeJourneys: {
+                        browseAxis = BrowseView.Axis.journeys.rawValue
+                        tab = .browse
+                    }
+                )
                 case .browse: BrowseView(interests: interests, pendingTopic: $pendingTopic)
                 case .search: SearchView()
                 case .you: YouView(onReplayTour: { hasOnboarded = false }, account: account)

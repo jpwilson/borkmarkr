@@ -5,6 +5,8 @@ import SwiftData
 /// density toggle, and the masonry feed.
 struct LibraryView: View {
     let onAdd: () -> Void
+    var onSearch: () -> Void = {}
+    var onSeeJourneys: () -> Void = {}
 
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
@@ -16,8 +18,16 @@ struct LibraryView: View {
     )
     private var bookmarks: [Bookmark]
 
+    @Query(
+        filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
+        sort: \Mission.createdAt, order: .reverse
+    )
+    private var journeys: [Mission]
+
     @State private var sourceFilter: Platform?
     @State private var detail: Bookmark?
+    @State private var openJourney: Mission?
+    @State private var creatingJourney = false
     @StateObject private var previews = PreviewFetcher()
 
     private var visible: [Bookmark] {
@@ -39,9 +49,17 @@ struct LibraryView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 16) {
                 header
                 searchEntry
+                JourneyRail(
+                    journeys: journeys,
+                    bookmarks: bookmarks,
+                    onOpen: { openJourney = $0 },
+                    onSeeAll: onSeeJourneys,
+                    onStart: { creatingJourney = true },
+                    onAcceptSeed: acceptSeed
+                )
                 if !presentPlatforms.isEmpty { filterRow }
                 feed
             }
@@ -51,6 +69,12 @@ struct LibraryView: View {
         .sheet(item: $detail) { bookmark in
             DetailSheet(bookmark: bookmark)
                 .environment(\.accent, accent)
+        }
+        .sheet(item: $openJourney) { journey in
+            MissionDetailSheet(mission: journey).environment(\.accent, accent)
+        }
+        .sheet(isPresented: $creatingJourney) {
+            NewMissionSheet().environment(\.accent, accent)
         }
         .onAppear(perform: markRead)
         // Fill in real titles and thumbnails for anything still missing them.
@@ -83,10 +107,10 @@ struct LibraryView: View {
             }
 
             Text("Your library")
-                .font(Typo.display(32, .heavy))
-                .tracking(-0.8)
+                .font(Typo.display(34, .heavy))
+                .tracking(-1.0)
                 .foregroundStyle(Tokens.ink)
-                .padding(.top, 10)
+                .padding(.top, 12)
 
             Text(statsLine)
                 .font(Typo.ui(12.5, .medium))
@@ -97,24 +121,36 @@ struct LibraryView: View {
     }
 
     private var searchEntry: some View {
-        HStack(spacing: 9) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Tokens.inkFaint)
-            Text(Copy.searchPlaceholder)
-                .font(Typo.ui(14))
-                .foregroundStyle(Tokens.inkMeta)
-            Spacer()
+        Button(action: onSearch) {
+            HStack(spacing: 9) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Tokens.inkFaint)
+                Text(Copy.searchPlaceholder)
+                    .font(Typo.ui(14))
+                    .foregroundStyle(Tokens.inkMeta)
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 13)
+            .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Tokens.hairline, lineWidth: 1)
+            )
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 13)
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Tokens.hairline, lineWidth: 1)
-        )
+        .buttonStyle(.plain)
         .padding(.horizontal, 18)
         .accessibilityHint("Opens the Search tab")
+    }
+
+    private func acceptSeed(_ seed: Mission.Seed) {
+        let journey = Mission(title: seed.title, categoryID: seed.categoryID)
+        journey.bookmarkIDs = seed.bookmarkIDs
+        context.insert(journey)
+        try? context.save()
+        Haptics.success()
+        openJourney = journey
     }
 
     private var filterRow: some View {

@@ -234,11 +234,11 @@ extension View {
 /// Swapping in the real families means changing only this enum.
 enum Typo {
     static func display(_ size: CGFloat, _ weight: Font.Weight = .bold) -> Font {
-        .system(size: size, weight: weight, design: .default)
+        .custom("Bricolage Grotesque", size: size).weight(weight)
     }
 
     static func ui(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .system(size: size, weight: weight, design: .default)
+        .custom("Instrument Sans", size: size).weight(weight)
     }
 
     static func mono(_ size: CGFloat) -> Font {

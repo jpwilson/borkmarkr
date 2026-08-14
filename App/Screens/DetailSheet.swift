@@ -18,7 +18,14 @@ struct DetailSheet: View {
     @State private var editingTitle = false
     @State private var draftTitle = ""
     @State private var showingPicker = false
+    @State private var showingJourneys = false
     @State private var tagDraft = ""
+
+    @Query(
+        filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
+        sort: \Mission.createdAt, order: .reverse
+    )
+    private var allJourneys: [Mission]
 
     private var palette: CategoryPalette {
         bookmark.category?.palette ?? NeutralPalette.value
@@ -31,6 +38,7 @@ struct DetailSheet: View {
                     hero
                     titleBlock
                     breadcrumb
+                    journeyRow
                     tagEditor
                     noteBlock
                     savedLine
@@ -76,6 +84,10 @@ struct DetailSheet: View {
                 bookmark.touch()
                 try? context.save()
             }
+        }
+        .sheet(isPresented: $showingJourneys) {
+            JourneyPickerSheet(bookmarkID: bookmark.id)
+                .environment(\.accent, accent)
         }
     }
 
@@ -224,6 +236,44 @@ struct DetailSheet: View {
             .foregroundStyle(Tokens.inkSecondary)
         }
         .buttonStyle(.plain)
+    }
+
+    private var onJourneys: [Mission] {
+        allJourneys.filter { $0.contains(bookmark.id) }
+    }
+
+    private var journeyRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button { showingJourneys = true } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "flag.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(onJourneys.isEmpty ? "Add to a journey" : "On \(Copy.countedJourneys(onJourneys.count))")
+                        .font(Typo.ui(13, .semibold))
+                    Spacer()
+                    Image(systemName: "plus")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Tokens.inkFaint)
+                }
+                .foregroundStyle(Tokens.inkSecondary)
+            }
+            .buttonStyle(.plain)
+
+            if !onJourneys.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(onJourneys) { journey in
+                            Text(journey.title)
+                                .font(Typo.ui(11.5, .semibold))
+                                .foregroundStyle((journey.topic?.palette ?? NeutralPalette.value).deep)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background((journey.topic?.palette ?? NeutralPalette.value).tint, in: Capsule())
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private var tagEditor: some View {
