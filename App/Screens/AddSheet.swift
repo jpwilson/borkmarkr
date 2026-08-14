@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import UIKit
 
 /// Three steps: paste → reading → details.
 ///
@@ -45,7 +44,6 @@ struct AddSheet: View {
     /// present it as a fact or as something to fill in.
     @State private var titleWasFetched = false
     @State private var editingTitle = false
-    @State private var clipboardURL: URL?
     @FocusState private var urlFocused: Bool
 
     private var parsedURL: URL? {
@@ -98,8 +96,10 @@ struct AddSheet: View {
     /// No "Fetch preview" button. Paste a link and it just goes — a button
     /// that only ever has one sensible outcome is a step, not a choice.
     ///
-    /// Also offers whatever's on the clipboard, since you almost always got
-    /// here by copying a link somewhere else.
+    /// We never read the system pasteboard ourselves. Peeking at it on appear
+    /// is what produced the "borkmarkr would like to paste" prompt on every
+    /// tap of +, including when you were about to type. Paste into the field
+    /// (keyboard bar or long-press) is a system gesture and does not prompt.
     private var pasteStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -117,30 +117,6 @@ struct AddSheet: View {
                                     lineWidth: parsedURL != nil ? 1.5 : 1)
                     )
 
-                if let clipboard = clipboardURL, urlText.isEmpty {
-                    Button {
-                        urlText = clipboard.absoluteString
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "doc.on.clipboard").font(.system(size: 12, weight: .semibold))
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text("Paste from clipboard")
-                                    .font(Typo.ui(13, .semibold))
-                                    .foregroundStyle(Tokens.ink)
-                                Text(clipboard.host ?? clipboard.absoluteString)
-                                    .font(Typo.mono(11))
-                                    .foregroundStyle(Tokens.inkMeta)
-                                    .lineLimit(1)
-                            }
-                            Spacer()
-                        }
-                        .foregroundStyle(accent.deep)
-                        .padding(13)
-                        .cardSurface(radius: 16)
-                    }
-                    .buttonStyle(PressableStyle())
-                }
-
                 HStack(spacing: 6) {
                     Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))
                     Text("Saving from another app? Use the share sheet.")
@@ -152,7 +128,6 @@ struct AddSheet: View {
         }
         .onAppear {
             urlFocused = true
-            clipboardURL = Self.readClipboard()
         }
         // Debounced so it fires once you've finished pasting, not on every
         // character of a typed URL.
@@ -162,15 +137,6 @@ struct AddSheet: View {
             guard !Task.isCancelled, step == .paste else { return }
             submit()
         }
-    }
-
-    private static func readClipboard() -> URL? {
-        guard UIPasteboard.general.hasURLs || UIPasteboard.general.hasStrings else { return nil }
-        let raw = UIPasteboard.general.url?.absoluteString
-            ?? UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines)
-            ?? ""
-        guard raw.hasPrefix("http"), let url = URL(string: raw), url.host != nil else { return nil }
-        return url
     }
 
     // MARK: Step 2 — reading
