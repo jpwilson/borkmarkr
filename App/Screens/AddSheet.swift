@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import UIKit
 
 /// Three steps: paste → reading → details.
 ///
@@ -109,9 +108,11 @@ struct AddSheet: View {
     /// No "Fetch preview" button. Paste a link and it just goes — a button
     /// that only ever has one sensible outcome is a step, not a choice.
     ///
-    /// Do not touch the pasteboard on appear. `detectPatterns` on iOS 26 was
-    /// crashing the sheet the moment + opened. The chip is always there; we
-    /// only read the clipboard when you tap it.
+    /// Never read `UIPasteboard` ourselves. A custom Button that peeks at it
+    /// is what produced "borkmarkr would like to paste from Chimoco" on every
+    /// tap — and users would get the same dialog from Instagram, Safari, etc.
+    /// `PasteButton` is a system control; iOS grants paste without asking.
+    /// Long-press in the field, or the keyboard paste key, also never prompts.
     private var pasteStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -130,25 +131,26 @@ struct AddSheet: View {
                     )
 
                 if urlText.isEmpty {
-                    Button(action: pasteFromClipboard) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "doc.on.clipboard")
-                                .font(.system(size: 12, weight: .semibold))
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text("Paste the copied link")
-                                    .font(Typo.ui(13, .semibold))
-                                    .foregroundStyle(Tokens.ink)
-                                Text("Only reads the clipboard when you tap")
-                                    .font(Typo.ui(11.5))
-                                    .foregroundStyle(Tokens.inkMeta)
-                            }
-                            Spacer()
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Have a link copied?")
+                                .font(Typo.ui(13, .semibold))
+                                .foregroundStyle(Tokens.ink)
+                            Text("Uses the system paste control, so iOS will not ask.")
+                                .font(Typo.ui(11.5))
+                                .foregroundStyle(Tokens.inkMeta)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        .foregroundStyle(accent.deep)
-                        .padding(13)
-                        .cardSurface(radius: 16)
+                        Spacer(minLength: 8)
+                        PasteButton(payloadType: String.self) { strings in
+                            applyPasted(strings.first ?? "")
+                        }
+                        .labelStyle(.titleAndIcon)
+                        .tint(accent.base)
+                        .buttonBorderShape(.capsule)
                     }
-                    .buttonStyle(PressableStyle())
+                    .padding(13)
+                    .cardSurface(radius: 16)
                 }
 
                 HStack(spacing: 6) {
@@ -174,12 +176,7 @@ struct AddSheet: View {
         }
     }
 
-    /// User-tapped read. iOS treats this as a paste gesture and does not
-    /// show the permission banner.
-    private func pasteFromClipboard() {
-        let raw = UIPasteboard.general.url?.absoluteString
-            ?? UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines)
-            ?? ""
+    private func applyPasted(_ raw: String) {
         guard let url = firstURL(in: raw) else { return }
         urlText = url.absoluteString
     }
