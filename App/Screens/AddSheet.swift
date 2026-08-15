@@ -52,7 +52,6 @@ struct AddSheet: View {
     /// present it as a fact or as something to fill in.
     @State private var titleWasFetched = false
     @State private var editingTitle = false
-    @State private var clipboardHasLink = false
     @State private var selectedJourneyIDs: Set<String> = []
     @State private var showingNewJourney = false
     @FocusState private var urlFocused: Bool
@@ -110,10 +109,9 @@ struct AddSheet: View {
     /// No "Fetch preview" button. Paste a link and it just goes — a button
     /// that only ever has one sensible outcome is a step, not a choice.
     ///
-    /// Clipboard *detection* uses `detectPatterns`, which does not read
-    /// contents and does not prompt. Reading the URL happens only when you
-    /// tap the chip — a user gesture, so iOS does not ask again. Peeking on
-    /// appear is what produced "borkmarkr would like to paste" on every +.
+    /// Do not touch the pasteboard on appear. `detectPatterns` on iOS 26 was
+    /// crashing the sheet the moment + opened. The chip is always there; we
+    /// only read the clipboard when you tap it.
     private var pasteStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -131,7 +129,7 @@ struct AddSheet: View {
                                     lineWidth: parsedURL != nil ? 1.5 : 1)
                     )
 
-                if clipboardHasLink, urlText.isEmpty {
+                if urlText.isEmpty {
                     Button(action: pasteFromClipboard) {
                         HStack(spacing: 8) {
                             Image(systemName: "doc.on.clipboard")
@@ -140,7 +138,7 @@ struct AddSheet: View {
                                 Text("Paste the copied link")
                                     .font(Typo.ui(13, .semibold))
                                     .foregroundStyle(Tokens.ink)
-                                Text("From the app you just copied")
+                                Text("Only reads the clipboard when you tap")
                                     .font(Typo.ui(11.5))
                                     .foregroundStyle(Tokens.inkMeta)
                             }
@@ -162,8 +160,10 @@ struct AddSheet: View {
             }
             .padding(18)
         }
-        .onAppear { urlFocused = true }
-        .task { clipboardHasLink = await detectClipboardLink() }
+        .task {
+            try? await Task.sleep(for: .milliseconds(250))
+            urlFocused = true
+        }
         // Debounced so it fires once you've finished pasting, not on every
         // character of a typed URL.
         .task(id: urlText) {
@@ -171,20 +171,6 @@ struct AddSheet: View {
             try? await Task.sleep(for: .milliseconds(350))
             guard !Task.isCancelled, step == .paste else { return }
             submit()
-        }
-    }
-
-    /// Pattern detection only — never reads the pasteboard contents.
-    private func detectClipboardLink() async -> Bool {
-        await withCheckedContinuation { continuation in
-            UIPasteboard.general.detectPatterns(for: [.probableWebURL]) { result in
-                switch result {
-                case .success(let patterns):
-                    continuation.resume(returning: patterns.contains(.probableWebURL))
-                case .failure:
-                    continuation.resume(returning: false)
-                }
-            }
         }
     }
 
