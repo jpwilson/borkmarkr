@@ -18,6 +18,8 @@ struct YouView: View {
     @State private var showingHowTo = false
     @State private var showingImport = false
     @State private var showingAuth = false
+    @State private var showingInsights = false
+    @State private var creatingQuestTitle: String?
 
     private var thisWeek: Int {
         let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
@@ -29,6 +31,7 @@ struct YouView: View {
             VStack(alignment: .leading, spacing: 18) {
                 profile
                 accountCard
+                insightsCard
                 stats
                 importHint
                 shareHint
@@ -49,6 +52,53 @@ struct YouView: View {
         .sheet(isPresented: $showingAuth) {
             AuthSheet(account: account).environment(\.accent, accent)
         }
+        .sheet(isPresented: $showingInsights) {
+            InsightsSheet(bookmarks: bookmarks, account: account) { title in
+                creatingQuestTitle = title
+            }
+            .environment(\.accent, accent)
+        }
+        .sheet(isPresented: Binding(
+            get: { creatingQuestTitle != nil },
+            set: { if !$0 { creatingQuestTitle = nil } }
+        )) {
+            NewMissionSheet(seed: creatingQuestTitle.map {
+                Mission.Seed(title: $0, categoryID: nil, subcategory: nil,
+                             bookmarkIDs: [], sampleTitles: [], blurb: "")
+            })
+            .environment(\.accent, accent)
+        }
+    }
+
+    private var insightsCard: some View {
+        Button { showingInsights = true } label: {
+            HStack(spacing: 11) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        LinearGradient(colors: [accent.base, accent.dark],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing),
+                        in: RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("What's interesting")
+                        .font(Typo.ui(14, .bold))
+                        .foregroundStyle(Tokens.ink)
+                    Text("Your last day, week or month of borks")
+                        .font(Typo.ui(12, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Tokens.inkFaint)
+            }
+            .padding(14)
+            .cardSurface(radius: 18)
+        }
+        .buttonStyle(PressableStyle())
     }
 
     private var profile: some View {

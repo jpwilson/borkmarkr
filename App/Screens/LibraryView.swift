@@ -29,6 +29,7 @@ struct LibraryView: View {
     @State private var detail: Bookmark?
     @State private var openJourney: Mission?
     @State private var creatingJourney = false
+    @State private var showingInsights = false
     @StateObject private var previews = PreviewFetcher()
 
     private var visible: [Bookmark] {
@@ -53,6 +54,7 @@ struct LibraryView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 searchEntry
+                insightsEntry
                 JourneyRail(
                     journeys: journeys,
                     bookmarks: bookmarks,
@@ -77,6 +79,15 @@ struct LibraryView: View {
         }
         .sheet(isPresented: $creatingJourney) {
             NewMissionSheet().environment(\.accent, accent)
+        }
+        .sheet(isPresented: $showingInsights) {
+            InsightsSheet(bookmarks: bookmarks, account: account) { title in
+                let quest = Mission(title: title)
+                context.insert(quest)
+                try? context.save()
+                openJourney = quest
+            }
+            .environment(\.accent, accent)
         }
         .onAppear(perform: markRead)
         // Fill in real titles and thumbnails for anything still missing them.
@@ -144,6 +155,28 @@ struct LibraryView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, 18)
         .accessibilityHint("Opens the Search tab")
+    }
+
+    private var insightsEntry: some View {
+        Button { showingInsights = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(accent.deep)
+                Text("What's interesting this week")
+                    .font(Typo.ui(13, .semibold))
+                    .foregroundStyle(Tokens.ink)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Tokens.inkFaint)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(accent.tint.opacity(0.55), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(PressableStyle())
+        .padding(.horizontal, 18)
     }
 
     private func acceptSeed(_ seed: Mission.Seed) {
