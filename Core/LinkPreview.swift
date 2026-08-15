@@ -29,6 +29,7 @@ enum LinkPreview {
         var author: String?
         var imageURL: URL?
         var durationSeconds: Int?
+        var publishedAt: Date?
     }
 
     /// Only the first 64KB is read — Open Graph tags live in `<head>`, and some
@@ -37,9 +38,17 @@ enum LinkPreview {
     private static let timeout: TimeInterval = 8
 
     static func fetch(for url: URL) async -> Result {
-        if let oembed = await fetchOEmbed(for: url) { return oembed }
-        if let og = await fetchOpenGraph(for: url) { return og }
-        return Result()
+        // oEmbed is great for title/thumb on YouTube, but it has no upload
+        // date. Merge with Open Graph / JSON-LD so "posted" can be filled in.
+        let oembed = await fetchOEmbed(for: url)
+        let og = await fetchOpenGraph(for: url)
+        var result = oembed ?? og ?? Result()
+        if result.title == nil { result.title = og?.title }
+        if result.author == nil { result.author = og?.author }
+        if result.imageURL == nil { result.imageURL = og?.imageURL }
+        if result.durationSeconds == nil { result.durationSeconds = og?.durationSeconds }
+        if result.publishedAt == nil { result.publishedAt = og?.publishedAt }
+        return result
     }
 
     // MARK: - oEmbed
@@ -90,7 +99,53 @@ enum LinkPreview {
         if let seconds = meta(in: html, property: "og:video:duration"), let value = Int(seconds) {
             result.durationSeconds = value
         }
-        return (result.title == nil && result.imageURL == nil) ? nil : result
+        result.publishedAt = publishedDate(in: html)
+        return (result.title == nil && result.imageURL == nil && result.publishedAt == nil) ? nil : result
+    }
+
+    /// article:published_time, JSON-LD uploadDate / datePublished.
+    /// Instagram and TikTok almost never emit these to an anonymous fetch.
+    private static func publishedDate(in html: String) -> Date? {
+        let metaKeys = [
+            "article:published_time",
+            "og:article:published_time",
+            "datePublished",
+            "pubdate",
+        ]
+        for key in metaKeys {
+            if let raw = meta(in: html, property: key), let date = parseDate(raw) {
+                return date
+            }
+        }
+        let jsonKeys = [
+            "\"uploadDate\"\\s*:\\s*\"([^\"]+)\"",
+            "\"datePublished\"\\s*:\\s*\"([^\"]+)\"",
+        ]
+        for pattern in jsonKeys {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+            else { continue }
+            let range = NSRange(html.startIndex..<html.endIndex, in: html)
+            if let match = regex.firstMatch(in: html, range: range),
+               match.numberOfRanges > 1,
+               let captured = Range(match.range(at: 1), in: html),
+               let date = parseDate(String(html[captured])) {
+                return date
+            }
+        }
+        return nil
+    }
+
+    private static func parseDate(_ raw: String) -> Date? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = iso.date(from: trimmed) { return date }
+        iso.formatOptions = [.withInternetDateTime]
+        if let date = iso.date(from: trimmed) { return date }
+        let day = DateFormatter()
+        day.locale = Locale(identifier: "en_US_POSIX")
+        day.dateFormat = "yyyy-MM-dd"
+        return day.date(from: String(trimmed.prefix(10)))
     }
 
     /// Deliberately a regex rather than a full HTML parse: we want four tags

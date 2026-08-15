@@ -20,7 +20,7 @@ final class PreviewFetcher: ObservableObject {
 
     func fetchMissing(for bookmarks: [Bookmark], in context: ModelContext) async {
         let pending = bookmarks
-            .filter { $0.needsPreview && !inFlight.contains($0.id) }
+            .filter { ($0.needsPreview || $0.needsPostedDate) && !inFlight.contains($0.id) }
             .prefix(24)
 
         guard !pending.isEmpty else { return }
@@ -71,6 +71,12 @@ final class PreviewFetcher: ObservableObject {
         }
         if let duration = result.durationSeconds, bookmark.durationSeconds == nil {
             bookmark.durationSeconds = duration
+        }
+        if let posted = result.publishedAt {
+            bookmark.postedAt = posted
+        }
+        if bookmark.canHavePostedDate {
+            bookmark.publishedDateChecked = true
         }
 
         // Only replace a title we invented from the URL slug. A title the user

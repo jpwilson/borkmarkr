@@ -47,6 +47,7 @@ struct AddSheet: View {
     @State private var error: String?
     @State private var imageURL: URL?
     @State private var duration: Int?
+    @State private var postedAt: Date?
     /// Whether the title came from the page or was generated. Drives whether we
     /// present it as a fact or as something to fill in.
     @State private var titleWasFetched = false
@@ -544,6 +545,7 @@ struct AddSheet: View {
 
             imageURL = preview.imageURL
             duration = preview.durationSeconds
+            postedAt = preview.publishedAt
             author = preview.author ?? Categorizer.fallbackAuthor(for: url)
 
             // A real page title, or nothing — never a routing word dressed up
@@ -655,6 +657,7 @@ struct AddSheet: View {
         )
 
         draft.imageURLString = imageURL?.absoluteString
+        draft.postedAt = postedAt
         draft.previewFetched = true
 
         do {

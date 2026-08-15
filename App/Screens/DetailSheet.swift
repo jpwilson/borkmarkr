@@ -411,9 +411,20 @@ struct DetailSheet: View {
     }
 
     private var savedLine: some View {
-        Text("Saved \(RelativeDate.full(bookmark.savedAt)) · from \(bookmark.platform.name)")
-            .font(Typo.ui(11.5, .medium))
-            .foregroundStyle(Tokens.inkMeta)
+        VStack(alignment: .leading, spacing: 3) {
+            Text("Liked \(RelativeDate.full(bookmark.savedAt)) · from \(bookmark.platform.name)")
+                .font(Typo.ui(11.5, .medium))
+                .foregroundStyle(Tokens.inkMeta)
+            if let posted = bookmark.postedAt {
+                Text("Posted \(RelativeDate.full(posted))")
+                    .font(Typo.ui(11.5, .medium))
+                    .foregroundStyle(Tokens.inkMeta)
+            } else if bookmark.platform == .instagram || bookmark.platform == .tiktok || bookmark.platform == .x {
+                Text("Posted date isn’t published by \(bookmark.platform.name)")
+                    .font(Typo.ui(11, .medium))
+                    .foregroundStyle(Tokens.inkFaint)
+            }
+        }
     }
 
     private var footerBar: some View {

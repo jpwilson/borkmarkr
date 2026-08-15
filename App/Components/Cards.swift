@@ -379,9 +379,17 @@ struct BookmarkCard: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
-            Text(RelativeDate.label(for: bookmark.savedAt))
-                .font(Typo.ui(10.5, .medium))
-                .foregroundStyle(Tokens.inkMeta)
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(RelativeDate.label(for: bookmark.savedAt))
+                    .font(Typo.ui(10.5, .medium))
+                    .foregroundStyle(Tokens.inkMeta)
+                if let posted = bookmark.postedAt,
+                   !Calendar.current.isDate(posted, inSameDayAs: bookmark.savedAt) {
+                    Text("Posted \(RelativeDate.calendar(posted))")
+                        .font(Typo.ui(9.5, .medium))
+                        .foregroundStyle(Tokens.inkFaint)
+                }
+            }
             if bookmark.hasNote { NoteDot() }
         }
     }
@@ -453,7 +461,7 @@ struct BookmarkRow: View {
                         .foregroundStyle(Tokens.inkSecondary)
                         .lineLimit(1)
                     Text("·").foregroundStyle(Tokens.inkFaint)
-                    Text(RelativeDate.label(for: bookmark.savedAt))
+                    Text(RelativeDate.cardLine(saved: bookmark.savedAt, posted: bookmark.postedAt))
                         .font(Typo.ui(11, .medium))
                         .foregroundStyle(Tokens.inkMeta)
                 }
@@ -510,5 +518,16 @@ enum RelativeDate {
 
     static func full(_ date: Date) -> String {
         date.formatted(.dateTime.month(.abbreviated).day().year())
+    }
+
+    static func calendar(_ date: Date) -> String {
+        date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    /// Liked/saved date, plus posted date when the page published one.
+    static func cardLine(saved: Date, posted: Date?, now: Date = .now, calendar: Calendar = .current) -> String {
+        let liked = label(for: saved, now: now, calendar: calendar)
+        guard let posted, !calendar.isDate(posted, inSameDayAs: saved) else { return liked }
+        return "\(liked) · posted \(Self.calendar(posted))"
     }
 }

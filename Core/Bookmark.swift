@@ -57,6 +57,12 @@ final class Bookmark {
     var lastOpenedAt: Date?
 
     var savedAt: Date
+    /// When the original post went up, if the page publishes it. Instagram and
+    /// TikTok usually do not. Distinct from `savedAt` — that is when *you*
+    /// liked or borked it (e.g. 10 Aug 2026).
+    var postedAt: Date?
+    /// So we only ask once. Existing rows default to false and get one backfill.
+    var publishedDateChecked: Bool = false
     var updatedAt: Date
 
     /// Soft-delete tombstone. Sync needs to know a thing was deleted, not just
@@ -85,6 +91,7 @@ final class Bookmark {
         noteText: String? = nil,
         noteDate: Date? = nil,
         savedAt: Date = .now,
+        postedAt: Date? = nil,
         isUnread: Bool = false
     ) {
         let resolvedPlatform = platform ?? Platform.detect(from: url)
@@ -102,6 +109,7 @@ final class Bookmark {
         self.noteText = noteText
         self.noteDate = noteDate
         self.savedAt = savedAt
+        self.postedAt = postedAt
         self.updatedAt = savedAt
         self.deletedAt = nil
         self.isUnread = isUnread
@@ -121,6 +129,19 @@ final class Bookmark {
         guard imageURLString == nil else { return false }
         guard let previewFetchedAt else { return true }
         return Date.now.timeIntervalSince(previewFetchedAt) > 60 * 60 * 24 * 7
+    }
+
+    /// YouTube, Shorts, the open web and Pinterest sometimes publish a date.
+    /// Instagram / TikTok / X usually do not — no point hammering them.
+    var canHavePostedDate: Bool {
+        switch platform {
+        case .youtube, .shorts, .web, .pinterest: true
+        default: false
+        }
+    }
+
+    var needsPostedDate: Bool {
+        postedAt == nil && canHavePostedDate && !publishedDateChecked
     }
 
     func markOpened() {
