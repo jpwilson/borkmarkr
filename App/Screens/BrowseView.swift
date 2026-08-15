@@ -7,6 +7,7 @@ import SwiftData
 struct BrowseView: View {
     let interests: [String]
     @Binding var pendingTopic: String?
+    var account: Account? = nil
 
     @Environment(\.accent) private var accent
     @AppStorage("browseAxis") private var axisRaw = Axis.topics.rawValue
@@ -18,7 +19,7 @@ struct BrowseView: View {
             switch self {
             case .topics: "Topics"
             case .sources: "Sources"
-            case .journeys: "Journeys"
+            case .journeys: "Side quests"
             }
         }
     }
@@ -63,7 +64,7 @@ struct BrowseView: View {
                     switch axis {
                     case .topics: topicsGrid
                     case .sources: sourcesList
-                    case .journeys: MissionsView()
+                    case .journeys: MissionsView(account: account)
                     }
                 }
                 .padding(.bottom, 120)

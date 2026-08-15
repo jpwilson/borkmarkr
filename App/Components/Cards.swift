@@ -41,29 +41,158 @@ struct CoverImage: View {
     }
 }
 
-/// Platform badge — small rounded square, 7.5–12px/800 label.
+/// Brand mark, not a two-letter tile. Letters read as a placeholder; these
+/// are the shapes people actually recognise: X, IG camera, Shorts portrait
+/// play, TikTok note, a globe (or the site favicon) for the open web.
 struct PlatformBadge: View {
     let platform: Platform
     var size: CGFloat = 22
+    var pageURL: URL? = nil
 
     var body: some View {
-        Text(platform.short)
-            .font(Typo.ui(size * 0.42, .heavy))
-            .foregroundStyle(platform.badgeInk)
-            .frame(width: size, height: size)
-            // A single-colour "gradient" of two identical stops keeps this one
-            // ShapeStyle type, so it can go straight into `background(_:in:)`.
-            .background(
-                LinearGradient(
-                    colors: platform.badgeColors.count > 1
-                        ? platform.badgeColors
-                        : [platform.badgeColors[0], platform.badgeColors[0]],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                in: RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
+        let radius = size * (platform == .shorts ? 0.38 : 0.32)
+        ZStack {
+            fill
+            mark
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .accessibilityLabel(platform.name)
+    }
+
+    @ViewBuilder
+    private var fill: some View {
+        if platform == .web, pageURL != nil {
+            Color(hex: "2A3038")
+        } else {
+            LinearGradient(
+                colors: platform.badgeColors.count > 1
+                    ? platform.badgeColors
+                    : [platform.badgeColors[0], platform.badgeColors[0]],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
-            .accessibilityLabel(platform.name)
+        }
+    }
+
+    @ViewBuilder
+    private var mark: some View {
+        switch platform {
+        case .x:
+            xMark
+        case .instagram:
+            instagramMark
+        case .tiktok:
+            tiktokMark
+        case .youtube:
+            Image(systemName: "play.fill")
+                .font(.system(size: size * 0.38, weight: .black))
+                .foregroundStyle(.white)
+                .offset(x: size * 0.03)
+        case .shorts:
+            shortsMark
+        case .threads:
+            Text("@")
+                .font(.system(size: size * 0.52, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
+        case .pinterest:
+            Text("P")
+                .font(.system(size: size * 0.5, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+        case .web:
+            webMark
+        }
+    }
+
+    private var xMark: some View {
+        ZStack {
+            Capsule().fill(.white).frame(width: size * 0.62, height: size * 0.12)
+                .rotationEffect(.degrees(40))
+            Capsule().fill(.white).frame(width: size * 0.62, height: size * 0.12)
+                .rotationEffect(.degrees(-40))
+        }
+    }
+
+    private var instagramMark: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                .stroke(.white, lineWidth: size * 0.075)
+                .padding(size * 0.18)
+            Circle()
+                .stroke(.white, lineWidth: size * 0.075)
+                .frame(width: size * 0.34, height: size * 0.34)
+            Circle()
+                .fill(.white)
+                .frame(width: size * 0.085, height: size * 0.085)
+                .offset(x: size * 0.18, y: -size * 0.18)
+        }
+    }
+
+    private var tiktokMark: some View {
+        ZStack {
+            Image(systemName: "music.note")
+                .font(.system(size: size * 0.48, weight: .bold))
+                .foregroundStyle(Color(hex: "25F4EE"))
+                .offset(x: -size * 0.06, y: size * 0.02)
+            Image(systemName: "music.note")
+                .font(.system(size: size * 0.48, weight: .bold))
+                .foregroundStyle(Color(hex: "FE2C55"))
+                .offset(x: size * 0.06, y: -size * 0.02)
+            Image(systemName: "music.note")
+                .font(.system(size: size * 0.48, weight: .bold))
+                .foregroundStyle(.white)
+        }
+    }
+
+    private var shortsMark: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
+                .stroke(.white, lineWidth: size * 0.08)
+                .padding(.horizontal, size * 0.24)
+                .padding(.vertical, size * 0.12)
+            Image(systemName: "play.fill")
+                .font(.system(size: size * 0.26, weight: .black))
+                .foregroundStyle(.white)
+                .offset(x: size * 0.015)
+        }
+    }
+
+    @ViewBuilder
+    private var webMark: some View {
+        if let host = pageURL?.host, let icon = Self.faviconURL(for: host) {
+            AsyncImage(url: icon) { phase in
+                if case .success(let image) = phase {
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .padding(size * 0.16)
+                } else {
+                    webFallback
+                }
+            }
+        } else {
+            webFallback
+        }
+    }
+
+    private var webFallback: some View {
+        ZStack {
+            Image(systemName: "globe.americas.fill")
+                .font(.system(size: size * 0.56, weight: .medium))
+                .foregroundStyle(Color(hex: "9BE7C4"))
+            if let host = pageURL?.host,
+               let initial = host.replacingOccurrences(of: "www.", with: "").first
+            {
+                Text(String(initial).uppercased())
+                    .font(.system(size: size * 0.28, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+        }
+    }
+
+    private static func faviconURL(for host: String) -> URL? {
+        let cleaned = host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+        return URL(string: "https://www.google.com/s2/favicons?domain=\(cleaned)&sz=128")
     }
 }
 
@@ -129,7 +258,7 @@ struct BookmarkCard: View {
     private var textCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                PlatformBadge(platform: bookmark.platform, size: 20)
+                PlatformBadge(platform: bookmark.platform, size: 20, pageURL: bookmark.url)
                 Text(bookmark.author ?? bookmark.platform.name)
                     .font(Typo.ui(11.5, .semibold))
                     .foregroundStyle(Tokens.inkSecondary)
@@ -163,7 +292,7 @@ struct BookmarkCard: View {
                     .clipped()
 
                 HStack(alignment: .top) {
-                    PlatformBadge(platform: bookmark.platform, size: 22)
+                    PlatformBadge(platform: bookmark.platform, size: 22, pageURL: bookmark.url)
                     Spacer()
                     if let duration = bookmark.durationLabel {
                         HStack(spacing: 3) {
@@ -317,7 +446,7 @@ struct BookmarkRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 5) {
                     if showPlatformBadge {
-                        PlatformBadge(platform: bookmark.platform, size: 16)
+                        PlatformBadge(platform: bookmark.platform, size: 16, pageURL: bookmark.url)
                     }
                     Text(bookmark.author ?? bookmark.platform.name)
                         .font(Typo.ui(11, .semibold))

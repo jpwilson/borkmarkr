@@ -63,9 +63,10 @@ struct RootView: View {
                     onSeeJourneys: {
                         browseAxis = BrowseView.Axis.journeys.rawValue
                         tab = .browse
-                    }
+                    },
+                    account: account
                 )
-                case .browse: BrowseView(interests: interests, pendingTopic: $pendingTopic)
+                case .browse: BrowseView(interests: interests, pendingTopic: $pendingTopic, account: account)
                 case .search: SearchView()
                 case .you: YouView(onReplayTour: { hasOnboarded = false }, account: account)
                 }

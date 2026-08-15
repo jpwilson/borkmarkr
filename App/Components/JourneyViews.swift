@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Horizontal rail of journeys for Library. Opens a journey, or starts one.
+/// Horizontal rail of side quests for Library.
 struct JourneyRail: View {
     let journeys: [Mission]
     let bookmarks: [Bookmark]
@@ -9,12 +9,10 @@ struct JourneyRail: View {
     let onSeeAll: () -> Void
     let onStart: () -> Void
     var onAcceptSeed: ((Mission.Seed) -> Void)?
+    var account: Account?
 
     @Environment(\.accent) private var accent
-
-    private var seeds: [Mission.Seed] {
-        Mission.suggested(from: bookmarks, existing: journeys)
-    }
+    @State private var seeds: [Mission.Seed] = []
 
     private var quiet: Mission? {
         journeys.first { $0.isQuiet(among: bookmarks) }
@@ -23,11 +21,11 @@ struct JourneyRail: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Text(Copy.journeysHeading)
+                Text(Copy.sideQuestsHeading)
                     .font(Typo.display(18, .bold))
                     .foregroundStyle(Tokens.ink)
                 Spacer()
-                Button(journeys.isEmpty ? Copy.startJourney : "See all", action: journeys.isEmpty ? onStart : onSeeAll)
+                Button(journeys.isEmpty ? Copy.startSideQuest : "See all", action: journeys.isEmpty ? onStart : onSeeAll)
                     .font(Typo.ui(12.5, .semibold))
                     .foregroundStyle(accent.deep)
             }
@@ -47,14 +45,14 @@ struct JourneyRail: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        ForEach(journeys) { journey in
-                            Button { onOpen(journey) } label: {
+                        ForEach(journeys) { quest in
+                            Button { onOpen(quest) } label: {
                                 JourneyTile(
-                                    title: journey.title,
-                                    count: journey.bookmarkIDs.count,
-                                    palette: journey.topic?.palette ?? NeutralPalette.value,
-                                    quiet: journey.isQuiet(among: bookmarks),
-                                    habit: journey.hasHabit
+                                    title: quest.title,
+                                    count: quest.bookmarkIDs.count,
+                                    palette: quest.topic?.palette ?? NeutralPalette.value,
+                                    quiet: quest.isQuiet(among: bookmarks),
+                                    habit: quest.hasHabit
                                 )
                             }
                             .buttonStyle(PressableStyle())
@@ -75,7 +73,7 @@ struct JourneyRail: View {
                         }
                         Button(action: onStart) {
                             JourneyTile(
-                                title: Copy.newJourney,
+                                title: Copy.newSideQuest,
                                 count: 0,
                                 palette: CategoryPalette(hue: 18),
                                 quiet: false,
@@ -90,11 +88,18 @@ struct JourneyRail: View {
                 }
             }
         }
+        .task(id: bookmarks.count + journeys.count) {
+            var next = Mission.suggested(from: bookmarks, existing: journeys)
+            seeds = next
+            let session = await account?.currentSession()
+            next = await SmartNamer.refine(next, session: session)
+            seeds = next
+        }
     }
 
-    private func quietCaption(_ journey: Mission) -> String {
-        let n = journey.bookmarkIDs.count
-        return "You saved \(Copy.countedBorks(n)) for \(journey.title) and have not looked lately."
+    private func quietCaption(_ quest: Mission) -> String {
+        let n = quest.bookmarkIDs.count
+        return "You saved \(Copy.countedBorks(n)) for \(quest.title) and have not looked lately."
     }
 
     private var emptyCard: some View {
@@ -103,11 +108,11 @@ struct JourneyRail: View {
                 Text(Copy.whatWorkingOn)
                     .font(Typo.display(17, .bold))
                     .foregroundStyle(Tokens.ink)
-                Text("A journey is why you kept something — get better at running, decide on a van, learn pottery. Not another topic.")
+                Text("A side quest is why you kept something — get better at running, pick a van, learn pottery. Not another topic.")
                     .font(Typo.ui(13))
                     .foregroundStyle(Tokens.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(Copy.startJourney)
+                Text(Copy.startSideQuest)
                     .font(Typo.ui(13.5, .bold))
                     .foregroundStyle(accent.deep)
                     .padding(.top, 4)
@@ -183,7 +188,7 @@ struct JourneyTile: View {
     }
 }
 
-/// Pick existing journeys, or start a new one, for a single bork.
+/// Pick existing side quests, or start a new one, for a single bork.
 struct JourneyPickerSheet: View {
     let bookmarkID: String
 
@@ -206,7 +211,7 @@ struct JourneyPickerSheet: View {
                     Button { creating = true } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "plus.circle.fill")
-                            Text(Copy.newJourney)
+                            Text(Copy.newSideQuest)
                                 .font(Typo.ui(14, .semibold))
                             Spacer()
                         }
@@ -216,22 +221,22 @@ struct JourneyPickerSheet: View {
                     }
                     .buttonStyle(.plain)
 
-                    ForEach(journeys) { journey in
-                        let on = journey.contains(bookmarkID)
+                    ForEach(journeys) { quest in
+                        let on = quest.contains(bookmarkID)
                         Button {
-                            if on { journey.detach(bookmarkID) } else { journey.attach(bookmarkID) }
+                            if on { quest.detach(bookmarkID) } else { quest.attach(bookmarkID) }
                             try? context.save()
                             Haptics.tap()
                         } label: {
                             HStack(spacing: 10) {
                                 Circle()
-                                    .fill((journey.topic?.palette ?? NeutralPalette.value).dot)
+                                    .fill((quest.topic?.palette ?? NeutralPalette.value).dot)
                                     .frame(width: 10, height: 10)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(journey.title)
+                                    Text(quest.title)
                                         .font(Typo.ui(14.5, .semibold))
                                         .foregroundStyle(Tokens.ink)
-                                    Text(Copy.countedBorks(journey.bookmarkIDs.count))
+                                    Text(Copy.countedBorks(quest.bookmarkIDs.count))
                                         .font(Typo.ui(11.5))
                                         .foregroundStyle(Tokens.inkMeta)
                                 }
@@ -249,7 +254,7 @@ struct JourneyPickerSheet: View {
                 .padding(18)
             }
             .background(Tokens.paper)
-            .navigationTitle("Add to a journey")
+            .navigationTitle("Add to a side quest")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }

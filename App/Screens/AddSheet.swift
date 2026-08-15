@@ -255,7 +255,7 @@ struct AddSheet: View {
                         .frame(height: 150)
                         .clipped()
                     HStack(alignment: .top) {
-                        PlatformBadge(platform: platform, size: 24)
+                        PlatformBadge(platform: platform, size: 24, pageURL: url)
                         Spacer()
                         if let duration {
                             let label = String(format: "%d:%02d", duration / 60, duration % 60)
@@ -414,10 +414,10 @@ struct AddSheet: View {
 
     private var journeyAttach: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("ALSO ON A JOURNEY")
+            Text("ALSO ON A SIDE QUEST")
                 .font(Typo.ui(10, .heavy)).tracking(0.6)
                 .foregroundStyle(Tokens.mutedHeading)
-            Text("Optional. Topics file what this is. A journey is why you kept it.")
+            Text("Optional. Topics file what this is. A side quest is why you kept it.")
                 .font(Typo.ui(12))
                 .foregroundStyle(Tokens.inkMeta)
 
@@ -441,7 +441,7 @@ struct AddSheet: View {
                     Button { showingNewJourney = true } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "plus").font(.system(size: 10, weight: .bold))
-                            Text(Copy.newJourney)
+                            Text(Copy.newSideQuest)
                                 .font(Typo.ui(12, .semibold))
                         }
                         .foregroundStyle(accent.deep)

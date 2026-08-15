@@ -134,21 +134,23 @@ final class Mission {
         let items = bookmarks.filter { bookmarkIDs.contains($0.id) }
         let lines = items.prefix(50).map { "• \($0.displayTitle)\n  \($0.urlString)" }
         let body = lines.isEmpty ? "Nothing attached yet." : lines.joined(separator: "\n\n")
-        return "\(title) — a journey from borkmarkr\n\n\(body)"
+        return "\(title) — a side quest from borkmarkr\n\n\(body)"
     }
 
-    /// A suggested journey, named from *their* library — not from a catalogue.
+    /// A suggested side quest, named from *their* library — not a catalogue.
     struct Seed: Identifiable, Hashable {
-        var id: String { (categoryID ?? "none") + "|" + title.lowercased() }
+        /// Stable across a title rewrite so a model rename does not remount the row.
+        var id: String { categoryID ?? bookmarkIDs.sorted().joined() }
         var title: String
         var categoryID: String?
+        var subcategory: String?
         var bookmarkIDs: [String]
+        var sampleTitles: [String]
         var blurb: String
     }
 
-    /// Cluster the library into 2–3 journey names. Topic/subtopic piles only —
-    /// we never invent a taxonomy of journeys. Existing journeys occupy a topic
-    /// so we do not suggest a second "Get into Fitness".
+    /// Cluster the library into a few side quests. Existing quests occupy a
+    /// topic so we do not suggest a second pile for the same filing.
     static func suggested(from bookmarks: [Bookmark], existing: [Mission], limit: Int = 3) -> [Seed] {
         let live = bookmarks.filter { $0.deletedAt == nil }
         let takenTopics = Set(existing.compactMap(\.categoryID))
@@ -169,16 +171,14 @@ final class Mission {
             let topicName = Taxonomy.category(id: topicID)?.name ?? "this"
             let subCounts = Dictionary(grouping: unused.compactMap(\.subcategory)) { $0 }.mapValues(\.count)
             let dominant = subCounts.max { $0.value < $1.value }
-            let title: String
-            if let dominant, dominant.value * 2 >= unused.count {
-                title = "Get into \(dominant.key.lowercased())"
-            } else {
-                title = "Get into \(topicName.lowercased())"
-            }
+            let sub = (dominant.map { $0.value * 2 >= unused.count } == true) ? dominant?.key : nil
+            let samples = unused.prefix(6).map(\.displayTitle)
             seeds.append(Seed(
-                title: title,
+                title: draftTitle(topic: topicName, subcategory: sub, titles: samples),
                 categoryID: topicID,
+                subcategory: sub,
                 bookmarkIDs: unused.map(\.id),
+                sampleTitles: samples,
                 blurb: "\(unused.count) \(Copy.borks(unused.count)) already in your library"
             ))
         }
@@ -187,6 +187,58 @@ final class Mission {
             .sorted { $0.bookmarkIDs.count > $1.bookmarkIDs.count }
             .prefix(limit)
             .map { $0 }
+    }
+
+    /// Offline names. Never "Get into X" — that is a category, not a quest.
+    static func draftTitle(topic: String, subcategory: String?, titles: [String]) -> String {
+        let blob = (titles + [subcategory, topic].compactMap { $0 })
+            .joined(separator: " ")
+            .lowercased()
+
+        func mentions(_ words: String...) -> Bool {
+            words.contains { blob.contains($0) }
+        }
+
+        if mentions("conspirac", "cover-up", "unsolved", "rabbit") {
+            return "Go down the rabbit hole"
+        }
+        if mentions("startup", "founder", "venture", "bootstrapp") {
+            return "Explore starting a business"
+        }
+        if mentions("social strategy") || (mentions("marketing") && mentions("social", "instagram", "tiktok", "shorts")) {
+            return "Marketing on socials"
+        }
+        if mentions("mobility", "hip", "hamstring", "stretch", "fascia") {
+            if mentions("run", "marathon", "5k", "10k") { return "Improve mobility for running" }
+            if mentions("football", "soccer") { return "Improve mobility for football" }
+            if mentions("desk", "office") { return "Undo the desk stiffness" }
+            return "Improve mobility"
+        }
+        if mentions("tendon", "achilles", "rehab") { return "Build tendon strength" }
+        if mentions("pottery", "ceramic", "wheel") { return "Learn pottery" }
+        if mentions("pencil", "charcoal", "drawing") { return "Get better at drawing" }
+        if mentions("paint", "oil paint", "watercol") { return "Get better at painting" }
+
+        if let subcategory {
+            return phrase(for: subcategory)
+        }
+        return phrase(for: topic)
+    }
+
+    private static func phrase(for label: String) -> String {
+        switch label.lowercased() {
+        case "mobility", "stretching": return "Improve \(label.lowercased())"
+        case "conspiracies": return "Go down the rabbit hole"
+        case "startups": return "Explore starting a business"
+        case "social strategy": return "Marketing on socials"
+        case "strength", "hypertrophy": return "Get stronger"
+        case "meal prep": return "Get meal prep going"
+        case "running": return "Train for running"
+        default:
+            let lower = label.lowercased()
+            if lower.hasSuffix("ing") { return "Get better at \(lower)" }
+            return "Work on \(lower)"
+        }
     }
 
     /// Suggestions offered when creating a mission — phrased the way people

@@ -1,11 +1,13 @@
 import SwiftUI
 import SwiftData
 
-/// Journeys — what you're working on, and the borks that serve it.
+/// Side quests — what you're working on, and the borks that serve it.
 ///
-/// Code type is still `Mission`. The UI noun is journey. A journey is a reason
+/// Code type is still `Mission`. The UI noun is side quest. A quest is a reason
 /// (become / decide / explore), not a topic. Topics file what a thing *is*.
 struct MissionsView: View {
+    var account: Account? = nil
+
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
 
@@ -21,10 +23,7 @@ struct MissionsView: View {
     @State private var creating = false
     @State private var pendingSeed: Mission.Seed?
     @State private var open: Mission?
-
-    private var seeds: [Mission.Seed] {
-        Mission.suggested(from: bookmarks, existing: missions)
-    }
+    @State private var seeds: [Mission.Seed] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -79,7 +78,7 @@ struct MissionsView: View {
             Button { creating = true } label: {
                 HStack(spacing: 7) {
                     Image(systemName: "plus")
-                    Text(Copy.newJourney).font(Typo.ui(13.5, .semibold))
+                    Text(Copy.newSideQuest).font(Typo.ui(13.5, .semibold))
                 }
                 .foregroundStyle(Tokens.inkSecondary)
                 .frame(maxWidth: .infinity)
@@ -98,7 +97,48 @@ struct MissionsView: View {
                 .onDisappear { pendingSeed = nil }
         }
         .sheet(item: $open) { mission in
-            MissionDetailSheet(mission: mission).environment(\.accent, accent)
+            MissionDetailSheet(mission: mission, account: account).environment(\.accent, accent)
+        }
+        .task(id: bookmarks.count + missions.count) {
+            var next = Mission.suggested(from: bookmarks, existing: missions)
+            seeds = next
+
+            let stiff = missions.filter { $0.title.lowercased().hasPrefix("get into ") }
+            for quest in stiff {
+                let items = bookmarks.filter { quest.bookmarkIDs.contains($0.id) }
+                quest.title = Mission.draftTitle(
+                    topic: quest.topic?.name ?? "",
+                    subcategory: items.compactMap(\.subcategory).first,
+                    titles: items.prefix(6).map(\.displayTitle)
+                )
+                quest.updatedAt = .now
+            }
+            if !stiff.isEmpty { try? context.save() }
+
+            let session = await account?.currentSession()
+            let stiffSeeds: [Mission.Seed] = stiff.map { quest in
+                let items = bookmarks.filter { quest.bookmarkIDs.contains($0.id) }
+                return Mission.Seed(
+                    title: quest.title,
+                    categoryID: quest.categoryID,
+                    subcategory: items.compactMap(\.subcategory).first,
+                    bookmarkIDs: quest.bookmarkIDs,
+                    sampleTitles: items.prefix(6).map(\.displayTitle),
+                    blurb: ""
+                )
+            }
+            let refined = await SmartNamer.refine(next + stiffSeeds, session: session)
+            let suggestionIDs = Set(next.map(\.id))
+            seeds = refined.filter { suggestionIDs.contains($0.id) }
+            var renamed = false
+            for seed in refined where !suggestionIDs.contains(seed.id) {
+                if let quest = stiff.first(where: { $0.categoryID == seed.categoryID || $0.id == seed.id }) {
+                    quest.title = seed.title
+                    quest.updatedAt = .now
+                    renamed = true
+                }
+            }
+            if renamed { try? context.save() }
         }
     }
 
@@ -118,14 +158,14 @@ struct MissionsView: View {
                     .font(Typo.display(20, .heavy))
                     .foregroundStyle(Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Become a faster runner. Decide on a van. Get into pottery. A journey is why you kept the links — a side quest, not another folder.")
+                Text("Become a faster runner. Decide on a van. Learn pottery. A side quest is why you kept the links — not another folder.")
                     .font(Typo.ui(13.5))
                     .foregroundStyle(Tokens.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             Button { creating = true } label: {
-                Text(Copy.startJourney)
+                Text(Copy.startSideQuest)
                     .font(Typo.ui(14.5, .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -339,7 +379,7 @@ struct NewMissionSheet: View {
                 .padding(18)
             }
             .background(Tokens.paper)
-            .navigationTitle(Copy.newJourney)
+            .navigationTitle(Copy.newSideQuest)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -394,6 +434,7 @@ struct NewMissionSheet: View {
 
 struct MissionDetailSheet: View {
     @Bindable var mission: Mission
+    var account: Account? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accent) private var accent
@@ -403,6 +444,8 @@ struct MissionDetailSheet: View {
     private var allBookmarks: [Bookmark]
 
     @State private var detail: Bookmark?
+    @State private var editingTitle = false
+    @State private var draftTitle = ""
 
     private var attached: [Bookmark] {
         allBookmarks.filter { mission.bookmarkIDs.contains($0.id) }
@@ -424,7 +467,7 @@ struct MissionDetailSheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     if mission.hasHabit { habitBlock }
 
-                    section("ON THIS JOURNEY", count: attached.count)
+                    section("ON THIS SIDE QUEST", count: attached.count)
                     if attached.isEmpty {
                         Text("Nothing attached yet. Pull in the borks that actually help.")
                             .font(Typo.ui(13))
@@ -466,8 +509,39 @@ struct MissionDetailSheet: View {
                 .padding(.bottom, 30)
             }
             .background(Tokens.paper)
-            .navigationTitle(mission.title)
+            .navigationTitle(editingTitle ? "Rename" : mission.title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Button {
+                        draftTitle = mission.title
+                        editingTitle = true
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(mission.title)
+                                .font(Typo.ui(16, .bold))
+                                .foregroundStyle(Tokens.ink)
+                                .lineLimit(1)
+                            Image(systemName: "pencil")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Tokens.inkFaint)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .alert("Rename side quest", isPresented: $editingTitle) {
+                TextField("Name", text: $draftTitle)
+                Button("Save") {
+                    let cleaned = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !cleaned.isEmpty {
+                        mission.title = cleaned
+                        mission.updatedAt = .now
+                        try? context.save()
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) {

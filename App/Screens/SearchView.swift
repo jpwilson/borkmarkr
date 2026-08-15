@@ -123,7 +123,7 @@ struct SearchView: View {
                 }
 
                 if !journeys.isEmpty {
-                    chipRow(title: "JOURNEY") {
+                    chipRow(title: "SIDE QUEST") {
                         ForEach(journeys) { journey in
                             toggleChip(journey.title,
                                        active: journeyFilter.contains(journey.id),

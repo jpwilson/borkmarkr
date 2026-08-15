@@ -7,6 +7,7 @@ struct LibraryView: View {
     let onAdd: () -> Void
     var onSearch: () -> Void = {}
     var onSeeJourneys: () -> Void = {}
+    var account: Account? = nil
 
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
@@ -58,7 +59,8 @@ struct LibraryView: View {
                     onOpen: { openJourney = $0 },
                     onSeeAll: onSeeJourneys,
                     onStart: { creatingJourney = true },
-                    onAcceptSeed: acceptSeed
+                    onAcceptSeed: acceptSeed,
+                    account: account
                 )
                 if !presentPlatforms.isEmpty { filterRow }
                 feed
@@ -71,7 +73,7 @@ struct LibraryView: View {
                 .environment(\.accent, accent)
         }
         .sheet(item: $openJourney) { journey in
-            MissionDetailSheet(mission: journey).environment(\.accent, accent)
+            MissionDetailSheet(mission: journey, account: account).environment(\.accent, accent)
         }
         .sheet(isPresented: $creatingJourney) {
             NewMissionSheet().environment(\.accent, accent)

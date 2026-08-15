@@ -154,7 +154,7 @@ struct ImportSheet: View {
 
                     ForEach(outcome.candidates.prefix(8)) { candidate in
                         HStack(spacing: 10) {
-                            PlatformBadge(platform: Platform.detect(from: candidate.url), size: 26)
+                            PlatformBadge(platform: Platform.detect(from: candidate.url), size: 26, pageURL: candidate.url)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(candidate.title ?? candidate.url.host ?? "Link")
                                     .font(Typo.ui(13, .semibold))

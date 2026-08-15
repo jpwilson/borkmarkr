@@ -96,7 +96,7 @@ struct DetailSheet: View {
         if bookmark.isTextPost {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 7) {
-                    PlatformBadge(platform: bookmark.platform, size: 26)
+                    PlatformBadge(platform: bookmark.platform, size: 26, pageURL: bookmark.url)
                     Text(bookmark.author ?? bookmark.platform.name)
                         .font(Typo.ui(13, .semibold))
                         .foregroundStyle(Tokens.inkSecondary)
@@ -248,7 +248,7 @@ struct DetailSheet: View {
                 HStack(spacing: 6) {
                     Image(systemName: "flag.fill")
                         .font(.system(size: 12, weight: .semibold))
-                    Text(onJourneys.isEmpty ? "Add to a journey" : "On \(Copy.countedJourneys(onJourneys.count))")
+                    Text(onJourneys.isEmpty ? "Add to a side quest" : "On \(Copy.countedSideQuests(onJourneys.count))")
                         .font(Typo.ui(13, .semibold))
                     Spacer()
                     Image(systemName: "plus")
