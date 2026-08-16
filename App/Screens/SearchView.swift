@@ -22,7 +22,8 @@ struct SearchView: View {
     @State private var sources: Set<Platform> = []
     @State private var topics: Set<String> = []
     @State private var journeyFilter: Set<String> = []
-    @State private var recents: [String] = []
+    @AppStorage("searchRecents") private var recentsRaw = ""
+    @State private var openAxis: SearchAxis?
     @State private var detail: Bookmark?
 
     @StateObject private var semantic = SemanticIndex()
@@ -38,6 +39,22 @@ struct SearchView: View {
         sort: \Mission.createdAt, order: .reverse
     )
     private var journeys: [Mission]
+
+    private enum SearchAxis: String, CaseIterable, Identifiable {
+        case source, topic, quest
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .source: "Source"
+            case .topic: "Topic"
+            case .quest: "Side quest"
+            }
+        }
+    }
+
+    private var recents: [String] {
+        recentsRaw.split(separator: "\u{1e}").map(String.init).filter { !$0.isEmpty }
+    }
 
     private var isFiltering: Bool {
         !debounced.isEmpty || !sources.isEmpty || !topics.isEmpty || !journeyFilter.isEmpty
@@ -77,11 +94,6 @@ struct SearchView: View {
         }
     }
 
-    private var presentPlatforms: [Platform] {
-        let used = Set(all.map(\.platform))
-        return Platform.ordered.filter { used.contains($0) }
-    }
-
     /// Every topic, with the ones you actually have borks in first.
     ///
     /// Showing only used topics made Search feel broken: you'd go looking for
@@ -108,48 +120,10 @@ struct SearchView: View {
                     .padding(.top, 12)
 
                 field
-
-                if !presentPlatforms.isEmpty {
-                    chipRow(title: "SOURCE") {
-                        ForEach(presentPlatforms, id: \.self) { platform in
-                            toggleChip(platform.name,
-                                       active: sources.contains(platform),
-                                       tint: Color(hex: "48505C")) {
-                                if sources.contains(platform) { sources.remove(platform) }
-                                else { sources.insert(platform) }
-                            }
-                        }
-                    }
+                axisTabs
+                if let openAxis {
+                    axisPills(openAxis)
                 }
-
-                if !journeys.isEmpty {
-                    chipRow(title: "SIDE QUEST") {
-                        ForEach(journeys) { journey in
-                            toggleChip(journey.title,
-                                       active: journeyFilter.contains(journey.id),
-                                       tint: (journey.topic?.palette ?? NeutralPalette.value).deep,
-                                       bg: (journey.topic?.palette ?? NeutralPalette.value).tint) {
-                                if journeyFilter.contains(journey.id) { journeyFilter.remove(journey.id) }
-                                else { journeyFilter.insert(journey.id) }
-                            }
-                        }
-                    }
-                }
-
-                if !presentTopics.isEmpty {
-                    chipRow(title: "TOPIC") {
-                        ForEach(presentTopics) { topic in
-                            toggleChip(topic.name,
-                                       active: topics.contains(topic.id),
-                                       tint: topic.palette.deep,
-                                       bg: topic.palette.tint) {
-                                if topics.contains(topic.id) { topics.remove(topic.id) }
-                                else { topics.insert(topic.id) }
-                            }
-                        }
-                    }
-                }
-
                 content
             }
             .padding(.bottom, 120)
@@ -201,16 +175,85 @@ struct SearchView: View {
         .padding(.horizontal, 18)
     }
 
-    private func chipRow<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
-                .padding(.horizontal, 18)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) { content() }
-                    .padding(.horizontal, 18)
+    private var axisTabs: some View {
+        HStack(spacing: 8) {
+            ForEach(SearchAxis.allCases) { axis in
+                let on = openAxis == axis
+                let count = selectedCount(axis)
+                Button {
+                    withAnimation(.easeOut(duration: 0.18)) {
+                        openAxis = on ? nil : axis
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(axis.title)
+                        if count > 0 {
+                            Text("\(count)")
+                                .font(Typo.ui(10, .bold))
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(.white.opacity(on ? 0.22 : 0.7), in: Capsule())
+                        }
+                    }
+                    .font(Typo.ui(13, .semibold))
+                    .foregroundStyle(on ? .white : Tokens.ink)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(on ? Tokens.ink : Tokens.surface, in: Capsule())
+                    .overlay(Capsule().stroke(on ? .clear : Tokens.hairline, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
             }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 18)
+    }
+
+    private func selectedCount(_ axis: SearchAxis) -> Int {
+        switch axis {
+        case .source: sources.count
+        case .topic: topics.count
+        case .quest: journeyFilter.count
+        }
+    }
+
+    @ViewBuilder
+    private func axisPills(_ axis: SearchAxis) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                switch axis {
+                case .source:
+                    ForEach(Platform.ordered, id: \.self) { platform in
+                        toggleChip(platform.name,
+                                   active: sources.contains(platform),
+                                   tint: Color(hex: "48505C")) {
+                            if sources.contains(platform) { sources.remove(platform) }
+                            else { sources.insert(platform) }
+                        }
+                    }
+                case .topic:
+                    ForEach(presentTopics) { topic in
+                        toggleChip(topic.name,
+                                   active: topics.contains(topic.id),
+                                   tint: topic.palette.deep,
+                                   bg: topic.palette.tint) {
+                            if topics.contains(topic.id) { topics.remove(topic.id) }
+                            else { topics.insert(topic.id) }
+                        }
+                    }
+                case .quest:
+                    ForEach(journeys) { journey in
+                        toggleChip(journey.title,
+                                   active: journeyFilter.contains(journey.id),
+                                   tint: (journey.topic?.palette ?? NeutralPalette.value).deep,
+                                   bg: (journey.topic?.palette ?? NeutralPalette.value).tint) {
+                            if journeyFilter.contains(journey.id) { journeyFilter.remove(journey.id) }
+                            else { journeyFilter.insert(journey.id) }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 18)
         }
     }
 
@@ -234,24 +277,42 @@ struct SearchView: View {
     @ViewBuilder
     private var content: some View {
         if !isFiltering {
-            if recents.isEmpty {
-                VStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 34, weight: .light))
-                        .foregroundStyle(Tokens.inkFaint)
-                    Text("Search everything you've saved")
-                        .font(Typo.ui(14.5, .semibold))
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Recent searches")
+                    .font(Typo.ui(10, .heavy)).tracking(0.6)
+                    .foregroundStyle(Tokens.mutedHeading)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 8)
+
+                if recents.isEmpty {
+                    Text("Nothing yet. Search for a title, a person, or a #subtopic.")
+                        .font(Typo.ui(13.5))
                         .foregroundStyle(Tokens.inkSecondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 56)
-            } else {
-                chipRow(title: "RECENT") {
-                    ForEach(recents, id: \.self) { term in
-                        toggleChip(term, active: false, tint: Tokens.inkSecondary) {
-                            query = term; debounced = term
+                        .padding(.horizontal, 18)
+                } else {
+                    VStack(spacing: 6) {
+                        ForEach(recents, id: \.self) { term in
+                            Button {
+                                query = term
+                                debounced = term
+                            } label: {
+                                HStack {
+                                    Image(systemName: "clock")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(Tokens.inkFaint)
+                                    Text(term)
+                                        .font(Typo.ui(14, .medium))
+                                        .foregroundStyle(Tokens.ink)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 11)
+                                .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
+                    .padding(.horizontal, 18)
                 }
             }
         } else if results.isEmpty {
@@ -273,7 +334,10 @@ struct SearchView: View {
 
             LazyVStack(spacing: 9) {
                 ForEach(results) { bookmark in
-                    Button { detail = bookmark } label: {
+                    Button {
+                        rememberQuery()
+                        detail = bookmark
+                    } label: {
                         BookmarkRow(bookmark: bookmark)
                     }
                     .buttonStyle(.plain)
@@ -327,8 +391,8 @@ struct SearchView: View {
     private func rememberQuery() {
         let term = query.trimmingCharacters(in: .whitespaces)
         guard term.count > 1 else { return }
-        recents.removeAll { $0 == term }
-        recents.insert(term, at: 0)
-        recents = Array(recents.prefix(6))
+        var next = recents.filter { $0 != term }
+        next.insert(term, at: 0)
+        recentsRaw = Array(next.prefix(8)).joined(separator: "\u{1e}")
     }
 }

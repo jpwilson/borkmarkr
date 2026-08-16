@@ -51,25 +51,7 @@ struct MissionsView: View {
 
                 ForEach(seeds) { seed in
                     Button { accept(seed) } label: {
-                        HStack(alignment: .top, spacing: 10) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(seed.title)
-                                    .font(Typo.display(16, .bold))
-                                    .foregroundStyle(Tokens.ink)
-                                Text(seed.blurb)
-                                    .font(Typo.ui(12.5))
-                                    .foregroundStyle(Tokens.inkSecondary)
-                            }
-                            Spacer()
-                            Text("Start")
-                                .font(Typo.ui(13, .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(accent.base, in: Capsule())
-                        }
-                        .padding(14)
-                        .cardSurface(radius: 18)
+                        QuestSeedRow(seed: seed)
                     }
                     .buttonStyle(PressableStyle())
                 }
@@ -198,60 +180,45 @@ private struct MissionCard: View {
 
     var body: some View {
         Button(action: onOpen) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(mission.title)
-                            .font(Typo.display(18, .bold))
-                            .foregroundStyle(Tokens.ink)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                        HStack(spacing: 6) {
-                            if let topic = mission.topic {
-                                Text(topic.name)
-                                    .font(Typo.ui(11, .semibold))
-                                    .foregroundStyle(palette.deep)
-                                    .padding(.horizontal, 8).padding(.vertical, 3)
-                                    .background(Color.white.opacity(0.55), in: Capsule())
-                            }
-                            Text(Copy.countedBorks(mission.bookmarkIDs.count))
-                                .font(Typo.ui(11.5, .medium))
-                                .foregroundStyle(Tokens.inkMeta)
-                        }
-                    }
-                    Spacer(minLength: 0)
-
+            VStack(alignment: .leading, spacing: 0) {
+                ZStack(alignment: .topTrailing) {
+                    QuestCard(
+                        title: mission.title,
+                        count: mission.bookmarkIDs.count,
+                        palette: palette,
+                        motif: QuestMotif.resolve(title: mission.title, categoryID: mission.categoryID),
+                        layout: .row,
+                        quiet: false,
+                        habit: mission.hasHabit,
+                        topicName: mission.topic?.name
+                    )
                     if mission.hasHabit {
                         TickButton(done: mission.isDone(), tint: accent.base, action: onTick)
+                            .padding(12)
                     }
                 }
 
                 if mission.hasHabit {
-                    HStack(spacing: 10) {
-                        if mission.streak() > 0 {
-                            Label("\(mission.streak()) day streak", systemImage: "flame.fill")
-                                .font(Typo.ui(11.5, .bold))
-                                .foregroundStyle(accent.deep)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 10) {
+                            if mission.streak() > 0 {
+                                Label("\(mission.streak()) day streak", systemImage: "flame.fill")
+                                    .font(Typo.ui(11.5, .bold))
+                                    .foregroundStyle(accent.deep)
+                            }
+                            Text("\(mission.completions(inLast: 30))/30 days")
+                                .font(Typo.ui(11.5, .medium))
+                                .foregroundStyle(Tokens.inkMeta)
+                            Spacer()
                         }
-                        Text("\(mission.completions(inLast: 30))/30 days")
-                            .font(Typo.ui(11.5, .medium))
-                            .foregroundStyle(Tokens.inkMeta)
-                        Spacer()
+                        WeekStrip(mission: mission, tint: accent.base)
                     }
-                    WeekStrip(mission: mission, tint: accent.base)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+                    .background(palette.tint)
                 }
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(colors: [palette.tint, palette.tint.opacity(0.35)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing),
-                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(palette.deep.opacity(0.12), lineWidth: 1)
-            )
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
         .buttonStyle(PressableStyle())
     }
@@ -446,9 +413,13 @@ struct MissionDetailSheet: View {
     @State private var detail: Bookmark?
     @State private var editingTitle = false
     @State private var draftTitle = ""
+    @State private var draftThoughts = ""
+    @State private var newTodo = ""
+    @State private var reordering = false
 
     private var attached: [Bookmark] {
-        allBookmarks.filter { mission.bookmarkIDs.contains($0.id) }
+        let map = Dictionary(uniqueKeysWithValues: allBookmarks.map { ($0.id, $0) })
+        return mission.bookmarkIDs.compactMap { map[$0] }
     }
 
     /// Brks in the mission's topic that aren't attached yet — the "these might
@@ -467,17 +438,54 @@ struct MissionDetailSheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     if mission.hasHabit { habitBlock }
 
-                    section("ON THIS SIDE QUEST", count: attached.count)
+                    summaryCard
+                    thoughtsCard
+                    todoCard
+
+                    HStack {
+                        section("ON THIS SIDE QUEST", count: attached.count)
+                        Spacer()
+                        if attached.count > 1 {
+                            Button(reordering ? "Done" : "Reorder") {
+                                withAnimation(.easeOut(duration: 0.18)) { reordering.toggle() }
+                            }
+                            .font(Typo.ui(12, .semibold))
+                            .foregroundStyle(accent.deep)
+                        }
+                    }
+
                     if attached.isEmpty {
                         Text("Nothing attached yet. Pull in the borks that actually help.")
                             .font(Typo.ui(13))
                             .foregroundStyle(Tokens.inkSecondary)
                     } else {
-                        ForEach(attached) { bookmark in
-                            Button { detail = bookmark } label: {
-                                BookmarkRow(bookmark: bookmark)
+                        ForEach(Array(attached.enumerated()), id: \.element.id) { index, bookmark in
+                            HStack(spacing: 8) {
+                                if reordering {
+                                    VStack(spacing: 4) {
+                                        Button {
+                                            moveBork(from: index, by: -1)
+                                        } label: {
+                                            Image(systemName: "chevron.up")
+                                                .font(.system(size: 11, weight: .bold))
+                                        }
+                                        .disabled(index == 0)
+                                        Button {
+                                            moveBork(from: index, by: 1)
+                                        } label: {
+                                            Image(systemName: "chevron.down")
+                                                .font(.system(size: 11, weight: .bold))
+                                        }
+                                        .disabled(index == attached.count - 1)
+                                    }
+                                    .foregroundStyle(accent.deep)
+                                    .buttonStyle(.plain)
+                                }
+                                Button { detail = bookmark } label: {
+                                    BookmarkRow(bookmark: bookmark)
+                                }
+                                .buttonStyle(PressableStyle())
                             }
-                            .buttonStyle(PressableStyle())
                         }
                     }
 
@@ -560,9 +568,122 @@ struct MissionDetailSheet: View {
                 }
             }
             .sheet(item: $detail) { DetailSheet(bookmark: $0).environment(\.accent, accent) }
+            .onAppear { draftThoughts = mission.detail ?? "" }
         }
         .presentationDetents([.large])
         .presentationCornerRadius(Tokens.sheetRadius)
+    }
+
+    private var summaryCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("THE THREAD")
+                .font(Typo.ui(10, .heavy)).tracking(0.6)
+                .foregroundStyle(Tokens.mutedHeading)
+            Text(mission.summary(from: allBookmarks))
+                .font(Typo.ui(14.5))
+                .foregroundStyle(Tokens.ink)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(accent.tint.opacity(0.45), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var thoughtsCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("YOUR THOUGHTS")
+                .font(Typo.ui(10, .heavy)).tracking(0.6)
+                .foregroundStyle(Tokens.mutedHeading)
+            TextField("What are you noticing? What do you want to try?", text: $draftThoughts, axis: .vertical)
+                .font(Typo.ui(14.5))
+                .lineLimit(3...8)
+                .onChange(of: draftThoughts) { _, value in
+                    mission.detail = value.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+                    mission.updatedAt = .now
+                    try? context.save()
+                }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface(radius: 18)
+    }
+
+    private var todoCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("TO-DO")
+                .font(Typo.ui(10, .heavy)).tracking(0.6)
+                .foregroundStyle(Tokens.mutedHeading)
+
+            ForEach(mission.todos) { item in
+                Button {
+                    var next = mission.todos
+                    if let i = next.firstIndex(of: item) {
+                        next[i].done.toggle()
+                        mission.todos = next
+                        try? context.save()
+                    }
+                    Haptics.tap()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(item.done ? accent.base : Tokens.inkFaint)
+                        Text(item.title)
+                            .font(Typo.ui(14.5))
+                            .foregroundStyle(item.done ? Tokens.inkMeta : Tokens.ink)
+                            .strikethrough(item.done)
+                            .multilineTextAlignment(.leading)
+                        Spacer()
+                        Button {
+                            mission.todos = mission.todos.filter { $0.id != item.id }
+                            try? context.save()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Tokens.inkFaint)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
+            HStack(spacing: 8) {
+                TextField("Add a step", text: $newTodo)
+                    .font(Typo.ui(14.5))
+                    .submitLabel(.done)
+                    .onSubmit(addTodo)
+                Button(action: addTodo) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(accent.base)
+                }
+                .buttonStyle(.plain)
+                .disabled(newTodo.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface(radius: 18)
+    }
+
+    private func addTodo() {
+        let title = newTodo.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return }
+        mission.todos = mission.todos + [QuestTodo(title: title)]
+        newTodo = ""
+        try? context.save()
+        Haptics.tap()
+    }
+
+    private func moveBork(from index: Int, by delta: Int) {
+        var ids = mission.bookmarkIDs
+        let next = index + delta
+        guard ids.indices.contains(index), ids.indices.contains(next) else { return }
+        ids.swapAt(index, next)
+        mission.bookmarkIDs = ids
+        mission.updatedAt = .now
+        try? context.save()
     }
 
     private var habitBlock: some View {

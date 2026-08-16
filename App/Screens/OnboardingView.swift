@@ -54,12 +54,9 @@ struct OnboardingView: View {
     private var valueProp: some View {
         VStack(spacing: 22) {
             Spacer()
-            Image(systemName: "bookmark.fill")
-                .font(.system(size: 34, weight: .black))
-                .foregroundStyle(.white)
-                .frame(width: 76, height: 76)
-                .background(accent.base, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .shadow(color: accent.base.opacity(0.4), radius: 22, y: 12)
+            ClayArt(name: "brandMark")
+                .frame(width: 148, height: 148)
+                .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
 
             VStack(spacing: 10) {
                 Text("Everything you save,\nfinally in one place.")
@@ -88,6 +85,9 @@ struct OnboardingView: View {
     private var shareDemo: some View {
         VStack(spacing: 20) {
             Spacer()
+            ClayArt(name: "welcomeHero")
+                .frame(width: 200, height: 200)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             VStack(spacing: 10) {
                 Text("Save it without\nleaving the app.")
                     .font(Typo.display(29, .heavy))

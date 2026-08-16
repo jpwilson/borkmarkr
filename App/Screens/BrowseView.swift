@@ -179,7 +179,7 @@ struct BrowseView: View {
                     .foregroundStyle(accent.deep)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(15)
-                    .frame(height: 128, alignment: .topLeading)
+                    .frame(height: 168, alignment: .topLeading)
                     .background(accent.tint, in: RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -217,26 +217,22 @@ struct BrowseView: View {
     @ViewBuilder
     private var sourcesList: some View {
         let counts = sourceCounts
-        let used = Platform.ordered.filter { (counts[$0] ?? 0) > 0 }
-
-        if used.isEmpty {
-            emptyAxis(symbol: "square.stack", text: "Sources appear as you save")
-        } else {
-            VStack(spacing: 10) {
-                ForEach(used, id: \.self) { platform in
-                    NavigationLink(value: platform) {
-                        SourceRow(
-                            platform: platform,
-                            count: counts[platform] ?? 0,
-                            topCategories: topCategories(for: platform),
-                            swatches: swatches(for: platform)
-                        )
-                    }
-                    .buttonStyle(.plain)
+        VStack(spacing: 10) {
+            ForEach(Platform.ordered, id: \.self) { platform in
+                let count = counts[platform] ?? 0
+                NavigationLink(value: platform) {
+                    SourceRow(
+                        platform: platform,
+                        count: count,
+                        topCategories: count == 0 ? "Nothing saved yet" : topCategories(for: platform),
+                        swatches: swatches(for: platform),
+                        empty: count == 0
+                    )
                 }
+                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 18)
         }
+        .padding(.horizontal, 18)
     }
 
     private func topCategories(for platform: Platform) -> String {
@@ -273,31 +269,31 @@ private struct TopicTile: View {
     let count: Int
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Circle()
-                .fill(category.palette.deep.opacity(0.10))
-                .frame(width: 84, height: 84)
-                .offset(x: 26, y: -26)
+        VStack(spacing: 0) {
+            ClayArt(name: TopicMotif.asset(for: category.id))
+                .frame(maxWidth: .infinity)
+                .frame(height: 92)
+                .clipped()
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(count)")
-                    .font(Typo.display(23, .heavy))
-                    .foregroundStyle(category.palette.deep)
-                Text(Copy.borks(count))
-                    .font(Typo.ui(10.5, .semibold))
-                    .foregroundStyle(category.palette.deep.opacity(0.7))
+            VStack(alignment: .leading, spacing: 2) {
                 Text(category.name)
                     .font(Typo.ui(14.5, .bold))
-                    .foregroundStyle(category.palette.deep)
+                    .foregroundStyle(Tokens.ink)
                     .lineLimit(2)
-                    .padding(.top, 6)
+                Text(Copy.countedBorks(count))
+                    .font(Typo.ui(11, .medium))
+                    .foregroundStyle(Tokens.inkMeta)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(11)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(category.palette.tint)
         }
-        .padding(15)
-        .frame(height: 128, alignment: .topLeading)
-        .background(category.palette.tint, in: RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous))
+        .frame(height: 168, alignment: .top)
         .clipShape(RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous)
+                .stroke(category.palette.deep.opacity(0.08), lineWidth: 1)
+        )
     }
 }
 
@@ -306,16 +302,18 @@ private struct SourceRow: View {
     let count: Int
     let topCategories: String
     let swatches: [CategoryPalette]
+    var empty: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
             PlatformBadge(platform: platform, size: 44)
+                .opacity(empty ? 0.55 : 1)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(platform.name)
                     .font(Typo.ui(15, .bold))
-                    .foregroundStyle(Tokens.ink)
-                Text("\(Copy.countedBorks(count)) · \(topCategories)")
+                    .foregroundStyle(empty ? Tokens.inkSecondary : Tokens.ink)
+                Text(empty ? "Nothing saved yet" : "\(Copy.countedBorks(count)) · \(topCategories)")
                     .font(Typo.ui(11.5, .medium))
                     .foregroundStyle(Tokens.inkMeta)
                     .lineLimit(1)
@@ -323,16 +321,18 @@ private struct SourceRow: View {
 
             Spacer(minLength: 6)
 
-            HStack(spacing: -6) {
-                ForEach(Array(swatches.enumerated()), id: \.offset) { _, palette in
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(LinearGradient(colors: [palette.coverTop, palette.coverBottom],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 22, height: 28)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .stroke(.white, lineWidth: 1.5)
-                        )
+            if !empty {
+                HStack(spacing: -6) {
+                    ForEach(Array(swatches.enumerated()), id: \.offset) { _, palette in
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(LinearGradient(colors: [palette.coverTop, palette.coverBottom],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 22, height: 28)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .stroke(.white, lineWidth: 1.5)
+                            )
+                    }
                 }
             }
 
@@ -342,5 +342,6 @@ private struct SourceRow: View {
         }
         .padding(13)
         .cardSurface(radius: 18)
+        .opacity(empty ? 0.92 : 1)
     }
 }

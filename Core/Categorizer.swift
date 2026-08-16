@@ -215,17 +215,18 @@ enum Categorizer {
         else {
             // Honest "don't know". Uncategorised is a real state and the
             // Explore screen surfaces it, so nothing is lost.
-            return Suggestion(categoryID: nil, subcategory: nil, tags: [platform.name.lowercased()])
+            return Suggestion(categoryID: nil, subcategory: nil, tags: [])
         }
 
         let unique: Set<String> = Set(matchedLabels.filter { $0.count > 3 })
         let ranked: [String] = unique.sorted { $0.count > $1.count }
         let topTags: [String] = Array(ranked.prefix(3)).sorted()
+            .filter { !Platform.isSiteName($0) }
 
         return Suggestion(
             categoryID: bestCategory,
             subcategory: subScores[bestCategory]?.sub,
-            tags: topTags + [platform.name.lowercased()],
+            tags: topTags,
             score: bestScore
         )
     }

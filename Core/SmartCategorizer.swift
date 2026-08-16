@@ -97,10 +97,9 @@ enum SmartCategorizer {
             topic.subs.first { $0.caseInsensitiveCompare(proposed) == .orderedSame }
         }
 
-        let platform = Platform.detect(from: url).name.lowercased()
-        let tags = (response.tags + [platform])
+        let tags = response.tags
             .map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
-            .filter { !$0.isEmpty }
+            .filter { !$0.isEmpty && !Platform.isSiteName($0) }
 
         return Categorizer.Suggestion(
             categoryID: topic.id,

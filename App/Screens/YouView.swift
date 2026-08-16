@@ -72,31 +72,7 @@ struct YouView: View {
 
     private var insightsCard: some View {
         Button { showingInsights = true } label: {
-            HStack(spacing: 11) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(
-                        LinearGradient(colors: [accent.base, accent.dark],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    )
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("What's interesting")
-                        .font(Typo.ui(14, .bold))
-                        .foregroundStyle(Tokens.ink)
-                    Text("Your last day, week or month of borks")
-                        .font(Typo.ui(12, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Tokens.inkFaint)
-            }
-            .padding(14)
-            .cardSurface(radius: 18)
+            InsightsEntry(bookmarks: bookmarks, compact: true)
         }
         .buttonStyle(PressableStyle())
     }

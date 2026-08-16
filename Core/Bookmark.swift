@@ -152,6 +152,12 @@ final class Bookmark {
     var category: Topic? { Taxonomy.category(id: categoryID) }
     var hasNote: Bool { !(noteText ?? "").isEmpty }
 
+    /// A person or handle — never "Instagram" or "X (formerly Twitter)".
+    var displayAuthor: String? {
+        guard let author, !author.isEmpty, !Platform.isSiteName(author) else { return nil }
+        return author
+    }
+
     /// X and Threads are always text cards. A pasted x.com link often has no
     /// post body — only a title — and treating that as media produced a
     /// 0-height cover with the title overflowing onto the card below.

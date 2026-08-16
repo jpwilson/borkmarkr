@@ -47,37 +47,41 @@ struct JourneyRail: View {
                     HStack(spacing: 10) {
                         ForEach(journeys) { quest in
                             Button { onOpen(quest) } label: {
-                                JourneyTile(
+                                QuestCard(
                                     title: quest.title,
                                     count: quest.bookmarkIDs.count,
                                     palette: quest.topic?.palette ?? NeutralPalette.value,
+                                    motif: QuestMotif.resolve(title: quest.title, categoryID: quest.categoryID),
+                                    layout: .rail,
                                     quiet: quest.isQuiet(among: bookmarks),
-                                    habit: quest.hasHabit
+                                    habit: quest.hasHabit,
+                                    topicName: quest.topic?.name
                                 )
                             }
                             .buttonStyle(PressableStyle())
                         }
                         ForEach(seeds) { seed in
                             Button { onAcceptSeed?(seed) } label: {
-                                JourneyTile(
+                                QuestCard(
                                     title: seed.title,
                                     count: seed.bookmarkIDs.count,
                                     palette: Taxonomy.category(id: seed.categoryID)?.palette ?? NeutralPalette.value,
-                                    quiet: false,
-                                    habit: false,
+                                    motif: QuestMotif.resolve(title: seed.title, categoryID: seed.categoryID, subcategory: seed.subcategory),
+                                    layout: .rail,
                                     suggested: true,
+                                    topicName: Taxonomy.category(id: seed.categoryID)?.name,
                                     blurb: seed.blurb
                                 )
                             }
                             .buttonStyle(PressableStyle())
                         }
                         Button(action: onStart) {
-                            JourneyTile(
+                            QuestCard(
                                 title: Copy.newSideQuest,
                                 count: 0,
                                 palette: CategoryPalette(hue: 18),
-                                quiet: false,
-                                habit: false,
+                                motif: .compass,
+                                layout: .rail,
                                 dashed: true
                             )
                         }
@@ -129,64 +133,7 @@ struct JourneyRail: View {
     }
 }
 
-struct JourneyTile: View {
-    let title: String
-    let count: Int
-    let palette: CategoryPalette
-    var quiet: Bool
-    var habit: Bool
-    var suggested: Bool = false
-    var dashed: Bool = false
-    var blurb: String?
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Circle().fill(palette.dot).frame(width: 8, height: 8)
-                if suggested {
-                    Text("From your library")
-                        .font(Typo.ui(10, .bold))
-                        .foregroundStyle(palette.deep)
-                } else if quiet {
-                    Text("Quiet")
-                        .font(Typo.ui(10, .bold))
-                        .foregroundStyle(Tokens.inkMeta)
-                } else if habit {
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(palette.deep)
-                }
-                Spacer(minLength: 0)
-            }
-
-            Text(title)
-                .font(Typo.display(16, .bold))
-                .foregroundStyle(Tokens.ink)
-                .multilineTextAlignment(.leading)
-                .lineLimit(3)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
-
-            Text(blurb ?? (dashed ? "Name what you’re after" : Copy.countedBorks(count)))
-                .font(Typo.ui(11.5, .medium))
-                .foregroundStyle(Tokens.inkMeta)
-                .lineLimit(2)
-        }
-        .padding(14)
-        .frame(width: 168, height: 148, alignment: .topLeading)
-        .background(
-            LinearGradient(colors: [palette.tint, palette.tint.opacity(0.35)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing),
-            in: RoundedRectangle(cornerRadius: 20, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(dashed ? Tokens.dashed : palette.deep.opacity(0.12),
-                              style: StrokeStyle(lineWidth: 1, dash: dashed ? [5, 4] : []))
-        )
-    }
-}
 
 /// Pick existing side quests, or start a new one, for a single bork.
 struct JourneyPickerSheet: View {

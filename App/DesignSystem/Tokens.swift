@@ -168,12 +168,13 @@ extension Platform {
     var badgeColors: [Color] {
         switch self {
         case .x: [Color(hex: "0F1014")]
-        case .instagram: [Color(hex: "7B3FE4"), Color(hex: "DB2E7A"), Color(hex: "FF7A3D")]
+        case .instagram: [Color(hex: "833AB4"), Color(hex: "C13584"), Color(hex: "F77737")]
         case .tiktok: [Color(hex: "0D0E12")]
         case .youtube: [Color(hex: "CC1B2B")]
-        case .shorts: [Color(hex: "D5202F")]
+        case .shorts: [Color(hex: "FF0033")]
         case .threads: [Color(hex: "141416")]
         case .pinterest: [Color(hex: "B8121F")]
+        case .grok: [Color(hex: "111113")]
         case .web: [Color(hex: "48505C")]
         }
     }
@@ -186,11 +187,12 @@ extension Platform {
     var headerColors: [Color] {
         switch self {
         case .x, .tiktok: [Color(hex: "17181D"), Color(hex: "000000")]
-        case .instagram: [Color(hex: "7B3FE4"), Color(hex: "DB2E7A"), Color(hex: "FF7A3D")]
+        case .instagram: [Color(hex: "833AB4"), Color(hex: "C13584"), Color(hex: "F77737")]
         case .youtube: [Color(hex: "B3121F"), Color(hex: "5E0A12")]
         case .shorts: [Color(hex: "C11723"), Color(hex: "5E0A12")]
         case .threads: [Color(hex: "1B1B1E"), Color(hex: "000000")]
         case .pinterest: [Color(hex: "A50F1B"), Color(hex: "4E070D")]
+        case .grok: [Color(hex: "1A1A1D"), Color(hex: "000000")]
         case .web: [Color(hex: "3E4550"), Color(hex: "20242B")]
         }
     }

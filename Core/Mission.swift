@@ -39,6 +39,8 @@ final class Mission {
     var updatedAt: Date
     var deletedAt: Date?
     var isArchived: Bool = false
+    /// JSON-encoded `[QuestTodo]`. Optional so existing stores migrate.
+    var todosJSON: String?
 
     init(title: String, detail: String? = nil, categoryID: String? = nil, habitName: String? = nil) {
         self.id = UUID().uuidString
@@ -54,6 +56,50 @@ final class Mission {
 
     var topic: Topic? { Taxonomy.category(id: categoryID) }
     var hasHabit: Bool { !(habitName ?? "").isEmpty }
+
+    var todos: [QuestTodo] {
+        get {
+            guard let data = todosJSON?.data(using: .utf8),
+                  let decoded = try? JSONDecoder().decode([QuestTodo].self, from: data)
+            else { return [] }
+            return decoded
+        }
+        set {
+            if let data = try? JSONEncoder().encode(newValue),
+               let text = String(data: data, encoding: .utf8) {
+                todosJSON = text
+            } else {
+                todosJSON = nil
+            }
+            updatedAt = .now
+        }
+    }
+
+    func summary(from bookmarks: [Bookmark]) -> String {
+        let items = bookmarks.filter { bookmarkIDs.contains($0.id) }
+        guard !items.isEmpty else {
+            return "Nothing on this quest yet. Add a few borks and I’ll sum them up."
+        }
+        let subs = Dictionary(grouping: items.compactMap(\.subcategory)) { $0 }
+            .sorted { $0.value.count > $1.value.count }
+            .prefix(2)
+            .map(\.key)
+        let platforms = Dictionary(grouping: items) { $0.platform.name }
+            .sorted { $0.value.count > $1.value.count }
+            .prefix(2)
+            .map(\.key)
+        var line = "\(Copy.countedBorks(items.count)) on this quest"
+        if let topic { line += ", filed under \(topic.name)" }
+        if !subs.isEmpty { line += " — mostly \(subs.joined(separator: " and "))" }
+        line += "."
+        if !platforms.isEmpty {
+            line += " Pulled from \(platforms.joined(separator: " and "))."
+        }
+        if let first = items.first?.displayTitle {
+            line += " Starts with “\(first)”."
+        }
+        return line
+    }
 
     // MARK: - Habit
 
@@ -173,13 +219,18 @@ final class Mission {
             let dominant = subCounts.max { $0.value < $1.value }
             let sub = (dominant.map { $0.value * 2 >= unused.count } == true) ? dominant?.key : nil
             let samples = unused.prefix(6).map(\.displayTitle)
+            let title = draftTitle(topic: topicName, subcategory: sub, titles: samples)
             seeds.append(Seed(
-                title: draftTitle(topic: topicName, subcategory: sub, titles: samples),
+                title: title,
                 categoryID: topicID,
                 subcategory: sub,
                 bookmarkIDs: unused.map(\.id),
                 sampleTitles: samples,
-                blurb: "\(unused.count) \(Copy.borks(unused.count)) already in your library"
+                blurb: Copy.suggestedQuestBlurb(
+                    count: unused.count,
+                    topic: sub ?? topicName,
+                    samples: samples + [title]
+                )
             ))
         }
 
@@ -260,4 +311,17 @@ final class Mission {
         ("Deepen my faith", "Read scripture", "beliefs"),
         ("Build something", "Ship one thing", "business"),
     ]
+}
+
+/// A single checkbox on a side quest. Stored as JSON on `Mission`.
+struct QuestTodo: Codable, Identifiable, Hashable {
+    var id: String
+    var title: String
+    var done: Bool
+
+    init(title: String, done: Bool = false) {
+        self.id = UUID().uuidString
+        self.title = title
+        self.done = done
+    }
 }

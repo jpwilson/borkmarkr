@@ -1,12 +1,12 @@
 import Foundation
 
-/// The eight sources borkmarkr knows about. One of the two browse axes —
+/// Sources borkmarkr knows about. One of the two browse axes —
 /// see `Taxonomy` for the other.
 enum Platform: String, Codable, CaseIterable, Sendable {
-    case x, instagram, tiktok, youtube, shorts, threads, pinterest, web
+    case x, instagram, tiktok, youtube, shorts, threads, pinterest, grok, web
 
     /// Display order used everywhere platforms are listed.
-    static let ordered: [Platform] = [.x, .instagram, .tiktok, .youtube, .shorts, .threads, .pinterest, .web]
+    static let ordered: [Platform] = [.x, .instagram, .tiktok, .youtube, .shorts, .threads, .pinterest, .grok, .web]
 
     var name: String {
         switch self {
@@ -17,6 +17,7 @@ enum Platform: String, Codable, CaseIterable, Sendable {
         case .shorts: "Shorts"
         case .threads: "Threads"
         case .pinterest: "Pinterest"
+        case .grok: "Grok"
         case .web: "Web"
         }
     }
@@ -31,6 +32,7 @@ enum Platform: String, Codable, CaseIterable, Sendable {
         case .shorts: "SH"
         case .threads: "TH"
         case .pinterest: "PIN"
+        case .grok: "GK"
         case .web: "WWW"
         }
     }
@@ -45,6 +47,7 @@ enum Platform: String, Codable, CaseIterable, Sendable {
         case .shorts: "Short videos"
         case .threads: "Text posts"
         case .pinterest: "Pins & boards"
+        case .grok: "Answers & shares"
         case .web: "Articles & pages"
         }
     }
@@ -58,6 +61,7 @@ enum Platform: String, Codable, CaseIterable, Sendable {
         case .youtube: .video
         case .x, .threads: .thread
         case .pinterest: .pin
+        case .grok: .article
         case .web: .article
         }
     }
@@ -65,6 +69,15 @@ enum Platform: String, Codable, CaseIterable, Sendable {
     /// Text posts only render as text cards on X and Threads — an Instagram
     /// caption is not a post body.
     var carriesTextPosts: Bool { self == .x || self == .threads }
+
+    /// Site names that sneak in as "author" from Open Graph. Not a person.
+    static func isSiteName(_ raw: String) -> Bool {
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if value.contains("formerly twitter") { return true }
+        if value == "twitter" || value == "x.com" { return true }
+        if value == "youtube shorts" || value == "youtu.be" { return true }
+        return ordered.contains { value == $0.name.lowercased() }
+    }
 
     /// Detects the source from the URL's **host**, not a substring of the whole
     /// URL.
@@ -100,6 +113,8 @@ enum Platform: String, Codable, CaseIterable, Sendable {
             return .threads
         case "pinterest.com", "pin.it":
             return .pinterest
+        case "grok.com", "grok.x.ai":
+            return .grok
         default:
             // Country domains: instagram.com.br, pinterest.co.uk, x.com.au…
             let labels = host.split(separator: ".")

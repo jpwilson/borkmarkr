@@ -159,21 +159,7 @@ struct LibraryView: View {
 
     private var insightsEntry: some View {
         Button { showingInsights = true } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(accent.deep)
-                Text("What's interesting this week")
-                    .font(Typo.ui(13, .semibold))
-                    .foregroundStyle(Tokens.ink)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Tokens.inkFaint)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(accent.tint.opacity(0.55), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            InsightsEntry(bookmarks: bookmarks)
         }
         .buttonStyle(PressableStyle())
         .padding(.horizontal, 18)

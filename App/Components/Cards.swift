@@ -50,7 +50,7 @@ struct PlatformBadge: View {
     var pageURL: URL? = nil
 
     var body: some View {
-        let radius = size * (platform == .shorts ? 0.38 : 0.32)
+        let radius = size * (platform == .shorts ? 0.34 : 0.30)
         ZStack {
             fill
             mark
@@ -77,83 +77,14 @@ struct PlatformBadge: View {
 
     @ViewBuilder
     private var mark: some View {
-        switch platform {
-        case .x:
-            xMark
-        case .instagram:
-            instagramMark
-        case .tiktok:
-            tiktokMark
-        case .youtube:
-            Image(systemName: "play.fill")
-                .font(.system(size: size * 0.38, weight: .black))
-                .foregroundStyle(.white)
-                .offset(x: size * 0.03)
-        case .shorts:
-            shortsMark
-        case .threads:
-            Text("@")
-                .font(.system(size: size * 0.52, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
-        case .pinterest:
-            Text("P")
-                .font(.system(size: size * 0.5, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white)
-        case .web:
+        if platform == .web {
             webMark
-        }
-    }
-
-    private var xMark: some View {
-        ZStack {
-            Capsule().fill(.white).frame(width: size * 0.62, height: size * 0.12)
-                .rotationEffect(.degrees(40))
-            Capsule().fill(.white).frame(width: size * 0.62, height: size * 0.12)
-                .rotationEffect(.degrees(-40))
-        }
-    }
-
-    private var instagramMark: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
-                .stroke(.white, lineWidth: size * 0.075)
-                .padding(size * 0.18)
-            Circle()
-                .stroke(.white, lineWidth: size * 0.075)
-                .frame(width: size * 0.34, height: size * 0.34)
-            Circle()
-                .fill(.white)
-                .frame(width: size * 0.085, height: size * 0.085)
-                .offset(x: size * 0.18, y: -size * 0.18)
-        }
-    }
-
-    private var tiktokMark: some View {
-        ZStack {
-            Image(systemName: "music.note")
-                .font(.system(size: size * 0.48, weight: .bold))
-                .foregroundStyle(Color(hex: "25F4EE"))
-                .offset(x: -size * 0.06, y: size * 0.02)
-            Image(systemName: "music.note")
-                .font(.system(size: size * 0.48, weight: .bold))
-                .foregroundStyle(Color(hex: "FE2C55"))
-                .offset(x: size * 0.06, y: -size * 0.02)
-            Image(systemName: "music.note")
-                .font(.system(size: size * 0.48, weight: .bold))
-                .foregroundStyle(.white)
-        }
-    }
-
-    private var shortsMark: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
-                .stroke(.white, lineWidth: size * 0.08)
-                .padding(.horizontal, size * 0.24)
-                .padding(.vertical, size * 0.12)
-            Image(systemName: "play.fill")
-                .font(.system(size: size * 0.26, weight: .black))
-                .foregroundStyle(.white)
-                .offset(x: size * 0.015)
+        } else {
+            PlatformMarks.Mark(
+                platform: platform,
+                canvas: size,
+                optical: PlatformMarks.Size.optical(for: size)
+            )
         }
     }
 
@@ -456,11 +387,13 @@ struct BookmarkRow: View {
                     if showPlatformBadge {
                         PlatformBadge(platform: bookmark.platform, size: 16, pageURL: bookmark.url)
                     }
-                    Text(bookmark.author ?? bookmark.platform.name)
-                        .font(Typo.ui(11, .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
-                        .lineLimit(1)
-                    Text("·").foregroundStyle(Tokens.inkFaint)
+                    if let author = bookmark.displayAuthor {
+                        Text(author)
+                            .font(Typo.ui(11, .semibold))
+                            .foregroundStyle(Tokens.inkSecondary)
+                            .lineLimit(1)
+                        Text("·").foregroundStyle(Tokens.inkFaint)
+                    }
                     Text(RelativeDate.cardLine(saved: bookmark.savedAt, posted: bookmark.postedAt))
                         .font(Typo.ui(11, .medium))
                         .foregroundStyle(Tokens.inkMeta)
@@ -473,8 +406,16 @@ struct BookmarkRow: View {
                     .multilineTextAlignment(.leading)
 
                 HStack(spacing: 5) {
-                    if let category = bookmark.category {
-                        Text(bookmark.subcategory.map { "\(category.name) · \($0)" } ?? category.name)
+                    if let sub = bookmark.subcategory, !sub.isEmpty {
+                        Text("#\(sub)")
+                            .font(Typo.ui(10.5, .semibold))
+                            .foregroundStyle(palette.deep)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(palette.tint, in: Capsule())
+                            .lineLimit(1)
+                    } else if let category = bookmark.category {
+                        Text(category.name)
                             .font(Typo.ui(10.5, .semibold))
                             .foregroundStyle(palette.deep)
                             .padding(.horizontal, 7)

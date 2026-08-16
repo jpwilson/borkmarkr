@@ -73,7 +73,9 @@ enum LinkPreview {
 
         var result = Result()
         result.title = (json["title"] as? String)?.trimmed
-        result.author = (json["author_name"] as? String)?.trimmed
+        if let name = (json["author_name"] as? String)?.trimmed, !Platform.isSiteName(name) {
+            result.author = name
+        }
         if let thumb = json["thumbnail_url"] as? String { result.imageURL = URL(string: thumb) }
         return result.title == nil ? nil : result
     }
@@ -90,8 +92,13 @@ enum LinkPreview {
         result.title = meta(in: html, property: "og:title")
             ?? meta(in: html, property: "twitter:title")
             ?? titleTag(in: html)
-        result.author = meta(in: html, property: "og:site_name")
-            ?? meta(in: html, property: "author")
+        let site = meta(in: html, property: "og:site_name")
+        let pageAuthor = meta(in: html, property: "author")
+        if let pageAuthor, !Platform.isSiteName(pageAuthor) {
+            result.author = pageAuthor
+        } else if let site, !Platform.isSiteName(site) {
+            result.author = site
+        }
         if let image = meta(in: html, property: "og:image")
             ?? meta(in: html, property: "twitter:image") {
             result.imageURL = URL(string: image, relativeTo: url)?.absoluteURL
