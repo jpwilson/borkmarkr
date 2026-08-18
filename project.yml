@@ -51,6 +51,10 @@ targets:
       properties:
         CFBundleDisplayName: borkmarkr
         CFBundleShortVersionString: $(MARKETING_VERSION)
+        # Only standard TLS (URLSession over HTTPS) — exempt from export compliance.
+        # Answers App Store Connect's encryption question once, here, instead of on
+        # every single upload.
+        ITSAppUsesNonExemptEncryption: false
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
         SupabaseURL: $(SUPABASE_URL)
@@ -85,6 +89,10 @@ targets:
       properties:
         CFBundleDisplayName: Save to borkmarkr
         CFBundleShortVersionString: $(MARKETING_VERSION)
+        # Only standard TLS (URLSession over HTTPS) — exempt from export compliance.
+        # Answers App Store Connect's encryption question once, here, instead of on
+        # every single upload.
+        ITSAppUsesNonExemptEncryption: false
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services
