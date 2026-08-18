@@ -29,7 +29,7 @@
 
 <div class="mark">▮</div>
 <h1>borkmarkr — Privacy Policy</h1>
-<p class="sub">Last updated 9 August 2026</p>
+<p class="sub">Last updated 17 August 2026</p>
 
 <p>borkmarkr saves links you choose to save. This policy describes exactly what
 is stored, where, and who can see it. It is short because the app does very
@@ -72,13 +72,21 @@ device, offline, by matching words in the title and address.</p>
 <p>When that isn't enough to place a link and you are signed in, the app asks a
 language model instead. In that case the link's address, its title, the account
 that posted it, and any tags you typed are sent to our server and from there to
-Anthropic, which returns a suggested topic. Anthropic processes it on our behalf
-and does not use it to train models. Nothing else is sent — not your notes, not
-the rest of your library, not your email address. If you are signed out, this
-never happens.</p>
+a language model provider (currently Anthropic's Claude, accessed via
+OpenRouter), which returns a suggested topic. These providers process the
+request on our behalf and do not use it to train models. Your notes and your
+email address are never sent. If you are signed out, this never happens.</p>
 
 <p>The suggestion is only a suggestion: it is shown to you and you can change it
 before saving.</p>
+
+<h2>Library highlights</h2>
+<p>If you are signed in, the app can summarise what you have been saving lately
+("what's interesting"). To do that, it sends the titles, topics and tags of up
+to 40 of your recent saves — never the links themselves, never your notes — to
+the same language model provider, which returns a short summary. This only runs
+inside the app for you; the result is not stored on our server and is not
+visible to anyone else. Signed out, this feature is off.</p>
 
 <h2>Requests to other websites</h2>
 <p>When you save a link, the app requests that page directly from your device

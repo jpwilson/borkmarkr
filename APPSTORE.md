@@ -118,8 +118,8 @@ HOW TO TEST SAVING
 TESTING THE SHARE EXTENSION (optional)
 In Safari or another app, tap Share, then More, and enable "borkmarkr". Sharing a link saves it directly.
 
-AUTOMATIC FILING
-Links are sorted into topics on-device by keyword matching. For links that can't be placed that way, a signed-in user's link URL and title are sent to our server, which asks a language model (Anthropic Claude) for a suggested topic. The suggestion is shown to the user and can be changed before saving. Signed-out users get on-device filing only. No API key ships in the app; the call is made server-side.
+AUTOMATIC FILING AND HIGHLIGHTS
+Links are sorted into topics on-device by keyword matching. For links that can't be placed that way, a signed-in user's link URL and title are sent to our server, which asks a language model (Anthropic Claude, accessed via OpenRouter) for a suggested topic. The suggestion is shown to the user and can be changed before saving. A signed-in user can also see a short summary of their recent saves; that sends titles, topics and tags of up to 40 recent items to the same model. Signed-out users get on-device filing only and no summaries. No API key ships in the app; all model calls are made server-side.
 
 TESTING SIGN-IN (optional)
 Sign-in uses a six-digit code sent by email — no password. If you wish to test it, use:
@@ -152,16 +152,18 @@ This is a preconfigured review-only account.
 - Used for tracking: **No**
 - Purpose: **App Functionality** only
 
-### Automatic filing — already covered above
+### Automatic filing & highlights — already covered above
 
-The AI topic suggestion sends a signed-in user's link URL and title to Anthropic
-via our own server. That's **User Content, used for App Functionality**, which
-is exactly what's already ticked — Anthropic is a service provider acting on our
-behalf, not a party we share data *with* in Apple's sense, and none of it is
-used for tracking or advertising. So there is nothing extra to tick here.
+The AI features send a signed-in user's link URL/title (filing) or recent
+titles, topics and tags (highlights) to a language model via our own server.
+The model is Anthropic's Claude, reached through OpenRouter. That's **User
+Content, used for App Functionality**, which is exactly what's already ticked —
+OpenRouter and Anthropic are service providers acting on our behalf, not
+parties we share data *with* in Apple's sense, and none of it is used for
+tracking or advertising. So there is nothing extra to tick here.
 
-It does need to be in the privacy policy, and it is: see the "Automatic filing"
-section at `docs/privacy.html`.
+It does need to be in the privacy policy, and it is: see "Automatic filing" and
+"Library highlights" at `docs/privacy.html`.
 
 ### Sharing — what to declare, and when
 
@@ -204,15 +206,15 @@ rating on its own and answering No would be untrue.
 
 ## Before you submit — the things only you can do
 
-**1. Anthropic API key** (optional — the app ships fine without it)
+**1. OpenRouter API key** (optional — the app ships fine without it)
 
-AI topic suggestion is dark until a key is set. Supabase dashboard →
-**Edge Functions → categorize → Secrets**, or:
+All three AI functions (categorize, insights, name-quest) are dark until the
+key is set. Supabase dashboard → **Edge Functions → Secrets**, or:
 ```
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+supabase secrets set OPENROUTER_API_KEY=sk-or-...
 ```
-Get the key at console.anthropic.com. Nothing else needs it, and it never
-leaves the server — do not put it in `Config.xcconfig`, the app, or the repo.
+Get the key at openrouter.ai. Nothing else needs it, and it never leaves the
+server — do not put it in `Config.xcconfig`, the app, or the repo.
 
 Until it's set, every save falls back to on-device filing, which is the same
 behaviour signed-out users get. Nothing breaks, nothing errors.

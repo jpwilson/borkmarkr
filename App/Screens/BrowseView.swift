@@ -48,47 +48,58 @@ struct BrowseView: View {
         MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
     }
 
+    private enum Route: Hashable {
+        case topic(String)
+        case source(Platform)
+    }
+
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Browse")
-                        .font(Typo.display(34, .heavy))
-                        .tracking(-1.0)
-                        .foregroundStyle(Tokens.ink)
-                        .padding(.horizontal, 18)
-                        .padding(.top, 12)
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Browse")
+                    .font(Typo.display(34, .heavy))
+                    .tracking(-1.0)
+                    .foregroundStyle(Tokens.ink)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 12)
 
-                    segmented
+                segmented
+                    .padding(.top, 16)
+                    .padding(.bottom, 14)
 
-                    switch axis {
-                    case .topics: topicsGrid
-                    case .sources: sourcesList
-                    case .journeys: MissionsView(account: account)
+                ScrollView {
+                    Group {
+                        switch axis {
+                        case .topics: topicsGrid
+                        case .sources: sourcesList
+                        case .journeys: MissionsView(account: account)
+                        }
                     }
+                    .padding(.bottom, 120)
                 }
-                .padding(.bottom, 120)
             }
             .background(Tokens.paper)
-            .navigationDestination(for: String.self) { categoryID in
-                if categoryID == "__uncategorised__" {
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .topic("__uncategorised__"):
                     UncategorisedPage()
-                } else if let category = merged.topic(id: categoryID) {
-                    TopicPage(category: category)
+                case .topic(let categoryID):
+                    if let category = merged.topic(id: categoryID) {
+                        TopicPage(category: category)
+                    }
+                case .source(let platform):
+                    SourcePage(platform: platform)
                 }
             }
             .sheet(isPresented: $showingPicker) {
                 TopicPickerSheet(categoryID: $pickerCategory, subcategory: $pickerSub)
                     .environment(\.accent, accent)
             }
-            .navigationDestination(for: Platform.self) { platform in
-                SourcePage(platform: platform)
-            }
         }
         .onChange(of: pendingTopic) { _, value in
             guard let value else { return }
             axis = .topics
-            path.append(value)
+            path.append(Route.topic(value))
             pendingTopic = nil
         }
     }
@@ -97,6 +108,7 @@ struct BrowseView: View {
         HStack(spacing: 3) {
             ForEach(Axis.allCases, id: \.self) { option in
                 Button {
+                    path = NavigationPath()
                     withAnimation(.easeOut(duration: 0.18)) { axis = option }
                 } label: {
                     Text(option.title)
@@ -104,6 +116,7 @@ struct BrowseView: View {
                         .foregroundStyle(axis == option ? Tokens.ink : Tokens.inkMeta)
                         .frame(maxWidth: .infinity)
                         .frame(height: 34)
+                        .contentShape(Rectangle())
                         .background(axis == option ? Tokens.surface : .clear, in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -112,6 +125,7 @@ struct BrowseView: View {
         .padding(3)
         .background(Tokens.segmentTrack, in: Capsule())
         .padding(.horizontal, 18)
+        .zIndex(1)
     }
 
     // MARK: Topics
@@ -159,7 +173,9 @@ struct BrowseView: View {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
                       spacing: 12) {
                 ForEach(usedCategories) { category in
-                    NavigationLink(value: category.id) {
+                    Button {
+                        path.append(Route.topic(category.id))
+                    } label: {
                         TopicTile(category: category, count: topicCounts[category.id] ?? 0)
                     }
                     .buttonStyle(.plain)
@@ -187,7 +203,9 @@ struct BrowseView: View {
             .padding(.horizontal, 18)
 
             if uncategorisedCount > 0 {
-                NavigationLink(value: "__uncategorised__") {
+                Button {
+                    path.append(Route.topic("__uncategorised__"))
+                } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "tray")
                             .font(.system(size: 14, weight: .semibold))
@@ -220,7 +238,9 @@ struct BrowseView: View {
         VStack(spacing: 10) {
             ForEach(Platform.ordered, id: \.self) { platform in
                 let count = counts[platform] ?? 0
-                NavigationLink(value: platform) {
+                Button {
+                    path.append(Route.source(platform))
+                } label: {
                     SourceRow(
                         platform: platform,
                         count: count,

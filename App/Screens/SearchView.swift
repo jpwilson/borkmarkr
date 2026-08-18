@@ -24,6 +24,7 @@ struct SearchView: View {
     @State private var journeyFilter: Set<String> = []
     @AppStorage("searchRecents") private var recentsRaw = ""
     @State private var openAxis: SearchAxis?
+    @State private var expandTopics = false
     @State private var detail: Bookmark?
 
     @StateObject private var semantic = SemanticIndex()
@@ -219,10 +220,10 @@ struct SearchView: View {
 
     @ViewBuilder
     private func axisPills(_ axis: SearchAxis) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                switch axis {
-                case .source:
+        switch axis {
+        case .source:
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
                     ForEach(Platform.ordered, id: \.self) { platform in
                         toggleChip(platform.name,
                                    active: sources.contains(platform),
@@ -231,34 +232,63 @@ struct SearchView: View {
                             else { sources.insert(platform) }
                         }
                     }
-                case .topic:
-                    ForEach(presentTopics) { topic in
+                }
+                .padding(.horizontal, 18)
+            }
+        case .topic:
+            let chips = expandTopics ? presentTopics : Array(presentTopics.prefix(12))
+            VStack(alignment: .leading, spacing: 10) {
+                FlowLayout(spacing: 7) {
+                    ForEach(chips) { topic in
                         toggleChip(topic.name,
                                    active: topics.contains(topic.id),
                                    tint: topic.palette.deep,
-                                   bg: topic.palette.tint) {
+                                   bg: topic.palette.tint,
+                                   expandHit: false) {
                             if topics.contains(topic.id) { topics.remove(topic.id) }
                             else { topics.insert(topic.id) }
                         }
                     }
-                case .quest:
+                }
+                if !expandTopics && presentTopics.count > 12 {
+                    Button {
+                        withAnimation(.easeOut(duration: 0.18)) { expandTopics = true }
+                    } label: {
+                        Text("More topics")
+                            .font(Typo.ui(12.5, .semibold))
+                            .foregroundStyle(accent.deep)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 18)
+        case .quest:
+            if journeys.isEmpty {
+                Text("No side quests yet")
+                    .font(Typo.ui(13))
+                    .foregroundStyle(Tokens.inkSecondary)
+                    .padding(.horizontal, 18)
+            } else {
+                FlowLayout(spacing: 7) {
                     ForEach(journeys) { journey in
                         toggleChip(journey.title,
                                    active: journeyFilter.contains(journey.id),
                                    tint: (journey.topic?.palette ?? NeutralPalette.value).deep,
-                                   bg: (journey.topic?.palette ?? NeutralPalette.value).tint) {
+                                   bg: (journey.topic?.palette ?? NeutralPalette.value).tint,
+                                   expandHit: false) {
                             if journeyFilter.contains(journey.id) { journeyFilter.remove(journey.id) }
                             else { journeyFilter.insert(journey.id) }
                         }
                     }
                 }
+                .padding(.horizontal, 18)
             }
-            .padding(.horizontal, 18)
         }
     }
 
     private func toggleChip(_ label: String, active: Bool, tint: Color,
-                            bg: Color? = nil, tap: @escaping () -> Void) -> some View {
+                            bg: Color? = nil, expandHit: Bool = true,
+                            tap: @escaping () -> Void) -> some View {
         Button(action: tap) {
             Text(label)
                 .font(Typo.ui(12.5, .semibold))
@@ -269,52 +299,53 @@ struct SearchView: View {
                 .overlay(
                     Capsule().stroke(active || bg != nil ? .clear : Tokens.hairline, lineWidth: 1)
                 )
-                .tappableChip()
         }
         .buttonStyle(.plain)
+        .modifier(OptionalChipHit(on: expandHit))
     }
 
     @ViewBuilder
     private var content: some View {
         if !isFiltering {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Recent searches")
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Recent")
                     .font(Typo.ui(10, .heavy)).tracking(0.6)
                     .foregroundStyle(Tokens.mutedHeading)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 8)
 
                 if recents.isEmpty {
-                    Text("Nothing yet. Search for a title, a person, or a #subtopic.")
+                    Text("Your last searches will show up here.")
                         .font(Typo.ui(13.5))
                         .foregroundStyle(Tokens.inkSecondary)
-                        .padding(.horizontal, 18)
+                        .padding(.vertical, 8)
                 } else {
-                    VStack(spacing: 6) {
-                        ForEach(recents, id: \.self) { term in
+                    VStack(spacing: 0) {
+                        ForEach(Array(recents.enumerated()), id: \.element) { index, term in
+                            if index > 0 { Divider().overlay(Tokens.divider) }
                             Button {
                                 query = term
                                 debounced = term
                             } label: {
                                 HStack {
-                                    Image(systemName: "clock")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(Tokens.inkFaint)
                                     Text(term)
-                                        .font(Typo.ui(14, .medium))
+                                        .font(Typo.ui(14.5, .medium))
                                         .foregroundStyle(Tokens.ink)
+                                        .lineLimit(1)
                                     Spacer()
+                                    Image(systemName: "arrow.up.left")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(Tokens.inkFaint)
                                 }
                                 .padding(.horizontal, 14)
-                                .padding(.vertical, 11)
-                                .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .padding(.vertical, 12)
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 18)
+                    .cardSurface(radius: 16)
                 }
             }
+            .padding(.horizontal, 18)
+            .padding(.top, 6)
         } else if results.isEmpty {
             VStack(spacing: 8) {
                 Text("No matches")
@@ -394,5 +425,17 @@ struct SearchView: View {
         var next = recents.filter { $0 != term }
         next.insert(term, at: 0)
         recentsRaw = Array(next.prefix(8)).joined(separator: "\u{1e}")
+    }
+}
+
+private struct OptionalChipHit: ViewModifier {
+    let on: Bool
+
+    func body(content: Content) -> some View {
+        if on {
+            content.tappableChip()
+        } else {
+            content
+        }
     }
 }
