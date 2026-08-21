@@ -1,20 +1,115 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>borkmarkr</title>
-<style>
- :root{color-scheme:light dark}
- body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-   max-width:34rem;margin:0 auto;padding:5rem 1.25rem;background:#F6F3EE;color:#191510}
- @media(prefers-color-scheme:dark){body{background:#14110E;color:#F2EEE8}}
- .mark{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;
-   border-radius:15px;background:#FF5A2D;color:#fff;font-size:26px;font-weight:800;margin-bottom:1.5rem}
- h1{font-size:2.1rem;letter-spacing:-.03em;margin:0 0 .4rem}
- p{color:#6E655A}@media(prefers-color-scheme:dark){p{color:#A39A8D}}
- a{color:#E8451C}
-</style></head><body>
-<div class="mark">▮</div>
-<h1>borkmarkr</h1>
-<p>One place for everything you save — Instagram, X, TikTok, YouTube, anywhere.</p>
-<p><a href="./privacy.html">Privacy policy</a></p>
-</body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>borkmarkr</title>
+  <meta name="description" content="The folder your feeds never gave you. Paste a link, find it again. On your iPhone, offline." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #F6F3EE;
+      --ink: #191510;
+      --ink-2: #6E655A;
+      --hairline: #EAE4DA;
+      --coral: #FF5A2D;
+      --coral-dark: #E8451C;
+      --surface: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0 auto; max-width: 36rem; padding: 4.5rem 1.25rem 3.5rem;
+      background: var(--paper); color: var(--ink);
+      font: 17px/1.55 "Instrument Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .icon {
+      width: 64px; height: 64px; border-radius: 18px;
+      display: block; margin-bottom: 1.4rem;
+      box-shadow: 0 10px 24px rgba(25,21,16,.12);
+    }
+    h1 {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 2.35rem; letter-spacing: -.03em; line-height: 1.05;
+      margin: 0 0 .5rem;
+    }
+    h2 {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 1.15rem; letter-spacing: -.02em;
+      margin: 2.1rem 0 .45rem;
+    }
+    .lede { font-size: 1.2rem; color: var(--ink); margin: 0 0 1rem; }
+    p { color: var(--ink-2); margin: 0 0 .85rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 20px;
+      padding: 1.05rem 1.15rem;
+      margin: 1.1rem 0 0;
+      box-shadow: 0 10px 24px rgba(25,21,16,.06);
+    }
+    .card strong { color: var(--ink); font-weight: 600; }
+    ul { margin: .2rem 0 0; padding-left: 1.1rem; color: var(--ink-2); }
+    li { margin: .4rem 0; }
+    .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0 0; }
+    .chip {
+      font-size: .78rem; font-weight: 600; letter-spacing: .01em;
+      padding: .28rem .6rem; border-radius: 999px; color: #fff;
+    }
+    .coming {
+      display: inline-block; margin-top: 1.6rem;
+      background: #FFE7DE; color: #AE3512;
+      font-weight: 600; font-size: .92rem;
+      padding: .45rem .75rem; border-radius: 12px;
+    }
+    footer { margin-top: 2.4rem; font-size: .92rem; color: var(--ink-2); }
+    a { color: var(--coral-dark); }
+    @media (prefers-color-scheme: dark) {
+      :root { --paper: #14110E; --ink: #F2EEE8; --ink-2: #A39A8D; --hairline: #2A241E; --surface: #1C1814; }
+      .coming { background: #3A1A12; color: #FFB39A; }
+    }
+  </style>
+</head>
+<body>
+  <img class="icon" alt="borkmarkr" width="64" height="64"
+       src="https://raw.githubusercontent.com/jpwilson/borkmarkr/main/Branding/icon-light-1024.png" />
+  <h1>borkmarkr</h1>
+  <p class="lede">The folder your feeds never gave you.</p>
+  <p>Instagram has nothing to do with YouTube Shorts. Shorts have nothing to do with X. You don’t care where something came from. You want the useful thing back.</p>
+  <p>Platform bookmarks are a write-only graveyard. Nothing is titled. Nothing is ordered. Nothing remembers that you opened it nine times. borkmarkr is the layer above all of them.</p>
+
+  <div class="card">
+    <strong>A saved item is a bork.</strong>
+    <p style="margin:.45rem 0 0">You bork something. Then you can search it, file it, and open the original. “412 borks.” That’s the product.</p>
+  </div>
+
+  <h2>Where did I see that thing</h2>
+  <ul>
+    <li>Paste any link. It is saved with a title and filed on the phone.</li>
+    <li>Fifty topics, about six hundred subtopics. Change it if the guess is wrong.</li>
+    <li>Browse by topic, or by the app it came from.</li>
+    <li>Search titles, tags, notes, and people. A Related strip finds what you meant, not just the words you typed.</li>
+    <li>Dated notes, plus how many times you actually went back.</li>
+    <li>Open a bork and you leave the app — we store the link, not the post.</li>
+  </ul>
+  <div class="chips" aria-hidden="true">
+    <span class="chip" style="background:#C2545A">Fitness</span>
+    <span class="chip" style="background:#1FA971">Recipes</span>
+    <span class="chip" style="background:#2E8CF0">Cars</span>
+    <span class="chip" style="background:#7C5CFC">Learn</span>
+    <span class="chip" style="background:#FF5A2D">Make</span>
+  </div>
+
+  <h2>Stays on your phone</h2>
+  <p>Local. Offline. No account, no ads, no tracking. Delete the app and the library goes with it.</p>
+
+  <span class="coming">Coming to the App Store</span>
+
+  <footer>
+    <a href="./privacy.html">Privacy policy</a>
+    ·
+    <a href="mailto:jeanpaulwilson@gmail.com">jeanpaulwilson@gmail.com</a>
+  </footer>
+</body>
+</html>
