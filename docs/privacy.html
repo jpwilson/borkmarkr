@@ -37,7 +37,7 @@
 
 <h2>Where it is stored</h2>
 <p>By default, on your device. If you never sign in, your library stays on your iPhone and we cannot see it.</p>
-<p>If you sign in, your saved links and your email address are stored on servers operated by Supabase in the United States, so your library is backed up and available on your other devices. Access is restricted at the database level: only your account can read or write your rows.</p>
+<p>If you sign in, your saved links and your email address are stored on our servers in the United States, so your library is backed up and available on your other devices. Access is restricted so only your account can read or write your data.</p>
 
 <h2>Your email address</h2>
 <p>Signing in is how we verify who you are. We store your email address for the sole purpose of identifying your account and sending you a one-time sign-in code. There is no password. We do not send marketing email.</p>
@@ -53,11 +53,11 @@
 
 <h2>Automatic filing</h2>
 <p>borkmarkr sorts saved links into topics. Almost all of that happens on your device, offline, by matching words in the title and address.</p>
-<p>When that is not enough to place a link and you are signed in, the app may ask a language model instead. In that case the link’s address, its title, the account that posted it, and any tags you typed are sent to our server and from there to a language model provider (currently Anthropic’s Claude, accessed via OpenRouter), which returns a suggested topic. These providers process the request on our behalf and do not use it to train models. Your notes and your email address are never sent. If you are signed out, this never happens.</p>
+<p>When that is not enough to place a link and you are signed in, the app may ask a language model instead. In that case the link’s address, its title, the account that posted it, and any tags you typed are sent to our server and from there to a language model provider acting on our behalf, which returns a suggested topic. That provider does not use the request to train models. Your notes and your email address are never sent. If you are signed out, this never happens.</p>
 <p>The suggestion is only a suggestion: it is shown to you and you can change it before saving.</p>
 
 <h2>Library highlights</h2>
-<p>If you are signed in, the app can summarise what you have been saving lately. To do that, it sends the titles, topics and tags of up to 40 of your recent saves — never the links themselves, never your notes — to the same language model provider, which returns a short summary. This only runs inside the app for you; the result is not stored on our server and is not visible to anyone else. Signed out, this feature is off.</p>
+<p>If you are signed in, the app can summarise what you have been saving lately. To do that, it sends the titles, topics and tags of up to 40 of your recent saves — never the links themselves, never your notes — to that same language model provider, which returns a short summary. This only runs inside the app for you; the result is not stored on our server and is not visible to anyone else. Signed out, this feature is off.</p>
 
 <h2>Requests to other websites</h2>
 <p>When you save a link, the app may request that page directly from your device to read its title and preview image. That website therefore receives an ordinary web request from your device, as it would if you opened the link in a browser. borkmarkr does not tell those sites who you are.</p>
