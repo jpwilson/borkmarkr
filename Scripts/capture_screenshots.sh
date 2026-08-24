@@ -16,7 +16,7 @@ set -euo pipefail
 
 BUNDLE="com.jpwilson.borkmarkr"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT="$ROOT/Marketing/captures"
+OUT="${OUT:-$ROOT/Marketing/captures}"
 DD="${DD:-$ROOT/.build/screenshots}"
 
 SIM="${SIM:-$(xcrun simctl list devices available \

@@ -238,20 +238,30 @@ notes — "no account required" already covers the requirement on its own.
 
 ## Screenshots
 
-Required: 6.9" iPhone — **1320 × 2868**, which is exactly what your iPhone 17
-Pro Max produces. So: screenshot on your phone (side button + volume up),
-AirDrop them to the Mac, upload. No editing, no mockup tool, no resizing.
+Required size: 6.9" iPhone — **1320 × 2868**. The finished files are in
+`Marketing/screenshots/` (`01-library.png`, `02-browse.png`, `03-search.png`),
+ready to upload as-is: no resizing.
+
+They are *designed* screenshots — a real capture of the app inside a phone
+frame on a coloured panel with a headline — which is what nearly every top
+listing does and is allowed, because the UI shown is genuine. Apple's rule is
+that the screenshots show the app as it actually is; it is not that they must
+be raw captures.
+
+**To regenerate after a UI change** (both scripts are in the repo):
+
+```
+bash Scripts/capture_screenshots.sh        # builds for the iPhone 17 Pro Max simulator,
+                                           # seeds demo data, sets 9:41, captures to Marketing/captures/
+python3 Scripts/make_screenshots.py        # composes the panels into Marketing/screenshots/ (needs Pillow)
+```
+
+The captures use a DEBUG-only seed (`-seed` launch argument), so nothing
+personal is ever on screen. The panel headlines live at the top of
+`make_screenshots.py` if you want different copy.
 
 Three practical notes:
 - Apple accepts as few as one, but 3–5 is normal. You can reorder them later.
-- Check nothing personal is on screen — a real saved link with your name, or a
-  notification banner mid-screenshot.
-- Use a library with real content. An empty app is a bad first impression, and
-  the first screenshot is most of the decision.
-
-Worth capturing, in this order:
-1. **Library** with a full masonry feed — the visual signature
-2. **Browse → Topics** showing the coloured topic tiles
-3. **Search** with results
-4. **A saved item** open, showing the note and "Open original"
-5. **Import** screen — the "you already saved thousands of things" idea
+- Upload in the numbered order — the first screenshot is most of the decision.
+- If you change the Library layout, re-run both scripts before submitting; a
+  screenshot that doesn't match the build is a legitimate rejection reason.
