@@ -206,33 +206,88 @@ rating on its own and answering No would be untrue.
 
 ## Before you submit — the things only you can do
 
-**1. OpenRouter API key** (optional — the app ships fine without it)
+Supabase project: **bookmarker** (`pcjuxnhqxyfvgagnblzv`) in the
+**JPGauntletProjects** organization — not the org that holds EVLineup/OFS.
+Dashboard: https://supabase.com/dashboard/project/pcjuxnhqxyfvgagnblzv
+
+**Tonight, in this order:** 1 → 2 → 5 → App Store Connect → Archive → Submit
+with *manual release*. Then 3 (SMTP) during review, before you press Release.
+4 is optional.
+
+**1. Email templates — REQUIRED (2 minutes)**
+
+The app asks for a six-digit code, but Supabase's default templates send a
+*link*. A real user gets an email they can't use. Fix:
+Authentication → Emails → Templates. Replace the body of BOTH
+**Confirm sign up** and **Magic Link** with:
+
+```html
+<h2>Your borkmarkr code</h2>
+<p>Enter this code in the app:</p>
+<p style="font-size:32px;font-weight:700;letter-spacing:4px">{{ .Token }}</p>
+<p>It expires in an hour. If you didn't ask for it, just ignore this email.</p>
+```
+
+Subject for both: `Your borkmarkr sign-in code`
+
+**2. Site URL (1 minute)**
+
+Authentication → URL Configuration → Site URL:
+```
+https://jpwilson.github.io/borkmarkr/
+```
+The default is `http://localhost:3000` and it leaks into any link Supabase
+generates.
+
+**3. Custom SMTP — REQUIRED before *release*, not before *submission***
+
+Supabase's built-in mailer is dev-only: it refuses to deliver to addresses
+outside your Supabase team and is capped at a couple of emails per hour. The
+reviewer never hits this (the Test OTP below bypasses email), but the first
+real user would. Needs a domain you own:
+
+1. Buy **borkmarkr.com** (~$11/yr; Vercel or any registrar).
+2. Resend (resend.com, free tier 3,000 emails/month) → Domains → add
+   `borkmarkr.com` → add the DNS records it shows → wait for "Verified".
+3. Resend → API Keys → create one (sending only).
+4. Supabase → Authentication → SMTP Settings → enable custom SMTP:
+   - Sender email: `hello@borkmarkr.com` · Sender name: `borkmarkr`
+   - Host: `smtp.resend.com` · Port: `465` · Username: `resend`
+   - Password: the Resend API key
+5. Authentication → Rate Limits → raise "emails per hour" from 30 to
+   something sane for launch (e.g. 300).
+6. Sign out in the app and sign in with an address that is NOT your Supabase
+   login to prove it end-to-end.
+
+In App Store Connect choose **"Manually release this version"** so approval
+doesn't put the app live before this is done.
+
+**4. OpenRouter API key** (optional — the app ships fine without it)
 
 All three AI functions (categorize, insights, name-quest) are dark until the
-key is set. Supabase dashboard → **Edge Functions → Secrets**, or:
+key is set. Edge Functions → Secrets, or:
 ```
 supabase secrets set OPENROUTER_API_KEY=sk-or-...
 ```
-Get the key at openrouter.ai. Nothing else needs it, and it never leaves the
-server — do not put it in `Config.xcconfig`, the app, or the repo.
+Get the key at openrouter.ai. It never leaves the server — do not put it in
+`Config.xcconfig`, the app, or the repo. Until it's set, every save falls back
+to on-device filing, which is what signed-out users get anyway.
 
-Until it's set, every save falls back to on-device filing, which is the same
-behaviour signed-out users get. Nothing breaks, nothing errors.
+**5. Review test code** (do it — it makes review independent of email)
 
-**2. Review test code** (needed only if you keep the sign-in paragraph)
-
-The review account only works once a fixed test code is configured, or the
-reviewer cannot receive the email. Supabase dashboard →
-**Authentication → Sign In / Providers → Email → Test OTPs**, add:
+Authentication → Sign In / Providers → Email → Test OTPs, add:
 ```
 appreview@borkmarkr.app = 123456
 ```
+That maps one address to one fixed code without weakening sign-in for anyone
+else. If you'd rather not, delete the "TESTING SIGN-IN" paragraph from the
+review notes — "no account required" already covers the requirement.
 
-That maps one specific address to one fixed code, without weakening sign-in for
-anyone else. Takes about thirty seconds.
+**6. Submission day**
 
-If you'd rather not, delete the "TESTING SIGN-IN" paragraph from the review
-notes — "no account required" already covers the requirement on its own.
+The free tier auto-pauses the project after about a week idle. Before you
+archive, open the dashboard and confirm the project says ACTIVE (it does as of
+25 Aug 2026); if paused, Restore and wait ~2 minutes.
 
 ---
 
