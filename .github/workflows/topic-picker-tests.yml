@@ -1,0 +1,29 @@
+name: Topic picker tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/TopicPickerQuery.swift"
+      - "Core/Taxonomy.swift"
+      - "App/Screens/TopicPickerSheet.swift"
+      - "Scripts/test_topic_picker.swift"
+      - ".github/workflows/topic-picker-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/TopicPickerQuery.swift"
+      - "Core/Taxonomy.swift"
+      - "App/Screens/TopicPickerSheet.swift"
+      - "Scripts/test_topic_picker.swift"
+      - ".github/workflows/topic-picker-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run topic picker checks
+        run: |
+          swiftc -parse-as-library -o /tmp/topic-picker-tests \
+            Core/Taxonomy.swift Core/TopicPickerQuery.swift Scripts/test_topic_picker.swift
+          /tmp/topic-picker-tests
