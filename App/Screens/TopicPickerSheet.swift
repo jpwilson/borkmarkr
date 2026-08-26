@@ -6,6 +6,10 @@ import SwiftData
 /// Built-ins stay a shipped constant — you add *around* them. Custom topics
 /// and custom subtopics can be created, renamed and deleted from here. That
 /// is also how you add a whole new topic, not only a subtopic under Fitness.
+///
+/// Search lives at the top of the sheet (not `.searchable`, which parks the
+/// field under the keyboard). The list is A–Z. Expanding a topic never
+/// replaces "Add a subtopic" with "create whatever is in the search box".
 struct TopicPickerSheet: View {
     @Binding var categoryID: String?
     @Binding var subcategory: String?
@@ -31,6 +35,10 @@ struct TopicPickerSheet: View {
     @State private var renameDraft = ""
     @State private var confirmingDeleteTopic: CustomTopic?
     @State private var confirmingDeleteSub: CustomSubtopic?
+    @State private var snapshotCategory: String?
+    @State private var snapshotSub: String?
+    @State private var didSnapshot = false
+    @FocusState private var searchFocused: Bool
 
     private var merged: MergedTaxonomy {
         MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
@@ -41,46 +49,61 @@ struct TopicPickerSheet: View {
     }
 
     private var shown: [Topic] {
-        let needle = trimmedFilter.lowercased()
-        let all = merged.allTopics
-        guard !needle.isEmpty else { return all }
-        return all.filter { topic in
-            topic.name.lowercased().contains(needle)
-                || merged.subs(for: topic).contains { $0.lowercased().contains(needle) }
-        }
+        TopicPickerQuery.shown(
+            topics: merged.allTopics,
+            subs: { merged.subs(for: $0) },
+            filter: trimmedFilter
+        )
     }
 
     private var canAddTopicFromFilter: Bool {
-        let candidate = trimmedFilter.lowercased()
-        guard candidate.count >= 2 else { return false }
-        return !merged.allTopics.contains { $0.name.lowercased() == candidate }
+        TopicPickerQuery.canAddName(trimmedFilter, to: merged.allTopics.map(\.name))
     }
 
     private func canAdd(_ name: String, to topic: Topic) -> Bool {
-        let candidate = name.lowercased()
-        guard candidate.count >= 2 else { return false }
-        return !merged.subs(for: topic).contains { $0.lowercased() == candidate }
+        TopicPickerQuery.canAddName(name, to: merged.subs(for: topic))
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    addTopicRow
+            VStack(spacing: 0) {
+                searchField
+                    .padding(.horizontal, 18)
+                    .padding(.top, 8)
+                    .padding(.bottom, 10)
 
-                    ForEach(shown) { topic in
-                        topicRow(topic)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            addTopicRow
+
+                            ForEach(shown) { topic in
+                                topicRow(topic)
+                                    .id(topic.id)
+                            }
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 24)
+                    }
+                    .scrollDismissesKeyboard(.interactively)
+                    .onAppear { scrollToExpanded(proxy) }
+                    .onChange(of: expanded) { _, _ in scrollToExpanded(proxy) }
+                    .onChange(of: trimmedFilter) { _, needle in
+                        reconcileExpansion(needle: needle)
+                        scrollToExpanded(proxy)
                     }
                 }
-                .padding(18)
             }
             .background(Tokens.paper)
             .navigationTitle("Pick a topic")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $filter, prompt: "Find a topic")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", action: cancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .fontWeight(.semibold)
                 }
             }
             .alert("New subtopic",
@@ -88,7 +111,9 @@ struct TopicPickerSheet: View {
                                         set: { if !$0 { newSubtopicTopic = nil } })) {
                 TextField("Name", text: $newSubtopicName)
                 Button("Add") {
-                    if let topic = newSubtopicTopic { addSubtopic(newSubtopicName, to: topic) }
+                    if let topic = newSubtopicTopic {
+                        addSubtopic(newSubtopicName, to: topic, dismissAfter: false)
+                    }
                     newSubtopicTopic = nil
                     newSubtopicName = ""
                 }
@@ -97,14 +122,14 @@ struct TopicPickerSheet: View {
                     newSubtopicName = ""
                 }
             } message: {
-                Text(newSubtopicTopic.map { "Added under \($0.name)." } ?? "")
+                Text(newSubtopicTopic.map { "Added under \($0.name). You can add another, or tap Done." } ?? "")
             }
             .alert("New topic", isPresented: $showingNewTopic) {
                 TextField("Name", text: $newTopicName)
                 Button("Add") { addTopic(newTopicName) }
                 Button("Cancel", role: .cancel) { newTopicName = "" }
             } message: {
-                Text("A topic is the top-level file — like Fitness or Cars. You can add subtopics inside it after.")
+                Text("A topic is the top-level file — like Fitness or Cars. After you add it you can give it subtopics, or just use the topic.")
             }
             .alert("Rename topic",
                    isPresented: Binding(get: { renamingTopic != nil },
@@ -139,6 +164,7 @@ struct TopicPickerSheet: View {
                             categoryID = nil
                             subcategory = nil
                         }
+                        if expanded == topic.id { expanded = nil }
                     }
                     confirmingDeleteTopic = nil
                 }
@@ -164,6 +190,47 @@ struct TopicPickerSheet: View {
         }
         .presentationDetents([.large])
         .presentationCornerRadius(Tokens.sheetRadius)
+        .onAppear {
+            if !didSnapshot {
+                snapshotCategory = categoryID
+                snapshotSub = subcategory
+                didSnapshot = true
+            }
+            if expanded == nil {
+                expanded = categoryID
+            }
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(accent.base)
+            TextField("Find a topic or subtopic", text: $filter)
+                .font(Typo.ui(14.5))
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .submitLabel(.search)
+                .focused($searchFocused)
+            if !filter.isEmpty {
+                Button {
+                    filter = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Tokens.inkFaint)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(searchFocused ? accent.base.opacity(0.55) : Tokens.hairline, lineWidth: searchFocused ? 1.5 : 1)
+        )
     }
 
     private var addTopicRow: some View {
@@ -189,11 +256,13 @@ struct TopicPickerSheet: View {
 
     private func topicRow(_ topic: Topic) -> some View {
         let custom = merged.isCustomTopic(topic.id)
+        let isOpen = expanded == topic.id
+        let highlighted = TopicPickerQuery.matchingSubs(merged.subs(for: topic), needle: trimmedFilter)
         return VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 10) {
                 Button {
                     withAnimation(.easeOut(duration: 0.18)) {
-                        expanded = expanded == topic.id ? nil : topic.id
+                        expanded = isOpen ? nil : topic.id
                     }
                 } label: {
                     HStack(spacing: 10) {
@@ -213,7 +282,7 @@ struct TopicPickerSheet: View {
                         Text("\(merged.subs(for: topic).count)")
                             .font(Typo.ui(11.5, .medium))
                             .foregroundStyle(Tokens.inkMeta)
-                        Image(systemName: expanded == topic.id ? "chevron.up" : "chevron.right")
+                        Image(systemName: isOpen ? "chevron.up" : "chevron.right")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(Tokens.inkFaint)
                     }
@@ -237,10 +306,11 @@ struct TopicPickerSheet: View {
                 }
             }
 
-            if expanded == topic.id {
+            if isOpen {
                 FlowChips(
                     items: merged.subs(for: topic),
                     custom: Set(merged.subs(for: topic).filter { merged.isCustom($0, in: topic) }),
+                    highlighted: highlighted,
                     onPick: { sub in
                         categoryID = topic.id
                         subcategory = sub
@@ -268,14 +338,14 @@ struct TopicPickerSheet: View {
                 }
                 .buttonStyle(.plain)
 
+                addButton(label: "Add a subtopic", topic: topic) {
+                    newSubtopicTopic = topic
+                    newSubtopicName = trimmedFilter
+                }
+
                 if canAdd(trimmedFilter, to: topic), !trimmedFilter.isEmpty {
-                    addButton(label: "Add \u{201C}\(trimmedFilter)\u{201D}", topic: topic) {
-                        addSubtopic(trimmedFilter, to: topic)
-                    }
-                } else {
-                    addButton(label: "Add a subtopic", topic: topic) {
-                        newSubtopicTopic = topic
-                        newSubtopicName = trimmedFilter
+                    addButton(label: "Use \u{201C}\(trimmedFilter)\u{201D} as a subtopic", topic: topic) {
+                        addSubtopic(trimmedFilter, to: topic, dismissAfter: true)
                     }
                 }
             }
@@ -305,24 +375,78 @@ struct TopicPickerSheet: View {
         }
     }
 
-    private func addSubtopic(_ raw: String, to topic: Topic) {
+    /// Clearing search must not collapse the open topic. Auto-expand only
+    /// when nothing is open (or the open row filtered out) and a sub matched.
+    private func reconcileExpansion(needle: String) {
+        if let expanded, shown.contains(where: { $0.id == expanded }) {
+            return
+        }
+        guard !needle.isEmpty else { return }
+        let subHit = shown.first { topic in
+            TopicPickerQuery.matchRank(
+                topicName: topic.name,
+                subs: merged.subs(for: topic),
+                needle: needle
+            ) == 2
+        }
+        if let subHit {
+            expanded = subHit.id
+        }
+    }
+
+    private func scrollToExpanded(_ proxy: ScrollViewProxy) {
+        let target = expanded
+        guard let target, shown.contains(where: { $0.id == target }) else { return }
+        Task { @MainActor in
+            withAnimation(.easeOut(duration: 0.18)) {
+                proxy.scrollTo(target, anchor: .top)
+            }
+        }
+    }
+
+    private func cancel() {
+        categoryID = snapshotCategory
+        subcategory = snapshotSub
+        dismiss()
+    }
+
+    private func addSubtopic(_ raw: String, to topic: Topic, dismissAfter: Bool) {
         let formatted = TaxonomyName.formatted(raw)
         guard !formatted.isEmpty else { return }
-        context.insert(CustomSubtopic(categoryID: topic.id, name: formatted))
-        try? context.save()
+        if canAdd(formatted, to: topic) {
+            context.insert(CustomSubtopic(categoryID: topic.id, name: formatted))
+            try? context.save()
+            Haptics.success()
+        } else {
+            Haptics.tap()
+        }
+        let existingName = merged.subs(for: topic).first {
+            $0.caseInsensitiveCompare(formatted) == .orderedSame
+        }
         categoryID = topic.id
-        subcategory = formatted
-        Haptics.success()
-        dismiss()
+        subcategory = existingName ?? formatted
+        expanded = topic.id
+        if dismissAfter { dismiss() }
     }
 
     private func addTopic(_ raw: String) {
         let formatted = TaxonomyName.formatted(raw)
         guard formatted.count >= 2 else { return }
+        filter = ""
+
         if let existing = customTopics.first(where: { $0.name.caseInsensitiveCompare(formatted) == .orderedSame }) {
             categoryID = existing.id
             subcategory = nil
             expanded = existing.id
+            newTopicName = ""
+            Haptics.tap()
+            return
+        }
+
+        if let builtin = Taxonomy.all.first(where: { $0.name.caseInsensitiveCompare(formatted) == .orderedSame }) {
+            categoryID = builtin.id
+            subcategory = nil
+            expanded = builtin.id
             newTopicName = ""
             Haptics.tap()
             return
@@ -360,6 +484,7 @@ struct TopicPickerSheet: View {
 struct FlowChips: View {
     let items: [String]
     var custom: Set<String> = []
+    var highlighted: Set<String> = []
     let onPick: (String) -> Void
     var onRename: ((String) -> Void)?
     var onDelete: ((String) -> Void)?
@@ -370,6 +495,7 @@ struct FlowChips: View {
         FlowLayout(spacing: 6) {
             ForEach(items, id: \.self) { item in
                 let isCustom = custom.contains { $0.caseInsensitiveCompare(item) == .orderedSame }
+                let isHit = highlighted.contains { $0.caseInsensitiveCompare(item) == .orderedSame }
                 Button { onPick(item) } label: {
                     Text(item)
                         .font(Typo.ui(12, .semibold))
@@ -377,6 +503,9 @@ struct FlowChips: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(palette.tint, in: Capsule())
+                        .overlay(
+                            Capsule().strokeBorder(palette.deep.opacity(isHit ? 0.85 : 0), lineWidth: 1.5)
+                        )
                 }
                 .buttonStyle(.plain)
                 .contextMenu {

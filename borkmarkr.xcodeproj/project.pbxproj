@@ -50,11 +50,13 @@
 		964A772F380819487AC6886F /* LinkPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6EFED0D5A77564B19E2159D /* LinkPreview.swift */; };
 		A2F072A20BA5FE73B2605DC0 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC10B3CE0C10FE6631F2BD11 /* ShareViewController.swift */; };
 		ABBDFC9F1D12C8F37F7EED12 /* OFL-Bricolage.txt in Resources */ = {isa = PBXBuildFile; fileRef = 9046840905787DF56F670280 /* OFL-Bricolage.txt */; };
+		AC4BD882269AA3AC947CD748 /* TopicPickerQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC62950D5538EA53D438815 /* TopicPickerQuery.swift */; };
 		AD51C6F132E881E691CB7C4C /* Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88674C0234F92868C875DE08 /* Motion.swift */; };
 		B3668C28BCD536DE2D9F81F1 /* MissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA4E66670607199DDC15B32 /* MissionsView.swift */; };
 		B67DE9D28EBA23033E89FEBD /* Importers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931EE76C8F04FB683B65ECBE /* Importers.swift */; };
 		B7DCA0588EA1627E67920FCE /* YouView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9883626D300D557C8B8F2061 /* YouView.swift */; };
 		B9A2569C00EE5902576E56C7 /* Copy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25911EF7451F262AAF7346BB /* Copy.swift */; };
+		BD0B7558844927CC6E32E046 /* TopicPickerQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC62950D5538EA53D438815 /* TopicPickerQuery.swift */; };
 		BD28CFDDA8873720B1F555B5 /* InsightsEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F120A252FDAF436430A54F54 /* InsightsEntry.swift */; };
 		C8CA5FB1B5C24930EB18E92D /* Categorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F93E7A1E9CEFD4F91EB5D0B /* Categorizer.swift */; };
 		CC338097341DC5659292DB83 /* TopicPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBF6488680E970F8BD800FF /* TopicPage.swift */; };
@@ -146,6 +148,7 @@
 		C24641D23CFCE82884ADCC9D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C28995D31AAC20CABE2409DA /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		C711BD3A0E1046941AB2AD33 /* AddSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSheet.swift; sourceTree = "<group>"; };
+		CFC62950D5538EA53D438815 /* TopicPickerQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicPickerQuery.swift; sourceTree = "<group>"; };
 		D0E2561707E17515E4370A4C /* CustomSubtopic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSubtopic.swift; sourceTree = "<group>"; };
 		D3FABFC1A9084B9C0360A43C /* BrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseView.swift; sourceTree = "<group>"; };
 		DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
@@ -155,7 +158,7 @@
 		F91794C010FF35E650EB340F /* borkmarkr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = borkmarkr.entitlements; sourceTree = "<group>"; };
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_C92F465A-6A06-4EB5-BA7B-3667EF27495A" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_CE33603C-5B44-4584-A3F8-243CF18485B5" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -186,6 +189,7 @@
 				5DE193BE10A36E1AD5BAC530 /* Store.swift */,
 				292B159D7B2467224C46A761 /* Supabase.swift */,
 				BDE014EBD9BA08565B958C19 /* Taxonomy.swift */,
+				CFC62950D5538EA53D438815 /* TopicPickerQuery.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -285,12 +289,12 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		"TEMP_EABFA5EA-78F4-4E4F-9781-CEF9A71431DB" /* borkmarkr */ = {
+		"TEMP_C597DB1E-3429-43FA-BB78-85C5D59BAA99" /* picker */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_C92F465A-6A06-4EB5-BA7B-3667EF27495A" /* Config.xcconfig */,
+				"TEMP_CE33603C-5B44-4584-A3F8-243CF18485B5" /* Config.xcconfig */,
 			);
-			path = borkmarkr;
+			path = picker;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -434,6 +438,7 @@
 				79ED586D9F3A1651B2A5EFED /* Taxonomy.swift in Sources */,
 				1E4797F66B55D7A7C9EC3369 /* Tokens.swift in Sources */,
 				CC338097341DC5659292DB83 /* TopicPage.swift in Sources */,
+				BD0B7558844927CC6E32E046 /* TopicPickerQuery.swift in Sources */,
 				382158749A4F3E7AEBB8351F /* TopicPickerSheet.swift in Sources */,
 				B7DCA0588EA1627E67920FCE /* YouView.swift in Sources */,
 			);
@@ -458,6 +463,7 @@
 				E6078D8B349C676C3F272B80 /* Store.swift in Sources */,
 				8B843833C0C1B90013657263 /* Supabase.swift in Sources */,
 				7156E5780C55C64FCEE3BE1A /* Taxonomy.swift in Sources */,
+				AC4BD882269AA3AC947CD748 /* TopicPickerQuery.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -474,7 +480,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_C92F465A-6A06-4EB5-BA7B-3667EF27495A" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_CE33603C-5B44-4584-A3F8-243CF18485B5" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -561,7 +567,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_C92F465A-6A06-4EB5-BA7B-3667EF27495A" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_CE33603C-5B44-4584-A3F8-243CF18485B5" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
