@@ -26,20 +26,22 @@ struct YouView: View {
         return bookmarks.filter { $0.savedAt >= cutoff }.count
     }
 
+    private var topicCount: Int {
+        Set(bookmarks.compactMap(\.categoryID)).count
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                profile
-                accountCard
-                insightsCard
-                stats
-                importHint
-                shareHint
+            VStack(alignment: .leading, spacing: 24) {
+                hero
+                insights
+                intake
                 if !collections.isEmpty { collectionsBlock }
                 appearance
                 help
             }
-            .padding(18)
+            .padding(.horizontal, 18)
+            .padding(.top, 12)
             .padding(.bottom, 120)
         }
         .background(Tokens.paper)
@@ -70,41 +72,43 @@ struct YouView: View {
         }
     }
 
-    private var insightsCard: some View {
-        Button { showingInsights = true } label: {
-            InsightsEntry(bookmarks: bookmarks, compact: true)
-        }
-        .buttonStyle(PressableStyle())
-    }
+    // MARK: Hero
 
-    private var profile: some View {
-        HStack(spacing: 13) {
-            Circle()
-                .fill(accent.tint)
-                .frame(width: 54, height: 54)
-                .overlay(Text("J").font(Typo.display(22, .heavy)).foregroundStyle(accent.deep))
-            VStack(alignment: .leading, spacing: 2) {
-                Text("You")
-                    .font(Typo.display(22, .heavy))
-                    .foregroundStyle(Tokens.ink)
-                Text("Library, side quests, and the knobs")
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .center, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("You")
+                        .font(Typo.display(34, .heavy))
+                        .tracking(-1.0)
+                        .foregroundStyle(Tokens.ink)
+                    accountStatus
+                }
+                Spacer(minLength: 8)
+                avatar
             }
-            Spacer()
+
+            statsStrip
+
+            if !account.isSignedIn {
+                Button { showingAuth = true } label: {
+                    Text("Sign in")
+                        .font(Typo.ui(15, .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(accent.base, in: Capsule())
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityHint("Back up and sync your borks")
+            }
         }
-        .padding(.top, 12)
     }
 
-    /// Signed-out is the honest default state, and it says plainly what that
-    /// means rather than hiding it behind a "Sign in" button with no context.
     @ViewBuilder
-    private var accountCard: some View {
+    private var accountStatus: some View {
         if account.isSignedIn {
-            HStack(spacing: 11) {
-                Image(systemName: "checkmark.icloud.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(accent.base)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(account.email ?? "Signed in")
                         .font(Typo.ui(13.5, .semibold))
@@ -113,207 +117,237 @@ struct YouView: View {
                     Text(account.isSyncing ? "Syncing…"
                          : account.lastSynced.map { "Backed up \(RelativeDate.label(for: $0).lowercased())" }
                             ?? "Waiting to back up")
-                        .font(Typo.ui(11.5, .medium))
+                        .font(Typo.ui(12, .medium))
                         .foregroundStyle(Tokens.inkMeta)
                 }
-                Spacer()
+                Spacer(minLength: 8)
                 Button("Sign out") { account.signOut() }
-                    .font(Typo.ui(12.5, .semibold))
+                    .font(Typo.ui(13, .semibold))
                     .foregroundStyle(Tokens.destructive)
             }
-            .padding(14)
-            .cardSurface(radius: 18)
         } else {
-            Button { showingAuth = true } label: {
-                HStack(spacing: 11) {
-                    Image(systemName: "icloud.slash")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
-                        .frame(width: 34, height: 34)
-                        .background(Tokens.mutedControl, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Only on this phone")
-                            .font(Typo.ui(14, .bold))
-                            .foregroundStyle(Tokens.ink)
-                        Text("Sign in to back up and sync your borks")
-                            .font(Typo.ui(12, .medium))
-                            .foregroundStyle(Tokens.inkMeta)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Tokens.inkFaint)
-                }
-                .padding(14)
-                .cardSurface(radius: 18)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Only on this phone")
+                    .font(Typo.ui(13.5, .semibold))
+                    .foregroundStyle(Tokens.inkSecondary)
+                Text("Sign in to back up and sync your borks")
+                    .font(Typo.ui(12, .medium))
+                    .foregroundStyle(Tokens.inkMeta)
             }
-            .buttonStyle(PressableStyle())
         }
     }
 
-    private var stats: some View {
-        HStack(spacing: 10) {
-            statTile("\(bookmarks.count)", "borks")
-            statTile("\(Set(bookmarks.compactMap(\.categoryID)).count)", "topics")
-            statTile("\(thisWeek)", "this week")
+    private var avatar: some View {
+        Circle()
+            .fill(accent.tint)
+            .frame(width: 64, height: 64)
+            .overlay { avatarGlyph }
+            .overlay {
+                Circle().stroke(accent.base.opacity(0.22), lineWidth: 1)
+            }
+            .glow(accent.base, radius: 36, opacity: 0.18)
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var avatarGlyph: some View {
+        if let letter = avatarLetter {
+            Text(letter)
+                .font(Typo.display(24, .heavy))
+                .foregroundStyle(accent.deep)
+        } else {
+            Image(systemName: "person.fill")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(accent.deep)
         }
     }
 
-    private func statTile(_ value: String, _ label: String) -> some View {
+    /// First letter of the signed-in email. Never a hardcoded "J".
+    private var avatarLetter: String? {
+        guard let email = account.email,
+              let local = email.split(separator: "@").first,
+              let first = local.first
+        else { return nil }
+        return String(first).uppercased()
+    }
+
+    private var statsStrip: some View {
+        HStack(spacing: 0) {
+            statColumn(value: "\(bookmarks.count)", label: Copy.borks(bookmarks.count), accented: false)
+            Rectangle().fill(Tokens.divider).frame(width: 1, height: 36)
+            statColumn(value: "\(topicCount)", label: topicCount == 1 ? "topic" : "topics", accented: false)
+            Rectangle().fill(Tokens.divider).frame(width: 1, height: 36)
+            statColumn(value: "\(thisWeek)", label: "this week", accented: true)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(Copy.countedBorks(bookmarks.count)), \(topicCount) \(topicCount == 1 ? "topic" : "topics"), \(thisWeek) this week")
+    }
+
+    private func statColumn(value: String, label: String, accented: Bool) -> some View {
         VStack(spacing: 3) {
             Text(value)
-                .font(Typo.display(24, .heavy))
-                .foregroundStyle(accent.base)
+                .font(Typo.display(22, .heavy))
+                .foregroundStyle(accented ? accent.base : Tokens.ink)
             Text(label)
                 .font(Typo.ui(11.5, .medium))
                 .foregroundStyle(Tokens.inkMeta)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .cardSurface(radius: 18)
     }
 
-    /// The cold-start fix, given prominence: most people arrive with thousands
-    /// of saves already sitting in other apps.
-    private var importHint: some View {
-        Button { showingImport = true } label: {
-            HStack(spacing: 11) {
-                Image(systemName: "square.and.arrow.down")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(Tokens.ink, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Import what you've already saved")
-                        .font(Typo.ui(14, .bold))
-                        .foregroundStyle(Tokens.ink)
-                    Text("X, Instagram, TikTok, YouTube, browser bookmarks")
-                        .font(Typo.ui(12, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Tokens.inkFaint)
-            }
-            .padding(14)
-            .cardSurface(radius: 18)
+    // MARK: Insights
+
+    private var insights: some View {
+        Button { showingInsights = true } label: {
+            InsightsEntry(bookmarks: bookmarks)
         }
         .buttonStyle(PressableStyle())
     }
 
-    private var shareHint: some View {
-        Button { showingHowTo = true } label: {
-            HStack(spacing: 11) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(accent.base, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Save from other apps")
-                        .font(Typo.ui(14, .bold))
-                        .foregroundStyle(Tokens.ink)
-                    Text("The fastest way to add anything")
-                        .font(Typo.ui(12, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Tokens.inkFaint)
+    // MARK: Intake
+
+    private var intake: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            YouSectionLabel("Bring things in")
+            VStack(spacing: 0) {
+                YouRow(
+                    symbol: "square.and.arrow.down",
+                    well: Tokens.ink,
+                    glyph: .white,
+                    title: "Import what you've already saved",
+                    subtitle: "X, Instagram, TikTok, YouTube, browser bookmarks"
+                ) { showingImport = true }
+
+                insetDivider
+
+                YouRow(
+                    symbol: "square.and.arrow.up",
+                    well: accent.base,
+                    glyph: .white,
+                    title: "Save from other apps",
+                    subtitle: "The fastest way to add anything"
+                ) { showingHowTo = true }
             }
-            .padding(14)
-            .background(accent.tint.opacity(0.5), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(accent.base.opacity(0.22), lineWidth: 1)
-            )
+            .cardSurface(radius: Tokens.cardRadius)
         }
-        .buttonStyle(.plain)
     }
+
+    private var insetDivider: some View {
+        Tokens.divider
+            .frame(height: 1)
+            .padding(.leading, 58)
+    }
+
+    // MARK: Collections
 
     private var collectionsBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Collections")
-                .font(Typo.ui(14.5, .bold))
-                .foregroundStyle(Tokens.ink)
-            ForEach(collections) { collection in
-                HStack(spacing: 11) {
-                    Image(systemName: "bookmark.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(collection.category?.palette.deep ?? Tokens.inkSecondary)
-                        .frame(width: 30, height: 30)
-                        .background(collection.category?.palette.tint ?? Tokens.mutedControl,
-                                    in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(collection.name)
-                            .font(Typo.ui(14, .semibold))
-                            .foregroundStyle(Tokens.ink)
-                        Text(Copy.countedBorks(collection.count))
-                            .font(Typo.ui(11.5, .medium))
-                            .foregroundStyle(Tokens.inkMeta)
+        VStack(alignment: .leading, spacing: 8) {
+            YouSectionLabel("Collections")
+            VStack(spacing: 0) {
+                ForEach(Array(collections.enumerated()), id: \.element.id) { index, collection in
+                    if index > 0 { insetDivider }
+                    HStack(spacing: 12) {
+                        Image(systemName: "bookmark.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(collection.category?.palette.deep ?? Tokens.inkSecondary)
+                            .frame(width: 32, height: 32)
+                            .background(
+                                collection.category?.palette.tint ?? Tokens.mutedControl,
+                                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            )
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(collection.name)
+                                .font(Typo.ui(14, .semibold))
+                                .foregroundStyle(Tokens.ink)
+                            Text(Copy.countedBorks(collection.count))
+                                .font(Typo.ui(11.5, .medium))
+                                .foregroundStyle(Tokens.inkMeta)
+                        }
+                        Spacer()
+                        Pill(text: collection.visibility.label, symbol: collection.visibility.symbol)
                     }
-                    Spacer()
-                    Pill(text: collection.visibility.label, symbol: collection.visibility.symbol)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .frame(minHeight: 52)
                 }
-                .padding(12)
-                .cardSurface(radius: 16)
             }
+            .cardSurface(radius: Tokens.cardRadius)
         }
     }
+
+    // MARK: Appearance
 
     private var appearance: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Appearance")
-                .font(Typo.ui(14.5, .bold))
-                .foregroundStyle(Tokens.ink)
-
-            HStack(spacing: 12) {
-                ForEach(AccentRamp.all, id: \.key) { ramp in
-                    Button {
-                        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
-                            accentKey = ramp.key
+        VStack(alignment: .leading, spacing: 8) {
+            YouSectionLabel("Look")
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Colour")
+                        .font(Typo.ui(14, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                    HStack(spacing: 14) {
+                        ForEach(AccentRamp.all, id: \.key) { ramp in
+                            Button {
+                                withAnimation(Motion.snap) { accentKey = ramp.key }
+                                Haptics.select()
+                            } label: {
+                                VStack(spacing: 6) {
+                                    Circle()
+                                        .fill(ramp.base)
+                                        .frame(width: 28, height: 28)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(ramp.base, lineWidth: accentKey == ramp.key ? 2.5 : 0)
+                                                .padding(-4)
+                                        )
+                                    Text(ramp.name)
+                                        .font(Typo.ui(10, .medium))
+                                        .foregroundStyle(accentKey == ramp.key ? Tokens.ink : Tokens.inkMeta)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(ramp.name)
+                            .accessibilityAddTraits(accentKey == ramp.key ? [.isSelected] : [])
                         }
-                    } label: {
-                        Circle()
-                            .fill(ramp.base)
-                            .frame(width: 32, height: 32)
-                            .scaleEffect(accentKey == ramp.key ? 1.08 : 1)
-                            .overlay(
-                                Circle()
-                                    .stroke(ramp.base, lineWidth: accentKey == ramp.key ? 3 : 0)
-                                    .padding(-5)
-                            )
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(ramp.name)
-                    .accessibilityAddTraits(accentKey == ramp.key ? [.isSelected] : [])
                 }
-                Spacer()
-            }
 
-            Picker("Feed density", selection: $density) {
-                Text("Cards").tag("cards")
-                Text("Compact").tag("compact")
-            }
-            .pickerStyle(.segmented)
+                Tokens.divider.frame(height: 1)
 
-            Picker("Open on", selection: $startingTab) {
-                ForEach(AppTab.allCases, id: \.rawValue) { tab in
-                    Text(tab.title).tag(tab.rawValue)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Feed")
+                        .font(Typo.ui(14, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                    YouChoiceTrack(
+                        options: [("cards", "Cards"), ("compact", "Compact")],
+                        selection: $density
+                    )
+                }
+
+                Tokens.divider.frame(height: 1)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Open on")
+                        .font(Typo.ui(14, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                    YouChoiceTrack(
+                        options: AppTab.allCases.map { ($0.rawValue, $0.title) },
+                        selection: $startingTab
+                    )
                 }
             }
-            .font(Typo.ui(13.5, .medium))
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .cardSurface(radius: Tokens.cardRadius)
         }
-        .padding(15)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(radius: 18)
     }
+
+    // MARK: Help
 
     private var help: some View {
         Button(action: onReplayTour) {
-            HStack(spacing: 9) {
+            HStack(spacing: 8) {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 12, weight: .semibold))
                 Text("Replay welcome tour")
@@ -321,10 +355,95 @@ struct YouView: View {
                 Spacer()
             }
             .foregroundStyle(Tokens.inkSecondary)
-            .padding(14)
-            .cardSurface(radius: 16)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityHint("See the intro again")
+    }
+}
+
+private struct YouSectionLabel: View {
+    let title: String
+    init(_ title: String) { self.title = title }
+
+    var body: some View {
+        Text(title)
+            .font(Typo.ui(13, .semibold))
+            .foregroundStyle(Tokens.inkMeta)
+            .padding(.leading, 4)
+    }
+}
+
+private struct YouRow: View {
+    let symbol: String
+    let well: Color
+    let glyph: Color
+    let title: String
+    let subtitle: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: symbol)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(glyph)
+                    .frame(width: 32, height: 32)
+                    .background(well, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(Typo.ui(14, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                    Text(subtitle)
+                        .font(Typo.ui(12, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Tokens.inkFaint)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(minHeight: 56)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableStyle())
+    }
+}
+
+private struct YouChoiceTrack: View {
+    let options: [(id: String, title: String)]
+    @Binding var selection: String
+
+    init(options: [(String, String)], selection: Binding<String>) {
+        self.options = options.map { (id: $0.0, title: $0.1) }
+        self._selection = selection
+    }
+
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(options, id: \.id) { option in
+                Button {
+                    withAnimation(.easeOut(duration: 0.18)) { selection = option.id }
+                    Haptics.select()
+                } label: {
+                    Text(option.title)
+                        .font(Typo.ui(12.5, .semibold))
+                        .foregroundStyle(selection == option.id ? Tokens.ink : Tokens.inkMeta)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                        .contentShape(Rectangle())
+                        .background(selection == option.id ? Tokens.surface : .clear, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selection == option.id ? [.isSelected] : [])
+            }
+        }
+        .padding(3)
+        .background(Tokens.segmentTrack, in: Capsule())
     }
 }
 
