@@ -1,0 +1,30 @@
+name: Core tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "Core/**"
+      - "Scripts/test_core.swift"
+      - ".github/workflows/core-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/**"
+      - "Scripts/test_core.swift"
+      - ".github/workflows/core-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run Foundation-only Core checks
+        run: |
+          swiftc -parse-as-library -o /tmp/borkmarkr-core-tests \
+            Core/Platform.swift \
+            Core/Taxonomy.swift \
+            Core/TagRecency.swift \
+            Core/TopicPickerQuery.swift \
+            Scripts/test_core.swift
+          /tmp/borkmarkr-core-tests
