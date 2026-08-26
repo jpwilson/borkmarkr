@@ -1,0 +1,46 @@
+<!-- Supabase Auth email template. Paste this as the BODY of BOTH
+     "Confirm sign up" and "Magic Link" (Authentication → Emails → Templates).
+     Subject for both:  Your borkmarkr code
+     {{ .Token }} is the six-digit code the app asks for. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your borkmarkr code</title>
+</head>
+<body style="margin:0;padding:0;background:#F6F3EE;">
+<span style="display:none;max-height:0;overflow:hidden;color:#F6F3EE;">Your sign-in code is {{ .Token }}</span>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F6F3EE;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:440px;">
+        <tr>
+          <td style="padding:0 0 20px 0;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+              <tr>
+                <td style="width:32px;height:32px;border-radius:9px;background:#FF5A2D;color:#ffffff;font:700 16px/32px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:center;">&#9646;</td>
+                <td style="padding-left:10px;font:600 17px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#191510;">borkmarkr</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#ffffff;border:1px solid #EAE4DA;border-radius:20px;padding:32px 28px;">
+            <p style="margin:0 0 6px 0;font:700 22px/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#191510;letter-spacing:-0.02em;">Your sign-in code</p>
+            <p style="margin:0 0 24px 0;font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#6E655A;">Enter this in the app to finish signing in.</p>
+            <p style="margin:0 0 24px 0;padding:18px 0;background:#F6F3EE;border-radius:14px;text-align:center;font:700 36px/1 'SF Mono',Menlo,Consolas,monospace;color:#191510;letter-spacing:8px;">{{ .Token }}</p>
+            <p style="margin:0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#6E655A;">The code expires in an hour. If you didn&rsquo;t ask for it, you can ignore this email &mdash; nothing happens without the code.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 8px 0 8px;font:400 12px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#A39A8D;">
+            borkmarkr &middot; <a href="https://bookmarker.lol/privacy.html" style="color:#A39A8D;">Privacy</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

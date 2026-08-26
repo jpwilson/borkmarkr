@@ -23,18 +23,22 @@ All your links, in one place
 
 **Support URL**
 ```
-https://jpwilson.github.io/borkmarkr/
+https://bookmarker.lol/
 ```
 
 **Marketing URL**
 ```
-https://jpwilson.github.io/borkmarkr/
+https://bookmarker.lol/
 ```
 
 **Privacy Policy URL**
 ```
-https://jpwilson.github.io/borkmarkr/privacy.html
+https://bookmarker.lol/privacy.html
 ```
+*(If HTTPS on bookmarker.lol isn't live yet when you fill this in, use
+`https://jpwilson.github.io/borkmarkr/` and `…/privacy.html` — they keep
+working and redirect once the domain is up. All three URLs can be edited
+any time without a new build.)*
 
 ---
 
@@ -123,13 +127,13 @@ Links are sorted into topics on-device by keyword matching. For links that can't
 
 TESTING SIGN-IN (optional)
 Sign-in uses a six-digit code sent by email — no password. If you wish to test it, use:
-  Email: appreview@borkmarkr.app
+  Email: appreview@bookmarker.lol
   Code:  123456
 This is a preconfigured review-only account.
 ```
 
 **Demo account** (fill these in if you leave "Sign-in required" ticked)
-- Username: `appreview@borkmarkr.app`
+- Username: `appreview@bookmarker.lol`
 - Password: `123456` (the fixed six-digit code, not a password)
 
 **Contact** — your name, phone, and `jeanpaulwilson@gmail.com`
@@ -219,22 +223,15 @@ with *manual release*. Then 3 (SMTP) during review, before you press Release.
 The app asks for a six-digit code, but Supabase's default templates send a
 *link*. A real user gets an email they can't use. Fix:
 Authentication → Emails → Templates. Replace the body of BOTH
-**Confirm sign up** and **Magic Link** with:
-
-```html
-<h2>Your borkmarkr code</h2>
-<p>Enter this code in the app:</p>
-<p style="font-size:32px;font-weight:700;letter-spacing:4px">{{ .Token }}</p>
-<p>It expires in an hour. If you didn't ask for it, just ignore this email.</p>
-```
-
-Subject for both: `Your borkmarkr sign-in code`
+**Confirm sign up** and **Magic Link** with the contents of
+`supabase/templates/otp-code.html` (branded, mobile-safe, puts `{{ .Token }}`
+in large type). Subject for both: `Your borkmarkr code`
 
 **2. Site URL (1 minute)**
 
 Authentication → URL Configuration → Site URL:
 ```
-https://jpwilson.github.io/borkmarkr/
+https://bookmarker.lol
 ```
 The default is `http://localhost:3000` and it leaks into any link Supabase
 generates.
@@ -246,12 +243,13 @@ outside your Supabase team and is capped at a couple of emails per hour. The
 reviewer never hits this (the Test OTP below bypasses email), but the first
 real user would. Needs a domain you own:
 
-1. Buy **borkmarkr.com** (~$11/yr; Vercel or any registrar).
+1. Domain: **bookmarker.lol** (bought 25 Aug 2026 at Porkbun; bkmrkr.lol
+   forwards to it).
 2. Resend (resend.com, free tier 3,000 emails/month) → Domains → add
-   `borkmarkr.com` → add the DNS records it shows → wait for "Verified".
+   `bookmarker.lol` → add the DNS records it shows at Porkbun → "Verified".
 3. Resend → API Keys → create one (sending only).
 4. Supabase → Authentication → SMTP Settings → enable custom SMTP:
-   - Sender email: `hello@borkmarkr.com` · Sender name: `borkmarkr`
+   - Sender email: `hello@bookmarker.lol` · Sender name: `borkmarkr`
    - Host: `smtp.resend.com` · Port: `465` · Username: `resend`
    - Password: the Resend API key
 5. Authentication → Rate Limits → raise "emails per hour" from 30 to
@@ -277,7 +275,7 @@ to on-device filing, which is what signed-out users get anyway.
 
 Authentication → Sign In / Providers → Email → Test OTPs, add:
 ```
-appreview@borkmarkr.app = 123456
+appreview@bookmarker.lol = 123456
 ```
 That maps one address to one fixed code without weakening sign-in for anyone
 else. If you'd rather not, delete the "TESTING SIGN-IN" paragraph from the
