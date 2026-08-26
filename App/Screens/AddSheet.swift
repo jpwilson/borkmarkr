@@ -578,28 +578,26 @@ struct AddSheet: View {
         withAnimation(.easeOut(duration: 0.2)) {
             categoryID = better.categoryID
             subcategory = better.subcategory
-            // Merge rather than replace: tags the user typed in the meantime
-            // stay, and the platform tag isn't duplicated.
-            for tag in better.tags where !tags.contains(tag) { tags.append(tag) }
+            // Merge rather than replace: tags the user typed in the meantime stay.
+            for tag in better.tags where !tags.contains(tag) && !Platform.isSiteName(tag) {
+                tags.append(tag)
+            }
         }
     }
 
-    /// Your own tags, ranked by how often you've used them, filtered by what
-    /// you're typing. Suggesting tags you've never used would just be the
-    /// taxonomy again.
+    /// Tags you've used on this category + subcategory, newest first — not
+    /// the library's global greatest hits. Platform names stay out because
+    /// the source is already on the card.
     private var tagSuggestions: [String] {
-        let draft = tagDraft.trimmingCharacters(in: .whitespaces).lowercased()
-        var counts: [String: Int] = [:]
-        for bookmark in allBookmarks {
-            for tag in bookmark.tags where !tags.contains(tag) {
-                counts[tag, default: 0] += 1
-            }
-        }
-        return counts
-            .filter { draft.isEmpty ? true : $0.key.hasPrefix(draft) }
-            .sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
-            .prefix(6)
-            .map(\.key)
+        TagRecency.suggestions(
+            in: allBookmarks.map {
+                .init(categoryID: $0.categoryID, subcategory: $0.subcategory, tags: $0.tags, at: $0.updatedAt)
+            },
+            categoryID: categoryID,
+            subcategory: subcategory,
+            excluding: Set(tags),
+            prefix: tagDraft
+        )
     }
 
     /// Where the tags you've added would place this in the taxonomy — e.g.

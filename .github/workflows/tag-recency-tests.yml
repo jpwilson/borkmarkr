@@ -1,0 +1,27 @@
+name: Tag recency tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/TagRecency.swift"
+      - "Core/Platform.swift"
+      - "Scripts/test_tag_recency.swift"
+      - ".github/workflows/tag-recency-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/TagRecency.swift"
+      - "Core/Platform.swift"
+      - "Scripts/test_tag_recency.swift"
+      - ".github/workflows/tag-recency-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run TagRecency checks
+        run: |
+          swiftc -parse-as-library -o /tmp/tag-recency-tests \
+            Core/Platform.swift Core/TagRecency.swift Scripts/test_tag_recency.swift
+          /tmp/tag-recency-tests

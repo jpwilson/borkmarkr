@@ -27,6 +27,9 @@ struct DetailSheet: View {
     )
     private var allJourneys: [Mission]
 
+    @Query(filter: #Predicate<Bookmark> { $0.deletedAt == nil })
+    private var allBookmarks: [Bookmark]
+
     private var palette: CategoryPalette {
         bookmark.category?.palette ?? NeutralPalette.value
     }
@@ -316,7 +319,39 @@ struct DetailSheet: View {
             .padding(.vertical, 9)
             .background(Tokens.surface, in: Capsule())
             .overlay(Capsule().stroke(Tokens.hairline, lineWidth: 1))
+
+            if !tagSuggestions.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(tagSuggestions, id: \.self) { suggestion in
+                            Button {
+                                tagDraft = suggestion
+                                commitTag()
+                            } label: {
+                                Text("#\(suggestion)")
+                                    .font(Typo.ui(11.5, .semibold))
+                                    .foregroundStyle(Tokens.inkSecondary)
+                                    .padding(.horizontal, 9).padding(.vertical, 5)
+                                    .background(Tokens.mutedControl, in: Capsule())
+                            }
+                            .buttonStyle(ChipStyle())
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private var tagSuggestions: [String] {
+        TagRecency.suggestions(
+            in: allBookmarks.map {
+                .init(categoryID: $0.categoryID, subcategory: $0.subcategory, tags: $0.tags, at: $0.updatedAt)
+            },
+            categoryID: bookmark.categoryID,
+            subcategory: bookmark.subcategory,
+            excluding: Set(bookmark.tags),
+            prefix: tagDraft
+        )
     }
 
     private func commitTag() {
