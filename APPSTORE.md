@@ -33,7 +33,7 @@ https://bookmarker.lol/
 
 **Privacy Policy URL**
 ```
-https://bookmarker.lol/privacy.html
+https://bookmarker.lol/privacy
 ```
 *(If HTTPS on bookmarker.lol isn't live yet when you fill this in, use
 `https://jpwilson.github.io/borkmarkr/` and `…/privacy.html` — they keep
@@ -45,7 +45,7 @@ any time without a new build.)*
 ## Promotional Text (170 char max — editable any time without a new build)
 
 ```
-Everything you save on Instagram, X, TikTok and YouTube ends up in one library you can actually search. Save from any app's share sheet. Works offline.
+Thousands of saved reels, threads and clips across five apps — and you can't find one of them. bookmarker puts every save in one library, filed by topic, searchable.
 ```
 
 ---
@@ -53,37 +53,34 @@ Everything you save on Instagram, X, TikTok and YouTube ends up in one library y
 ## Description
 
 ```
-You save things everywhere. A reel on Instagram, a thread on X, a clip on TikTok, a video on YouTube. Then you never find any of it again.
+You've saved thousands of things. The reel that finally explained mobility work. A thread on sleep supplements. A recipe you meant to cook, a car you meant to research, a place you meant to go. You know you saved them. You just can't find a single one.
 
-Every app has its own saved list. None of them are titled, sorted or searchable. bookmarker is the one library that sits above all of them.
+That's because every app keeps your saves in its own pile — untitled, unsorted, unsearchable, and locked inside that app. Instagram doesn't know about YouTube. YouTube doesn't know about X. Your "saved" folders are where good things go to disappear.
 
-Put simply: it's a good way to organise all your useful links, from every app, in one place.
+bookmarker is the library that sits above all of them.
 
-SAVE FROM ANYWHERE
-Tap Share in any app and pick bookmarker. The link is saved with its title, the account that posted it and a thumbnail. Or paste a link straight into the app.
+SAVE FROM ANYWHERE, IN ONE TAP
+Tap Share in Instagram, X, TikTok, YouTube or any other app and pick bookmarker. Done. The title, the account and a thumbnail come along automatically. Or paste a link straight in.
 
-IT SORTS ITSELF
-Every link is filed into a topic and subtopic automatically — Fitness > Mobility, Recipes > Meal prep, Cars > Detailing. Fifty topics, over six hundred subtopics, and you can add your own. Change anything it gets wrong, or leave it and search instead.
+IT FILES ITSELF
+Every save lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep, Cars › Detailing. Fifty topics, over six hundred subtopics, and room to add your own. It's a suggestion, not a sentence: change anything it gets wrong, or just search.
 
-TWO WAYS TO BROWSE
-By topic, to see everything you've saved about running no matter where it came from. Or by app, to see everything you kept from TikTok. Each view filters by the other.
+FIND IT AGAIN IN SECONDS
+Search titles, tags, notes, people and links. A Related strip surfaces the saves that match what you meant, not just the words you typed. Browse by topic to see everything about running, from every app. Or by app, to see everything you kept from TikTok.
 
-FIND IT AGAIN
-Search titles, tags, notes, people and links. Related results surface saves that match what you meant, not just the words you typed.
-
-YOUR OWN NOTES
-Add a dated note to anything, so you remember why you kept it.
+REMEMBER WHY YOU SAVED IT
+Add a dated note to anything. bookmarker also keeps count of how many times you've gone back to it, so you can see what you actually use.
 
 SIDE QUESTS
-Working on something — running a marathon, choosing a car, planning a trip? Group the links that help, and add a daily habit if it needs one.
+Training for a marathon? Choosing a car? Planning a trip? Group the saves that help, give the quest a name, and add a daily habit if it needs one. Your saves stop being a pile and start being a plan.
 
-BRING WHAT YOU ALREADY HAVE
-Import your browser bookmarks, or your data export from X, Instagram, TikTok or YouTube. Thousands of old saves become a sorted, searchable library in one step.
+BRING THE THOUSANDS YOU ALREADY HAVE
+Import your browser bookmarks, or your data export from X, Instagram, TikTok or YouTube. Years of saves become a sorted, searchable library in one step. That's the moment it clicks.
 
-BUILT TO STAY YOURS
-bookmarker stores links, not content. Opening a save takes you to the original post in the app it came from.
+YOURS, AND ONLY YOURS
+bookmarker stores links, not content — opening a save takes you to the original post, in the app it came from. Everything works offline and lives on your phone. Sign in with just an email, no password, if you want it backed up and synced. No ads. No tracking. No analytics.
 
-Everything works offline and stays on your device. Sign in with just an email if you want your library backed up and synced — no password to create. No ads. No tracking. No analytics. Your library is nobody's business but yours.
+Your saves were never the problem. Finding them was.
 ```
 
 ---
@@ -289,6 +286,10 @@ frame on a coloured panel with a headline — which is what nearly every top
 listing does and is allowed, because the UI shown is genuine. Apple's rule is
 that the screenshots show the app as it actually is; it is not that they must
 be raw captures.
+
+A 6.5" set (1284 × 2778) is in `Marketing/screenshots-6.5/` for the other iPhone
+slot; App Store Connect shows whichever slot it feels like first — "View All
+Sizes in Media Manager" reveals both.
 
 **To regenerate after a UI change** (both scripts are in the repo):
 
