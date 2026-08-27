@@ -69,7 +69,7 @@ def layout(*, preheader, eyebrow, headline, sub, middle, note, screens_caption=N
         <tr><td style="padding:0 4px 18px 4px;">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
             <td style="width:44px;"><img src="{SITE}/img/mark-192.png" width="44" height="44" alt="" style="display:block;width:44px;height:44px;border-radius:12px;" /></td>
-            <td style="padding-left:12px;font:700 19px/1 {FONT};color:{INK};letter-spacing:-0.02em;">borkmarkr</td>
+            <td style="padding-left:12px;font:700 19px/1 {FONT};color:{INK};letter-spacing:-0.02em;">bookmarker</td>
           </tr></table>
         </td></tr>
 
@@ -85,7 +85,7 @@ def layout(*, preheader, eyebrow, headline, sub, middle, note, screens_caption=N
         <tr><td style="padding:26px 8px 0 8px;font:400 12px/1.6 {FONT};color:#A39A8D;">
           <a href="{SITE}" style="color:#A39A8D;text-decoration:none;font-weight:600;">bookmarker.lol</a>
           &nbsp;&middot;&nbsp; <a href="{SITE}/privacy" style="color:#A39A8D;">Privacy</a><br>
-          You're getting this because this address was entered in the borkmarkr app. If that wasn't you, nothing happens &mdash; just ignore it.
+          You're getting this because this address was entered in the bookmarker app. If that wasn't you, nothing happens &mdash; just ignore it.
         </td></tr>
 
       </table>
@@ -97,12 +97,12 @@ def layout(*, preheader, eyebrow, headline, sub, middle, note, screens_caption=N
 """
 
 SUBJECTS = {
-    "confirm-signup":   "Your borkmarkr code",
-    "magic-link":       "Your borkmarkr code",
-    "change-email":     "Confirm your new borkmarkr email",
-    "reauthentication": "Your borkmarkr confirmation code",
-    "reset-password":   "borkmarkr has no passwords — here's what to do",
-    "invite":           "You're invited to borkmarkr",
+    "confirm-signup":   "Your bookmarker code",
+    "magic-link":       "Your bookmarker code",
+    "change-email":     "Confirm your new bookmarker email",
+    "reauthentication": "Your bookmarker confirmation code",
+    "reset-password":   "bookmarker has no passwords — here's what to do",
+    "invite":           "You're invited to bookmarker",
 }
 
 TEMPLATES = {
@@ -128,7 +128,7 @@ TEMPLATES = {
         preheader="Your confirmation code is {{ .Token }}",
         eyebrow="Change of address",
         headline="Confirm your new email.",
-        sub="You asked to move your borkmarkr account to <strong style=\"color:#191510;\">{{ .NewEmail }}</strong>. Enter this code in the app to make it official.",
+        sub="You asked to move your bookmarker account to <strong style=\"color:#191510;\">{{ .NewEmail }}</strong>. Enter this code in the app to make it official.",
         middle=code_block(),
         note="If this wasn&rsquo;t you, don&rsquo;t enter the code &mdash; your account stays exactly as it is.",
     ),
@@ -141,18 +141,18 @@ TEMPLATES = {
         note="Good for a few minutes. If you weren&rsquo;t changing anything, ignore this and nothing happens.",
     ),
     "reset-password": dict(
-        preheader="borkmarkr doesn't use passwords — here's how to get back in",
+        preheader="bookmarker doesn't use passwords — here's how to get back in",
         eyebrow="About that password",
         headline="There isn&rsquo;t one.",
-        sub="borkmarkr never had passwords, so there&rsquo;s nothing to reset. Open the app, type your email, and we&rsquo;ll send you a fresh six-digit code. That&rsquo;s the whole login.",
-        middle=button("Open borkmarkr", f"{SITE}/app"),
+        sub="bookmarker never had passwords, so there&rsquo;s nothing to reset. Open the app, type your email, and we&rsquo;ll send you a fresh six-digit code. That&rsquo;s the whole login.",
+        middle=button("Open bookmarker", f"{SITE}/app"),
         note="If you didn&rsquo;t request this, you can ignore it.",
     ),
     "invite": dict(
-        preheader="Someone saved you a seat in borkmarkr",
+        preheader="Someone saved you a seat in bookmarker",
         eyebrow="You&rsquo;re invited",
         headline="Someone saved you a seat.",
-        sub="You&rsquo;ve been invited to borkmarkr &mdash; one library for everything you save on Instagram, X, TikTok and YouTube, filed automatically and actually searchable.",
+        sub="You&rsquo;ve been invited to bookmarker &mdash; one library for everything you save on Instagram, X, TikTok and YouTube, filed automatically and actually searchable.",
         middle=button("Accept the invite", "{{ .ConfirmationURL }}"),
         note="The link is for you only and expires after a while. If you weren&rsquo;t expecting an invite, ignore this.",
         screens_caption="Save from any app. It files itself. Find it again.",

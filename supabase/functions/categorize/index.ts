@@ -1,4 +1,4 @@
-// borkmarkr — AI categorisation via OpenRouter (Claude Sonnet 5).
+// bookmarker — AI categorisation via OpenRouter (Claude Sonnet 5).
 //
 // The key is OPENROUTER_API_KEY on the function. It never ships in the app.
 

@@ -1,11 +1,13 @@
-# borkmarkr
+# bookmarker
+
+Formerly borkmarkr; identifiers keep the old name on purpose.
 
 One place for everything you save from everywhere.
 
 You see something worth keeping on Instagram, X, TikTok, YouTube Shorts,
 Pinterest or a plain website — you like it, and it disappears into a pile of
-ten thousand other likes you can never search. borkmarkr is the layer on top:
-tap **Share → borkmarkr**, and it's saved, categorised, and findable.
+ten thousand other likes you can never search. bookmarker is the layer on top:
+tap **Share → bookmarker**, and it's saved, categorised, and findable.
 
 Native iOS app. SwiftUI + SwiftData, no backend, no account, no network calls.
 

@@ -1,4 +1,4 @@
-# borkmarkr — brief for marketing
+# bookmarker — brief for marketing
 
 Written for the parallel session working on marketing material. This is JP's
 positioning in his own framing, plus what's actually true about the product
@@ -12,7 +12,7 @@ today so nothing gets promised that doesn't exist.
 
 Instagram has nothing to do with YouTube Shorts. Shorts has nothing to do with
 Threads or X. But the user doesn't care where something came from — **they're
-looking for interesting content and they want to keep what's useful.** borkmarkr
+looking for interesting content and they want to keep what's useful.** bookmarker
 is the layer above all of them.
 
 ## The enemy: platform bookmarks are a write-only graveyard
@@ -32,7 +32,7 @@ you will never see again.
 
 Concrete contrasts that all land:
 
-| Platform saves | borkmarkr |
+| Platform saves | bookmarker |
 |---|---|
 | One flat list per app, 5+ apps | One library, all apps |
 | No titles | Real titles and thumbnails |
@@ -73,7 +73,7 @@ Be careful here. Marketing that promises the roadmap will burn the launch.
 - Everything local and offline — nothing leaves the phone
 
 **Built but blocked on a paid Apple account:**
-- Share-extension saving (tap Share in any app → borkmarkr). This is the core
+- Share-extension saving (tap Share in any app → bookmarker). This is the core
   acquisition path and it needs an App Group entitlement.
 
 **Not built — do not market yet:**

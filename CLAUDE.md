@@ -1,4 +1,4 @@
-# Claude Code Instructions — borkmarkr
+# Claude Code Instructions — bookmarker
 
 Native iOS app: save any link from any social app, categorise it, find it later.
 SwiftUI + SwiftData, no backend. Sibling of `OFS_iOS/` and follows the same
@@ -8,8 +8,8 @@ XcodeGen conventions.
 
 The problem: people like thousands of posts across IG / X / TikTok / Shorts /
 Pinterest and can never find any of them again — untitled, unorganised,
-unsearchable, and locked inside each app. borkmarkr is the cross-app layer:
-**Share → borkmarkr** saves it with a source, a category, tags and an optional
+unsearchable, and locked inside each app. bookmarker is the cross-app layer:
+**Share → bookmarker** saves it with a source, a category, tags and an optional
 dated note.
 
 Saving must ALWAYS be instant. Organising is optional and can happen later —

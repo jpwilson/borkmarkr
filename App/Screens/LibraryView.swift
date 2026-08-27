@@ -106,7 +106,7 @@ struct LibraryView: View {
                         .foregroundStyle(.white)
                         .frame(width: 26, height: 26)
                         .background(accent.base, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    Text("borkmarkr")
+                    Text("bookmarker")
                         .font(Typo.display(17, .bold))
                         .foregroundStyle(Tokens.ink)
                 }
@@ -304,7 +304,7 @@ private struct EmptyFeedState: View {
 
             Text(filtered
                  ? "Try another source."
-                 : "In Instagram, X, TikTok or YouTube — tap Share, then borkmarkr.")
+                 : "In Instagram, X, TikTok or YouTube — tap Share, then bookmarker.")
                 .font(Typo.ui(13.5))
                 .foregroundStyle(Tokens.inkSecondary)
                 .multilineTextAlignment(.center)

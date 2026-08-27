@@ -41,7 +41,7 @@ enum Supabase {
 
         var errorDescription: String? {
             switch self {
-            case .notConfigured: "borkmarkr isn't connected to an account server yet."
+            case .notConfigured: "bookmarker isn't connected to an account server yet."
             case .http(let code, let body):
                 // Surface the server's own message — Supabase returns useful
                 // ones ("Email rate limit exceeded", "Token has expired").

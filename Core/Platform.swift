@@ -1,6 +1,6 @@
 import Foundation
 
-/// Sources borkmarkr knows about. One of the two browse axes —
+/// Sources bookmarker knows about. One of the two browse axes —
 /// see `Taxonomy` for the other.
 enum Platform: String, Codable, CaseIterable, Sendable {
     case x, instagram, tiktok, youtube, shorts, threads, pinterest, grok, web

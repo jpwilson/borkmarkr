@@ -7,7 +7,7 @@ import SwiftData
 /// better morning person, you want to run a faster marathon, you want to reduce
 /// your injuries during your running training, you want to eat healthier."*
 ///
-/// This is what turns borkmarkr from a filing cabinet into something you open on
+/// This is what turns bookmarker from a filing cabinet into something you open on
 /// purpose. A library is passive — you visit it when you remember something is
 /// in there. A mission is active: it has a reason, it collects the brks that
 /// serve it, and it asks you a question once a day.
@@ -180,7 +180,7 @@ final class Mission {
         let items = bookmarks.filter { bookmarkIDs.contains($0.id) }
         let lines = items.prefix(50).map { "• \($0.displayTitle)\n  \($0.urlString)" }
         let body = lines.isEmpty ? "Nothing attached yet." : lines.joined(separator: "\n\n")
-        return "\(title) — a side quest from borkmarkr\n\n\(body)"
+        return "\(title) — a side quest from bookmarker\n\n\(body)"
     }
 
     /// A suggested side quest, named from *their* library — not a catalogue.

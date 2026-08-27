@@ -1,4 +1,4 @@
-# borkmarkr clay illustration — locked style
+# bookmarker clay illustration — locked style
 
 Use this prompt for **every** new scene. Do not invent a second look.
 
@@ -14,7 +14,7 @@ Also keep `questCook`, `questLearn`, `questCreate`, `questMoney`,
 
 ## Style lock prompt
 
-Soft clay-3D editorial illustration for the iOS app borkmarkr. Isolated
+Soft clay-3D editorial illustration for the iOS app bookmarker. Isolated
 subject, centered, generous cream paper background exactly #F6F3EE. Rounded
 friendly forms like a collectible toy or premium sticker. Gentle studio
 lighting, a small contact shadow under the object only. Palette: muted coral,

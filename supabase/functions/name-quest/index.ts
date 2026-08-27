@@ -1,4 +1,4 @@
-// borkmarkr — name a side quest. Claude Sonnet 5 via OpenRouter.
+// bookmarker — name a side quest. Claude Sonnet 5 via OpenRouter.
 
 import { completeJSON, consumeQuota, json } from "../_shared/openrouter.ts";
 

@@ -461,8 +461,8 @@ struct HowToSheet: View {
 
                     VStack(alignment: .leading, spacing: 14) {
                         step(1, "Find something worth keeping", "A reel, a thread, a video, an article — anything.")
-                        step(2, "Tap Share", "Then scroll the app row and pick borkmarkr.")
-                        step(3, "First time only", "Tap More, then switch borkmarkr on.")
+                        step(2, "Tap Share", "Then scroll the app row and pick bookmarker.")
+                        step(3, "First time only", "Tap More, then switch bookmarker on.")
                     }
 
                     Button { dismiss() } label: {
@@ -526,7 +526,7 @@ struct HowToSheet: View {
                                     .stroke(accent.base, lineWidth: index == 1 ? 2.5 : 0)
                                     .padding(-4)
                             )
-                        Text(index == 1 ? "borkmarkr" : " ")
+                        Text(index == 1 ? "bookmarker" : " ")
                             .font(Typo.ui(9.5, .semibold))
                             .foregroundStyle(index == 1 ? accent.deep : .clear)
                     }

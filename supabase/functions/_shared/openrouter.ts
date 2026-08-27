@@ -19,8 +19,8 @@ export async function completeJSON(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://jpwilson.github.io/borkmarkr/",
-      "X-Title": "borkmarkr",
+      "HTTP-Referer": "https://bookmarker.lol/",
+      "X-Title": "bookmarker",
     },
     body: JSON.stringify({
       model: MODEL,

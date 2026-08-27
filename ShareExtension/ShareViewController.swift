@@ -1,8 +1,8 @@
 import UIKit
 import UniformTypeIdentifiers
 
-/// The primary way things get into borkmarkr: you're in Instagram, you tap
-/// Share, you pick borkmarkr, it's saved.
+/// The primary way things get into bookmarker: you're in Instagram, you tap
+/// Share, you pick bookmarker, it's saved.
 ///
 /// **Engineering deviation.** v1 opened the SwiftData container here and wrote
 /// directly. This queues a JSON draft into the App Group inbox instead and
@@ -72,7 +72,7 @@ final class ShareViewController: UIViewController {
 
         do {
             try Store.enqueue(draft)
-            finish(message: "Saved to borkmarkr")
+            finish(message: "Saved to bookmarker")
         } catch {
             finish(message: "Couldn't save")
         }

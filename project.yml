@@ -49,7 +49,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: borkmarkr
+        CFBundleDisplayName: bookmarker
         CFBundleShortVersionString: $(MARKETING_VERSION)
         # Only standard TLS (URLSession over HTTPS) — exempt from export compliance.
         # Answers App Store Connect's encryption question once, here, instead of on
@@ -87,7 +87,7 @@ targets:
     info:
       path: ShareExtension/Info.plist
       properties:
-        CFBundleDisplayName: Save to borkmarkr
+        CFBundleDisplayName: Save to bookmarker
         CFBundleShortVersionString: $(MARKETING_VERSION)
         # Only standard TLS (URLSession over HTTPS) — exempt from export compliance.
         # Answers App Store Connect's encryption question once, here, instead of on

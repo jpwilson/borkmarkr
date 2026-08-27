@@ -73,7 +73,7 @@ struct AddSheet: View {
                 }
             }
             .background(Tokens.paper)
-            .navigationTitle(step == .details ? "Save to borkmarkr" : "Add a link")
+            .navigationTitle(step == .details ? "Save to bookmarker" : "Add a link")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -109,7 +109,7 @@ struct AddSheet: View {
     /// that only ever has one sensible outcome is a step, not a choice.
     ///
     /// Never read `UIPasteboard` ourselves. A custom Button that peeks at it
-    /// is what produced "borkmarkr would like to paste from Chimoco" on every
+    /// is what produced "bookmarker would like to paste from Chimoco" on every
     /// tap — and users would get the same dialog from Instagram, Safari, etc.
     /// `PasteButton` is a system control; iOS grants paste without asking.
     /// Long-press in the field, or the keyboard paste key, also never prompts.
