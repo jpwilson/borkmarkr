@@ -144,7 +144,7 @@ struct TopicPage: View {
     private var shareText: String {
         let title = sub.map { "\(category.name) › \($0)" } ?? category.name
         let lines = visible.prefix(50).map { "• \($0.title)\n  \($0.urlString)" }
-        return "\(title) — from borkmarkr\n\n" + lines.joined(separator: "\n\n")
+        return "\(title) — from bookmarker\n\n" + lines.joined(separator: "\n\n")
     }
 
     private var subRow: some View {

@@ -38,7 +38,7 @@ enum Store {
         do {
             return try ModelContainer(for: schema, configurations: local)
         } catch {
-            fatalError("Could not open the borkmarkr store: \(error)")
+            fatalError("Could not open the bookmarker store: \(error)")
         }
     }
 

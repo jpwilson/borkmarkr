@@ -1,4 +1,4 @@
-# borkmarkr — what makes this big
+# bookmarker — what makes this big
 
 Written 2026-08-08, after building v1 and v2. This is an engineering view of the
 product, not a pitch. The honest version of what stands between this app and the
@@ -31,7 +31,7 @@ problems in the brief. That's the gap.
 
 **This is the single highest-leverage unbuilt feature.**
 
-Today borkmarkr starts empty and you add one link at a time. But the brief's own
+Today bookmarker starts empty and you add one link at a time. But the brief's own
 premise is that the user *already has thousands of saves*. A new user's first
 session should not be "save your first link" — it should be **"import the 1,400
 things you already saved and finally see them."**

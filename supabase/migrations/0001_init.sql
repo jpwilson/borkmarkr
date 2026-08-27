@@ -1,4 +1,4 @@
--- borkmarkr — Supabase schema (project name: `bookmarker`)
+-- bookmarker — Supabase schema (project name: `bookmarker`)
 --
 -- SCAFFOLDING ONLY. Nothing in the app talks to this yet. The friend feed is a
 -- deliberate post-launch fast-follow; this exists so the shape is settled

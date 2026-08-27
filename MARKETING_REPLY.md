@@ -88,7 +88,7 @@ Flagging these so you know they're load-bearing:
 
 1. **Confirm the paid Team ID** before wiring it into `project.yml`.
 2. **A device screen recording once the App Group is live** — share sheet inside
-   TikTok → tap borkmarkr → "Bork'd to Fitness · Mobility". The UGC shot lists
+   TikTok → tap bookmarker → "Bork'd to Fitness · Mobility". The UGC shot lists
    call for it and it can't be faked convincingly.
 
 ## 7. Where the marketing lives

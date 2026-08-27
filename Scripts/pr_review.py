@@ -36,7 +36,7 @@ SKIP_PREFIXES = (
     "App/Fonts/",
 )
 
-SYSTEM = """You review pull requests for borkmarkr, a native iOS app (SwiftUI + SwiftData).
+SYSTEM = """You review pull requests for bookmarker, a native iOS app (SwiftUI + SwiftData).
 
 Product rules:
 - Saving must stay instant. Never gate a save on categorisation, tags, or notes.

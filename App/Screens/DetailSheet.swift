@@ -56,7 +56,7 @@ struct DetailSheet: View {
                     Button("Close") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    ShareLink(item: bookmark.url ?? URL(string: "https://borkmarkr.app")!) {
+                    ShareLink(item: bookmark.url ?? URL(string: "https://bookmarker.lol")!) {
                         Image(systemName: "square.and.arrow.up")
                     }
                 }
@@ -69,7 +69,7 @@ struct DetailSheet: View {
             Button("Delete", role: .destructive, action: softDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("It's removed from borkmarkr. The original post isn't touched.")
+            Text("It's removed from bookmarker. The original post isn't touched.")
         }
         .sheet(isPresented: $showingPicker) {
             TopicPickerSheet(

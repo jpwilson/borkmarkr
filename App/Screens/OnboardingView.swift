@@ -94,7 +94,7 @@ struct OnboardingView: View {
                     .tracking(-0.6)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Tokens.ink)
-                Text("Tap Share in Instagram, X, TikTok or anywhere else — then pick borkmarkr.")
+                Text("Tap Share in Instagram, X, TikTok or anywhere else — then pick bookmarker.")
                     .font(Typo.ui(14.5))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Tokens.inkSecondary)

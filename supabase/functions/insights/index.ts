@@ -1,4 +1,4 @@
-// borkmarkr — what's interesting in the last day / week / month.
+// bookmarker — what's interesting in the last day / week / month.
 // Claude Sonnet 5 via OpenRouter. Titles and topics only — no notes, no URLs.
 
 import { completeJSON, consumeQuota, json } from "../_shared/openrouter.ts";

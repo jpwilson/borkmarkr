@@ -193,7 +193,7 @@ enum LinkPreview {
         request.timeoutInterval = timeout
         // Identify honestly. Spoofing a browser UA to get past a block is both
         // a terms violation and something that silently breaks.
-        request.setValue("borkmarkr/0.1 (link preview)", forHTTPHeaderField: "User-Agent")
+        request.setValue("bookmarker/0.1 (link preview)", forHTTPHeaderField: "User-Agent")
         request.setValue("text/html,application/json", forHTTPHeaderField: "Accept")
 
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
