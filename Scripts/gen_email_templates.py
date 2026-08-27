@@ -7,6 +7,8 @@
 Paste each file's contents as the BODY of the matching template in
 Supabase → Authentication → Emails → Templates. Subjects are in SUBJECTS.
 Images are served from bookmarker.lol, so they render in any mail client.
+No viewport meta on purpose: Supabase's mailer sends the body without
+quoted-printable escaping, so "=de" in "width=device-width" arrives mangled.
 """
 import sys, pathlib, re
 
@@ -54,7 +56,6 @@ def layout(*, preheader, eyebrow, headline, sub, middle, note, screens_caption=N
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>{headline}</title>
 </head>
