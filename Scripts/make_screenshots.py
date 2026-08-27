@@ -208,3 +208,19 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+# App Store Connect also has a 6.5" slot (1284x2778). Same aspect ratio to
+# within 0.4%, so a resize plus a 6px trim top and bottom is pixel-honest.
+def also_65(path):
+    from PIL import Image
+    im = Image.open(path).convert("RGB").resize((1284, 2790), Image.LANCZOS)
+    im = im.crop((0, 6, 1284, 2784))
+    out = path.parent.parent / "screenshots-6.5" / path.name
+    out.parent.mkdir(parents=True, exist_ok=True)
+    im.save(out, optimize=True)
+    print("wrote", out)
+
+if __name__ == "__main__":
+    import pathlib as _pl
+    for f in sorted(_pl.Path("Marketing/screenshots").glob("*.png")):
+        also_65(f)
