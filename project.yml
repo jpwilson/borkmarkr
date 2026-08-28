@@ -38,6 +38,12 @@ targets:
     # into BOTH targets — the Share Extension writes straight into the same
     # App Group store the app reads.
     sources: [App, Core]
+    settings:
+      base:
+        # iPhone only. XcodeGen's per-target default is "1,2", which overrides
+        # the project-level value and makes App Store validation demand iPad
+        # multitasking orientations.
+        TARGETED_DEVICE_FAMILY: "1"
     dependencies:
       - target: ShareExtension
         embed: true
@@ -79,6 +85,7 @@ targets:
       base:
         # Must nest under the app's identifier or the embed step fails.
         PRODUCT_BUNDLE_IDENTIFIER: com.jpwilson.borkmarkr.ShareExtension
+        TARGETED_DEVICE_FAMILY: "1"
     entitlements:
       path: ShareExtension/ShareExtension.entitlements
       properties:
