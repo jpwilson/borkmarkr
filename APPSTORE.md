@@ -190,9 +190,15 @@ frameworks.)
 
 All content questions → **None**. Expected rating **4+**.
 
-One judgement call: the questionnaire asks about *unrestricted web access*.
-Answer **Yes** — the app opens saved links in Safari. This does not raise the
-rating on its own and answering No would be untrue.
+The questionnaire asks about *unrestricted web access*. Answer **No**: it means
+browsing the web *inside* the app (a web view), and bookmarker has none — it
+hands every link to iOS with `openURL`. Answering Yes is what pushes the rating
+to 16+ under Apple's 2025 scheme. Set 2026-08-27: 4+.
+
+**Digital Services Act (EU):** App Information → App Store Regulations &
+Permits → Digital Services Act → Set Up. Apple needs a trader/non-trader
+declaration before the app can be sold in the EU. It's an account-level legal
+statement, so JP does it himself.
 
 ---
 
@@ -231,7 +237,7 @@ generates.
 
 Supabase's built-in mailer is dev-only: it refuses to deliver to addresses
 outside your Supabase team and is capped at a couple of emails per hour. The
-reviewer never hits this (the Test OTP below bypasses email), but the first
+reviewer never hits this (the review notes say no account is needed), but the first
 real user would. Needs a domain you own:
 
 1. Domain: **bookmarker.lol** (bought 25 Aug 2026 at Porkbun; bkmrkr.lol
