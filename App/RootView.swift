@@ -122,6 +122,11 @@ struct RootView: View {
                 Task { await account.sync(context: context) }
             }
         }
+        .onChange(of: account.isSignedIn) { _, signedIn in
+            // Back up the moment someone signs in, not at the next foreground.
+            // Push runs before pull, so what's on the phone is never at risk.
+            if signedIn { Task { await account.sync(context: context) } }
+        }
         .onChange(of: pendingTopic) { _, value in
             if value != nil { tab = .browse }
         }
