@@ -1,6 +1,8 @@
 import SwiftUI
 
-/// Sign in with an email and a six-digit code. No password, ever.
+/// Sign in with an email and a six-digit code. No password — except for the
+/// App Review demo account, which can't receive mail (see
+/// `Supabase.passwordAccounts`).
 struct AuthSheet: View {
     @ObservedObject var account: Account
 
@@ -9,11 +11,12 @@ struct AuthSheet: View {
 
     @State private var email = ""
     @State private var code = ""
+    @State private var password = ""
     @State private var stage = Stage.email
     @State private var busy = false
     @State private var message: String?
 
-    enum Stage { case email, code, done }
+    enum Stage { case email, code, password, done }
 
     var body: some View {
         NavigationStack {
@@ -22,6 +25,7 @@ struct AuthSheet: View {
                     switch stage {
                     case .email: emailStage
                     case .code: codeStage
+                    case .password: passwordStage
                     case .done: doneStage
                     }
 
@@ -102,6 +106,32 @@ struct AuthSheet: View {
         }
     }
 
+    private var passwordStage: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("\(email) signs in with a password.")
+                .font(Typo.ui(14))
+                .foregroundStyle(Tokens.inkSecondary)
+
+            SecureField("Password", text: $password)
+                .font(Typo.ui(16))
+                .textContentType(.password)
+                .padding(14)
+                .cardSurface(radius: 16)
+
+            primaryButton(busy ? "Checking…" : "Sign in") {
+                Task { await signInWithPassword() }
+            }
+            .disabled(busy || password.isEmpty)
+
+            Button("Use a different email") {
+                stage = .email
+                password = ""
+                message = nil
+            }
+            .font(Typo.ui(13, .semibold))
+        }
+    }
+
     private var doneStage: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
@@ -134,11 +164,27 @@ struct AuthSheet: View {
     }
 
     private func sendCode() async {
+        if Supabase.usesPassword(email) {
+            withAnimation(Motion.gentle) { stage = .password }
+            return
+        }
         busy = true; message = nil
         defer { busy = false }
         do {
             try await account.sendCode(to: email)
             withAnimation(Motion.gentle) { stage = .code }
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
+    private func signInWithPassword() async {
+        busy = true; message = nil
+        defer { busy = false }
+        do {
+            try await account.signIn(email: email, password: password)
+            Haptics.success()
+            withAnimation(Motion.gentle) { stage = .done }
         } catch {
             message = error.localizedDescription
         }

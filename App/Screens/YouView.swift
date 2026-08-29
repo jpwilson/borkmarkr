@@ -20,6 +20,9 @@ struct YouView: View {
     @State private var showingAuth = false
     @State private var showingInsights = false
     @State private var creatingQuestTitle: String?
+    @State private var confirmingDelete = false
+    @State private var deletingAccount = false
+    @State private var deleteError: String?
 
     private var thisWeek: Int {
         let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
@@ -53,6 +56,23 @@ struct YouView: View {
         }
         .sheet(isPresented: $showingAuth) {
             AuthSheet(account: account).environment(\.accent, accent)
+        }
+        .confirmationDialog("Delete your account?", isPresented: $confirmingDelete,
+                            titleVisibility: .visible) {
+            Button("Delete account", role: .destructive) {
+                Task { await deleteAccount() }
+            }
+            Button("Keep it", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes your account and every bork backed up to it. The borks on this phone stay here. It can't be undone.")
+        }
+        .alert("Couldn't delete your account", isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deleteError ?? "")
         }
         .sheet(isPresented: $showingInsights) {
             InsightsSheet(bookmarks: bookmarks, account: account) { title in
@@ -125,6 +145,14 @@ struct YouView: View {
                     .font(Typo.ui(13, .semibold))
                     .foregroundStyle(Tokens.destructive)
             }
+            // Account deletion is a store requirement (App Review 5.1.1(v))
+            // and the right thing anyway: what you can create, you can remove.
+            Button(deletingAccount ? "Deleting…" : "Delete account") {
+                confirmingDelete = true
+            }
+            .font(Typo.ui(12, .medium))
+            .foregroundStyle(Tokens.inkMeta)
+            .disabled(deletingAccount)
         } else {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Only on this phone")
@@ -134,6 +162,17 @@ struct YouView: View {
                     .font(Typo.ui(12, .medium))
                     .foregroundStyle(Tokens.inkMeta)
             }
+        }
+    }
+
+    private func deleteAccount() async {
+        deletingAccount = true
+        defer { deletingAccount = false }
+        do {
+            try await account.deleteAccount()
+            Haptics.success()
+        } catch {
+            deleteError = error.localizedDescription
         }
     }
 

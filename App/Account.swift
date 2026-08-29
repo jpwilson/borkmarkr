@@ -42,6 +42,24 @@ final class Account: ObservableObject {
         session = new
     }
 
+    /// Password sign-in, for the App Review demo account only.
+    func signIn(email: String, password: String) async throws {
+        let new = try await Supabase.signIn(
+            email: email.trimmingCharacters(in: .whitespaces).lowercased(),
+            password: password
+        )
+        Keychain.save(new)
+        session = new
+    }
+
+    /// Deletes the account server-side, then signs out. Local borks stay on
+    /// the phone — the app is local-first and the user's device is theirs.
+    func deleteAccount() async throws {
+        let current = try await validSession()
+        try await Supabase.deleteAccount(session: current)
+        signOut()
+    }
+
     func signOut() {
         Keychain.clear()
         session = nil

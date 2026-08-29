@@ -72,6 +72,27 @@ enum Supabase {
         _ = try await post(path: "/auth/v1/otp", body: body, config: config, token: nil)
     }
 
+    /// Accounts that sign in with a password instead of an emailed code.
+    ///
+    /// Exactly one: the demo account App Review uses. Reviewers can't read mail
+    /// at an address we control, so the review account gets a password instead.
+    /// The password lives in App Store Connect's review notes and in Supabase —
+    /// never here. Everyone else stays on codes.
+    static let passwordAccounts: Set<String> = ["review@bookmarker.lol"]
+
+    static func usesPassword(_ email: String) -> Bool {
+        passwordAccounts.contains(email.trimmingCharacters(in: .whitespaces).lowercased())
+    }
+
+    /// Password grant. Only reachable for `passwordAccounts`.
+    static func signIn(email: String, password: String) async throws -> Session {
+        guard let config = Config.current else { throw Failure.notConfigured }
+        let body = ["email": email, "password": password]
+        let data = try await post(path: "/auth/v1/token?grant_type=password",
+                                  body: body, config: config, token: nil)
+        return try session(from: data)
+    }
+
     /// Exchanges the emailed code for a session.
     static func verifyCode(_ code: String, email: String) async throws -> Session {
         guard let config = Config.current else { throw Failure.notConfigured }
@@ -183,11 +204,30 @@ enum Supabase {
         return try await send(request)
     }
 
+    // MARK: - Account deletion
+
+    /// Deletes the signed-in user and everything they backed up.
+    ///
+    /// Runs in an Edge Function holding the service role, because a client can
+    /// never be allowed to delete rows in `auth.users` directly. The database
+    /// cascades from the user to profile, bookmarks, collections and AI usage.
+    static func deleteAccount(session: Session) async throws {
+        _ = try await invoke(function: "delete-account", bodyJSON: Data("{}".utf8),
+                             session: session, timeout: 20)
+    }
+
     // MARK: - Plumbing
 
     private static func post(path: String, body: [String: Any],
                              config: Config, token: String?) async throws -> Data {
-        var request = URLRequest(url: config.url.appendingPathComponent(String(path.dropFirst())))
+        // `appendingPathComponent` percent-encodes `?`, which turned the
+        // refresh-token grant into `/token%3Fgrant_type=…` and a 404 — every
+        // session silently died an hour after sign-in. Resolve relative to the
+        // base URL instead so query strings survive.
+        guard let url = URL(string: path, relativeTo: config.url)?.absoluteURL else {
+            throw Failure.notConfigured
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(config.anonKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

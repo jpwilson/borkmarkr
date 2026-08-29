@@ -95,33 +95,55 @@ bookmark,save,links,reels,tiktok,shorts,organize,tags,offline,library,read later
 
 ## App Review Information
 
-**Sign-in required?** → **No** (untick "Sign-in required")
+**Sign-in required?** → **Yes.** Apple's first review (28 Aug 2026, Guideline
+2.1 "Information Needed") asked for a demo login even though no feature needs
+an account, so we give them one.
 
-This is the honest answer and it removes the biggest review risk: every feature
-works without an account. Sign-in only adds cloud backup.
+- User name: `review@bookmarker.lol`
+- Password: whatever you set when you created that user in Supabase
+  (Authentication → Users → Add user → *Create new user*, email +
+  password, **Auto Confirm User on**). Keep it in ASC and Supabase only.
 
-**Notes**
+The app recognises that one address (`Supabase.passwordAccounts`) and asks for
+a password instead of emailing a code. Every other account stays on codes.
+If a reviewer taps "Delete account" the user is gone — re-create it before the
+next submission.
+
+**Contact phone**: currently the Porkbun registrant number; swap if you'd
+rather Apple call a different one.
+
+**Notes** (paste the block below; keep it under 4,000 characters)
 ```
-No account is required. Every feature — saving links, automatic sorting, browsing, search, notes, side quests, import — works fully without signing in. Please tap "Not now" if the sign-in screen appears.
+DEMO ACCOUNT
+Use the sign-in details above (review@bookmarker.lol). You tab → Sign in → enter the email → the app asks for the password. This is the one address that uses a password: every other user receives a six-digit code by email, and a review address can't receive mail. No account is needed for any feature; tapping "Not now" also works.
 
-WHAT THE APP DOES
-bookmarker is a personal bookmark manager. Users save links they choose to save, from any app, into one searchable library. It stores the URL, a title, and a thumbnail supplied by the page's own Open Graph metadata.
+WHAT THE APP IS, AND FOR WHOM
+bookmarker is a personal bookmark manager for people who save reels, threads, videos and articles across several apps and can't find them again. Users save links they chose — via the Share sheet or by pasting — into one library. Each save is filed under a topic, tagged, searchable, and can carry a note. "Side quests" group saves into a small to-do (recipes to cook, places to visit). Audience: general, rated 4+; typical users are adults who save a lot on social apps.
 
-The app does NOT display, embed, host, reproduce or scrape content from any social platform. Opening a saved item calls openURL and hands the user to the original app or website, where the content is viewed as normal. There is no in-app feed of anyone else's content and no login to any third-party service.
+The app does NOT display, embed, host, reproduce or scrape platform content. It stores the URL plus the title and thumbnail from the page's own Open Graph metadata, and opening a save calls openURL to hand off to the original app or site. There is no feed, no content visible to other users, and no login to any third-party service.
 
-HOW TO TEST SAVING
-1. Open the app and tap the + button.
-2. Paste any link, e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ
-   The title, author and thumbnail are fetched automatically.
-3. Tap "Bork it" to save.
-4. The item appears in Library. Tap it, then "Open original" to confirm it links out to the source.
+HOW TO TEST
+1. Tap + → paste any link (e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ). Title/thumbnail fetch automatically → tap "Bork it".
+2. Library shows the save. Tap it → "Open original" hands off to the source.
+3. Search tab: type a word from the title. Browse tab: topics.
+4. Share extension (optional): Safari → Share → "bookmarker".
+5. Account: You tab → Sign in with the demo account → "Backed up" appears on the You card. "Sign out" and "Delete account" are on the same card. Delete account asks for confirmation, deletes the account and all server-side data, and signs out.
 
-TESTING THE SHARE EXTENSION (optional)
-In Safari or another app, tap Share, then More, and enable "bookmarker". Sharing a link saves it directly.
+EXTERNAL SERVICES
+- Supabase (auth, Postgres, Edge Functions): email-code sign-in and optional backup/sync of the user's own bookmarks.
+- Resend: delivers the sign-in code emails from hello@bookmarker.lol.
+- OpenRouter → Anthropic Claude: when on-device keyword filing can't place a link, a signed-in user's link URL and title are sent from our server to suggest a topic; "Highlights" summarises up to 40 recent titles/topics. Signed-out users get on-device filing only. No API key ships in the app; calls are server-side and capped per user per day.
+- Link previews are fetched directly from the saved page (its Open Graph tags).
+- Website and privacy policy: https://bookmarker.lol (GitHub Pages).
 
-AUTOMATIC FILING AND HIGHLIGHTS
-Links are sorted into topics on-device by keyword matching. For links that can't be placed that way, a signed-in user's link URL and title are sent to our server, which asks a language model (Anthropic Claude, accessed via OpenRouter) for a suggested topic. The suggestion is shown to the user and can be changed before saving. A signed-in user can also see a short summary of their recent saves; that sends titles, topics and tags of up to 40 recent items to the same model. Signed-out users get on-device filing only and no summaries. No API key ships in the app; all model calls are made server-side.
+DEVICES TESTED
+iPhone 17 Pro Max on iOS 26.6 (physical device, via TestFlight); iPhone 17 Pro Max simulator, Xcode 26.6.
 
+REGIONS
+Identical features and content in every region. Not a regulated industry. No protected third-party material: users save links to content they chose, and the app links out to it.
+
+PERMISSIONS
+None requested — no location, contacts, camera, photos, tracking or notifications. The only system UI is the iOS Share sheet.
 ```
 
 **Contact** — your name, phone, and `jeanpaulwilson@gmail.com`
