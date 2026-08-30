@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>bookmarker — your library</title>
+<link rel="icon" href="../img/mark-192.png">
+<style>
+  /* Tokens copied from the landing page — one brand, two surfaces. */
+  :root {
+    --paper: #F6F3EE; --ink: #191510; --ink-2: #6E655A; --hairline: #EAE4DA;
+    --surface: #FFFFFF; --coral: #FF5A2D; --coral-dark: #E8451C;
+    --accent-text: #C93A12; --coral-tint: #FFE9E1;
+    --shadow-card: 0 1px 2px rgba(25,21,16,.04), 0 12px 32px -16px rgba(25,21,16,.14);
+    --radius: 18px;
+    --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14110E; --ink: #F2EEE8; --ink-2: #A39A8D; --hairline: #2A241E;
+      --surface: #1C1814; --accent-text: #FF7A55; --coral-tint: #33190F;
+      --shadow-card: 0 1px 2px rgba(0,0,0,.2), 0 12px 32px -16px rgba(0,0,0,.5);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font-body); }
+  button { font: inherit; cursor: pointer; }
+  input, textarea, select { font: inherit; color: var(--ink); }
+  a { color: var(--accent-text); }
+  [hidden] { display: none !important; }
+
+  .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px;
+    padding: 10px clamp(14px, 3vw, 28px); background: color-mix(in srgb, var(--paper) 86%, transparent);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--hairline); }
+  .wordmark { font-weight: 800; letter-spacing: -.03em; font-size: 20px; color: var(--ink); text-decoration: none; white-space: nowrap; }
+  .wordmark b { color: var(--coral); }
+  .topbar input[type=search] { flex: 1; min-width: 0; height: 40px; border: 1px solid var(--hairline);
+    border-radius: 999px; padding: 0 16px; background: var(--surface); outline: none; }
+  .topbar input[type=search]:focus-visible { border-color: var(--coral); }
+  .icon-btn { height: 40px; border: 1px solid var(--hairline); background: var(--surface);
+    border-radius: 999px; padding: 0 14px; color: var(--ink-2); white-space: nowrap; }
+
+  .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 12px clamp(14px, 3vw, 28px) 4px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--hairline);
+    background: var(--surface); color: var(--ink); font-size: 13.5px; font-weight: 600; }
+  .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip .n { color: inherit; opacity: .55; font-weight: 500; margin-left: 5px; }
+
+  main { padding: 14px clamp(14px, 3vw, 28px) 90px; max-width: 1400px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  @media (max-width: 480px) { .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; } }
+
+  .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow-card); cursor: pointer; display: flex; flex-direction: column; }
+  .card:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
+  .cover { aspect-ratio: 16 / 10; position: relative; background: var(--coral-tint); }
+  .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .badge { position: absolute; left: 10px; top: 10px; background: rgba(20, 17, 14, .72); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: .04em; border-radius: 8px; padding: 3px 7px; }
+  .card-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .card-title { font-weight: 700; font-size: 14.5px; line-height: 1.3; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+  .topic-chip { font-size: 11.5px; font-weight: 700; border-radius: 8px; padding: 3px 8px; }
+  .date { color: var(--ink-2); font-size: 11.5px; }
+  .note-dot { color: var(--accent-text); font-size: 11.5px; }
+
+  .fab { position: fixed; right: 20px; bottom: 20px; z-index: 30; height: 56px; padding: 0 22px;
+    border: 0; border-radius: 999px; background: var(--coral); color: #fff; font-weight: 800; font-size: 16px;
+    box-shadow: 0 12px 30px -8px rgba(255, 90, 45, .55); }
+  .fab:active { transform: scale(.97); }
+
+  .state { text-align: center; color: var(--ink-2); padding: 60px 20px; }
+
+  /* Auth */
+  #auth { max-width: 420px; margin: 0 auto; padding: 12vh 22px 40px; }
+  #auth h1 { font-size: 32px; letter-spacing: -.03em; margin: 18px 0 8px; }
+  #auth p { color: var(--ink-2); margin: 0 0 18px; }
+  .field { width: 100%; height: 50px; border: 1px solid var(--hairline); border-radius: 14px;
+    padding: 0 16px; background: var(--surface); outline: none; margin-bottom: 12px; }
+  .field:focus-visible { border-color: var(--coral); }
+  #code-input { text-align: center; font-size: 24px; letter-spacing: .3em; font-variant-numeric: tabular-nums; }
+  .btn { width: 100%; height: 50px; border: 0; border-radius: 14px; background: var(--coral); color: #fff;
+    font-weight: 800; font-size: 15.5px; margin-bottom: 10px; }
+  .btn.ghost { background: var(--coral-tint); color: var(--accent-text); }
+  .btn[disabled] { opacity: .55; cursor: default; }
+  .linkish { display: block; background: none; border: 0; color: var(--accent-text); font-weight: 600; padding: 6px 0; }
+  .err { color: #C0392B; font-size: 13px; min-height: 18px; margin: 4px 0 0; }
+  .hint { color: var(--ink-2); font-size: 12.5px; }
+
+  /* Dialogs */
+  dialog { border: 0; border-radius: 20px; background: var(--surface); color: var(--ink);
+    box-shadow: var(--shadow-card); width: min(560px, calc(100vw - 32px)); padding: 22px; }
+  dialog::backdrop { background: rgba(20, 17, 14, .45); backdrop-filter: blur(2px); }
+  @media (max-width: 640px) {
+    dialog { margin: auto 0 0; width: 100vw; max-width: 100vw; border-radius: 22px 22px 0 0; }
+  }
+  dialog h2 { margin: 0 0 14px; font-size: 20px; letter-spacing: -.02em; }
+  dialog label { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin: 12px 0 5px; }
+  dialog .field, dialog textarea, dialog select { margin-bottom: 0; width: 100%; }
+  dialog textarea { border: 1px solid var(--hairline); border-radius: 14px; background: var(--surface);
+    padding: 12px 14px; min-height: 70px; resize: vertical; outline: none; }
+  dialog select { height: 44px; border: 1px solid var(--hairline); border-radius: 12px;
+    background: var(--surface); padding: 0 10px; }
+  .dialog-row { display: flex; gap: 10px; margin-top: 18px; }
+  .dialog-row .btn { margin: 0; }
+  .danger { background: none; border: 0; color: #C0392B; font-weight: 600; padding: 10px 0 0; }
+  .preview-box { display: flex; gap: 12px; align-items: center; margin-top: 12px; min-height: 0; }
+  .preview-box img { width: 84px; height: 56px; object-fit: cover; border-radius: 10px; background: var(--coral-tint); }
+
+  #toast { position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%); z-index: 40;
+    background: var(--ink); color: var(--paper); border-radius: 999px; padding: 10px 18px; font-size: 14px;
+    display: flex; gap: 14px; align-items: center; max-width: calc(100vw - 32px); }
+  #toast button { background: none; border: 0; color: var(--coral); font-weight: 700; }
+  @media (prefers-reduced-motion: no-preference) {
+    .card { transition: transform .12s ease; } .card:hover { transform: translateY(-2px); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ───────────────────────── Auth ───────────────────────── -->
+<section id="auth" hidden>
+  <a class="wordmark" href="https://bookmarker.lol">book<b>marker</b></a>
+  <div id="auth-choose">
+    <h1>Your borks,<br>on the big screen.</h1>
+    <p>The same library as the app — search it, sort it, add to it from any browser.</p>
+    <button class="btn" data-act="choose-signup">Sign up</button>
+    <button class="btn ghost" data-act="choose-signin">Sign in</button>
+  </div>
+  <div id="auth-email" hidden>
+    <h1 id="auth-email-title">Create your account</h1>
+    <p id="auth-email-blurb"></p>
+    <input class="field" id="email-input" type="email" autocomplete="email" placeholder="you@example.com">
+    <button class="btn" data-act="send-code">Email me a code</button>
+    <button class="linkish" data-act="switch-mode"></button>
+    <button class="linkish" data-act="back-choose">Back</button>
+    <p class="err" id="auth-err"></p>
+    <p class="hint">No password to make up or lose — the code is the whole thing.</p>
+  </div>
+  <div id="auth-code" hidden>
+    <h1>Check your email</h1>
+    <p id="code-blurb"></p>
+    <input class="field" id="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+    <button class="btn" data-act="verify-code">Continue</button>
+    <button class="linkish" data-act="back-email">Use a different email</button>
+    <p class="err" id="code-err"></p>
+  </div>
+</section>
+
+<!-- ───────────────────────── Library ───────────────────────── -->
+<div id="app" hidden>
+  <header class="topbar">
+    <a class="wordmark" href="https://bookmarker.lol">book<b>marker</b></a>
+    <input type="search" id="search" placeholder="Search your borks" autocomplete="off">
+    <button class="icon-btn" id="account-btn" title="Account"></button>
+  </header>
+  <nav class="chips" id="chips" aria-label="Filter by topic"></nav>
+  <main>
+    <div class="grid" id="grid"></div>
+    <div class="state" id="empty-state" hidden></div>
+  </main>
+  <button class="fab" id="add-btn">+ Bork it</button>
+</div>
+
+<!-- Add -->
+<dialog id="add-dialog">
+  <h2>Bork a link</h2>
+  <label for="add-url">Link</label>
+  <input class="field" id="add-url" type="url" placeholder="https://…" autocomplete="off">
+  <div class="preview-box" id="add-preview" hidden>
+    <img id="add-thumb" alt="" onerror="this.hidden=true">
+    <div>
+      <div id="add-title" style="font-weight:700"></div>
+      <div class="hint" id="add-author"></div>
+    </div>
+  </div>
+  <label for="add-topic">Topic (optional)</label>
+  <select id="add-topic"></select>
+  <p class="err" id="add-err"></p>
+  <div class="dialog-row">
+    <button class="btn ghost" data-act="close-add">Not now</button>
+    <button class="btn" data-act="save-add">Bork it</button>
+  </div>
+</dialog>
+
+<!-- Detail / edit -->
+<dialog id="edit-dialog">
+  <h2 id="edit-title" style="overflow-wrap:anywhere"></h2>
+  <p style="margin:0"><a id="edit-open" target="_blank" rel="noopener">Open original ↗</a></p>
+  <label for="edit-topic">Topic</label>
+  <select id="edit-topic"></select>
+  <label for="edit-sub">Subtopic</label>
+  <select id="edit-sub"></select>
+  <label for="edit-tags">Tags (comma separated)</label>
+  <input class="field" id="edit-tags" autocomplete="off">
+  <label for="edit-note">Note</label>
+  <textarea id="edit-note" placeholder="Why did you save this?"></textarea>
+  <div class="dialog-row">
+    <button class="btn ghost" data-act="close-edit">Cancel</button>
+    <button class="btn" data-act="save-edit">Save</button>
+  </div>
+  <button class="danger" data-act="delete-bork">Delete this bork</button>
+</dialog>
+
+<div id="toast" hidden><span id="toast-msg"></span><button id="toast-act" hidden></button></div>
+
+<script src="taxonomy.js"></script>
+<script>
+"use strict";
+/* bookmarker web — one file, no framework, same backend as the iPhone app.
+   The wire protocol mirrors Core/Supabase.swift and App/Account.swift; the
+   URL identity mirrors Bookmark.stableID. Change those, change this. */
+
+const SUPABASE_URL = "https://pcjuxnhqxyfvgagnblzv.supabase.co";
+const ANON_KEY = "sb_publishable_z0wBO4NZrMW3T0ZywSDfJA_UoFRHMKb"; // public by design; RLS is the lock
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const TOPIC_BY_ID = Object.fromEntries(TAXONOMY.map(t => [t.id, t]));
+
+/* ── Identity: verbatim port of Bookmark.stableID ─────────────────────── */
+const JUNK_PARAMS = new Set([
+  "utm_source","utm_medium","utm_campaign","utm_term","utm_content",
+  "igshid","igsh","si","s","t","fbclid","gclid","ref","ref_src",
+  "ref_url","feature","app","is_from_webapp","sender_device","_r","_t",
+]);
+function stableID(raw) {
+  let u;
+  try { u = new URL(raw); } catch { return null; }
+  let host = u.hostname.toLowerCase();
+  for (const p of ["www.", "m.", "mobile."]) if (host.startsWith(p)) { host = host.slice(p.length); break; }
+  const kept = [...u.searchParams.entries()]
+    .filter(([k]) => !JUNK_PARAMS.has(k.toLowerCase()))
+    .sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
+  let path = u.pathname;
+  while (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+  const q = kept.length ? "?" + kept.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&") : "";
+  return `https://${host}${path}${q}`;
+}
+
+/* ── Platform: port of Platform.detect ────────────────────────────────── */
+const PLATFORM = {
+  x: { name: "X", short: "X", kind: "thread" },
+  instagram: { name: "Instagram", short: "IG", kind: "reel" },
+  tiktok: { name: "TikTok", short: "TT", kind: "clip" },
+  youtube: { name: "YouTube", short: "YT", kind: "video" },
+  shorts: { name: "Shorts", short: "SH", kind: "short" },
+  threads: { name: "Threads", short: "TH", kind: "post" },
+  pinterest: { name: "Pinterest", short: "PIN", kind: "pin" },
+  grok: { name: "Grok", short: "GK", kind: "post" },
+  web: { name: "Web", short: "WWW", kind: "article" },
+};
+function detectPlatform(raw) {
+  let u; try { u = new URL(raw); } catch { return "web"; }
+  let host = u.hostname.toLowerCase();
+  for (const p of ["www.", "m.", "mobile.", "vm.", "vt."]) if (host.startsWith(p)) { host = host.slice(p.length); break; }
+  const path = u.pathname.toLowerCase();
+  const map = {
+    "tiktok.com": "tiktok", "tiktok.net": "tiktok",
+    "instagram.com": "instagram", "instagr.am": "instagram", "ig.me": "instagram",
+    "x.com": "x", "twitter.com": "x", "t.co": "x",
+    "threads.net": "threads", "threads.com": "threads",
+    "pinterest.com": "pinterest", "pin.it": "pinterest",
+    "grok.com": "grok", "grok.x.ai": "grok",
+  };
+  if (host === "youtube.com" || host === "youtu.be" || host === "music.youtube.com")
+    return path.startsWith("/shorts/") ? "shorts" : "youtube";
+  if (map[host]) return map[host];
+  const labels = host.split(".");
+  if (labels.length >= 2) {
+    const root = labels[labels.length > 2 ? labels.length - 3 : 0];
+    if (root === "tiktok") return "tiktok";
+    if (root === "instagram") return "instagram";
+    if (root === "youtube") return path.startsWith("/shorts/") ? "shorts" : "youtube";
+    if (root === "twitter") return "x";
+    if (root === "pinterest") return "pinterest";
+  }
+  return "web";
+}
+
+/* ── Session (browser twin of the iOS Keychain struct) ────────────────── */
+const store = {
+  get session() { try { return JSON.parse(localStorage.getItem("bm.session")); } catch { return null; } },
+  set session(v) { v ? localStorage.setItem("bm.session", JSON.stringify(v)) : localStorage.removeItem("bm.session"); },
+  get cache() { try { return JSON.parse(localStorage.getItem("bm.cache")) || []; } catch { return []; } },
+  set cache(v) { try { localStorage.setItem("bm.cache", JSON.stringify(v)); } catch { /* full — cache is optional */ } },
+  get cursor() { return localStorage.getItem("bm.cursor"); },
+  set cursor(v) { v ? localStorage.setItem("bm.cursor", v) : localStorage.removeItem("bm.cursor"); },
+};
+
+let refreshing = null; // single-flight: refresh tokens are single-use
+async function validSession() {
+  const s = store.session;
+  if (!s) return null;
+  if (Date.now() < s.expires_at - 60_000) return s;
+  refreshing ??= (async () => {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: store.session?.refresh_token }),
+      });
+      if (!r.ok) throw new Error("refresh failed");
+      const d = await r.json();
+      const next = {
+        access_token: d.access_token, refresh_token: d.refresh_token,
+        expires_at: Date.now() + (d.expires_in ?? 3600) * 1000,
+        user_id: d.user?.id ?? store.session?.user_id, email: d.user?.email ?? store.session?.email,
+      };
+      store.session = next;
+      return next;
+    } catch {
+      signOut("Signed out — sign in again.");
+      return null;
+    } finally { refreshing = null; }
+  })();
+  return refreshing;
+}
+// Another tab may rotate the token; adopt its session.
+window.addEventListener("storage", (e) => { if (e.key === "bm.session") render(); });
+
+function supaError(body, fallback) {
+  try { const d = JSON.parse(body); return d.msg || d.message || d.error_description || fallback; }
+  catch { return fallback; }
+}
+
+async function api(path, { method = "GET", body, headers = {}, auth = true } = {}) {
+  const h = { apikey: ANON_KEY, "Content-Type": "application/json", ...headers };
+  if (auth) {
+    const s = await validSession();
+    if (!s) throw new Error("Signed out.");
+    h.Authorization = `Bearer ${s.access_token}`;
+  }
+  const res = await fetch(`${SUPABASE_URL}${path}`, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
+  const text = await res.text();
+  if (!res.ok) throw new Error(supaError(text, `Server error (${res.status})`));
+  return text ? JSON.parse(text) : null;
+}
+
+/* ── Library data: server-first replica with a warm cache ─────────────── */
+let borks = new Map(); // id → row
+let filterTopic = null;
+let query = "";
+
+const blob = (r) => [
+  r.title, r.author, r.body_text, r.note_text, (r.tags || []).join(" "),
+  TOPIC_BY_ID[r.category_id]?.name, r.subcategory, PLATFORM[r.platform]?.name, r.url,
+].filter(Boolean).join(" ").toLowerCase();
+
+function absorb(rows) {
+  for (const r of rows) {
+    const mine = borks.get(r.id);
+    if (mine && mine.updated_at >= r.updated_at) continue; // LWW, same rule as iOS pull
+    r._blob = blob(r);
+    borks.set(r.id, r);
+  }
+}
+
+async function pull({ full = false } = {}) {
+  const s = await validSession();
+  if (!s) return;
+  let cursor = full ? null : store.cursor;
+  for (let page = 0; page < 30; page++) {
+    let path = `/rest/v1/bookmarks?select=*&owner_id=eq.${s.user_id}&order=updated_at.asc,id.asc&limit=1000`;
+    if (cursor) path += `&updated_at=gte.${encodeURIComponent(cursor)}`;
+    const rows = await api(path);
+    absorb(rows);
+    if (rows.length) {
+      // Cursor is the raw server string — never round-trip through Date,
+      // which truncates Postgres microseconds and skips boundary rows.
+      cursor = rows[rows.length - 1].updated_at;
+      store.cursor = cursor;
+    }
+    if (rows.length < 1000) break;
+  }
+  store.cache = [...borks.values()].map(({ _blob, ...r }) => r);
+  render();
+}
+
+async function push(row) {
+  // Uniform key set with explicit nulls — PGRST102 taught the iPhone this.
+  const s = await validSession();
+  if (!s) throw new Error("Signed out.");
+  const full = {
+    id: row.id, owner_id: s.user_id, url: row.url, title: row.title ?? "",
+    platform: row.platform ?? "web", kind: row.kind ?? "article", tags: row.tags ?? [],
+    saved_at: row.saved_at ?? new Date().toISOString(), updated_at: new Date().toISOString(),
+    author: row.author ?? null, category_id: row.category_id ?? null,
+    subcategory: row.subcategory ?? null, body_text: row.body_text ?? null,
+    duration_seconds: row.duration_seconds ?? null, note_text: row.note_text ?? null,
+    image_url: row.image_url ?? null, deleted_at: row.deleted_at ?? null,
+  };
+  // return=representation captures the trigger-stamped updated_at in one trip.
+  const back = await api(`/rest/v1/bookmarks?on_conflict=owner_id,id`, {
+    method: "POST", body: [full],
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+  });
+  absorb(back || []);
+  store.cache = [...borks.values()].map(({ _blob, ...r }) => r);
+  render();
+  return (back && back[0]) || full;
+}
+
+/* ── Rendering ────────────────────────────────────────────────────────── */
+const fmtDate = (iso) => {
+  const d = new Date(iso); const days = (Date.now() - d) / 86_400_000;
+  if (days < 1) return "today";
+  if (days < 2) return "yesterday";
+  if (days < 30) return `${Math.floor(days)}d ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
+const hueChip = (hue) => `background:hsl(${hue} 70% 92%);color:hsl(${hue} 60% 28%)`;
+const hueChipDark = (hue) => `background:hsl(${hue} 45% 20%);color:hsl(${hue} 65% 75%)`;
+const dark = matchMedia("(prefers-color-scheme: dark)");
+const gradient = (hue) => `background:linear-gradient(135deg, hsl(${hue} 65% 60%), hsl(${hue} 72% 42%))`;
+
+function visible() {
+  const out = [];
+  for (const r of borks.values()) {
+    if (r.deleted_at) continue;
+    if (filterTopic && r.category_id !== filterTopic) continue;
+    if (query && !r._blob.includes(query)) continue;
+    out.push(r);
+  }
+  out.sort((a, b) => (b.saved_at || "").localeCompare(a.saved_at || ""));
+  return out;
+}
+
+function render() {
+  const s = store.session;
+  $("auth").hidden = !!s;
+  $("app").hidden = !s;
+  if (!s) { renderAuth(); return; }
+  $("account-btn").textContent = `${s.email ?? "account"} · sign out`;
+
+  const rows = visible();
+  const live = [...borks.values()].filter(r => !r.deleted_at);
+
+  // Topic chips, ordered by count.
+  const counts = new Map();
+  for (const r of live) if (r.category_id && TOPIC_BY_ID[r.category_id])
+    counts.set(r.category_id, (counts.get(r.category_id) || 0) + 1);
+  const chipHTML = [[null, live.length], ...[...counts.entries()].sort((a, b) => b[1] - a[1])]
+    .map(([id, n]) => {
+      const on = filterTopic === id ? " on" : "";
+      const label = id ? esc(TOPIC_BY_ID[id].name) : "All";
+      return `<button class="chip${on}" data-topic="${id ?? ""}">${label}<span class="n">${n}</span></button>`;
+    }).join("");
+  $("chips").innerHTML = chipHTML;
+
+  $("grid").innerHTML = rows.map(r => {
+    const p = PLATFORM[r.platform] || PLATFORM.web;
+    const topic = TOPIC_BY_ID[r.category_id];
+    const hue = topic ? topic.hue : 24;
+    const img = r.image_url
+      ? `<img src="${esc(r.image_url)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+    const chipStyle = dark.matches ? hueChipDark(hue) : hueChip(hue);
+    return `<article class="card" tabindex="0" data-id="${esc(r.id)}">
+      <div class="cover" style="${gradient(hue)}">${img}<span class="badge">${p.short}</span></div>
+      <div class="card-body">
+        <div class="card-title">${esc(r.title || r.url)}</div>
+        <div class="card-meta">
+          ${topic ? `<span class="topic-chip" style="${chipStyle}">${esc(topic.name)}</span>` : ""}
+          ${r.note_text ? `<span class="note-dot">✎</span>` : ""}
+          <span class="date">${fmtDate(r.saved_at)}</span>
+        </div>
+      </div>
+    </article>`;
+  }).join("");
+
+  const empty = $("empty-state");
+  empty.hidden = rows.length > 0;
+  if (!rows.length) {
+    empty.textContent = live.length === 0
+      ? "Nothing here yet. Tap “Bork it” and paste a link — or save from the iPhone app; it all lands in the same library."
+      : "No borks match. Different search?";
+  }
+}
+
+/* ── Auth flow ────────────────────────────────────────────────────────── */
+let authMode = "signup"; // sign up creates the account; sign in refuses unknown emails
+let pendingEmail = "";
+function renderAuth() {
+  $("auth-email-title").textContent = authMode === "signup" ? "Create your account" : "Sign in";
+  $("auth-email-blurb").textContent = authMode === "signup"
+    ? "Enter your email and we'll send a six-digit code — that's the whole sign-up."
+    : "Enter the email you signed up with and we'll send a six-digit code.";
+  $("auth").querySelector("[data-act=switch-mode]").textContent =
+    authMode === "signup" ? "Already have an account? Sign in" : "New here? Sign up";
+}
+function showAuthStage(stage) {
+  $("auth-choose").hidden = stage !== "choose";
+  $("auth-email").hidden = stage !== "email";
+  $("auth-code").hidden = stage !== "code";
+}
+async function sendCode() {
+  const email = $("email-input").value.trim().toLowerCase();
+  if (!email.includes("@")) { $("auth-err").textContent = "That doesn't look like an email."; return; }
+  $("auth-err").textContent = "";
+  const btn = $("auth").querySelector("[data-act=send-code]");
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    await api("/auth/v1/otp", { method: "POST", auth: false, body: { email, create_user: authMode === "signup" } });
+    pendingEmail = email;
+    $("code-blurb").textContent = `We emailed a six-digit code to ${email}.`;
+    $("code-input").value = "";
+    showAuthStage("code");
+    $("code-input").focus();
+  } catch (e) {
+    $("auth-err").textContent = /signups not allowed/i.test(e.message)
+      ? "No account with that email yet. Tap Sign up and we'll make one."
+      : e.message;
+  } finally { btn.disabled = false; btn.textContent = "Email me a code"; }
+}
+async function verifyCode() {
+  const code = $("code-input").value.trim();
+  if (code.length < 6) return;
+  $("code-err").textContent = "";
+  const btn = $("auth").querySelector("[data-act=verify-code]");
+  btn.disabled = true; btn.textContent = "Checking…";
+  try {
+    const d = await api("/auth/v1/verify", { method: "POST", auth: false, body: { email: pendingEmail, token: code, type: "email" } });
+    store.session = {
+      access_token: d.access_token, refresh_token: d.refresh_token,
+      expires_at: Date.now() + (d.expires_in ?? 3600) * 1000,
+      user_id: d.user?.id, email: d.user?.email ?? pendingEmail,
+    };
+    borks = new Map(); store.cursor = null;
+    render();
+    toast("You're in. Pulling your borks…");
+    await pull({ full: true });
+  } catch (e) { $("code-err").textContent = e.message; }
+  finally { btn.disabled = false; btn.textContent = "Continue"; }
+}
+function signOut(msg) {
+  fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+    method: "POST",
+    headers: { apikey: ANON_KEY, Authorization: `Bearer ${store.session?.access_token ?? ""}` },
+  }).catch(() => {});
+  store.session = null; store.cursor = null; store.cache = [];
+  borks = new Map(); filterTopic = null; query = "";
+  showAuthStage("choose");
+  render();
+  if (msg) toast(msg);
+}
+
+/* ── Add flow ─────────────────────────────────────────────────────────── */
+let addPreview = null;
+function fillTopicSelect(sel, chosen) {
+  sel.innerHTML = `<option value="">— none —</option>` +
+    TAXONOMY.map(t => `<option value="${t.id}"${t.id === chosen ? " selected" : ""}>${esc(t.name)}</option>`).join("");
+}
+function fillSubSelect(sel, topicID, chosen) {
+  const subs = TOPIC_BY_ID[topicID]?.subs || [];
+  sel.innerHTML = `<option value="">— none —</option>` +
+    subs.map(x => `<option${x === chosen ? " selected" : ""}>${esc(x)}</option>`).join("");
+}
+async function fetchPreviewInto(url) {
+  addPreview = null;
+  $("add-preview").hidden = true;
+  try {
+    const d = await api("/functions/v1/preview", { method: "POST", body: { url } });
+    if (d && (d.title || d.image_url)) {
+      addPreview = d;
+      $("add-title").textContent = d.title || "";
+      $("add-author").textContent = d.author || "";
+      const img = $("add-thumb");
+      img.hidden = !d.image_url;
+      if (d.image_url) img.src = d.image_url;
+      $("add-preview").hidden = false;
+    }
+  } catch { /* preview is a bonus, never a blocker */ }
+}
+async function saveAdd() {
+  const raw = $("add-url").value.trim();
+  const id = stableID(raw);
+  if (!id) { $("add-err").textContent = "That doesn't look like a link."; return; }
+  const existing = borks.get(id);
+  if (existing && !existing.deleted_at) { $("add-err").textContent = "Already in your library."; return; }
+  const platform = detectPlatform(raw);
+  const slug = decodeURIComponent((new URL(id).pathname.split("/").filter(Boolean).pop() || new URL(id).hostname))
+    .replace(/[-_+]/g, " ").trim();
+  const btn = $("add-dialog").querySelector("[data-act=save-add]");
+  btn.disabled = true; btn.textContent = "Saving…";
+  try {
+    await push({
+      id, url: raw, title: (addPreview?.title || slug || raw),
+      platform, kind: PLATFORM[platform].kind,
+      category_id: $("add-topic").value || null,
+      author: addPreview?.author ?? null, image_url: addPreview?.image_url ?? null,
+      duration_seconds: addPreview?.duration_seconds ?? null,
+    });
+    $("add-dialog").close();
+    toast("Borked. It's on your phone too.");
+  } catch (e) { $("add-err").textContent = e.message; }
+  finally { btn.disabled = false; btn.textContent = "Bork it"; }
+}
+
+/* ── Edit flow ────────────────────────────────────────────────────────── */
+let editing = null;
+function openEdit(id) {
+  const r = borks.get(id);
+  if (!r) return;
+  editing = id;
+  $("edit-title").textContent = r.title || r.url;
+  $("edit-open").href = r.url;
+  fillTopicSelect($("edit-topic"), r.category_id);
+  fillSubSelect($("edit-sub"), r.category_id, r.subcategory);
+  $("edit-tags").value = (r.tags || []).join(", ");
+  $("edit-note").value = r.note_text || "";
+  $("edit-dialog").showModal();
+}
+async function saveEdit() {
+  const r = borks.get(editing);
+  if (!r) return;
+  const btn = $("edit-dialog").querySelector("[data-act=save-edit]");
+  btn.disabled = true;
+  try {
+    await push({ ...r,
+      category_id: $("edit-topic").value || null,
+      subcategory: $("edit-sub").value || null,
+      tags: $("edit-tags").value.split(",").map(x => x.trim().toLowerCase()).filter(Boolean),
+      note_text: $("edit-note").value.trim() || null,
+    });
+    $("edit-dialog").close();
+  } catch (e) { toast(e.message); }
+  finally { btn.disabled = false; }
+}
+async function deleteBork() {
+  const r = borks.get(editing);
+  if (!r) return;
+  $("edit-dialog").close();
+  try {
+    await push({ ...r, deleted_at: new Date().toISOString() });
+    toast("Bork deleted.", "Undo", async () => {
+      try { await push({ ...r, deleted_at: null }); toast("Back where it was."); }
+      catch (e) { toast(e.message); }
+    });
+  } catch (e) { toast(e.message); }
+}
+
+/* ── Toast ────────────────────────────────────────────────────────────── */
+let toastTimer = null;
+function toast(msg, actLabel, act) {
+  $("toast-msg").textContent = msg;
+  const b = $("toast-act");
+  b.hidden = !actLabel;
+  if (actLabel) { b.textContent = actLabel; b.onclick = () => { $("toast").hidden = true; act(); }; }
+  $("toast").hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $("toast").hidden = true; }, actLabel ? 8000 : 3500);
+}
+
+/* ── Wiring ───────────────────────────────────────────────────────────── */
+document.addEventListener("click", (e) => {
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  if (act === "choose-signup") { authMode = "signup"; renderAuth(); showAuthStage("email"); $("email-input").focus(); }
+  if (act === "choose-signin") { authMode = "signin"; renderAuth(); showAuthStage("email"); $("email-input").focus(); }
+  if (act === "switch-mode") { authMode = authMode === "signup" ? "signin" : "signup"; $("auth-err").textContent = ""; renderAuth(); }
+  if (act === "back-choose") { showAuthStage("choose"); $("auth-err").textContent = ""; }
+  if (act === "back-email") { showAuthStage("email"); $("code-err").textContent = ""; }
+  if (act === "send-code") sendCode();
+  if (act === "verify-code") verifyCode();
+  if (act === "close-add") $("add-dialog").close();
+  if (act === "save-add") saveAdd();
+  if (act === "close-edit") $("edit-dialog").close();
+  if (act === "save-edit") saveEdit();
+  if (act === "delete-bork") deleteBork();
+  const chip = e.target.closest(".chip");
+  if (chip) { filterTopic = chip.dataset.topic || null; render(); }
+  const card = e.target.closest(".card");
+  if (card) openEdit(card.dataset.id);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !$("auth").hidden) {
+    if (!$("auth-email").hidden) sendCode();
+    else if (!$("auth-code").hidden) verifyCode();
+  }
+});
+let searchTimer = null;
+$("search").addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { query = $("search").value.trim().toLowerCase(); render(); }, 180);
+});
+$("account-btn").addEventListener("click", () => { if (confirm("Sign out on this browser?")) signOut(); });
+$("add-btn").addEventListener("click", () => {
+  $("add-url").value = ""; $("add-err").textContent = ""; $("add-preview").hidden = true; addPreview = null;
+  fillTopicSelect($("add-topic"), null);
+  $("add-dialog").showModal();
+  $("add-url").focus();
+});
+let previewTimer = null;
+$("add-url").addEventListener("input", () => {
+  clearTimeout(previewTimer);
+  const raw = $("add-url").value.trim();
+  if (!/^https?:\/\/\S+\.\S+/.test(raw)) return;
+  previewTimer = setTimeout(() => fetchPreviewInto(raw), 400);
+});
+$("edit-topic").addEventListener("change", () => fillSubSelect($("edit-sub"), $("edit-topic").value, null));
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && store.session) pull().catch(() => {});
+});
+dark.addEventListener?.("change", render);
+
+/* ── Boot: paint from cache instantly, then reconcile with the server ── */
+(function boot() {
+  absorb(store.cache);
+  showAuthStage("choose");
+  renderAuth();
+  render();
+  if (store.session) pull({ full: !store.cursor }).catch((e) => toast(e.message));
+})();
+</script>
+</body>
+</html>
