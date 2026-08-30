@@ -1,14 +1,21 @@
 import SwiftUI
 
-/// Sign in with an email and a six-digit code. No password — except for the
-/// App Review demo account, which can't receive mail (see
+/// Sign up or sign in with an email and a six-digit code. No password —
+/// except for the App Review demo account, which can't receive mail (see
 /// `Supabase.passwordAccounts`).
+///
+/// Both modes send the same code; the difference is that Sign up creates the
+/// account on the spot and Sign in refuses an unknown address, so a typo can't
+/// quietly become a second, empty account.
 struct AuthSheet: View {
+    enum Mode { case signUp, signIn }
+
     @ObservedObject var account: Account
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accent) private var accent
 
+    @State private var mode: Mode
     @State private var email = ""
     @State private var code = ""
     @State private var password = ""
@@ -17,6 +24,18 @@ struct AuthSheet: View {
     @State private var message: String?
 
     enum Stage { case email, code, password, done }
+
+    init(account: Account, mode: Mode = .signUp) {
+        _account = ObservedObject(wrappedValue: account)
+        _mode = State(initialValue: mode)
+    }
+
+    private var title: String {
+        switch stage {
+        case .done: "You're in"
+        default: mode == .signUp ? "Create your account" : "Sign in"
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -39,7 +58,7 @@ struct AuthSheet: View {
                 .padding(18)
             }
             .background(Tokens.paper)
-            .navigationTitle(stage == .done ? "You're in" : "Back up your borks")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -53,7 +72,9 @@ struct AuthSheet: View {
 
     private var emailStage: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Right now your borks only exist on this phone. Enter your email and we'll send a six-digit code. New here? That creates your account. Been here before? It signs you in. Either way, your borks get backed up and follow you to every device.")
+            Text(mode == .signUp
+                 ? "Your borks only exist on this phone right now. Enter your email and we'll send a six-digit code — that's the whole sign-up. Your borks get backed up and follow you to every device."
+                 : "Enter the email you signed up with and we'll send a six-digit code.")
                 .font(Typo.ui(14))
                 .foregroundStyle(Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -72,9 +93,18 @@ struct AuthSheet: View {
             }
             .disabled(busy || !email.contains("@"))
 
-            Text("No password to remember or lose — the code is the whole thing.")
+            Text("No password to make up or lose — the code is the whole thing.")
                 .font(Typo.ui(12))
                 .foregroundStyle(Tokens.inkFaint)
+
+            Button(mode == .signUp ? "Already have an account? Sign in" : "New here? Sign up") {
+                withAnimation(Motion.gentle) {
+                    mode = mode == .signUp ? .signIn : .signUp
+                }
+                message = nil
+            }
+            .font(Typo.ui(13, .semibold))
+            .padding(.top, 4)
         }
     }
 
@@ -142,7 +172,9 @@ struct AuthSheet: View {
                     Text(account.email ?? email)
                         .font(Typo.ui(15, .bold))
                         .foregroundStyle(Tokens.ink)
-                    Text("Your borks are backing up now.")
+                    Text(mode == .signUp
+                         ? "Account made. Your borks are backing up now."
+                         : "Your borks are backing up now.")
                         .font(Typo.ui(12.5))
                         .foregroundStyle(Tokens.inkMeta)
                 }
@@ -171,8 +203,10 @@ struct AuthSheet: View {
         busy = true; message = nil
         defer { busy = false }
         do {
-            try await account.sendCode(to: email)
+            try await account.sendCode(to: email, createIfNew: mode == .signUp)
             withAnimation(Motion.gentle) { stage = .code }
+        } catch where Supabase.isUnknownAccount(error) {
+            message = "No account with that email yet. Tap Sign up and we'll make one."
         } catch {
             message = error.localizedDescription
         }

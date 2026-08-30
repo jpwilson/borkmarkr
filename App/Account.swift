@@ -29,8 +29,9 @@ final class Account: ObservableObject {
 
     // MARK: - Auth
 
-    func sendCode(to email: String) async throws {
-        try await Supabase.sendCode(to: email.trimmingCharacters(in: .whitespaces).lowercased())
+    func sendCode(to email: String, createIfNew: Bool) async throws {
+        try await Supabase.sendCode(to: email.trimmingCharacters(in: .whitespaces).lowercased(),
+                                    createIfNew: createIfNew)
     }
 
     func verify(code: String, email: String) async throws {

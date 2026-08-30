@@ -65,11 +65,23 @@ enum Supabase {
 
     // MARK: - Auth
 
-    /// Sends a six-digit code to `email`, creating the account if it's new.
-    static func sendCode(to email: String) async throws {
+    /// Sends a six-digit code to `email`.
+    ///
+    /// `createIfNew` is the whole difference between Sign up and Sign in: Sign
+    /// up creates the account on the spot; Sign in refuses an unknown address
+    /// so a typo can't quietly become a second, empty account.
+    static func sendCode(to email: String, createIfNew: Bool) async throws {
         guard let config = Config.current else { throw Failure.notConfigured }
-        let body = ["email": email, "create_user": true] as [String: Any]
+        let body = ["email": email, "create_user": createIfNew] as [String: Any]
         _ = try await post(path: "/auth/v1/otp", body: body, config: config, token: nil)
+    }
+
+    /// Sign in with an address that has no account. Supabase phrases it as a
+    /// signup restriction ("Signups not allowed for otp"); the user needs to
+    /// hear "tap Sign up".
+    static func isUnknownAccount(_ error: Error) -> Bool {
+        guard case Failure.http(_, let body) = error else { return false }
+        return body.localizedCaseInsensitiveContains("signups not allowed")
     }
 
     /// Accounts that sign in with a password instead of an emailed code.
