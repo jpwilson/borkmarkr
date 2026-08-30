@@ -115,7 +115,7 @@ rather Apple call a different one.
 **Notes** (paste the block below; keep it under 4,000 characters)
 ```
 DEMO ACCOUNT
-Use the sign-in details above (review@bookmarker.lol). You tab → Sign in → enter the email → the app asks for the password. This is the one address that uses a password: every other user receives a six-digit code by email, and a review address can't receive mail. No account is needed for any feature; tapping "Not now" also works.
+Use the sign-in details above (review@bookmarker.lol). You tab → "Back up my borks" → enter the email → the app asks for the password. This is the one address that uses a password: every other user receives a six-digit code by email, and a review address can't receive mail. No account is needed for any feature; tapping "Not now" also works.
 
 WHAT THE APP IS, AND FOR WHOM
 bookmarker is a personal bookmark manager for people who save reels, threads, videos and articles across several apps and can't find them again. Users save links they chose — via the Share sheet or by pasting — into one library. Each save is filed under a topic, tagged, searchable, and can carry a note. "Side quests" group saves into a small to-do (recipes to cook, places to visit). Audience: general, rated 4+; typical users are adults who save a lot on social apps.
@@ -127,7 +127,7 @@ HOW TO TEST
 2. Library shows the save. Tap it → "Open original" hands off to the source.
 3. Search tab: type a word from the title. Browse tab: topics.
 4. Share extension (optional): Safari → Share → "bookmarker".
-5. Account: You tab → Sign in with the demo account → "Backed up" appears on the You card. "Sign out" and "Delete account" are on the same card. Delete account asks for confirmation, deletes the account and all server-side data, and signs out.
+5. Account: You tab → "Back up my borks" → demo account → "Backed up" appears on the You card. "Sign out" and "Delete account" are on the same card. Delete account asks for confirmation, deletes the account and all server-side data, and signs out.
 
 EXTERNAL SERVICES
 - Supabase (auth, Postgres, Edge Functions): email-code sign-in and optional backup/sync of the user's own bookmarks.
