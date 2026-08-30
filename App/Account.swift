@@ -122,8 +122,14 @@ final class Account: ObservableObject {
         let changed = all.filter { cutoff == nil || $0.updatedAt > cutoff! }
         guard !changed.isEmpty else { return }
 
+        // PostgREST rejects a bulk upsert whose rows don't share an identical
+        // key set (PGRST102 "All object keys must match"). Assigning a nil
+        // Optional to a dictionary subscript *removes* the key, so the old
+        // per-row optional assignments made every mixed batch fail. Absent
+        // values must be explicit nulls, never missing keys.
+        func nullable(_ value: Any?) -> Any { value ?? NSNull() }
         let rows = changed.map { bookmark -> [String: Any] in
-            var row: [String: Any] = [
+            [
                 "id": bookmark.id,
                 "owner_id": session.userID,
                 "url": bookmark.urlString,
@@ -133,18 +139,15 @@ final class Account: ObservableObject {
                 "tags": bookmark.tags,
                 "saved_at": SupabaseDate.string(from: bookmark.savedAt),
                 "updated_at": SupabaseDate.string(from: bookmark.updatedAt),
+                "author": nullable(bookmark.author),
+                "category_id": nullable(bookmark.categoryID),
+                "subcategory": nullable(bookmark.subcategory),
+                "body_text": nullable(bookmark.text),
+                "duration_seconds": nullable(bookmark.durationSeconds),
+                "note_text": nullable(bookmark.noteText),
+                "image_url": nullable(bookmark.imageURLString),
+                "deleted_at": nullable(bookmark.deletedAt.map { SupabaseDate.string(from: $0) }),
             ]
-            row["author"] = bookmark.author
-            row["category_id"] = bookmark.categoryID
-            row["subcategory"] = bookmark.subcategory
-            row["body_text"] = bookmark.text
-            row["duration_seconds"] = bookmark.durationSeconds
-            row["note_text"] = bookmark.noteText
-            row["image_url"] = bookmark.imageURLString
-            if let deleted = bookmark.deletedAt {
-                row["deleted_at"] = SupabaseDate.string(from: deleted)
-            }
-            return row
         }
 
         // Chunked so a large first sync doesn't hit request size limits, and
