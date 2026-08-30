@@ -53,7 +53,7 @@ struct AuthSheet: View {
 
     private var emailStage: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Right now your borks only exist on this phone. Sign in and they're backed up and on every device you use.")
+            Text("Right now your borks only exist on this phone. Enter your email and we'll send a six-digit code. New here? That creates your account. Been here before? It signs you in. Either way, your borks get backed up and follow you to every device.")
                 .font(Typo.ui(14))
                 .foregroundStyle(Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -72,7 +72,7 @@ struct AuthSheet: View {
             }
             .disabled(busy || !email.contains("@"))
 
-            Text("We'll email you a six-digit code. No password to remember or lose.")
+            Text("No password to remember or lose — the code is the whole thing.")
                 .font(Typo.ui(12))
                 .foregroundStyle(Tokens.inkFaint)
         }
@@ -92,7 +92,7 @@ struct AuthSheet: View {
                 .padding(16)
                 .cardSurface(radius: 16)
 
-            primaryButton(busy ? "Checking…" : "Sign in") {
+            primaryButton(busy ? "Checking…" : "Continue") {
                 Task { await verify() }
             }
             .disabled(busy || code.count < 6)

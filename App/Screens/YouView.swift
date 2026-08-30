@@ -112,7 +112,7 @@ struct YouView: View {
 
             if !account.isSignedIn {
                 Button { showingAuth = true } label: {
-                    Text("Sign in")
+                    Text("Back up my borks")
                         .font(Typo.ui(15, .bold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -120,7 +120,7 @@ struct YouView: View {
                         .background(accent.base, in: Capsule())
                 }
                 .buttonStyle(PressableStyle())
-                .accessibilityHint("Back up and sync your borks")
+                .accessibilityHint("Sign up or sign in with your email to back up and sync")
             }
         }
     }
@@ -158,7 +158,7 @@ struct YouView: View {
                 Text("Only on this phone")
                     .font(Typo.ui(13.5, .semibold))
                     .foregroundStyle(Tokens.inkSecondary)
-                Text("Sign in to back up and sync your borks")
+                Text("Sign up or sign in with just your email")
                     .font(Typo.ui(12, .medium))
                     .foregroundStyle(Tokens.inkMeta)
             }

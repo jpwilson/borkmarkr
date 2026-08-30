@@ -86,7 +86,7 @@ struct InsightsSheet: View {
                         .font(Typo.ui(11, .medium))
                         .foregroundStyle(Tokens.inkMeta)
                 } else if account?.isSignedIn != true {
-                    Text("Sign in for a sharper read")
+                    Text("Back up your borks for a sharper read")
                         .font(Typo.ui(11, .medium))
                         .foregroundStyle(Tokens.inkMeta)
                 }
