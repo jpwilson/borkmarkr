@@ -147,11 +147,17 @@ struct YouView: View {
                         .font(Typo.ui(13.5, .semibold))
                         .foregroundStyle(Tokens.ink)
                         .lineLimit(1)
+                    // A backup that fails silently looks like a backup that
+                    // never runs. Say what went wrong.
                     Text(account.isSyncing ? "Syncing…"
-                         : account.lastSynced.map { "Backed up \(RelativeDate.label(for: $0).lowercased())" }
-                            ?? "Waiting to back up")
+                         : account.lastError.map { "Backup hit a snag: \($0)" }
+                         ?? account.lastSynced.map { "Backed up \(RelativeDate.label(for: $0).lowercased())" }
+                         ?? "Waiting to back up")
                         .font(Typo.ui(12, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .foregroundStyle(account.isSyncing || account.lastError == nil
+                                         ? Tokens.inkMeta : Tokens.destructive)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
                 Button("Sign out") { account.signOut() }
