@@ -18,6 +18,7 @@ struct YouView: View {
     @State private var showingHowTo = false
     @State private var showingImport = false
     @State private var showingAuth = false
+    @State private var authMode: AuthSheet.Mode = .signUp
     @State private var showingInsights = false
     @State private var creatingQuestTitle: String?
     @State private var confirmingDelete = false
@@ -55,7 +56,7 @@ struct YouView: View {
             ImportSheet { _ in }.environment(\.accent, accent)
         }
         .sheet(isPresented: $showingAuth) {
-            AuthSheet(account: account).environment(\.accent, accent)
+            AuthSheet(account: account, mode: authMode).environment(\.accent, accent)
         }
         .confirmationDialog("Delete your account?", isPresented: $confirmingDelete,
                             titleVisibility: .visible) {
@@ -111,16 +112,28 @@ struct YouView: View {
             statsStrip
 
             if !account.isSignedIn {
-                Button { showingAuth = true } label: {
-                    Text("Back up my borks")
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(accent.base, in: Capsule())
+                HStack(spacing: 10) {
+                    Button { authMode = .signUp; showingAuth = true } label: {
+                        Text("Sign up")
+                            .font(Typo.ui(15, .bold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(accent.base, in: Capsule())
+                    }
+                    .buttonStyle(PressableStyle())
+
+                    Button { authMode = .signIn; showingAuth = true } label: {
+                        Text("Sign in")
+                            .font(Typo.ui(15, .bold))
+                            .foregroundStyle(accent.deep)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(accent.tint, in: Capsule())
+                            .overlay(Capsule().stroke(accent.base.opacity(0.35), lineWidth: 1))
+                    }
+                    .buttonStyle(PressableStyle())
                 }
-                .buttonStyle(PressableStyle())
-                .accessibilityHint("Sign up or sign in with your email to back up and sync")
             }
         }
     }
@@ -158,7 +171,7 @@ struct YouView: View {
                 Text("Only on this phone")
                     .font(Typo.ui(13.5, .semibold))
                     .foregroundStyle(Tokens.inkSecondary)
-                Text("Sign up or sign in with just your email")
+                Text("Sign up to back up and sync your borks")
                     .font(Typo.ui(12, .medium))
                     .foregroundStyle(Tokens.inkMeta)
             }
