@@ -108,6 +108,10 @@
   .spacer { flex: 1; }
 
   main { max-width: 1280px; margin: 0 auto; padding: 22px clamp(14px, 3vw, 28px) 60px; }
+  /* Bottom of every view. The You page carries the same links one tap away. */
+  .app-foot { border-top: 1px solid var(--hairline); margin-top: 44px; padding: 16px 0 0;
+    color: var(--faint); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .app-foot a { color: var(--ink-2); font-weight: 600; }
 
   /* ── Library home sections ── */
   .h-row { display: flex; align-items: baseline; justify-content: space-between; margin: 8px 0 10px; }
@@ -154,6 +158,16 @@
   .quest-starter b { display: block; font-family: var(--font-head); font-size: 16px; letter-spacing: -.01em; }
   .quest-starter p { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.4; }
   .quest-starter .btn-sm { flex: 0 0 auto; }
+  /* "From your library" — the app's QuestSeedRow: art, a name, why, one sample, Start this quest */
+  .quest-seed { flex: 0 0 300px; display: flex; gap: 12px; align-items: flex-start; background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: 16px; padding: 12px; box-shadow: var(--shadow-card); }
+  .quest-seed .quest-art { width: 56px; height: 56px; }
+  .qs-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+  .qs-t { font-family: var(--font-head); font-weight: 700; font-size: 15px; line-height: 1.2; letter-spacing: -.01em; }
+  .qs-b { color: var(--ink-2); font-size: 12.5px; line-height: 1.35; }
+  .qs-s { color: var(--meta); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .qs-go { align-self: flex-start; margin-top: 7px; height: 32px; padding: 0 13px; font-size: 12.5px; }
+  @media (max-width: 480px) { .quest-seed { flex-basis: min(300px, 84vw); } }
   .todo-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--hairline); }
   .todo-row input[type=checkbox] { width: 19px; height: 19px; accent-color: var(--coral); }
   .todo-row span { flex: 1; font-size: 14px; }
@@ -193,6 +207,9 @@
     margin-bottom: 3px; min-width: 0; }
   .card-author > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card-author .pg { width: 11px; height: 11px; opacity: .85; }
+  /* X saves carry the poster's avatar: a small round one by the name, glyph at the end */
+  .card-author .av { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
+  .card-author .av-pg { margin-left: auto; padding-left: 6px; display: inline-flex; }
   .card-title { font-weight: 700; font-size: 14px; line-height: 1.32; display: -webkit-box;
     -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
   .card-text .card-title { -webkit-line-clamp: 4; font-size: 14.5px; }
@@ -598,6 +615,13 @@
         </div>
       </div>
     </section>
+    <footer class="app-foot">
+      <span>© 2026 bookmarker</span>
+      <a href="/app">Get the app</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
+    </footer>
   </main>
 
   <button class="fab-desktop" id="add-desktop" title="Bork a link" aria-label="Bork a link">+</button>
@@ -1156,6 +1180,17 @@ const chipStyle = (hue) => `background:hsl(${hue} 70% 92%);color:hsl(${hue} 60% 
 const tileStyle = (hue) => `background:hsl(${hue} 68% 90%);color:hsl(${hue} 62% 24%)`;
 const gradient = (hue) => `background:linear-gradient(135deg, hsl(${hue} 65% 62%), hsl(${hue} 72% 44%))`;
 const KIND_ASPECT = { clip: "3 / 4", reel: "3 / 4", short: "3 / 4", pin: "3 / 4", video: "16 / 9", post: "4 / 3" };
+/* X saves carry one of two pictures: the poster's avatar (profile_images) or
+   the post's own media. Only the media earns a cover; the avatar sits by the
+   name. Threads and articles are otherwise text cards, as in the app. */
+const X_MEDIA = /\/\/pbs\.twimg\.com\/(media|ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//;
+const X_VIDEO = /_video_thumb\//;
+const isAvatar = (u) => /\/\/pbs\.twimg\.com\/profile_images\//.test(u || "");
+function coverAspect(r) {
+  if (KIND_ASPECT[r.kind]) return KIND_ASPECT[r.kind];
+  const u = r.image_url || "";
+  return X_MEDIA.test(u) ? (X_VIDEO.test(u) ? "16 / 9" : "4 / 3") : null;
+}
 const live = () => [...borks.values()].filter(r => !r.deleted_at);
 const initial = () => (profile.display_name || profile.handle || store.session?.email || "?").trim().charAt(0).toUpperCase() || "?";
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
@@ -1195,21 +1230,21 @@ function displayFields(r) {
   return r._disp;
 }
 
-const topicArt = (id) => id && TOPIC_BY_ID[id] ? `/img/topics/${id}.jpg` : null;
-
 /* Instagram (and friends) sign their image URLs and they expire after a few
    days, so a saved image_url is a hope, not a promise. Once one fails we
-   remember it and treat that bork as picture-less from then on. */
+   remember it; the card keeps its topic-coloured cover with the platform
+   glyph, exactly as the app does — never a picture of something else. */
 const badImg = new Set();
 const picOf = (r) => (r.image_url && !badImg.has(r.image_url)) ? r.image_url : null;
+const avatarOf = (r) => { const u = picOf(r); return u && isAvatar(u) ? u : null; };
 function cardHTML(r, o = {}) {
   const p = PLATFORM[r.platform] || PLATFORM.web;
   const d = displayFields(r);
   const topic = TOPIC_BY_ID[r.category_id];
   const hue = topic ? topic.hue : 24;
-  const aspect = KIND_ASPECT[r.kind];
-  const src = picOf(r) || o.art || null;
-  const isText = !aspect || !src;
+  const aspect = coverAspect(r);
+  const src = aspect ? picOf(r) : null;
+  const isText = !aspect;
   const cls = `card${isText ? " card-text" : ""}${o.fresh ? " card-in" : ""}`;
   const style = o.idx != null ? ` style="--i:${o.idx}"` : "";
   const meta = `<div class="card-meta">
@@ -1218,18 +1253,23 @@ function cardHTML(r, o = {}) {
       <span class="date">${fmtDate(r.saved_at)}</span>
     </div>`;
   if (isText) {
+    const av = avatarOf(r);
+    const who = av
+      ? `<img class="av" src="${esc(av)}" alt="" loading="lazy" data-fb="hide"><span>${esc(d.author || p.name)}</span><span class="av-pg">${glyph(r.platform)}</span>`
+      : `${glyph(r.platform)}<span>${esc(d.author || p.name)}</span>`;
     return `<article class="${cls}" role="button" tabindex="0" data-id="${esc(r.id)}" data-platform="${esc(r.platform)}"${style}>
       <div class="card-body">
-        <div class="card-author">${glyph(r.platform)}<span>${esc(d.author || p.name)}</span></div>
+        <div class="card-author">${who}</div>
         <div class="card-title">${esc(d.title)}</div>
         ${d.snippet ? `<div class="card-snippet">${esc(d.snippet)}</div>` : ""}
         ${meta}
       </div>
     </article>`;
   }
-  // The glyph sits under the image; a failed load removes the image and reveals it.
+  // The glyph sits under the image; no picture, or a dead one, simply shows it.
+  const img = src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : "";
   return `<article class="${cls}" role="button" tabindex="0" data-id="${esc(r.id)}" data-platform="${esc(r.platform)}"${style}>
-    <div class="cover" style="aspect-ratio:${aspect};${gradient(hue)}"><span class="cover-glyph">${glyph(r.platform)}</span><img src="${esc(src)}" alt="" loading="lazy" data-fb="remove"><span class="badge" role="img" aria-label="${esc(p.name)}">${glyph(r.platform)}</span></div>
+    <div class="cover" style="aspect-ratio:${aspect};${gradient(hue)}"><span class="cover-glyph">${glyph(r.platform)}</span>${img}<span class="badge" role="img" aria-label="${esc(p.name)}">${glyph(r.platform)}</span></div>
     <div class="card-body">
       ${d.author ? `<div class="card-author"><span>${esc(d.author)}</span></div>` : ""}
       <div class="card-title">${esc(d.title)}</div>
@@ -1237,11 +1277,11 @@ function cardHTML(r, o = {}) {
     </div>
   </article>`;
 }
-function estHeight(r, art) {
+function estHeight(r) {
   const d = displayFields(r);
   const titleLines = Math.min(4, Math.ceil(d.title.length / 24));
-  const aspect = KIND_ASPECT[r.kind];
-  if (!aspect || !(picOf(r) || art)) {
+  const aspect = coverAspect(r);
+  if (!aspect) {
     const snippet = d.snippet ? Math.min(3, Math.ceil(d.snippet.length / 34)) : 0;
     return 64 + titleLines * 19 + snippet * 18 + 32;
   }
@@ -1254,21 +1294,13 @@ function columnCount() {
   return w < 761 ? 2 : Math.max(3, Math.floor(w / 250));
 }
 // The app's Masonry.swift in three lines: next card goes to the shortest column.
-// Borks without a picture borrow their topic's clay art — once per topic per
-// grid, so a wall of the same painting never happens.
 function gridHTML(rows, stagger) {
   const n = columnCount();
   const cols = Array.from({ length: n }, () => ({ h: 0, html: [] }));
-  const seenArt = new Set();
   rows.forEach((r, i) => {
-    let art = null;
-    if (!picOf(r) && KIND_ASPECT[r.kind]) {
-      const a = topicArt(r.category_id);
-      if (a && !seenArt.has(a)) { seenArt.add(a); art = a; }
-    }
     const c = cols.reduce((a, b) => (b.h < a.h ? b : a));
-    c.html.push(cardHTML(r, { art, idx: stagger ? Math.min(i, 30) : null, fresh: justAdded.has(r.id) }));
-    c.h += estHeight(r, art);
+    c.html.push(cardHTML(r, { idx: stagger ? Math.min(i, 30) : null, fresh: justAdded.has(r.id) }));
+    c.h += estHeight(r);
   });
   return cols.map(c => `<div class="col">${c.html.join("")}</div>`).join("");
 }
@@ -1290,7 +1322,7 @@ function renderGrid(el, rows, ctx, { skeleton = false } = {}) {
     memo.set(el.id, k); el.classList.remove("grid-in"); el.innerHTML = skeletonHTML();
     return;
   }
-  const key = `${ctx}|${cols}|b${badImg.size}|${rows.map(r => r.id + ":" + r.updated_at).join(",")}`;
+  const key = `${ctx}|${cols}|${rows.map(r => r.id + ":" + r.updated_at).join(",")}`;
   const prev = memo.get(el.id) || "";
   if (prev === key) return;
   const fresh = !prev || prev.startsWith("skel|") || !prev.startsWith(ctx + "|");
@@ -1300,10 +1332,10 @@ function renderGrid(el, rows, ctx, { skeleton = false } = {}) {
 }
 const bySaved = (a, b) => (b.saved_at || "").localeCompare(a.saved_at || "");
 
-function recentCardHTML(r, art) {
+function recentCardHTML(r) {
   const topic = TOPIC_BY_ID[r.category_id];
   const hue = topic ? topic.hue : 24;
-  const src = picOf(r) || art;
+  const src = picOf(r);
   const img = src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : "";
   return `<div class="recent-card" data-id="${esc(r.id)}" role="button" tabindex="0">
     <div class="rc-cover" style="${gradient(hue)}"><span class="cover-glyph">${glyph(r.platform)}</span>${img}</div>
@@ -1322,6 +1354,113 @@ function topicPillsHTML(all, limit) {
       <span class="pill-art"><i class="ini">${esc(t.name.charAt(0))}</i><img src="/img/topics/${id}.jpg" alt="" loading="lazy" data-fb="remove"></span>${esc(t.name)}<span class="n">${n}</span></button>`;
   }).join("");
 }
+/* ── Suggested side quests — the app's Mission.suggested, ported ──
+   Three or more borks in a topic that no quest owns yet make a seed, named
+   from what's in it. Offline names first; name-quest improves them. */
+function suggestedQuests(all, quests, limit = 3) {
+  const takenTopics = new Set(quests.map(m => m.category_id).filter(Boolean));
+  const takenIDs = new Set(quests.flatMap(m => m.bookmark_ids || []));
+  const byTopic = new Map();
+  for (const r of all) if (r.category_id && TOPIC_BY_ID[r.category_id])
+    byTopic.set(r.category_id, [...(byTopic.get(r.category_id) || []), r]);
+  const seeds = [];
+  for (const [topicID, items] of byTopic) {
+    if (items.length < 3 || takenTopics.has(topicID)) continue;
+    const unused = items.filter(r => !takenIDs.has(r.id));
+    if (unused.length < 3) continue;
+    const topicName = TOPIC_BY_ID[topicID].name;
+    const subCounts = new Map();
+    for (const r of unused) if (r.subcategory) subCounts.set(r.subcategory, (subCounts.get(r.subcategory) || 0) + 1);
+    const dominant = [...subCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+    const sub = dominant && dominant[1] * 2 >= unused.length ? dominant[0] : null;
+    const samples = unused.slice(0, 6).map(r => displayFields(r).title);
+    const title = draftQuestTitle(topicName, sub, samples);
+    seeds.push({ id: topicID, title, category_id: topicID, subcategory: sub, samples,
+      bookmark_ids: unused.map(r => r.id), blurb: questBlurb(unused.length, sub || topicName, [...samples, title]) });
+  }
+  return seeds.sort((a, b) => b.bookmark_ids.length - a.bookmark_ids.length).slice(0, limit);
+}
+// Never "Get into X" — that's a category, not a quest.
+function draftQuestTitle(topic, sub, titles) {
+  const blob = [...titles, sub, topic].filter(Boolean).join(" ").toLowerCase();
+  const has = (...w) => w.some(x => blob.includes(x));
+  if (has("conspirac", "cover-up", "unsolved", "rabbit")) return "Go down the rabbit hole";
+  if (has("startup", "founder", "venture", "bootstrapp")) return "Explore starting a business";
+  if (has("social strategy") || (has("marketing") && has("social", "instagram", "tiktok", "shorts"))) return "Marketing on socials";
+  if (has("mobility", "hip", "hamstring", "stretch", "fascia")) {
+    if (has("run", "marathon", "5k", "10k")) return "Improve mobility for running";
+    if (has("football", "soccer")) return "Improve mobility for football";
+    if (has("desk", "office")) return "Undo the desk stiffness";
+    return "Improve mobility";
+  }
+  if (has("tendon", "achilles", "rehab")) return "Build tendon strength";
+  if (has("pottery", "ceramic", "wheel")) return "Learn pottery";
+  if (has("pencil", "charcoal", "drawing")) return "Get better at drawing";
+  if (has("paint", "oil paint", "watercol")) return "Get better at painting";
+  return questPhrase(sub || topic);
+}
+function questPhrase(label) {
+  const l = label.toLowerCase();
+  switch (l) {
+    case "mobility": case "stretching": return `Improve ${l}`;
+    case "conspiracies": return "Go down the rabbit hole";
+    case "startups": return "Explore starting a business";
+    case "social strategy": return "Marketing on socials";
+    case "strength": case "hypertrophy": return "Get stronger";
+    case "meal prep": return "Get meal prep going";
+    case "running": return "Train for running";
+    default: return l.endsWith("ing") ? `Get better at ${l}` : `Work on ${l}`;
+  }
+}
+// The title names the quest; this line is why you should start it.
+function questBlurb(count, topic, samples) {
+  const n = plural(count, "bork");
+  const blob = [...samples, topic].filter(Boolean).join(" ").toLowerCase();
+  if (/rabbit|conspirac|unsolved/.test(blob)) return `You're already ${n} deep. Keep the thread in one place.`;
+  if (/market|social|hook|audience/.test(blob)) return `You've already saved the playbook — ${n} on hooks and timing. Don't leave them in a pile.`;
+  if (/startup|business|founder/.test(blob)) return `${n} on starting up. Pick a thread before they go cold.`;
+  if (/run|mobility|stretch/.test(blob)) return `${n} waiting to become a routine, not another saved stretch.`;
+  if (topic) return `You've already saved ${n} on ${topic.toLowerCase()}. A side quest is how they stop being a pile.`;
+  return `You've already saved ${n}. A side quest is how they stop being a pile.`;
+}
+/* Better names from the model, asked once per seed and remembered, so the
+   name-quest quota isn't spent re-naming the same pile on every render. */
+const questNames = (() => { try { return JSON.parse(lsGet("bm.qnames") || "{}"); } catch { return {}; } })();
+const seedCache = new Map();
+let namingSeeds = false;
+async function refineSeedTitles(seeds) {
+  const todo = seeds.filter(s => !questNames[s.id]);
+  if (!todo.length || namingSeeds || demoMode) return;
+  namingSeeds = true;   // one ask per page load, whatever it returns
+  try {
+    const clusters = todo.map(s => ({ id: s.id, topic: TOPIC_BY_ID[s.category_id].name, subtopic: s.subcategory || undefined, titles: s.samples }));
+    const d = await api("/functions/v1/name-quest", { method: "POST", body: { clusters } });
+    let changed = false;
+    for (const n of (d?.names || [])) if (todo.some(s => s.id === n.id) && n.title) { questNames[n.id] = n.title; changed = true; }
+    if (changed) { lsSet("bm.qnames", JSON.stringify(questNames)); memo.delete("home-sections"); render(); }
+  } catch { /* the offline name stands */ }
+}
+const seedCardHTML = (s) => `<div class="quest-seed">
+    <img class="quest-art" src="${questArt(s.category_id)}" alt="" data-fb="remove">
+    <div class="qs-body">
+      <span class="qs-t">${esc(s.title)}</span>
+      <span class="qs-b">${esc(s.blurb)}</span>
+      ${s.samples[0] ? `<span class="qs-s">“${esc(s.samples[0])}”</span>` : ""}
+      <button class="btn-sm btn-coral qs-go" data-seed="${esc(s.id)}">Start this quest</button>
+    </div>
+  </div>`;
+function startSeed(id) {
+  const s = seedCache.get(id);
+  if (!s) return;
+  if (demoMode) { toast("Side quests come with an account.", "Sign up", exitDemoToSignup); return; }
+  const m = { id: uuid().toUpperCase(), title: s.title, detail: null, category_id: s.category_id,
+    bookmark_ids: s.bookmark_ids, habit_name: null, completed_days: [], todos: [], is_archived: false,
+    created_at: new Date().toISOString() };
+  track("quest_created", { source: "suggested", todos: 0, borks: m.bookmark_ids.length });
+  toast("Side quest started.", "Open", () => openQuest(m.id));
+  commitMission(m);
+}
+
 const questStarterHTML = () => `
   <div class="quest-starter">
     <img src="/img/quests/rabbit.jpg" alt="" data-fb="remove">
@@ -1399,18 +1538,17 @@ function renderLibrary(all, s) {
   if (all.length && !platformFilter) {
     const recents = all.slice(0, 12);
     const quests = liveMissions();
-    const key = ["home", demoMode, all.length, "b" + badImg.size,
+    const seeds = suggestedQuests(all, quests);
+    seeds.forEach(s => { if (questNames[s.id]) s.title = questNames[s.id]; seedCache.set(s.id, s); });
+    const key = ["home", demoMode, all.length,
       recents.map(r => r.id + ":" + r.updated_at).join(","),
       topicCounts(all).slice(0, 10).map(([id, n]) => id + n).join(","),
-      quests.map(m => m.id + ":" + m.updated_at).join(",")].join("|");
+      quests.map(m => m.id + ":" + m.updated_at).join(","),
+      seeds.map(s => s.id + ":" + s.title + ":" + s.bookmark_ids.length).join(",")].join("|");
     if (memo.get("home-sections") !== key) {
       memo.set("home-sections", key);
-      const seenArt = new Set();
-      const recentsHTML = recents.map(r => {
-        let art = null;
-        if (!picOf(r)) { const a = topicArt(r.category_id); if (a && !seenArt.has(a)) { seenArt.add(a); art = a; } }
-        return recentCardHTML(r, art);
-      }).join("");
+      refineSeedTitles(seeds);
+      const recentsHTML = recents.map(recentCardHTML).join("");
       const pills = topicPillsHTML(all, 10);
       const questCards = quests.map(m => {
         const done = (m.todos || []).filter(t => t.done).length;
@@ -1427,7 +1565,11 @@ function renderLibrary(all, s) {
         ? `<div class="h-row"><span class="h-title">Side quests</span></div>
            <div class="quests">${questCards}<button class="quest-new" data-quest="">+ Start another</button></div>`
         : `<div class="h-row"><span class="h-title">Side quests</span></div>${questStarterHTML()}`;
-      home.innerHTML = questsHTML + `
+      const seedsHTML = seeds.length
+        ? `<div class="h-row"><span class="h-title">From your library</span></div>
+           <div class="quests">${seeds.map(seedCardHTML).join("")}</div>`
+        : "";
+      home.innerHTML = questsHTML + seedsHTML + `
         <div class="h-row"><span class="h-title">Recent</span></div>
         <div class="recents">${recentsHTML}</div>
         ${pills ? `<div class="h-row"><span class="h-title">Your topics</span><button class="h-more" data-tab-link="browse">All topics →</button></div>
@@ -1927,23 +2069,8 @@ document.addEventListener("error", (e) => {
   if (fb !== "remove") return;
   const src = img.getAttribute("src");
   if (src && !src.startsWith("/")) badImg.add(src);
-  const card = img.closest(".card");
-  img.remove();
-  if (card) degradeCard(card);
+  img.remove();   // the cover's gradient and glyph were underneath all along
 }, true);
-/* A grid card whose picture died becomes the text card it would have been
-   rendered as — in place, so the masonry doesn't reshuffle under the reader.
-   The next full rebuild lays it out properly via badImg. */
-function degradeCard(card) {
-  const cover = card.querySelector(".cover");
-  if (!cover) return;
-  cover.remove();
-  card.classList.add("card-text");
-  const body = card.querySelector(".card-body");
-  let au = card.querySelector(".card-author");
-  if (!au) { au = document.createElement("div"); au.className = "card-author"; au.innerHTML = `<span>${esc((PLATFORM[card.dataset.platform] || PLATFORM.web).name)}</span>`; body.prepend(au); }
-  au.insertAdjacentHTML("afterbegin", glyph(card.dataset.platform));
-}
 
 document.addEventListener("click", (e) => {
   if (e.target.closest('a[href="/app"]')) track("get_the_app_clicked", { where: tab });
@@ -1992,6 +2119,8 @@ document.addEventListener("click", (e) => {
   }
   const questBtn = e.target.closest("[data-quest]");
   if (questBtn) { openQuest(questBtn.dataset.quest || null); return; }
+  const seedBtn = e.target.closest("[data-seed]");
+  if (seedBtn) { startSeed(seedBtn.dataset.seed); return; }
   const todoX = e.target.closest("[data-todo-x]");
   if (todoX) { questDraft.todos = (questDraft.todos || []).filter(t => t.id !== todoX.dataset.todoX); renderQuestLists(); return; }
   const qbAdd = e.target.closest("[data-qb-add]");
