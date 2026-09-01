@@ -60,6 +60,25 @@
 
   main { max-width: 1280px; margin: 0 auto; padding: 16px clamp(14px, 3vw, 28px) 40px; }
 
+  /* ── Library home sections ── */
+  .h-row { display: flex; align-items: baseline; justify-content: space-between; margin: 8px 0 10px; }
+  .h-title { font-family: var(--font-head); font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+  .h-more { border: 0; background: none; color: var(--accent-text); font-weight: 700; font-size: 13px; }
+  .recents { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 16px; }
+  .recents::-webkit-scrollbar { display: none; }
+  .recent-card { flex: 0 0 150px; background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: 14px; overflow: hidden; cursor: pointer; box-shadow: var(--shadow-card); }
+  .rc-cover { height: 88px; position: relative; }
+  .rc-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .rc-title { font-size: 12px; font-weight: 600; line-height: 1.3; padding: 8px 10px 10px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .topic-pills { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 16px; }
+  .topic-pills::-webkit-scrollbar { display: none; }
+  .topic-pill { flex: 0 0 auto; height: 36px; border: 0; border-radius: 999px; padding: 0 15px;
+    font-weight: 700; font-size: 13.5px; }
+  .topic-pill .n { opacity: .6; margin-left: 5px; font-weight: 600; }
+  @media (min-width: 761px) { .topic-pills { flex-wrap: wrap; overflow: visible; } }
+
   /* ── Filter chips ── */
   .chips { display: flex; gap: 8px; padding: 2px 0 14px; overflow-x: auto; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
@@ -76,6 +95,11 @@
   .card:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
   .cover { position: relative; background: var(--tint); }
   .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cover-empty::before { content: ""; position: absolute; inset: 0;
+    background: radial-gradient(130% 95% at 18% 0%, rgba(255,255,255,.30), transparent 58%); }
+  .cover-glyph { position: absolute; inset: 0; display: grid; place-items: center;
+    font-family: var(--font-head); font-weight: 800; font-size: 38px; color: rgba(255,255,255,.42);
+    letter-spacing: .04em; }
   .badge { position: absolute; left: 10px; top: 10px; background: rgba(25,21,16,.68); color: #fff;
     font-size: 10.5px; font-weight: 700; letter-spacing: .05em; border-radius: 7px; padding: 3px 7px; }
   .card-body { padding: 11px 13px 13px; }
@@ -132,11 +156,32 @@
   .hint { color: var(--faint); font-size: 12.5px; }
   .state { text-align: center; color: var(--ink-2); padding: 56px 20px; }
 
-  /* ── Auth ── */
-  #auth { min-height: 100svh; display: grid; place-items: center; padding: 24px; }
-  .auth-card { width: min(400px, 100%); background: var(--surface); border: 1px solid var(--hairline);
+  /* ── Auth / signed-out story ── */
+  #auth { min-height: 100svh; display: flex; align-items: center; }
+  .auth-wrap { display: flex; gap: clamp(32px, 6vw, 72px); align-items: center; justify-content: center;
+    width: 100%; max-width: 1040px; margin: 0 auto; padding: 48px 24px; }
+  .auth-pitch { max-width: 470px; }
+  .auth-pitch .brand { margin-bottom: 26px; }
+  .pitch-h1 { font-size: clamp(30px, 4vw, 44px); line-height: 1.04; margin: 0 0 14px; letter-spacing: -.03em; }
+  .pitch-sub { color: var(--ink-2); font-size: 16px; line-height: 1.55; margin: 0 0 18px; }
+  .pitch-points { list-style: none; padding: 0; margin: 0 0 26px; }
+  .pitch-points li { padding-left: 26px; position: relative; margin: 9px 0; color: var(--ink); font-weight: 500; }
+  .pitch-points li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-text); font-weight: 800; }
+  .pitch-links { color: var(--faint); font-size: 12.5px; }
+  .pitch-links a { color: var(--ink-2); font-weight: 600; }
+  .auth-card { width: min(400px, 100%); flex: 0 0 auto; background: var(--surface); border: 1px solid var(--hairline);
     border-radius: 24px; padding: 28px 24px; box-shadow: var(--shadow-card); }
   .auth-card .brand { margin-bottom: 18px; }
+  .auth-card-brand { display: none; }
+  @media (max-width: 880px) {
+    #auth { align-items: flex-start; }
+    .auth-wrap { flex-direction: column; gap: 26px; align-items: stretch; padding-top: 40px; }
+    .auth-pitch { max-width: none; }
+    .pitch-points { margin-bottom: 4px; }
+    .auth-pitch .pitch-links { display: none; }
+    .auth-card { width: 100%; }
+  }
+  @media (min-width: 881px) { .m-links { display: none; } }
   .auth-card h1 { font-size: 27px; margin: 0 0 6px; }
   .auth-card > div > p { color: var(--ink-2); margin: 0 0 16px; }
   .auth-card .field { margin-bottom: 10px; }
@@ -177,7 +222,7 @@
   .tabbar { display: none; }
   .fab-desktop { display: inline-flex; }
   @media (max-width: 760px) {
-    .nav-tabs, .nav-search, .fab-desktop, footer { display: none; }
+    .nav-tabs, .nav-search, .fab-desktop { display: none; }
     main { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 80px); }
     .grid { gap: 10px; } .grid .col { gap: 10px; }
     .chips { position: sticky; top: var(--nav-h); z-index: 20; background: var(--paper); margin: 0 -14px; padding: 8px 14px 12px; }
@@ -205,10 +250,23 @@
 </head>
 <body>
 
-<!-- ─────────────── Auth ─────────────── -->
+<!-- ─────────────── Auth / signed-out story ─────────────── -->
 <section id="auth" hidden>
+  <div class="auth-wrap">
+    <div class="auth-pitch">
+      <a class="brand" href="/app"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
+      <h1 class="pitch-h1">The folder your feeds never gave you.</h1>
+      <p class="pitch-sub">Everything you save on Instagram, X, TikTok and YouTube — reels, threads, clips, articles — in one library you can actually search. Filed by topic, automatically.</p>
+      <ul class="pitch-points">
+        <li>Save from any app, or paste a link</li>
+        <li>Fifty topics that file themselves</li>
+        <li>Search everything you've ever saved</li>
+        <li>Free — here on the web and <a href="/app">on iPhone</a></li>
+      </ul>
+      <p class="pitch-links">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a></p>
+    </div>
   <div class="auth-card">
-    <a class="brand" href="/app"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
+    <a class="brand auth-card-brand" href="/app"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
     <div id="auth-choose">
       <h1>Every save.<br>One library.</h1>
       <p>Sign in and your borks follow you — phone, laptop, everywhere.</p>
@@ -241,6 +299,8 @@
       <p class="err" id="code-err"></p>
     </div>
   </div>
+  <p class="pitch-links m-links" style="text-align:center;padding-bottom:30px">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+  </div>
 </section>
 
 <!-- ─────────────── App ─────────────── -->
@@ -262,6 +322,7 @@
 
   <main>
     <section id="view-library">
+      <div id="home-sections"></div>
       <nav class="chips" id="platform-chips" aria-label="Filter by source"></nav>
       <div class="grid" id="grid-library"></div>
       <div class="state" id="empty-library" hidden></div>
@@ -320,16 +381,6 @@
       </p>
     </section>
   </main>
-
-  <footer>
-    <div class="foot-in">
-      <span>© 2026 bookmarker</span>
-      <a href="/app">Get the app</a>
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms of Use</a>
-      <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
-    </div>
-  </footer>
 
   <nav class="tabbar" aria-label="Tabs">
     <button class="tab" data-tab-link="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</button>
@@ -653,8 +704,9 @@ function cardHTML(r) {
     </article>`;
   }
   const img = r.image_url ? `<img src="${esc(r.image_url)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+  const glyph = r.image_url ? "" : `<span class="cover-glyph">${p.short}</span>`;
   return `<article class="card" tabindex="0" data-id="${esc(r.id)}">
-    <div class="cover" style="aspect-ratio:${aspect};${gradient(hue)}">${img}<span class="badge">${p.short}</span></div>
+    <div class="cover${r.image_url ? "" : " cover-empty"}" style="aspect-ratio:${aspect};${gradient(hue)}">${img}${glyph}<span class="badge">${p.short}</span></div>
     <div class="card-body">
       ${author ? `<div class="card-author">${esc(author)}</div>` : ""}
       <div class="card-title">${esc(r.title || r.url)}</div>
@@ -663,10 +715,14 @@ function cardHTML(r) {
   </article>`;
 }
 function estHeight(r) {
+  const titleLines = Math.min(4, Math.ceil((r.title || r.url).length / 24));
   const aspect = KIND_ASPECT[r.kind];
-  if (!aspect) return 120 + (r.body_text ? 54 : 0);
-  const [w, h] = aspect.split("/").map(Number);
-  return 230 * (h / w) + 92;
+  if (!aspect) {
+    const snippet = r.body_text ? Math.min(3, Math.ceil(r.body_text.length / 34)) : 0;
+    return 64 + titleLines * 19 + snippet * 18 + 32;
+  }
+  const [aw, ah] = aspect.split("/").map(Number);
+  return 240 * (ah / aw) + 58 + Math.min(2, titleLines) * 19 + (cleanAuthor(r.author) ? 17 : 0);
 }
 function columnCount() {
   const w = Math.min(window.innerWidth, 1280);
@@ -703,6 +759,34 @@ function render() {
   });
 
   if (tab === "library") {
+    // Home sections: what you saved lately, and the topics you actually use —
+    // the jobs the app serves before "scroll everything".
+    const home = $("home-sections");
+    if (all.length && !platformFilter) {
+      const recents = all.slice(0, 12).map(r => {
+        const topic = TOPIC_BY_ID[r.category_id];
+        const hue = topic ? topic.hue : 24;
+        const img = r.image_url ? `<img src="${esc(r.image_url)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+        return `<div class="recent-card" data-id="${esc(r.id)}" role="button" tabindex="0">
+          <div class="rc-cover" style="${gradient(hue)}">${img}</div>
+          <div class="rc-title">${esc(r.title || r.url)}</div></div>`;
+      }).join("");
+      const tCounts = new Map();
+      for (const r of all) if (r.category_id && TOPIC_BY_ID[r.category_id])
+        tCounts.set(r.category_id, (tCounts.get(r.category_id) || 0) + 1);
+      const pills = [...tCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id, n]) => {
+        const t = TOPIC_BY_ID[id];
+        return `<button class="topic-pill" style="${chipStyle(t.hue)}" data-topic-go="${id}">${esc(t.name)}<span class="n">${n}</span></button>`;
+      }).join("");
+      home.innerHTML = `
+        <div class="h-row"><span class="h-title">Recent</span></div>
+        <div class="recents">${recents}</div>
+        ${pills ? `<div class="h-row"><span class="h-title">Your topics</span><button class="h-more" data-tab-link="browse">All topics →</button></div>
+        <div class="topic-pills">${pills}</div>` : ""}
+        <div class="h-row"><span class="h-title">Everything</span></div>`;
+    } else {
+      home.innerHTML = "";
+    }
     const counts = new Map();
     for (const r of all) counts.set(r.platform, (counts.get(r.platform) || 0) + 1);
     const order = Object.keys(PLATFORM).filter(k => counts.get(k));
@@ -767,9 +851,9 @@ function render() {
   }
 }
 
-function setTab(next) {
+function setTab(next, { keepTopic = false } = {}) {
   tab = next;
-  if (next !== "browse") topicFilter = null;
+  if (next !== "browse" && !keepTopic) topicFilter = null;
   render();
   if (next === "search") setTimeout(() => $("search-mobile").focus(), 50);
   window.scrollTo({ top: 0 });
@@ -1000,7 +1084,9 @@ document.addEventListener("click", (e) => {
   if (tile) { topicFilter = tile.dataset.topic; render(); window.scrollTo({ top: 0 }); }
   const srcRow = e.target.closest("[data-platform-row]");
   if (srcRow) { platformFilter = srcRow.dataset.platformRow; setTab("library"); }
-  const card = e.target.closest(".card");
+  const pill = e.target.closest("[data-topic-go]");
+  if (pill) { const id = pill.dataset.topicGo; setTab("browse"); topicFilter = id; render(); return; }
+  const card = e.target.closest(".card, .recent-card");
   if (card) openEdit(card.dataset.id);
 });
 $("google-btn").addEventListener("click", signInWithGoogle);
