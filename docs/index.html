@@ -199,6 +199,8 @@
   .pitch-points { list-style: none; padding: 0; margin: 0 0 26px; }
   .pitch-points li { padding-left: 26px; position: relative; margin: 9px 0; color: var(--ink); font-weight: 500; }
   .pitch-points li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-text); font-weight: 800; }
+  .pitch-art { width: 100%; max-width: 400px; border-radius: 22px; margin: 0 0 20px; display: block;
+    box-shadow: 0 1px 2px rgba(25,21,16,.04), 0 14px 34px -18px rgba(25,21,16,.22); }
   .pitch-links { color: var(--faint); font-size: 12.5px; }
   .pitch-links a { color: var(--ink-2); font-weight: 600; }
   .auth-card { width: min(400px, 100%); flex: 0 0 auto; background: var(--surface); border: 1px solid var(--hairline);
@@ -210,6 +212,7 @@
     .auth-wrap { flex-direction: column; gap: 26px; align-items: stretch; padding-top: 40px; }
     .auth-pitch { max-width: none; }
     .pitch-points { margin-bottom: 4px; }
+    .pitch-art { display: none; }
     .auth-pitch .pitch-links { display: none; }
     .auth-card { width: 100%; }
   }
@@ -299,6 +302,7 @@
         <li>Search everything you've ever saved</li>
         <li>Free — here on the web and <a href="/app">on iPhone</a></li>
       </ul>
+      <img class="pitch-art" src="/img/art-hero.jpg" alt="Clay illustrations of the things people save: a recipe bowl, dumbbells, a camera, a book, a scroll — and a coral bookmark.">
       <p class="pitch-links">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a></p>
     </div>
   <div class="auth-card">
