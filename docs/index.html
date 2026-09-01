@@ -819,7 +819,8 @@ function cardHTML(r) {
   }
   const art = topicArt(r.category_id);
   const src = r.image_url || art;
-  const img = src ? `<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+  const fallback = r.image_url && art ? `this.onerror=null;this.src='${esc(art)}'` : "this.remove()";
+  const img = src ? `<img src="${esc(src)}" alt="" loading="lazy" onerror="${fallback}">` : "";
   const glyph = src ? "" : `<span class="cover-glyph">${p.short}</span>`;
   return `<article class="card" tabindex="0" data-id="${esc(r.id)}">
     <div class="cover${src ? "" : " cover-empty"}" style="aspect-ratio:${aspect};${gradient(hue)}">${img}${glyph}<span class="badge">${p.short}</span></div>
@@ -882,8 +883,10 @@ function render() {
       const recents = all.slice(0, 12).map(r => {
         const topic = TOPIC_BY_ID[r.category_id];
         const hue = topic ? topic.hue : 24;
-        const rsrc = r.image_url || topicArt(r.category_id);
-        const img = rsrc ? `<img src="${esc(rsrc)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+        const rart = topicArt(r.category_id);
+        const rsrc = r.image_url || rart;
+        const rfall = r.image_url && rart ? `this.onerror=null;this.src='${esc(rart)}'` : "this.remove()";
+        const img = rsrc ? `<img src="${esc(rsrc)}" alt="" loading="lazy" onerror="${rfall}">` : "";
         return `<div class="recent-card" data-id="${esc(r.id)}" role="button" tabindex="0">
           <div class="rc-cover" style="${gradient(hue)}">${img}</div>
           <div class="rc-title">${esc(r.title || r.url)}</div></div>`;
