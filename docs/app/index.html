@@ -724,6 +724,8 @@
       const ERR = "Something went wrong — email hello@bookmarker.lol and we’ll add you.";
       const say = (text, kind) => { msg.textContent = text; msg.className = "form-msg" + (kind ? " " + kind : ""); };
       const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+      // Count the signup, never the address: the email goes to our table, not to analytics.
+      const track = (name, props) => { try { window.posthog && posthog.capture(name, props); } catch (_) {} };
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -742,8 +744,8 @@
             },
             body: JSON.stringify({ email, source: "landing" })
           });
-          if (res.status === 201) { say(OK, "ok"); form.reset(); }
-          else if (res.status === 409) { say(DUP, "ok"); }
+          if (res.status === 201) { say(OK, "ok"); form.reset(); track("beta_signup", { duplicate: false }); }
+          else if (res.status === 409) { say(DUP, "ok"); track("beta_signup", { duplicate: true }); }
           else { say(ERR, "err"); }
         } catch (_) {
           say(ERR, "err");
