@@ -8,13 +8,20 @@
 // Postgres does the rest: auth.users → profiles → bookmarks, collections,
 // grants, and ai_usage all cascade.
 
+// The web app's You page calls this from bookmarker.lol, so the browser's
+// preflight must be answered before the gateway's JWT check gates the POST.
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+    },
   });
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") return json({}, 200);
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
 
   const base = Deno.env.get("SUPABASE_URL");
