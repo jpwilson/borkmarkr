@@ -41,6 +41,7 @@ const clamp = (value: unknown): string =>
   typeof value === "string" ? value.slice(0, MAX_FIELD).trim() : "";
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") return json({}, 200);
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
 
   const authorization = req.headers.get("Authorization") ?? "";

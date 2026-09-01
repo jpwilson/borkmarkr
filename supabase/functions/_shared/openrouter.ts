@@ -52,10 +52,16 @@ export async function completeJSON(
   }
 }
 
+// The web app calls these from bookmarker.lol, so the browser's preflight
+// must be answered; the JWT check at the gateway still gates the real call.
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+    },
   });
 
 export async function consumeQuota(authorization: string, dailyLimit: number): Promise<boolean> {
