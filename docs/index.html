@@ -391,7 +391,7 @@
 
 const SUPABASE_URL = "https://pcjuxnhqxyfvgagnblzv.supabase.co";
 const ANON_KEY = "sb_publishable_z0wBO4NZrMW3T0ZywSDfJA_UoFRHMKb"; // public by design; RLS is the lock
-const GOOGLE_ENABLED = false; // flip to true once the Google provider is configured in Supabase
+const GOOGLE_ENABLED = true; // Google provider configured in Supabase 2026-08-31
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
