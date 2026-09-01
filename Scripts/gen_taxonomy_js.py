@@ -15,7 +15,7 @@ import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SWIFT = ROOT / "Core" / "Taxonomy.swift"
-OUT = ROOT / "docs" / "web" / "taxonomy.js"
+OUT = ROOT / "docs" / "taxonomy.js"
 
 TOPIC = re.compile(
     r'Topic\(id: "([^"]+)", name: "([^"]+)", hue: ([\d.]+), subs: \[(.*?)\]\)', re.S

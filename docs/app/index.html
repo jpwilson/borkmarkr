@@ -2,21 +2,731 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <!--
-    /app is the permanent "get the app" URL: it is what the QR code on the
-    landing page encodes and what the App Store buttons point at.
-    TODO: swap to the App Store URL after launch — change BOTH the meta refresh
-    and the JS below to https://apps.apple.com/app/id... . The QR code never
-    needs regenerating.
-  -->
-  <meta name="robots" content="noindex">
-  <meta http-equiv="refresh" content="0; url=https://bookmarker.lol/#get">
-  <link rel="canonical" href="https://bookmarker.lol/#get">
-  <title>bookmarker — get the app</title>
-  <script>location.replace("https://bookmarker.lol/#get");</script>
-  <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#F6F3EE;color:#191510;font:17px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}@media(prefers-color-scheme:dark){body{background:#14110E;color:#F2EEE8}}a{color:inherit}</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bookmarker — every link you save, in one place</title>
+  <meta name="description" content="bookmarker is a bookmark manager for iPhone. Save any link from Instagram, X, TikTok or YouTube with one tap; it files itself into topics and stays searchable. Works offline. No ads, no tracking.">
+  <link rel="canonical" href="https://bookmarker.lol/">
+  <meta name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14110E" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="bookmarker">
+  <meta property="og:url" content="https://bookmarker.lol/">
+  <meta property="og:title" content="bookmarker — every link you save, in one place">
+  <meta property="og:description" content="The folder your feeds never gave you. Save from any app, it files itself, find it again. For iPhone. Works offline, no ads, no tracking.">
+  <meta property="og:image" content="https://bookmarker.lol/img/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="bookmarker — The folder your feeds never gave you.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="bookmarker — every link you save, in one place">
+  <meta name="twitter:description" content="The folder your feeds never gave you. Save from any app, it files itself, find it again. For iPhone.">
+  <meta name="twitter:image" content="https://bookmarker.lol/img/og.png">
+
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="preload" as="image" href="/img/library.webp" type="image/webp">
+  <script>document.documentElement.classList.add("js");</script>
+
+  <style>
+    /* ---------- tokens ---------- */
+    :root {
+      --paper: #F6F3EE;
+      --ink: #191510;
+      --ink-2: #6E655A;
+      --hairline: #EAE4DA;
+      --surface: #FFFFFF;
+      --coral: #FF5A2D;
+      --coral-dark: #E8451C;
+      /* coral darkened only where it has to carry small text on paper (WCAG AA) */
+      --accent-text: #C93A12;
+      --coral-tint: #FFE9E1;
+      --shadow-phone: 0 40px 80px -30px rgba(25, 21, 16, .45), 0 12px 28px -12px rgba(25, 21, 16, .25);
+      --shadow-card: 0 1px 2px rgba(25, 21, 16, .04), 0 12px 32px -16px rgba(25, 21, 16, .14);
+      --nav-h: 64px;
+      --sp: clamp(4.5rem, 9vw, 8.5rem);
+      --gutter: clamp(1.25rem, 4vw, 2.5rem);
+      --radius: 22px;
+      --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #14110E;
+        --ink: #F2EEE8;
+        --ink-2: #A39A8D;
+        --hairline: #2A241E;
+        --surface: #1C1814;
+        --accent-text: #FF7A55;
+        --coral-tint: #33190F;
+        --shadow-phone: 0 40px 80px -30px rgba(0, 0, 0, .8), 0 12px 28px -12px rgba(0, 0, 0, .5);
+        --shadow-card: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px -16px rgba(0, 0, 0, .5);
+      }
+    }
+
+    /* ---------- base ---------- */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.55;
+      font-feature-settings: "ss01";
+      -webkit-font-smoothing: antialiased;
+      overflow-x: clip;
+    }
+    img, svg { display: block; max-width: 100%; }
+    h1, h2, h3, h4 {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-optical-sizing: auto;
+      letter-spacing: -0.03em;
+      line-height: 1.02;
+      margin: 0;
+      text-wrap: balance;
+    }
+    p { margin: 0; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; border-radius: 6px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    .wrap { width: 100%; max-width: 1160px; margin-inline: auto; padding-inline: var(--gutter); }
+
+    .eyebrow {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent-text);
+      margin-bottom: 1rem;
+    }
+    .h1 { font-size: clamp(2.7rem, 1.5rem + 3.5vw, 4.75rem); }
+    .h2 { font-size: clamp(2rem, 1.2rem + 2.4vw, 3.4rem); }
+    .h3 { font-size: 1.25rem; letter-spacing: -0.02em; line-height: 1.2; }
+    .lede { font-size: clamp(1.1rem, 1rem + .5vw, 1.35rem); color: var(--ink-2); max-width: 32ch; }
+    .muted { color: var(--ink-2); }
+
+    /* ---------- buttons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
+      min-height: 48px; padding: 0 1.25rem;
+      border-radius: 14px; border: 1px solid transparent;
+      font: inherit; font-weight: 600; font-size: 1rem; line-height: 1;
+      text-decoration: none; cursor: pointer; white-space: nowrap;
+      transition: transform .18s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--ink); color: var(--paper); }
+    .btn-primary:hover { background: var(--coral-dark); color: #fff; }
+    .btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--hairline); box-shadow: var(--shadow-card); }
+    .btn-ghost:hover { border-color: var(--ink-2); }
+    .btn-sm { min-height: 44px; padding: 0 1.05rem; font-size: .95rem; border-radius: 12px; }
+    .btn svg { width: 18px; height: 18px; flex: none; }
+    .btn[disabled] { opacity: .55; cursor: default; transform: none; }
+
+    /* ---------- nav ---------- */
+    .nav {
+      position: sticky; top: 0; z-index: 20;
+      background: color-mix(in srgb, var(--paper) 84%, transparent);
+      -webkit-backdrop-filter: saturate(160%) blur(14px);
+      backdrop-filter: saturate(160%) blur(14px);
+      border-bottom: 1px solid var(--hairline);
+    }
+    .nav-in { display: flex; align-items: center; gap: 1.5rem; height: var(--nav-h); }
+    .brand { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; min-height: 44px; }
+    .brand img { width: 30px; height: 30px; border-radius: 8px; }
+    .brand span { font-family: var(--font-head); font-weight: 800; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .nav-links { display: flex; gap: .25rem; margin-inline: auto; }
+    .nav-links a {
+      display: inline-flex; align-items: center; min-height: 44px; padding: 0 .8rem;
+      font-size: .95rem; font-weight: 500; color: var(--ink-2); text-decoration: none; border-radius: 10px;
+    }
+    .nav-links a:hover { color: var(--ink); }
+    .nav .btn { margin-left: auto; }
+    @media (max-width: 840px) { .nav-links { display: none; } }
+
+    /* ---------- phone frame ---------- */
+    .phone { container-type: inline-size; width: 100%; }
+    .bezel {
+      position: relative;
+      background: #0C0B0A;
+      border-radius: 13.6cqw;
+      padding: 3.2cqw;
+      box-shadow: var(--shadow-phone), inset 0 0 0 1px rgba(255, 255, 255, .10), inset 0 0 0 2.4cqw #1A1918;
+    }
+    .bezel::before, .bezel::after { /* side buttons */
+      content: ""; position: absolute; width: 1cqw; background: #1F1E1C; border-radius: 1cqw;
+    }
+    .bezel::before { left: -1cqw; top: 22cqw; height: 16cqw; }
+    .bezel::after { right: -1cqw; top: 30cqw; height: 22cqw; }
+    .screen {
+      position: relative; overflow: hidden; border-radius: 10.6cqw; background: #F6F3EE;
+      aspect-ratio: 1320 / 2868;
+    }
+    .screen img { width: 100%; height: auto; aspect-ratio: 1320 / 2868; }
+    .island {
+      position: absolute; left: 50%; top: 3.9cqw; transform: translateX(-50%);
+      width: 29.5%; height: 8.2cqw; border-radius: 999px; background: #000;
+    }
+
+    /* ---------- hero ---------- */
+    .hero {
+      display: grid; grid-template-columns: 1.05fr .95fr; align-items: center;
+      gap: clamp(2rem, 5vw, 5rem);
+      padding-top: clamp(3rem, 7vw, 5.5rem); padding-bottom: clamp(3rem, 6vw, 5rem);
+    }
+    .hero-copy .lede { margin-top: 1.4rem; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2.1rem; }
+    .fineprint { margin-top: 1.25rem; font-size: .9rem; color: var(--ink-2); }
+    .fineprint span { display: inline-block; white-space: nowrap; }
+    .fineprint span + span::before { content: "·"; margin: 0 .55rem; }
+    .hero-art { position: relative; }
+    .hero-art::before {
+      content: ""; position: absolute; inset: -8% 0; z-index: -1; pointer-events: none;
+      background: radial-gradient(closest-side, color-mix(in srgb, var(--coral) 16%, transparent), transparent 70%);
+    }
+    .fan { position: relative; width: min(100%, 560px); aspect-ratio: 560 / 620; margin-inline: auto; }
+    .fan .phone { position: absolute; }
+    .fan .p-main { width: 49%; left: 25.5%; top: 0; z-index: 2; }
+    .fan .p-left { width: 41%; left: 0; top: 10%; transform: rotate(-8deg); transform-origin: 50% 90%; }
+    .fan .p-right { width: 41%; right: 0; top: 10%; transform: rotate(8deg); transform-origin: 50% 90%; }
+    .fan .p-left .bezel, .fan .p-right .bezel { filter: brightness(.96); }
+
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; text-align: center; padding-top: 2.5rem; }
+      .hero-copy .lede { margin-inline: auto; }
+      .hero-art { overflow-x: clip; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
+      .cta-row { justify-content: center; }
+      .fan { width: min(100%, 440px); aspect-ratio: 440 / 500; margin-top: 1rem; }
+      .fan .p-main { width: 52%; left: 24%; }
+      .fan .p-left, .fan .p-right { width: 43%; top: 9%; }
+      .fan .p-left { left: 4%; } .fan .p-right { right: 4%; }
+    }
+    @media (max-width: 480px) {
+      .cta-row .btn { width: 100%; }
+      .fineprint { display: flex; flex-wrap: wrap; justify-content: center; gap: .2rem .9rem; }
+      .fineprint span + span::before { content: none; }
+    }
+
+    /* ---------- sections ---------- */
+    .section { padding-block: var(--sp); }
+    .section + .section { padding-top: 0; }
+    .section-head { max-width: 40ch; margin-bottom: clamp(2rem, 4vw, 3.5rem); }
+    .section-head p.muted { margin-top: 1rem; font-size: 1.1rem; }
+
+    /* problem */
+    .problem { display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(2rem, 5vw, 5rem); align-items: center; }
+    .problem .big { font-size: clamp(1.15rem, 1rem + .7vw, 1.45rem); color: var(--ink-2); margin-top: 1.25rem; max-width: 40ch; }
+    .defcard {
+      background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius);
+      padding: 1.6rem 1.7rem 1.5rem; box-shadow: var(--shadow-card); position: relative;
+    }
+    .defcard::before { content: ""; position: absolute; left: 1.7rem; top: 0; width: 44px; height: 4px; background: var(--coral); border-radius: 0 0 4px 4px; }
+    .def-word { font-family: var(--font-head); font-weight: 800; font-size: 2rem; letter-spacing: -0.03em; line-height: 1; }
+    .def-word small { font-family: var(--font-body); font-weight: 500; font-size: .85rem; letter-spacing: .02em; color: var(--ink-2); margin-left: .6rem; font-style: italic; }
+    .defcard p + p { margin-top: .75rem; }
+    .def-ex { font-family: var(--font-head); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; color: var(--accent-text); }
+    @media (max-width: 760px) { .problem { grid-template-columns: 1fr; } }
+
+    /* features */
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .feature {
+      background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius);
+      padding: 1.6rem 1.5rem 1.7rem; box-shadow: var(--shadow-card);
+    }
+    .feature .icon {
+      width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+      background: var(--coral-tint); color: var(--accent-text); margin-bottom: 1.25rem;
+    }
+    .feature .icon svg { width: 22px; height: 22px; }
+    .feature h3 { margin-bottom: .5rem; }
+    .feature p { color: var(--ink-2); font-size: 1rem; }
+    @media (max-width: 960px) { .features { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+
+    /* how it works */
+    .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; counter-reset: step; position: relative; }
+    .step { position: relative; padding: 1.75rem 1.5rem 0; border-top: 1px solid var(--hairline); }
+    .step::before {
+      content: ""; position: absolute; top: -1px; left: 0; width: 56px; height: 3px; background: var(--coral);
+    }
+    .step .num { display: block; font-family: var(--font-head); font-weight: 800; font-size: .9rem; letter-spacing: .08em; color: var(--accent-text); margin-bottom: 1.5rem; }
+    .step h3 { font-size: 1.6rem; margin-bottom: .6rem; }
+    .step h3 .brandword { color: var(--accent-text); }
+    .step p { color: var(--ink-2); }
+    .step kbd {
+      font: inherit; font-size: .9em; font-weight: 600; color: var(--ink);
+      background: var(--surface); border: 1px solid var(--hairline); border-bottom-width: 2px; border-radius: 7px; padding: .05em .45em;
+    }
+    @media (max-width: 720px) { .steps { grid-template-columns: 1fr; gap: 1.5rem; } .step { padding-inline: 0; } }
+
+    /* import */
+    .import {
+      background: var(--surface); border: 1px solid var(--hairline); border-radius: calc(var(--radius) + 6px);
+      padding: clamp(1.75rem, 4vw, 3.5rem); box-shadow: var(--shadow-card);
+      display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 4vw, 4rem); align-items: center;
+    }
+    .import .section-head { margin-bottom: 0; }
+    .flow { display: grid; gap: 1rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .chip {
+      display: inline-flex; align-items: center; gap: .45rem;
+      font-size: .92rem; font-weight: 600; padding: .5rem .85rem; border-radius: 999px;
+      background: var(--paper); border: 1px solid var(--hairline); color: var(--ink);
+    }
+    .chip.topic { border-color: transparent; background: color-mix(in srgb, var(--c) 16%, var(--paper)); }
+    .chip.topic::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+    .chip.more { background: transparent; border-style: dashed; color: var(--ink-2); font-weight: 500; }
+    .flow-arrow { display: flex; align-items: center; gap: .6rem; color: var(--ink-2); font-size: .9rem; font-weight: 500; }
+    .flow-arrow svg { width: 22px; height: 22px; color: var(--accent-text); }
+    .flow-label { font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: .5rem; }
+    @media (max-width: 860px) { .import { grid-template-columns: 1fr; } }
+
+    /* privacy */
+    .privacy {
+      background: var(--ink); color: var(--paper);
+      border-radius: calc(var(--radius) + 6px);
+      padding: clamp(2rem, 5vw, 4.5rem);
+      display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(2rem, 5vw, 5rem); align-items: center;
+      overflow: hidden; position: relative;
+    }
+    .privacy .eyebrow { color: var(--coral); }
+    .privacy .h2 { color: inherit; }
+    .privacy-list { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; gap: 1.25rem; }
+    .privacy-list li { display: grid; grid-template-columns: 28px 1fr; gap: .9rem; align-items: start; }
+    .privacy-list svg { width: 24px; height: 24px; color: var(--coral); margin-top: 2px; }
+    .privacy-list strong { display: block; font-weight: 600; margin-bottom: .15rem; }
+    .privacy-list span { color: color-mix(in srgb, var(--paper) 70%, var(--ink)); }
+    .privacy .link { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; margin-top: 1.5rem; font-weight: 600; color: var(--paper); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--paper) 40%, transparent); }
+    .privacy .link:hover { border-color: var(--coral); }
+    .privacy .link svg { width: 16px; height: 16px; }
+    .privacy-art { position: relative; height: 100%; min-height: 380px; }
+    .privacy-art .phone { position: absolute; width: min(300px, 72%); left: 50%; top: 2.75rem; transform: translateX(-50%) rotate(4deg); }
+    @media (prefers-color-scheme: dark) {
+      .privacy { background: var(--surface); color: var(--ink); border: 1px solid var(--hairline); }
+      .privacy-list span { color: var(--ink-2); }
+      .privacy .link { color: var(--ink); border-color: var(--hairline); }
+    }
+    @media (max-width: 860px) {
+      .privacy { grid-template-columns: 1fr; padding-bottom: 0; }
+      .privacy-art { min-height: 0; height: 300px; margin-inline: calc(-1 * clamp(2rem, 5vw, 4.5rem)); }
+      .privacy-art .phone { width: min(260px, 60%); top: 2.5rem; }
+    }
+
+    /* get the app */
+    .get { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .panel {
+      background: var(--surface); border: 1px solid var(--hairline); border-radius: calc(var(--radius) + 6px);
+      padding: clamp(1.75rem, 4vw, 3rem); box-shadow: var(--shadow-card);
+      display: flex; flex-direction: column; min-width: 0;
+    }
+    .panel .h2 { font-size: clamp(1.8rem, 1.2rem + 1.6vw, 2.5rem); }
+    .panel > p.muted { margin-top: .9rem; max-width: 36ch; }
+    .store-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; margin-top: 1.75rem; }
+    .qr { display: flex; align-items: center; gap: 1rem; }
+    .qr svg { width: 104px; height: 104px; color: var(--ink); background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 6px; flex: none; }
+    .qr p { font-size: .9rem; color: var(--ink-2); max-width: 12ch; line-height: 1.35; }
+    .beta { margin-top: .5rem; }
+    .field { display: flex; gap: .6rem; margin-top: 1.5rem; }
+    .field input {
+      flex: 1 1 auto; min-width: 0; min-height: 48px; padding: 0 1rem;
+      border-radius: 14px; border: 1px solid var(--hairline); background: var(--paper); color: var(--ink);
+      font: inherit; font-size: 1rem;
+    }
+    .field input::placeholder { color: color-mix(in srgb, var(--ink-2) 70%, transparent); }
+    .field input:focus-visible { outline-offset: 0; border-color: var(--coral); }
+    .field .btn { flex: none; }
+    .hp { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); opacity: 0; pointer-events: none; }
+    .form-msg { margin-top: .8rem; font-size: .95rem; min-height: 1.4em; color: var(--ink-2); }
+    .form-msg.ok { color: var(--ink); font-weight: 500; }
+    .form-msg.err { color: var(--accent-text); font-weight: 500; }
+    @media (max-width: 860px) { .get { grid-template-columns: 1fr; } .get > * { min-width: 0; } }
+    @media (max-width: 480px) { .field { flex-direction: column; } .field .btn { width: 100%; } .panel > .btn { width: 100%; white-space: normal; text-align: center; } }
+
+    /* footer */
+    .footer { border-top: 1px solid var(--hairline); padding-block: 2.5rem; }
+    .footer-in { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; font-size: .92rem; color: var(--ink-2); }
+    .footer .brand span { font-size: 1.05rem; }
+    .footer-links { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin-left: auto; }
+    .footer-links a, .footer .made { display: inline-flex; align-items: center; min-height: 44px; }
+    .footer-links a { color: var(--ink-2); text-decoration: none; }
+    .footer-links a:hover { color: var(--ink); }
+    .footer-copy { width: 100%; font-size: .85rem; }
+    @media (max-width: 600px) { .footer-links { margin-left: 0; width: 100%; } }
+
+    /* ---------- motion ---------- */
+    html.js .reveal { opacity: 0; transform: translateY(16px); transition: opacity .45s cubic-bezier(.2, .7, .2, 1), transform .45s cubic-bezier(.2, .7, .2, 1); }
+    html.js .reveal.in { opacity: 1; transform: none; }
+    html.js .reveal[data-delay="1"] { transition-delay: .06s; }
+    html.js .reveal[data-delay="2"] { transition-delay: .12s; }
+    html.js .reveal[data-delay="3"] { transition-delay: .18s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+    @keyframes rise-l { from { opacity: 0; transform: translateY(28px) rotate(-8deg); } to { opacity: 1; transform: rotate(-8deg); } }
+    @keyframes rise-r { from { opacity: 0; transform: translateY(28px) rotate(8deg); } to { opacity: 1; transform: rotate(8deg); } }
+    .fan .p-main { animation: rise .9s cubic-bezier(.2, .7, .2, 1) both; }
+    .fan .p-left { animation: rise-l .9s cubic-bezier(.2, .7, .2, 1) .12s both; }
+    .fan .p-right { animation: rise-r .9s cubic-bezier(.2, .7, .2, 1) .2s both; }
+    .hero-copy > * { animation: rise .8s cubic-bezier(.2, .7, .2, 1) both; }
+    .hero-copy > :nth-child(2) { animation-delay: .06s; }
+    .hero-copy > :nth-child(3) { animation-delay: .12s; }
+    .hero-copy > :nth-child(4) { animation-delay: .18s; }
+    .hero-copy > :nth-child(5) { animation-delay: .24s; }
+    @media (prefers-reduced-motion: reduce) {
+      html.js .reveal { opacity: 1; transform: none; transition: none; }
+      .fan .phone, .hero-copy > * { animation: none; }
+      .btn { transition: none; }
+    }
+  </style>
 </head>
-<body>
-  <p>Taking you to <a href="https://bookmarker.lol/#get">bookmarker.lol</a>…</p>
+
+<body id="top">
+  <header class="nav">
+    <div class="wrap nav-in">
+      <a class="brand" href="#top" aria-label="bookmarker home">
+        <img src="/img/mark-192.png" width="30" height="30" alt="">
+        <span>bookmarker</span>
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#import">Import</a>
+        <a href="#privacy">Privacy</a>
+        <a href="/">Open the app</a>
+      </nav>
+      <a class="btn btn-primary btn-sm" href="#get">Get the app</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== hero ===== -->
+    <section class="wrap hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">For iPhone · Coming soon</p>
+        <h1 class="h1" id="hero-title">The folder your feeds never gave you.</h1>
+        <p class="lede">Everything you save on Instagram, X, TikTok and YouTube, in one library you can actually search.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" data-appstore href="#get">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
+            Coming soon to the App Store
+          </a>
+          <a class="btn btn-ghost" href="#get">Join the beta</a>
+        </div>
+        <p class="fineprint"><span>Works offline</span><span>No account needed</span><span>No ads, no tracking</span></p>
+      </div>
+
+      <div class="hero-art">
+        <div class="fan" role="group" aria-label="Screenshots of bookmarker">
+          <div class="phone p-left">
+            <div class="bezel"><div class="screen">
+              <picture>
+                <source srcset="img/browse.webp" type="image/webp">
+                <img src="/img/browse.png" width="405" height="880" alt="The Browse tab: a grid of topics such as Recipes, Nutrition, Fitness, AI, Health and Cars, each showing how many borks it holds." decoding="async">
+              </picture>
+              <span class="island" aria-hidden="true"></span>
+            </div></div>
+          </div>
+          <div class="phone p-main">
+            <div class="bezel"><div class="screen">
+              <picture>
+                <source srcset="img/library.webp" type="image/webp">
+                <img src="/img/library.png" width="405" height="880" alt="The Library tab: 18 borks across 8 apps and 14 topics, a search field, a weekly summary card, side quests, and a filter row for X, Instagram, TikTok and YouTube." fetchpriority="high" decoding="async">
+              </picture>
+              <span class="island" aria-hidden="true"></span>
+            </div></div>
+          </div>
+          <div class="phone p-right">
+            <div class="bezel"><div class="screen">
+              <picture>
+                <source srcset="img/search.webp" type="image/webp">
+                <img src="/img/search.png" width="405" height="880" alt="The Search tab: results for “protein” from YouTube and Instagram, each with the account that posted it and a tag." decoding="async">
+              </picture>
+              <span class="island" aria-hidden="true"></span>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== problem ===== -->
+    <section class="wrap section" aria-labelledby="problem-title">
+      <div class="problem">
+        <div class="reveal">
+          <p class="eyebrow">The problem</p>
+          <h2 class="h2" id="problem-title">Saved everywhere. Findable nowhere.</h2>
+          <p class="big">A reel on Instagram, a thread on X, a clip on TikTok, a video on YouTube — every app keeps its own saved list. None of them are titled, sorted or searchable, so you never find any of it again.</p>
+        </div>
+        <aside class="defcard reveal" data-delay="1" aria-label="What a bork is">
+          <p class="def-word">bork <small>noun, verb</small></p>
+          <p class="muted">A saved item. You bork something. Then you can search it, file it, and open the original.</p>
+          <p class="def-ex">“412 borks.” That’s the product.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===== features ===== -->
+    <section class="wrap section" id="features" aria-labelledby="features-title">
+      <div class="section-head reveal">
+        <p class="eyebrow">What it does</p>
+        <h2 class="h2" id="features-title">One library above all of them.</h2>
+        <p class="muted">Saving is instant. Organising is optional — bookmarker does most of it for you, and you can change anything it gets wrong.</p>
+      </div>
+      <div class="features">
+        <article class="feature reveal">
+          <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 13v5a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-5"/></svg></div>
+          <h3 class="h3">Save from anywhere</h3>
+          <p>Tap Share in any app and pick bookmarker, or paste a link. The title, the account that posted it and a thumbnail come along automatically.</p>
+        </article>
+        <article class="feature reveal" data-delay="1">
+          <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 12h18"/></svg></div>
+          <h3 class="h3">It files itself</h3>
+          <p>Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. Fifty topics, six hundred subtopics, and you can add your own.</p>
+        </article>
+        <article class="feature reveal" data-delay="2">
+          <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg></div>
+          <h3 class="h3">Browse two ways</h3>
+          <p>By topic, to see everything about running no matter where it came from. Or by app, to see everything you kept from TikTok. Each view filters the other.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/></svg></div>
+          <h3 class="h3">Find it again</h3>
+          <p>Search titles, tags, notes, people and links. A Related strip surfaces the near-matches — what you meant, not just the words you typed.</p>
+        </article>
+        <article class="feature reveal" data-delay="1">
+          <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4"/><path d="M8.5 12.5h7M8.5 16h4.5"/></svg></div>
+          <h3 class="h3">Notes, and a memory</h3>
+          <p>Add a dated note to any bork so you remember why you kept it. bookmarker also counts how many times you’ve gone back to it.</p>
+        </article>
+        <article class="feature reveal" data-delay="2">
+          <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 21V3.5"/><path d="M5.5 4h12.5l-2.5 4.5 2.5 4.5H5.5"/></svg></div>
+          <h3 class="h3">Side quests</h3>
+          <p>Running a marathon, choosing a car, planning a trip? Group the links that help with the goal, and add a daily habit if it needs one.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== how it works ===== -->
+    <section class="wrap section" id="how" aria-labelledby="how-title">
+      <div class="section-head reveal">
+        <p class="eyebrow">How it works</p>
+        <h2 class="h2" id="how-title">Share. Bork. Filed.</h2>
+      </div>
+      <ol class="steps">
+        <li class="step reveal">
+          <span class="num">STEP 1</span>
+          <h3>Share</h3>
+          <p>Tap <kbd>Share</kbd> in Instagram, X, TikTok, YouTube — anywhere — and pick bookmarker. Or paste a link straight into the app.</p>
+        </li>
+        <li class="step reveal" data-delay="1">
+          <span class="num">STEP 2</span>
+          <h3><span class="brandword">bookmarker</span></h3>
+          <p>The title, who posted it and a thumbnail are fetched on the spot. Saving takes one tap; organising is optional and can happen later.</p>
+        </li>
+        <li class="step reveal" data-delay="2">
+          <span class="num">STEP 3</span>
+          <h3>Filed</h3>
+          <p>It lands in a topic and subtopic, ready to browse, search and open — straight back to the original post in the app it came from.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== import ===== -->
+    <section class="wrap section" id="import" aria-labelledby="import-title">
+      <div class="import reveal">
+        <div class="section-head">
+          <p class="eyebrow">Import</p>
+          <h2 class="h2" id="import-title">Bring what you already saved.</h2>
+          <p class="muted">Import your browser bookmarks, or the data export from X, Instagram, TikTok or YouTube. Thousands of old saves become a sorted, searchable library in one step.</p>
+        </div>
+        <div class="flow" aria-label="What you can import, and where it ends up">
+          <div>
+            <p class="flow-label">From</p>
+            <div class="chips">
+              <span class="chip">Browser bookmarks</span>
+              <span class="chip">X</span>
+              <span class="chip">Instagram</span>
+              <span class="chip">TikTok</span>
+              <span class="chip">YouTube</span>
+            </div>
+          </div>
+          <div class="flow-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16"/><path d="m6 14 6 6 6-6"/></svg>
+            sorted on your phone
+          </div>
+          <div>
+            <p class="flow-label">Into</p>
+            <div class="chips">
+              <span class="chip topic" style="--c:#C2545A">Fitness</span>
+              <span class="chip topic" style="--c:#1FA971">Recipes</span>
+              <span class="chip topic" style="--c:#2E8CF0">Cars</span>
+              <span class="chip topic" style="--c:#7C5CFC">Learn</span>
+              <span class="chip topic" style="--c:#FF5A2D">Make</span>
+              <span class="chip more">+ 45 more topics</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== privacy ===== -->
+    <section class="wrap section" id="privacy" aria-labelledby="privacy-title">
+      <div class="privacy reveal">
+        <div>
+          <p class="eyebrow">Built to stay yours</p>
+          <h2 class="h2" id="privacy-title">On your phone. Nobody else’s business.</h2>
+          <ul class="privacy-list">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
+              <div><strong>Offline by default</strong><span>Every feature works without an account or a connection. Your library lives on your iPhone.</span></div>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="m4.5 7.5 7.5 5.5 7.5-5.5"/></svg>
+              <div><strong>Optional sign-in</strong><span>Want backup and sync? Sign in with your email and a six-digit code. No password to create.</span></div>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.1 7.5 9.5 4.3-1.4 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/></svg>
+              <div><strong>No ads, no tracking, no analytics</strong><span>bookmarker stores links, not content. Opening a bork sends you to the original post.</span></div>
+            </li>
+          </ul>
+          <a class="link" href="/privacy">Read the privacy policy
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </a>
+        </div>
+        <div class="privacy-art" aria-hidden="true">
+          <div class="phone">
+            <div class="bezel"><div class="screen">
+              <picture>
+                <source srcset="img/you.webp" type="image/webp">
+                <img src="/img/you.png" width="405" height="880" alt="" loading="lazy" decoding="async">
+              </picture>
+              <span class="island"></span>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== get the app ===== -->
+    <section class="wrap section" id="get" aria-labelledby="get-title">
+      <div class="get">
+        <div class="panel reveal">
+          <p class="eyebrow">Get the app</p>
+          <h2 class="h2" id="get-title">bookmarker for iPhone</h2>
+          <p class="muted">Launching soon on the App Store. Until then, the button and the code below bring you straight back here.</p>
+          <div class="store-row">
+            <a class="btn btn-primary" data-appstore href="#get">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
+              Coming soon to the App Store
+            </a>
+            <div class="qr">
+              <svg role="img" aria-label="QR code linking to bookmarker.lol/app" version="1.1" viewBox="0 0 29 29" xmlns="http://www.w3.org/2000/svg"><path d="M2,2H3V3H2zM3,2H4V3H3zM4,2H5V3H4zM5,2H6V3H5zM6,2H7V3H6zM7,2H8V3H7zM8,2H9V3H8zM10,2H11V3H10zM11,2H12V3H11zM15,2H16V3H15zM17,2H18V3H17zM18,2H19V3H18zM20,2H21V3H20zM21,2H22V3H21zM22,2H23V3H22zM23,2H24V3H23zM24,2H25V3H24zM25,2H26V3H25zM26,2H27V3H26zM2,3H3V4H2zM8,3H9V4H8zM11,3H12V4H11zM12,3H13V4H12zM16,3H17V4H16zM18,3H19V4H18zM20,3H21V4H20zM26,3H27V4H26zM2,4H3V5H2zM4,4H5V5H4zM5,4H6V5H5zM6,4H7V5H6zM8,4H9V5H8zM12,4H13V5H12zM14,4H15V5H14zM17,4H18V5H17zM20,4H21V5H20zM22,4H23V5H22zM23,4H24V5H23zM24,4H25V5H24zM26,4H27V5H26zM2,5H3V6H2zM4,5H5V6H4zM5,5H6V6H5zM6,5H7V6H6zM8,5H9V6H8zM10,5H11V6H10zM13,5H14V6H13zM15,5H16V6H15zM17,5H18V6H17zM18,5H19V6H18zM20,5H21V6H20zM22,5H23V6H22zM23,5H24V6H23zM24,5H25V6H24zM26,5H27V6H26zM2,6H3V7H2zM4,6H5V7H4zM5,6H6V7H5zM6,6H7V7H6zM8,6H9V7H8zM10,6H11V7H10zM11,6H12V7H11zM14,6H15V7H14zM16,6H17V7H16zM17,6H18V7H17zM18,6H19V7H18zM20,6H21V7H20zM22,6H23V7H22zM23,6H24V7H23zM24,6H25V7H24zM26,6H27V7H26zM2,7H3V8H2zM8,7H9V8H8zM10,7H11V8H10zM13,7H14V8H13zM18,7H19V8H18zM20,7H21V8H20zM26,7H27V8H26zM2,8H3V9H2zM3,8H4V9H3zM4,8H5V9H4zM5,8H6V9H5zM6,8H7V9H6zM7,8H8V9H7zM8,8H9V9H8zM10,8H11V9H10zM12,8H13V9H12zM14,8H15V9H14zM16,8H17V9H16zM18,8H19V9H18zM20,8H21V9H20zM21,8H22V9H21zM22,8H23V9H22zM23,8H24V9H23zM24,8H25V9H24zM25,8H26V9H25zM26,8H27V9H26zM10,9H11V10H10zM12,9H13V10H12zM18,9H19V10H18zM2,10H3V11H2zM6,10H7V11H6zM8,10H9V11H8zM9,10H10V11H9zM10,10H11V11H10zM11,10H12V11H11zM12,10H13V11H12zM14,10H15V11H14zM17,10H18V11H17zM19,10H20V11H19zM20,10H21V11H20zM21,10H22V11H21zM22,10H23V11H22zM23,10H24V11H23zM26,10H27V11H26zM5,11H6V12H5zM9,11H10V12H9zM10,11H11V12H10zM12,11H13V12H12zM13,11H14V12H13zM14,11H15V12H14zM16,11H17V12H16zM17,11H18V12H17zM18,11H19V12H18zM22,11H23V12H22zM23,11H24V12H23zM25,11H26V12H25zM4,12H5V13H4zM6,12H7V13H6zM7,12H8V13H7zM8,12H9V13H8zM9,12H10V13H9zM10,12H11V13H10zM12,12H13V13H12zM14,12H15V13H14zM16,12H17V13H16zM17,12H18V13H17zM18,12H19V13H18zM20,12H21V13H20zM22,12H23V13H22zM23,12H24V13H23zM24,12H25V13H24zM4,13H5V14H4zM5,13H6V14H5zM6,13H7V14H6zM7,13H8V14H7zM9,13H10V14H9zM12,13H13V14H12zM18,13H19V14H18zM20,13H21V14H20zM24,13H25V14H24zM25,13H26V14H25zM2,14H3V15H2zM8,14H9V15H8zM10,14H11V15H10zM14,14H15V15H14zM18,14H19V15H18zM19,14H20V15H19zM20,14H21V15H20zM21,14H22V15H21zM23,14H24V15H23zM24,14H25V15H24zM25,14H26V15H25zM26,14H27V15H26zM2,15H3V16H2zM6,15H7V16H6zM11,15H12V16H11zM14,15H15V16H14zM16,15H17V16H16zM17,15H18V16H17zM18,15H19V16H18zM22,15H23V16H22zM25,15H26V16H25zM7,16H8V17H7zM8,16H9V17H8zM9,16H10V17H9zM10,16H11V17H10zM11,16H12V17H11zM13,16H14V17H13zM15,16H16V17H15zM16,16H17V17H16zM17,16H18V17H17zM20,16H21V17H20zM21,16H22V17H21zM22,16H23V17H22zM23,16H24V17H23zM24,16H25V17H24zM4,17H5V18H4zM5,17H6V18H5zM6,17H7V18H6zM7,17H8V18H7zM11,17H12V18H11zM13,17H14V18H13zM16,17H17V18H16zM17,17H18V18H17zM18,17H19V18H18zM20,17H21V18H20zM21,17H22V18H21zM22,17H23V18H22zM24,17H25V18H24zM25,17H26V18H25zM2,18H3V19H2zM3,18H4V19H3zM4,18H5V19H4zM5,18H6V19H5zM8,18H9V19H8zM9,18H10V19H9zM18,18H19V19H18zM19,18H20V19H19zM20,18H21V19H20zM21,18H22V19H21zM22,18H23V19H22zM23,18H24V19H23zM24,18H25V19H24zM10,19H11V20H10zM12,19H13V20H12zM13,19H14V20H13zM16,19H17V20H16zM18,19H19V20H18zM22,19H23V20H22zM2,20H3V21H2zM3,20H4V21H3zM4,20H5V21H4zM5,20H6V21H5zM6,20H7V21H6zM7,20H8V21H7zM8,20H9V21H8zM10,20H11V21H10zM11,20H12V21H11zM12,20H13V21H12zM13,20H14V21H13zM16,20H17V21H16zM18,20H19V21H18zM20,20H21V21H20zM22,20H23V21H22zM2,21H3V22H2zM8,21H9V22H8zM13,21H14V22H13zM18,21H19V22H18zM22,21H23V22H22zM23,21H24V22H23zM24,21H25V22H24zM25,21H26V22H25zM26,21H27V22H26zM2,22H3V23H2zM4,22H5V23H4zM5,22H6V23H5zM6,22H7V23H6zM8,22H9V23H8zM10,22H11V23H10zM12,22H13V23H12zM16,22H17V23H16zM18,22H19V23H18zM19,22H20V23H19zM20,22H21V23H20zM21,22H22V23H21zM22,22H23V23H22zM23,22H24V23H23zM24,22H25V23H24zM2,23H3V24H2zM4,23H5V24H4zM5,23H6V24H5zM6,23H7V24H6zM8,23H9V24H8zM13,23H14V24H13zM16,23H17V24H16zM17,23H18V24H17zM19,23H20V24H19zM20,23H21V24H20zM21,23H22V24H21zM24,23H25V24H24zM25,23H26V24H25zM26,23H27V24H26zM2,24H3V25H2zM4,24H5V25H4zM5,24H6V25H5zM6,24H7V25H6zM8,24H9V25H8zM11,24H12V25H11zM13,24H14V25H13zM14,24H15V25H14zM15,24H16V25H15zM16,24H17V25H16zM19,24H20V25H19zM20,24H21V25H20zM23,24H24V25H23zM25,24H26V25H25zM2,25H3V26H2zM8,25H9V26H8zM12,25H13V26H12zM13,25H14V26H13zM16,25H17V26H16zM17,25H18V26H17zM19,25H20V26H19zM20,25H21V26H20zM21,25H22V26H21zM22,25H23V26H22zM23,25H24V26H23zM24,25H25V26H24zM25,25H26V26H25zM2,26H3V27H2zM3,26H4V27H3zM4,26H5V27H4zM5,26H6V27H5zM6,26H7V27H6zM7,26H8V27H7zM8,26H9V27H8zM10,26H11V27H10zM14,26H15V27H14zM17,26H18V27H17zM19,26H20V27H19zM24,26H25V27H24zM25,26H26V27H25zM26,26H27V27H26z" id="qr-path" fill="currentColor" fill-opacity="1" fill-rule="nonzero" stroke="none" /></svg>
+              <p>Scan to open on your iPhone</p>
+            </div>
+          </div>
+        </div>
+        <form class="panel beta-panel reveal" data-delay="1" id="beta" novalidate>
+          <p class="eyebrow">Get in before launch</p>
+          <h2 class="h2">Join the beta</h2>
+          <p class="muted">Leave your email and we’ll write when the beta opens, and once more at launch. Nothing else, ever.</p>
+          <div class="beta">
+            <label for="email" class="sr-only">Email address</label>
+            <div class="field">
+              <input type="email" id="email" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
+              <button type="submit" class="btn btn-primary">Join the beta</button>
+            </div>
+            <label class="hp" aria-hidden="true">Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+            <p class="form-msg" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-in">
+      <a class="brand" href="#top" aria-label="Back to top">
+        <img src="/img/mark-192.png" width="30" height="30" alt="" loading="lazy">
+        <span>bookmarker</span>
+      </a>
+      <span class="made">Made by JP</span>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
+        <a href="/privacy">Privacy</a>
+        <a href="#get">Get the app</a>
+      </nav>
+      <p class="footer-copy">© 2026 bookmarker</p>
+    </div>
+  </footer>
+
+  <script>
+    // Change this one line when the App Store listing is live.
+    const APP_STORE_URL = "https://bookmarker.lol/app";
+
+    const SUPABASE_URL = "https://pcjuxnhqxyfvgagnblzv.supabase.co";
+    const ANON_KEY = "sb_publishable_z0wBO4NZrMW3T0ZywSDfJA_UoFRHMKb"; // public publishable key
+
+    // App Store buttons
+    document.querySelectorAll("[data-appstore]").forEach((a) => { a.href = APP_STORE_URL; });
+
+    // Fade/rise on scroll
+    (function () {
+      const els = document.querySelectorAll(".reveal");
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce || !("IntersectionObserver" in window)) { els.forEach((el) => el.classList.add("in")); return; }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+      }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+      els.forEach((el) => io.observe(el));
+    })();
+
+    // Beta sign-up
+    (function () {
+      const form = document.getElementById("beta");
+      const input = form.querySelector('input[name="email"]');
+      const honeypot = form.querySelector('input[name="website"]');
+      const button = form.querySelector('button[type="submit"]');
+      const msg = form.querySelector(".form-msg");
+      const label = button.textContent;
+      const OK = "You’re on the list — we’ll email you at launch.";
+      const DUP = "You’re already on the list.";
+      const ERR = "Something went wrong — email hello@bookmarker.lol and we’ll add you.";
+      const say = (text, kind) => { msg.textContent = text; msg.className = "form-msg" + (kind ? " " + kind : ""); };
+      const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = input.value.trim().toLowerCase();
+        if (!validEmail(email)) { say("That doesn’t look like an email address.", "err"); input.focus(); return; }
+        if (honeypot.value) { say(OK, "ok"); form.reset(); return; } // bot: pretend it worked
+        button.disabled = true; button.textContent = "Sending…"; say("");
+        try {
+          const res = await fetch(SUPABASE_URL + "/rest/v1/beta_signups", {
+            method: "POST",
+            headers: {
+              "apikey": ANON_KEY,
+              "Authorization": "Bearer " + ANON_KEY,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({ email, source: "landing" })
+          });
+          if (res.status === 201) { say(OK, "ok"); form.reset(); }
+          else if (res.status === 409) { say(DUP, "ok"); }
+          else { say(ERR, "err"); }
+        } catch (_) {
+          say(ERR, "err");
+        } finally {
+          button.disabled = false; button.textContent = label;
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
