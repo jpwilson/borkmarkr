@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bookmarker — Lifetime access</title>
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F6F3EE; --surface: #FFFFFF; --ink: #191510; --ink-2: #5B554D;
+    --faint: #A39A8D; --hairline: #EAE4DA; --coral: #FF5A2D; --accent-text: #C93A12; --tint: #FFE9E1;
+    --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--font-body); }
+  a { color: var(--accent-text); text-decoration: none; }
+  .nav { position: sticky; top: 0; background: color-mix(in srgb, var(--paper) 84%, transparent);
+    backdrop-filter: blur(14px); border-bottom: 1px solid var(--hairline); }
+  .nav-in { display: flex; align-items: center; height: 60px; max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-family: var(--font-head); font-weight: 800; font-size: 19px; color: var(--ink); }
+  .brand img { width: 28px; height: 28px; border-radius: 8px; }
+  main { max-width: 460px; margin: 0 auto; padding: 46px 20px 80px; }
+  .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 22px; padding: 26px 24px;
+    box-shadow: 0 1px 2px rgba(25,21,16,.04), 0 14px 34px -16px rgba(25,21,16,.16); }
+  h1 { font-family: var(--font-head); font-size: 26px; letter-spacing: -.02em; margin: 0 0 4px; }
+  .price { display: flex; align-items: baseline; gap: 8px; margin: 14px 0 4px; }
+  .price b { font-family: var(--font-head); font-size: 42px; letter-spacing: -.03em; }
+  .price span { color: var(--faint); font-weight: 600; }
+  ul { list-style: none; padding: 0; margin: 14px 0 20px; }
+  li { padding-left: 26px; position: relative; margin: 8px 0; font-weight: 500; }
+  li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-text); font-weight: 800; }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin: 0 0 6px; }
+  input { width: 100%; height: 48px; border: 1px solid var(--hairline); border-radius: 13px; padding: 0 14px;
+    background: var(--surface); font: inherit; color: var(--ink); outline: none; }
+  input:focus-visible { border-color: var(--coral); }
+  button { width: 100%; height: 50px; border: 0; border-radius: 14px; background: var(--coral); color: #fff;
+    font: inherit; font-weight: 800; font-size: 15.5px; margin-top: 12px; cursor: pointer; }
+  button[disabled] { opacity: .6; }
+  .fine { color: var(--faint); font-size: 12.5px; margin-top: 12px; line-height: 1.5; }
+  .err { color: #C0392B; font-size: 13px; min-height: 18px; margin: 8px 0 0; }
+  #done { text-align: center; }
+  #done .big { font-size: 44px; margin: 6px 0 10px; }
+  .back { display: inline-block; margin-top: 22px; font-weight: 600; }
+</style>
+</head>
+<body>
+<header class="nav"><div class="nav-in">
+  <a class="brand" href="/"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
+</div></header>
+<main>
+  <div class="card" id="form">
+    <h1>Lifetime access</h1>
+    <p style="color:var(--ink-2);margin:0">Pay once. Every save, every device, forever.</p>
+    <div class="price"><b>$30</b><span>one time · no subscription</span></div>
+    <ul>
+      <li>iPhone app + web app, synced</li>
+      <li>AI filing, highlights and side-quest naming</li>
+      <li>Every future feature — forever</li>
+      <li>The warm feeling of funding an indie app</li>
+    </ul>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+    <button id="go">Continue</button>
+    <p class="err" id="err"></p>
+    <p class="fine">Payments aren't switched on yet — this reserves the founding price. No card today,
+      nothing is charged. We'll email you a payment link when it goes live, and you can ignore it freely.</p>
+  </div>
+  <div class="card" id="done" hidden>
+    <div class="big">🎟️</div>
+    <h1>You're on the founders list</h1>
+    <p style="color:var(--ink-2)">We saved your spot at <b id="done-email"></b>. When payments go live you'll
+      get one email with a real checkout link — the price stays $30 for you even if it goes up later.</p>
+    <a class="back" href="/">← Back to your library</a>
+  </div>
+</main>
+<script>
+"use strict";
+const SUPABASE_URL = "https://pcjuxnhqxyfvgagnblzv.supabase.co";
+const ANON_KEY = "sb_publishable_z0wBO4NZrMW3T0ZywSDfJA_UoFRHMKb";
+document.getElementById("go").addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim().toLowerCase();
+  const err = document.getElementById("err");
+  err.textContent = "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = "That doesn't look like an email."; return; }
+  const btn = document.getElementById("go");
+  btn.disabled = true; btn.textContent = "Saving your spot…";
+  try {
+    const res = await fetch(SUPABASE_URL + "/rest/v1/beta_signups", {
+      method: "POST",
+      headers: { apikey: ANON_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ email, source: "lifetime30" }),
+    });
+    if (!res.ok && res.status !== 409) throw new Error("Something hiccuped — try again?");
+    document.getElementById("form").hidden = true;
+    document.getElementById("done-email").textContent = email;
+    document.getElementById("done").hidden = false;
+  } catch (e) {
+    err.textContent = e.message;
+  } finally { btn.disabled = false; btn.textContent = "Continue"; }
+});
+document.getElementById("email").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("go").click();
+});
+</script>
+</body>
+</html>
