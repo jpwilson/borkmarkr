@@ -49,6 +49,14 @@
   [hidden] { display: none !important; }
   h1, h2, h3 { font-family: var(--font-head); letter-spacing: -.02em; }
 
+  #demo-banner { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 12px;
+    background: var(--ink); color: var(--paper); padding: 10px clamp(14px, 3vw, 28px); font-size: 14px; }
+  #demo-banner b { color: #fff; }
+  #demo-banner span { flex: 1; }
+  #demo-banner button { border: 0; border-radius: 999px; background: var(--coral); color: #fff;
+    font-weight: 700; padding: 8px 16px; }
+  #demo-banner .demo-x { background: none; color: var(--faint); font-weight: 400; padding: 4px 6px; font-size: 15px; }
+
   /* ── Ribbon (same recipe as the landing page nav) ── */
   .nav { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--paper) 84%, transparent);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--hairline); }
@@ -331,6 +339,7 @@
       <div class="divider" id="google-divider" hidden>or</div>
       <button class="btn" data-act="choose-signup">Sign up with email</button>
       <button class="btn ghost" data-act="choose-signin">Sign in</button>
+      <button class="linkish" data-act="peek-demo" style="text-align:center;width:100%">Just looking? Peek inside a full library →</button>
       <p class="consent">By continuing you agree to the <a href="/terms">Terms of Use</a> and <a href="/privacy">Privacy Policy</a>.</p>
     </div>
     <div id="auth-email" hidden>
@@ -359,6 +368,11 @@
 
 <!-- ─────────────── App ─────────────── -->
 <div id="app" hidden>
+  <div id="demo-banner" hidden>
+    <span>You're looking at a <b>demo library</b> — this is what your saves become.</span>
+    <button data-act="demo-signup">Make mine</button>
+    <button class="demo-x" data-act="demo-exit" title="Back">✕</button>
+  </div>
   <header class="nav">
     <div class="nav-in">
       <a class="brand" href="/" data-tab-link="library"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
@@ -661,6 +675,51 @@ const blob = (r) => [
   TOPIC_BY_ID[r.category_id]?.name, r.subcategory, PLATFORM[r.platform]?.name, r.url,
 ].filter(Boolean).join(" ").toLowerCase();
 
+/* ── Demo library: the product explaining itself before it exists ── */
+const DEMO_SEED = [
+  ["5 mobility drills that undo a desk day", "@stretchtheory", "instagram", "reel", "fitness", 1],
+  ["The 20-minute meal-prep system I use every Sunday", "@mealprepmanny", "instagram", "reel", "recipes", 1],
+  ["Thread: how I'd learn marketing from zero in 2026", "@growthnotes", "x", "thread", "marketing", 2],
+  ["Why your deadlift stalls at 100kg — form breakdown", "Squat Mechanics", "youtube", "video", "fitness", 2],
+  ["Osaka on $60 a day — full itinerary", "@wanderfrugal", "tiktok", "clip", "travel", 3],
+  ["The only knife skills video you actually need", "Kenji's Kitchen", "youtube", "video", "recipes", 3],
+  ["How the Roman concrete mystery got solved", "@historydept", "x", "thread", "history", 4],
+  ["Magnesium: what the evidence actually says", "@evidencemed", "instagram", "reel", "health", 4],
+  ["I rebuilt my sleep in 30 days — protocol inside", "@circadianclub", "x", "thread", "wellness", 5],
+  ["Watercolor basics: your first 3 exercises", "@paintwithmara", "tiktok", "clip", "art", 5],
+  ["The índex-fund order that saves you 0.4% a year", "@bogleheadd", "x", "thread", "investing", 6],
+  ["Sourdough starter troubleshooting flowchart", "@crumbcoach", "instagram", "post", "recipes", 7],
+  ["Every hip hinge cue, ranked by a physio", "@rehabroom", "instagram", "reel", "fitness", 7],
+  ["A beginner's map of the AI agent landscape", "@builderslog", "x", "thread", "ai", 8],
+  ["Van conversion: electrical system in one video", "Vanlife Garage", "youtube", "video", "outdoors", 9],
+  ["The negotiation email template that got me +18%", "@careerplays", "x", "thread", "career", 10],
+  ["Tokyo listening bars you can actually get into", "@tinytokyo", "instagram", "reel", "travel", 11],
+  ["Zone 2 explained without the bro science", "Endurance Lab", "youtube", "video", "fitness", 12],
+  ["How to read a balance sheet in 10 minutes", "@plainfinance", "youtube", "video", "money", 13],
+  ["Pottery wheel first session: what to expect", "@mudandfire", "tiktok", "clip", "crafts", 14],
+];
+const DEMO_BORKS = DEMO_SEED.map(([title, author, platform, kind, topic, days], i) => {
+  const saved = new Date(Date.now() - days * 86_400_000).toISOString();
+  const r = {
+    id: `demo-${i}`, url: "https://bookmarker.lol/app", title, author, platform, kind,
+    category_id: topic, subcategory: null, tags: [], body_text: null, note_text: i === 3 ? "try this Friday" : null,
+    image_url: null, duration_seconds: null, saved_at: saved, updated_at: saved, deleted_at: null,
+  };
+  r._blob = blob(r);
+  return r;
+});
+let demoMode = false;
+function enterDemo() {
+  demoMode = true; tab = "library"; platformFilter = null; topicFilter = null; query = "";
+  render(); window.scrollTo({ top: 0 });
+}
+function exitDemoToSignup() {
+  demoMode = false; authMode = "signup";
+  render(); renderAuth(); showAuthStage("email");
+  $("email-input").focus();
+}
+
+
 function absorb(rows) {
   for (const r of rows) {
     const mine = borks.get(r.id);
@@ -879,12 +938,14 @@ const bySaved = (a, b) => (b.saved_at || "").localeCompare(a.saved_at || "");
 
 function render() {
   const s = store.session;
-  $("auth").hidden = !!s;
-  $("app").hidden = !s;
-  if (!s) { renderAuth(); return; }
+  $("auth").hidden = !!s || demoMode;
+  $("app").hidden = !s && !demoMode;
+  if (s && demoMode) { /* signed-in peek: banner offers the exit back to their own library */ }
+  $("demo-banner").hidden = !demoMode;
+  if (!s && !demoMode) { renderAuth(); return; }
 
-  const all = live().sort(bySaved);
-  $("avatar-btn").textContent = initial();
+  const all = demoMode ? [...DEMO_BORKS].sort(bySaved) : live().sort(bySaved);
+  $("avatar-btn").textContent = demoMode ? "→" : initial();
 
   // tab visibility
   for (const v of ["library", "browse", "search", "you"]) $(`view-${v}`).hidden = v !== tab;
@@ -953,10 +1014,24 @@ function render() {
     const rows = platformFilter ? all.filter(r => r.platform === platformFilter) : all;
     $("grid-library").innerHTML = gridHTML(rows);
     $("empty-library").hidden = rows.length > 0;
-    if (!rows.length) $("empty-library").textContent =
-      all.length === 0
-        ? "Nothing here yet. Tap + and paste a link — or save from the iPhone app; it all lands in the same library."
-        : "No borks from that source yet.";
+    if (!rows.length) {
+      if (all.length === 0 && !demoMode) {
+        $("empty-library").innerHTML = `
+          <div style="max-width:640px;margin:0 auto;text-align:left">
+            <h2 style="font-family:var(--font-head);font-size:24px;letter-spacing:-.02em;margin:0 0 6px">Everything you're consuming on the internet — one library.</h2>
+            <p style="color:var(--ink-2);margin:0 0 18px">Reels, threads, videos, articles. Save them here and they stop disappearing.</p>
+            <div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px">
+              <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>1 · Save</b><br><span style="color:var(--ink-2);font-size:13px">Tap +, paste any link from any app</span></div>
+              <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>2 · It files itself</b><br><span style="color:var(--ink-2);font-size:13px">Fifty topics, sorted automatically</span></div>
+              <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>3 · Find it in seconds</b><br><span style="color:var(--ink-2);font-size:13px">Search everything you ever saved</span></div>
+            </div>
+            <button class="btn" data-act="empty-add" style="max-width:280px">+ Bork your first link</button>
+            <button class="linkish" data-act="peek-demo-signedout">See what a full library looks like →</button>
+          </div>`;
+      } else {
+        $("empty-library").textContent = "No borks from that source yet.";
+      }
+    }
   }
 
   if (tab === "browse") {
@@ -1008,6 +1083,7 @@ function render() {
 }
 
 function setTab(next, { keepTopic = false } = {}) {
+  if (demoMode && next === "you") { toast("Sign up first — then this is your page.", "Sign up", exitDemoToSignup); return; }
   tab = next;
   if (next !== "browse" && !keepTopic) topicFilter = null;
   render();
@@ -1114,6 +1190,7 @@ function fillSubSelect(sel, topicID, chosen) {
     subs.map(x => `<option${x === chosen ? " selected" : ""}>${esc(x)}</option>`).join("");
 }
 function openAdd() {
+  if (demoMode) { toast("Sign up free and this + is yours.", "Sign up", exitDemoToSignup); return; }
   $("add-url").value = ""; $("add-err").textContent = ""; $("add-preview").hidden = true; addPreview = null;
   fillTopicSelect($("add-topic"), null);
   $("add-dialog").showModal();
@@ -1205,6 +1282,7 @@ async function deleteBork() {
 
 /* ── Quest dialog ── */
 function openQuest(id) {
+  if (demoMode) { toast("Side quests come with an account.", "Sign up", exitDemoToSignup); return; }
   const m = id ? missions.get(id) : null;
   questDraft = m
     ? JSON.parse(JSON.stringify(m))
@@ -1280,6 +1358,11 @@ document.addEventListener("click", (e) => {
   const tabLink = e.target.closest("[data-tab-link]");
   if (tabLink) { e.preventDefault(); setTab(tabLink.dataset.tabLink); return; }
   const act = e.target.closest("[data-act]")?.dataset.act;
+  if (act === "peek-demo") { enterDemo(); return; }
+  if (act === "empty-add") { openAdd(); return; }
+  if (act === "peek-demo-signedout") { enterDemo(); return; }
+  if (act === "demo-signup") { if (store.session) { demoMode = false; render(); } else exitDemoToSignup(); return; }
+  if (act === "demo-exit") { demoMode = false; render(); return; }
   if (act === "choose-signup") { authMode = "signup"; renderAuth(); showAuthStage("email"); $("email-input").focus(); }
   if (act === "choose-signin") { authMode = "signin"; renderAuth(); showAuthStage("email"); $("email-input").focus(); }
   if (act === "switch-mode") { authMode = authMode === "signup" ? "signin" : "signup"; $("auth-err").textContent = ""; renderAuth(); }
@@ -1321,7 +1404,10 @@ document.addEventListener("click", (e) => {
   const pill = e.target.closest("[data-topic-go]");
   if (pill) { const id = pill.dataset.topicGo; setTab("browse"); topicFilter = id; render(); return; }
   const card = e.target.closest(".card, .recent-card");
-  if (card) openEdit(card.dataset.id);
+  if (card) {
+    if (demoMode) { toast("That's a demo bork — sign up and start saving your own.", "Sign up", exitDemoToSignup); return; }
+    openEdit(card.dataset.id);
+  }
 });
 $("google-btn").addEventListener("click", signInWithGoogle);
 document.addEventListener("keydown", (e) => {
