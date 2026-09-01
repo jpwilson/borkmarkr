@@ -837,8 +837,6 @@ const store = {
   set session(v) { v ? lsSet("bm.session", JSON.stringify(v)) : lsDel("bm.session"); },
   get cache() { try { return JSON.parse(lsGet("bm.cache")) || []; } catch { return []; } },
   set cache(v) { try { localStorage.setItem("bm.cache", JSON.stringify(v)); } catch { /* cache is optional */ } },
-  get cursor() { return lsGet("bm.cursor"); },
-  set cursor(v) { v ? lsSet("bm.cursor", v) : lsDel("bm.cursor"); },
 };
 
 let refreshing = null; // refresh tokens are single-use: one flight only
@@ -992,19 +990,24 @@ function absorb(rows) {
 }
 const persist = () => { store.cache = [...borks.values()].map(({ _blob, _disp, ...r }) => r); };
 
-async function pull({ full = false } = {}) {
+/* Always the whole library. A persisted "since" cursor looks cheaper, but
+   updated_at is stamped by whichever device made the change, so a row can
+   reach the server carrying a stamp older than the cursor (a phone that saved
+   offline, a second tab, plain clock skew) and then never show up here. One
+   request per thousand rows is the price of never losing a bork. */
+async function pull() {
   const s = await validSession();
   if (!s) return;
   loading = true;
   if (!borks.size) render(); // skeleton
   try {
-    let cursor = full ? null : store.cursor;
+    let after = null; // page continuation only; never persisted
     for (let page = 0; page < 30; page++) {
       let path = `/rest/v1/bookmarks?select=*&owner_id=eq.${s.user_id}&order=updated_at.asc,id.asc&limit=1000`;
-      if (cursor) path += `&updated_at=gte.${encodeURIComponent(cursor)}`;
+      if (after) path += `&updated_at=gte.${encodeURIComponent(after)}`;
       const rows = await api(path);
       absorb(rows);
-      if (rows.length) { cursor = rows[rows.length - 1].updated_at; store.cursor = cursor; } // raw server string
+      if (rows.length) after = rows[rows.length - 1].updated_at; // raw server string
       persist();
       if (page === 0) { pulledOnce = true; render(); } // big libraries: show page one while the rest streams in
       if (rows.length < 1000) break;
@@ -1706,7 +1709,7 @@ function adoptSession(d, emailHint, method) {
     expires_at: Date.now() + (Number(d.expires_in) || 3600) * 1000,
     user_id: user.id, email: user.email ?? emailHint ?? null,
   };
-  store.cursor = null; store.cache = [];
+  lsDel("bm.cursor"); store.cache = [];
   try { window.posthog?.identify?.(user.id); } catch {}
   const brandNew = user.created_at && (Date.now() - new Date(user.created_at)) < 60_000;
   track(brandNew ? "signed_up" : "signed_in", { method });
@@ -1715,7 +1718,7 @@ function adoptSession(d, emailHint, method) {
   render(); pushRoute();
   toast(brandNew ? "Welcome. Your library starts here." : "You're in. Pulling your borks…");
   loadProfile();
-  pull({ full: true }).catch(e => toast(humanError(e), "Retry", () => pull({ full: true }).catch(() => {})));
+  pull().catch(e => toast(humanError(e), "Retry", () => pull().catch(() => {})));
 }
 function signInWithGoogle() {
   track("google_clicked");
@@ -1728,7 +1731,7 @@ function signOut(msg) {
     headers: { apikey: ANON_KEY, Authorization: `Bearer ${store.session?.access_token ?? ""}` },
   }).catch(() => {});
   track("signed_out");
-  store.session = null; store.cursor = null; store.cache = [];
+  store.session = null; lsDel("bm.cursor"); store.cache = [];
   lsDel("bm.mcache");
   try { window.posthog?.reset?.(); } catch {}
   demoMode = false;
@@ -2100,7 +2103,7 @@ document.addEventListener("visibilitychange", () => {
   applyRoute();
   if (store.session) {
     loadProfile();
-    pull({ full: !store.cursor }).catch((e) => toast(humanError(e), "Retry", () => pull().catch(() => {})));
+    pull().catch((e) => toast(humanError(e), "Retry", () => pull().catch(() => {})));
   }
 })();
 </script>
