@@ -21,6 +21,12 @@
 <meta name="twitter:image" content="https://bookmarker.lol/img/share.jpg">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<meta name="theme-color" content="#F6F3EE">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="bookmarker">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -47,18 +53,27 @@
     --coral: #FF5A2D; --coral-dark: #E8451C; --accent-text: #C93A12; --tint: #FFE9E1;
     --destructive: #C0392B;
     --shadow-card: 0 1px 2px rgba(25,21,16,.04), 0 10px 26px -14px rgba(25,21,16,.16);
-    --radius: 18px; --nav-h: 60px; --tabbar-h: 62px;
+    --radius: 18px; --nav-h: 60px; --tabbar-h: 62px; --banner-h: 0px;
+    --ease-out: cubic-bezier(.2, .7, .2, 1);
     --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
     --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html { color-scheme: light; }
-  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font-body); }
-  button { font: inherit; cursor: pointer; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font-body);
+    -webkit-tap-highlight-color: transparent; }
+  button { font: inherit; cursor: pointer; color: inherit; }
   input, textarea, select { font: inherit; color: var(--ink); }
   a { color: var(--accent-text); text-decoration: none; }
   [hidden] { display: none !important; }
   h1, h2, h3 { font-family: var(--font-head); letter-spacing: -.02em; }
+  /* One focus ring for everything keyboard-reachable; fields use their border instead. */
+  :focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
+  .field:focus-visible, .nav-search:focus-visible, dialog textarea:focus-visible, dialog select:focus-visible {
+    outline: 0; border-color: var(--coral); box-shadow: 0 0 0 3px var(--tint); }
+  /* Platform glyphs (Simple Icons paths, sprite at the top of <body>) */
+  .pg { width: 12px; height: 12px; fill: currentColor; display: inline-block; vertical-align: -1px; flex: 0 0 auto; }
+  .pg-txt { font-size: 10px; font-weight: 800; letter-spacing: .04em; }
 
   #demo-banner { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 12px;
     background: var(--ink); color: var(--paper); padding: 10px clamp(14px, 3vw, 28px); font-size: 14px; }
@@ -68,8 +83,8 @@
     font-weight: 700; padding: 8px 16px; }
   #demo-banner .demo-x { background: none; color: var(--faint); font-weight: 400; padding: 4px 6px; font-size: 15px; }
 
-  /* ── Ribbon (same recipe as the landing page nav) ── */
-  .nav { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--paper) 84%, transparent);
+  /* ── Ribbon (same recipe as the landing page nav); sits under the demo banner when there is one ── */
+  .nav { position: sticky; top: var(--banner-h); z-index: 30; background: color-mix(in srgb, var(--paper) 84%, transparent);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--hairline); }
   .nav-in { display: flex; align-items: center; gap: 18px; height: var(--nav-h);
     max-width: 1280px; margin: 0 auto; padding: 0 clamp(14px, 3vw, 28px); }
@@ -82,7 +97,6 @@
   .nav-tab.on { background: var(--ink); color: var(--paper); }
   .nav-search { flex: 1; min-width: 120px; max-width: 380px; height: 38px; border: 1px solid var(--hairline);
     border-radius: 999px; padding: 0 16px; background: var(--surface); outline: none; }
-  .nav-search:focus-visible { border-color: var(--coral); }
   .btn-sm { display: inline-flex; align-items: center; justify-content: center; height: 38px;
     padding: 0 16px; border-radius: 999px; border: 0; font-weight: 700; font-size: 14px;
     line-height: 1; white-space: nowrap; }
@@ -99,24 +113,27 @@
   .h-row { display: flex; align-items: baseline; justify-content: space-between; margin: 8px 0 10px; }
   .h-title { font-family: var(--font-head); font-size: 19px; font-weight: 800; letter-spacing: -.015em; }
   .h-more { border: 0; background: none; color: var(--accent-text); font-weight: 700; font-size: 13px; }
-  .recents { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 16px; }
+  .recents { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 4px 0 16px; }
   .recents::-webkit-scrollbar { display: none; }
-  .recent-card { flex: 0 0 150px; background: var(--surface); border: 1px solid var(--hairline);
-    border-radius: 14px; overflow: hidden; cursor: pointer; box-shadow: var(--shadow-card); }
-  .rc-cover { height: 88px; position: relative; }
+  .recent-card { flex: 0 0 150px; height: 142px; display: flex; flex-direction: column; background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; cursor: pointer; box-shadow: var(--shadow-card); }
+  .rc-cover { flex: 0 0 88px; position: relative; }
   .rc-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .rc-title { font-size: 12px; font-weight: 600; line-height: 1.3; padding: 8px 10px 10px;
+  .rc-cover .cover-glyph .pg { width: 26px; height: 26px; }
+  .rc-title { font-size: 12px; font-weight: 600; line-height: 1.3; padding: 8px 10px 10px; overflow-wrap: anywhere;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .topic-pills { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 16px; }
+  .topic-pills { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 16px; }
   .topic-pills::-webkit-scrollbar { display: none; }
   .topic-pill { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; height: 40px;
     border: 0; border-radius: 999px; padding: 0 16px 0 6px; font-weight: 700; font-size: 13.5px; }
-  .pill-art { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+  .pill-art { position: relative; width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+    display: grid; place-items: center; background: rgba(255,255,255,.55); font: 800 13px var(--font-head); }
+  .pill-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .topic-pill .n { opacity: .6; margin-left: 5px; font-weight: 600; }
   @media (min-width: 761px) { .topic-pills { flex-wrap: wrap; overflow: visible; } }
 
   /* ── Side quests ── */
-  .quests { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 16px; }
+  .quests { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 4px 0 16px; }
   .quests::-webkit-scrollbar { display: none; }
   .quest-card { flex: 0 0 240px; display: flex; gap: 12px; align-items: center; background: var(--surface);
     border: 1px solid var(--hairline); border-radius: 16px; padding: 12px; cursor: pointer;
@@ -128,6 +145,15 @@
   .quest-new { flex: 0 0 auto; align-self: stretch; display: grid; place-items: center; padding: 0 18px;
     border: 1.5px dashed var(--hairline); border-radius: 16px; background: none;
     color: var(--accent-text); font-weight: 700; font-size: 13.5px; }
+  /* The iOS "What are you working on?" starter card, for a library with no quests yet */
+  .quest-starter { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: 16px; padding: 14px 16px; box-shadow: var(--shadow-card);
+    max-width: 640px; margin: 4px 0 16px; }
+  .quest-starter img { width: 60px; height: 60px; border-radius: 16px; object-fit: cover; flex: 0 0 auto; }
+  .quest-starter > div { flex: 1 1 220px; }
+  .quest-starter b { display: block; font-family: var(--font-head); font-size: 16px; letter-spacing: -.01em; }
+  .quest-starter p { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.4; }
+  .quest-starter .btn-sm { flex: 0 0 auto; }
   .todo-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--hairline); }
   .todo-row input[type=checkbox] { width: 19px; height: 19px; accent-color: var(--coral); }
   .todo-row span { flex: 1; font-size: 14px; }
@@ -141,29 +167,32 @@
   /* ── Filter chips ── */
   .chips { display: flex; gap: 8px; padding: 2px 0 14px; overflow-x: auto; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
-  .chip { flex: 0 0 auto; height: 33px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--hairline);
-    background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; }
+  .chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 33px; padding: 0 13px;
+    border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface); color: var(--ink);
+    font-size: 13px; font-weight: 600; }
   .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-  .chip .n { opacity: .5; margin-left: 4px; font-weight: 500; }
+  .chip .n { opacity: .5; font-weight: 500; }
 
   /* ── Cards (the app's masonry feel: media cards tall, text cards text) ── */
   .grid { display: flex; gap: 14px; align-items: flex-start; }
   .grid .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
   .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius);
     overflow: hidden; box-shadow: var(--shadow-card); cursor: pointer; }
-  .card:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
   .cover { position: relative; width: 100%; background: var(--tint); max-height: 420px; overflow: hidden; }
   .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .cover-empty::before { content: ""; position: absolute; inset: 0;
+  /* The glyph sits under the image: a failed load simply reveals it. */
+  .cover-glyph { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(255,255,255,.5); }
+  .cover-glyph::before { content: ""; position: absolute; inset: 0;
     background: radial-gradient(130% 95% at 18% 0%, rgba(255,255,255,.30), transparent 58%); }
-  .cover-glyph { position: absolute; inset: 0; display: grid; place-items: center;
-    font-family: var(--font-head); font-weight: 800; font-size: 38px; color: rgba(255,255,255,.42);
-    letter-spacing: .04em; }
-  .badge { position: absolute; left: 10px; top: 10px; background: rgba(25,21,16,.68); color: #fff;
-    font-size: 10.5px; font-weight: 700; letter-spacing: .05em; border-radius: 7px; padding: 3px 7px; }
+  .cover-glyph .pg { width: 40px; height: 40px; position: relative; }
+  .badge { position: absolute; left: 10px; top: 10px; width: 26px; height: 26px; display: grid; place-items: center;
+    background: rgba(25,21,16,.66); color: #fff; border-radius: 8px; backdrop-filter: blur(6px); }
+  .badge .pg { width: 13px; height: 13px; }
   .card-body { padding: 11px 13px 13px; }
-  .card-author { color: var(--meta); font-size: 11.5px; font-weight: 600; margin-bottom: 3px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-author { display: flex; align-items: center; gap: 5px; color: var(--meta); font-size: 11.5px; font-weight: 600;
+    margin-bottom: 3px; min-width: 0; }
+  .card-author > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-author .pg { width: 11px; height: 11px; opacity: .85; }
   .card-title { font-weight: 700; font-size: 14px; line-height: 1.32; display: -webkit-box;
     -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
   .card-text .card-title { -webkit-line-clamp: 4; font-size: 14.5px; }
@@ -173,31 +202,50 @@
   .topic-chip { font-size: 11px; font-weight: 700; border-radius: 7px; padding: 2.5px 7px; }
   .date { color: var(--meta); font-size: 11px; }
   .note-dot { color: var(--accent-text); font-size: 11px; }
+  /* Skeleton while the first pull runs */
+  .skel { height: var(--h, 220px); background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: var(--radius); position: relative; overflow: hidden; }
+  .skel::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 58%; background: var(--paper); }
+  .skel::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 20%, rgba(25,21,16,.035) 50%, transparent 80%); transform: translateX(-100%); }
 
   /* ── Browse ── */
   .section-title { font-size: 21px; margin: 10px 0 12px; }
   .topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-  .topic-tile { border: 1px solid var(--hairline); background: var(--surface); border-radius: 18px;
-    padding: 0; text-align: left; overflow: hidden; box-shadow: var(--shadow-card); }
-  .topic-tile img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
-  .tt-text { display: flex; flex-direction: column; gap: 1px; padding: 10px 13px 12px; }
+  .topic-tile { border: 1px solid var(--hairline); border-radius: 18px; padding: 0; text-align: left;
+    overflow: hidden; box-shadow: var(--shadow-card); }
+  /* Hue-tinted like the iOS tiles; the clay art has cream baked in, so it multiplies onto the tint.
+     The initial letter sits under the image — a missing file shows a lettered hue block, never a hole. */
+  .tt-art { position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center;
+    font: 800 34px var(--font-head); opacity: .9; }
+  .tt-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+    mix-blend-mode: multiply; }
+  /* The initial is the fallback: it only shows once a broken image has removed itself. */
+  .ini { font-style: normal; }
+  .tt-art:has(> img) .ini, .pill-art:has(> img) .ini { visibility: hidden; }
+  .tt-text { display: flex; flex-direction: column; gap: 1px; padding: 10px 13px 12px; background: var(--surface); }
   .topic-tile b { font-size: 14.5px; font-family: var(--font-head); color: var(--ink); }
   .tt-text span { font-size: 12px; color: var(--meta); font-weight: 600; }
-  @media (prefers-reduced-motion: no-preference) {
-    .topic-tile, .recent-card, .card { transition: transform .13s ease; }
-    .topic-tile:hover, .recent-card:hover, .card:hover { transform: translateY(-2px); }
-  }
   .source-row { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--surface);
     border: 1px solid var(--hairline); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
   .source-badge { width: 38px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--paper);
-    font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+    display: grid; place-items: center; }
+  .source-badge .pg { width: 16px; height: 16px; }
   .source-row b { flex: 1; text-align: left; }
   .source-row span { color: var(--meta); font-size: 13px; }
   .backlink { border: 0; background: none; color: var(--accent-text); font-weight: 700; padding: 0 0 12px; }
 
+  /* ── Search ── */
+  #search-start .hint { margin: 4px 0 12px; }
+  #search-head .h-row { margin-top: 0; }
+  #search-meta { font-size: 17px; }
+
   /* ── You ── */
+  .you-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); max-width: 980px; }
+  .you-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  @media (min-width: 761px) { .you-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
   .you-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 20px;
-    padding: 20px; max-width: 520px; box-shadow: var(--shadow-card); margin-bottom: 14px; }
+    padding: 20px; box-shadow: var(--shadow-card); }
   .you-head { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
   .avatar-big { width: 64px; height: 64px; border-radius: 50%; background: var(--tint); color: var(--accent-text);
     font-weight: 800; font-size: 26px; font-family: var(--font-head); display: grid; place-items: center; }
@@ -209,11 +257,11 @@
   .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin: 12px 0 5px; }
   .field { width: 100%; height: 46px; border: 1px solid var(--hairline); border-radius: 13px;
     padding: 0 14px; background: var(--surface); outline: none; }
-  .field:focus-visible { border-color: var(--coral); }
   .btn { width: 100%; height: 48px; border: 0; border-radius: 14px; background: var(--coral); color: #fff;
     font-weight: 700; font-size: 15px; }
   .btn.ghost { background: var(--tint); color: var(--accent-text); }
-  .btn[disabled] { opacity: .55; cursor: default; }
+  .btn.danger { background: var(--destructive); }
+  .btn[disabled], .btn-sm[disabled], .linkish[disabled] { opacity: .55; cursor: default; }
   .linkish { display: block; background: none; border: 0; color: var(--accent-text); font-weight: 600; padding: 8px 0 0; }
   .danger-link { display: block; background: none; border: 0; color: var(--destructive); font-weight: 600; padding: 10px 0 0; }
   .err { color: var(--destructive); font-size: 13px; min-height: 18px; margin: 6px 0 0; }
@@ -232,7 +280,7 @@
   .pitch-points { list-style: none; padding: 0; margin: 0 0 26px; }
   .pitch-points li { padding-left: 26px; position: relative; margin: 9px 0; color: var(--ink); font-weight: 500; }
   .pitch-points li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-text); font-weight: 800; }
-  .pitch-art { width: 100%; max-width: 400px; border-radius: 22px; margin: 0 0 20px; display: block;
+  .pitch-art { width: 100%; max-width: 400px; height: auto; border-radius: 22px; margin: 0 0 20px; display: block;
     box-shadow: 0 1px 2px rgba(25,21,16,.04), 0 14px 34px -18px rgba(25,21,16,.22); }
   .pitch-links { color: var(--faint); font-size: 12.5px; }
   .pitch-links a { color: var(--ink-2); font-weight: 600; }
@@ -252,8 +300,10 @@
   @media (min-width: 881px) { .m-links { display: none; } }
   .auth-card h1 { font-size: 27px; margin: 0 0 6px; }
   .auth-card > div > p { color: var(--ink-2); margin: 0 0 16px; }
+  .auth-card > div > p.err, .auth-card > div > p.hint, .auth-card > div > p.consent { margin-bottom: 0; }
   .auth-card .field { margin-bottom: 10px; }
   .auth-card .btn { margin-bottom: 10px; }
+  #code-blurb b { color: var(--ink); }
   #code-input { text-align: center; font-size: 22px; letter-spacing: .28em; font-variant-numeric: tabular-nums; }
   .g-btn { display: flex; align-items: center; justify-content: center; gap: 10px;
     background: var(--surface); color: var(--ink); border: 1px solid var(--hairline); }
@@ -263,9 +313,13 @@
 
   /* ── Dialogs ── */
   dialog { border: 0; border-radius: 20px; background: var(--surface); color: var(--ink);
-    box-shadow: 0 24px 70px -20px rgba(25,21,16,.35); width: min(540px, calc(100vw - 32px)); padding: 22px; }
+    box-shadow: 0 24px 70px -20px rgba(25,21,16,.35); width: min(540px, calc(100vw - 32px)); padding: 22px;
+    max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow-y: auto; overscroll-behavior: contain; }
+  dialog.dlg-sm { width: min(420px, calc(100vw - 32px)); }
   dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
   dialog h2 { margin: 0 0 12px; font-size: 20px; }
+  /* A long caption is a title, not a paragraph: three lines, then an ellipsis. */
+  #edit-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.25; }
   dialog textarea { border: 1px solid var(--hairline); border-radius: 13px; background: var(--surface);
     width: 100%; padding: 12px 14px; min-height: 68px; resize: vertical; outline: none; }
   dialog select { height: 44px; width: 100%; border: 1px solid var(--hairline); border-radius: 12px;
@@ -275,9 +329,11 @@
   .preview-box { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
   .preview-box img { width: 84px; height: 56px; object-fit: cover; border-radius: 10px; background: var(--tint); }
 
-  #toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + 26px); transform: translateX(-50%); z-index: 60;
-    background: var(--ink); color: var(--paper); border-radius: 999px; padding: 10px 18px; font-size: 14px;
-    display: flex; gap: 14px; align-items: center; max-width: calc(100vw - 32px); box-shadow: var(--shadow-card); }
+  #toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 14px); z-index: 60; opacity: 0;
+    pointer-events: none; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 10px 18px;
+    font-size: 14px; display: flex; gap: 14px; align-items: center; max-width: calc(100vw - 32px);
+    box-shadow: var(--shadow-card); }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
   #toast button { background: none; border: 0; color: var(--coral); font-weight: 700; }
 
   /* ── Footer (desktop) ── */
@@ -292,12 +348,18 @@
     border: 0; border-radius: 50%; background: var(--coral); color: #fff; font-size: 32px; font-weight: 600;
     line-height: 1; display: grid; place-items: center; padding: 0 0 3px;
     box-shadow: 0 14px 30px -8px rgba(255,90,45,.55); }
-  .fab-desktop:active { transform: scale(.96); }
   @media (max-width: 760px) {
     .nav-tabs, .nav-search, .fab-desktop { display: none; }
     main { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 80px); }
     .grid { gap: 10px; } .grid .col { gap: 10px; }
-    .chips { position: sticky; top: var(--nav-h); z-index: 20; background: var(--paper); margin: 0 -14px; padding: 8px 14px 12px; }
+    .chips { position: sticky; top: calc(var(--banner-h) + var(--nav-h)); z-index: 20; background: var(--paper);
+      margin: 0 -14px; padding: 8px 14px 12px; }
+    #search-chips { position: static; margin: 0; padding: 2px 0 14px; }
+    /* Thumb-sized targets */
+    .chip { min-height: 44px; }
+    .topic-pill { height: 44px; }
+    .todo-x, .qb-x, .demo-x, #toast button { min-width: 44px; min-height: 44px; }
+    .h-more, .backlink, .linkish, .danger-link, .qb-add { min-height: 44px; }
     .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid;
       grid-template-columns: 1fr 1fr 74px 1fr 1fr; align-items: center;
       height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
@@ -311,16 +373,78 @@
     .fab-mobile { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--coral); color: #fff;
       font-size: 30px; font-weight: 700; line-height: 1; margin: 0 auto; transform: translateY(-14px);
       box-shadow: 0 10px 24px -6px rgba(255,90,45,.55); }
+    /* Bottom sheets: scroll inside, keep the buttons reachable above the keyboard */
     dialog { margin: auto 0 0; width: 100vw; max-width: 100vw; border-radius: 22px 22px 0 0;
-      padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
+      max-height: calc(100dvh - 40px); padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
+    dialog.dlg-sm { width: 100vw; }
+    .dialog-row { position: sticky; bottom: 0; background: var(--surface); margin: 12px 0 calc(-22px - env(safe-area-inset-bottom));
+      padding: 12px 0 calc(14px + env(safe-area-inset-bottom)); }
+    #toast { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px); }
   }
   @media (min-width: 761px) {
-    .fab-mobile { display: none; }
+    .fab-mobile, #search-mobile { display: none; }
     .chips { flex-wrap: wrap; overflow: visible; }  /* every topic reachable on desktop */
+  }
+
+  /* ── Motion. Everything here is off under prefers-reduced-motion. ── */
+  @media (prefers-reduced-motion: no-preference) {
+    .btn, .btn-sm, .chip, .nav-tab, .tab, .topic-pill, .quest-card, .quest-new, .source-row, .avatar,
+    .h-more, .backlink, .linkish, .danger-link, .todo-x, .qb-x, .qb-add, .fab-desktop, .fab-mobile, #toast button,
+    .card, .recent-card, .topic-tile {
+      transition: transform .14s var(--ease-out), background-color .16s ease, color .16s ease,
+        border-color .16s ease, box-shadow .16s ease, opacity .16s ease; }
+    .topic-tile:hover, .recent-card:hover, .card:hover, .quest-card:hover { transform: translateY(-2px); }
+    .card:hover, .topic-tile:hover { box-shadow: 0 1px 2px rgba(25,21,16,.04), 0 16px 32px -14px rgba(25,21,16,.22); }
+    .btn:active, .btn-sm:active, .chip:active, .nav-tab:active, .tab:active, .topic-pill:active, .quest-card:active,
+    .quest-new:active, .source-row:active, .avatar:active, .h-more:active, .backlink:active, .linkish:active,
+    .danger-link:active, .todo-x:active, .qb-x:active, .qb-add:active, #toast button:active { transform: scale(.96); }
+    .card:active, .recent-card:active, .topic-tile:active { transform: translateY(0) scale(.98); }
+    .fab-desktop:active { transform: scale(.93); }
+    .fab-mobile:active { transform: translateY(-14px) scale(.93); }
+    .btn:active, .btn[disabled] { transform: none; }
+    .btn:not([disabled]):active { transform: scale(.98); }
+
+    @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
+    .view-enter { animation: view-in .22s var(--ease-out) backwards; }
+    @keyframes card-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+    .card-in { animation: card-in .3s var(--ease-out) backwards; }
+    .grid-in .card { animation: card-in .34s var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 22ms); }
+    @keyframes card-out { to { opacity: 0; transform: scale(.95); } }
+    .card.card-out, .recent-card.card-out { animation: card-out .17s ease-in forwards; pointer-events: none; }
+
+    @keyframes dlg-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+    @keyframes dlg-out { to { opacity: 0; transform: translateY(8px) scale(.98); } }
+    @keyframes bd-in { from { opacity: 0; } }
+    @keyframes bd-out { to { opacity: 0; } }
+    dialog[open] { animation: dlg-in .22s var(--ease-out); }
+    dialog[open]::backdrop { animation: bd-in .22s ease-out; }
+    dialog.closing { animation: dlg-out .16s ease-in forwards; }
+    dialog.closing::backdrop { animation: bd-out .16s ease-in forwards; }
+    @media (max-width: 760px) {
+      @keyframes sheet-in { from { transform: translateY(100%); } }
+      @keyframes sheet-out { to { transform: translateY(100%); } }
+      dialog[open] { animation: sheet-in .28s var(--ease-out); }
+      dialog.closing { animation: sheet-out .2s ease-in forwards; }
+    }
+    #toast { transition: opacity .2s ease, transform .24s var(--ease-out); }
+    @keyframes shimmer { to { transform: translateX(100%); } }
+    .skel::after { animation: shimmer 1.4s ease-in-out infinite; }
   }
 </style>
 </head>
 <body>
+
+<!-- Platform glyphs: official shapes from Simple Icons (CC0), drawn in currentColor -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="p-x" viewBox="0 0 24 24"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></symbol>
+<symbol id="p-instagram" viewBox="0 0 24 24"><path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"/></symbol>
+<symbol id="p-tiktok" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></symbol>
+<symbol id="p-youtube" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></symbol>
+<symbol id="p-shorts" viewBox="0 0 24 24"><path d="m18.931 9.99-1.441-.601 1.717-.913a4.48 4.48 0 0 0 1.874-6.078 4.506 4.506 0 0 0-6.09-1.874L4.792 5.929a4.504 4.504 0 0 0-2.402 4.193 4.521 4.521 0 0 0 2.666 3.904c.036.012 1.442.6 1.442.6l-1.706.901a4.51 4.51 0 0 0-2.369 3.967A4.528 4.528 0 0 0 6.93 24c.725 0 1.437-.174 2.08-.508l10.21-5.406a4.494 4.494 0 0 0 2.39-4.192 4.525 4.525 0 0 0-2.678-3.904ZM9.597 15.19V8.824l6.007 3.184z"/></symbol>
+<symbol id="p-threads" viewBox="0 0 24 24"><path d="M18.263 11.097c-.03-3.486-1.92-5.586-5.111-5.586-2.13 0-3.922.963-4.863 2.499l2.062 1.438c.535-.843 1.272-1.543 2.628-1.543 1.528 0 2.318.85 2.544 2.431a15 15 0 0 0-2.236-.173c-4.125 0-6.068 1.867-6.068 4.336s1.943 3.99 4.804 3.99c3.139 0 5.013-2.115 5.781-4.735.798.361 1.348 1.204 1.348 2.47 0 3.387-3.907 5.232-7.22 5.232-4.885 0-8.077-3.207-8.077-8.424 0-6.392 4.223-10.487 9.9-10.487 3.808 0 5.69 1.671 6.97 3.914l2.108-1.475C21.44 2.078 18.331 0 13.663 0 6.227 0 1.168 5.277 1.168 12.934c0 7 4.953 11.066 10.856 11.066 4.878 0 9.809-2.846 9.809-7.716 0-2.545-1.46-4.231-3.569-5.187m-6.33 4.855c-1.077 0-2.026-.512-2.026-1.453 0-1.483 1.822-1.934 3.606-1.934.678 0 1.34.045 1.927.173-.422 1.927-1.671 3.215-3.508 3.214Z"/></symbol>
+<symbol id="p-pinterest" viewBox="0 0 24 24"><path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z"/></symbol>
+<symbol id="p-web" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.93 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14A7.9 7.9 0 0 1 4 12c0-.69.1-1.36.26-2h3.38a16.5 16.5 0 0 0 0 4H4.26zm.81 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.99 7.99 0 0 1 5.07 16zM8.03 8H5.07a7.99 7.99 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66a14.7 14.7 0 0 1 0-4h4.68a14.7 14.7 0 0 1 0 4zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14a16.5 16.5 0 0 0 0-4h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></symbol>
+</defs></svg>
 
 <!-- ─────────────── Auth / signed-out story ─────────────── -->
 <section id="auth" hidden>
@@ -344,33 +468,35 @@
       <h1>Every save.<br>One library.</h1>
       <p>Sign in and your borks follow you — phone, laptop, everywhere.</p>
       <button class="btn g-btn" id="google-btn" hidden>
-        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
         Continue with Google
       </button>
       <div class="divider" id="google-divider" hidden>or</div>
       <button class="btn" data-act="choose-signup">Sign up with email</button>
       <button class="btn ghost" data-act="choose-signin">Sign in</button>
       <button class="linkish" data-act="peek-demo" style="text-align:center;width:100%">Just looking? Peek inside a full library →</button>
+      <p class="err" id="choose-err" role="alert"></p>
       <p class="consent">By continuing you agree to the <a href="/terms">Terms of Use</a> and <a href="/privacy">Privacy Policy</a>.</p>
     </div>
     <div id="auth-email" hidden>
       <h1 id="auth-email-title">Create your account</h1>
       <p id="auth-email-blurb"></p>
-      <input class="field" id="email-input" type="email" autocomplete="email" placeholder="you@example.com">
+      <input class="field" id="email-input" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email address">
       <button class="btn" data-act="send-code">Email me a code</button>
       <button class="linkish" data-act="switch-mode"></button>
       <button class="linkish" data-act="back-choose">Back</button>
-      <p class="err" id="auth-err"></p>
+      <p class="err" id="auth-err" role="alert"></p>
       <p class="hint">No password to make up or lose — the code is the whole thing.</p>
       <p class="consent">By continuing you agree to the <a href="/terms">Terms of Use</a> and <a href="/privacy">Privacy Policy</a>.</p>
     </div>
     <div id="auth-code" hidden>
       <h1>Check your email</h1>
       <p id="code-blurb"></p>
-      <input class="field" id="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+      <input class="field" id="code-input" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" placeholder="123456" aria-label="Six-digit code">
       <button class="btn" data-act="verify-code">Continue</button>
+      <button class="linkish" id="resend-btn" data-act="resend-code">Send a new code</button>
       <button class="linkish" data-act="back-email">Use a different email</button>
-      <p class="err" id="code-err"></p>
+      <p class="err" id="code-err" role="alert"></p>
     </div>
   </div>
   <p class="pitch-links m-links" style="text-align:center;padding-bottom:30px">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
@@ -382,19 +508,19 @@
   <div id="demo-banner" hidden>
     <span>You're looking at a <b>demo library</b> — this is what your saves become.</span>
     <button data-act="demo-signup">Make mine</button>
-    <button class="demo-x" data-act="demo-exit" title="Back">✕</button>
+    <button class="demo-x" data-act="demo-exit" title="Back" aria-label="Leave the demo">✕</button>
   </div>
   <header class="nav">
     <div class="nav-in">
       <a class="brand" href="/" data-tab-link="library"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
-      <nav class="nav-tabs">
+      <nav class="nav-tabs" aria-label="Sections">
         <button class="nav-tab" data-tab-link="library">Library</button>
         <button class="nav-tab" data-tab-link="browse">Browse</button>
       </nav>
-      <input type="search" class="nav-search" id="search-desktop" placeholder="Search your borks" autocomplete="off">
+      <input type="search" class="nav-search" id="search-desktop" placeholder="Search your borks" autocomplete="off" aria-label="Search your borks">
       <span class="spacer"></span>
       <a class="btn-sm btn-coral" href="/app">Get the app</a>
-      <button class="avatar" id="avatar-btn" data-tab-link="you" title="You">?</button>
+      <button class="avatar" id="avatar-btn" data-tab-link="you" title="You" aria-label="You">?</button>
     </div>
   </header>
 
@@ -420,64 +546,78 @@
       </div>
     </section>
 
-    <section id="view-search" hidden>
-      <input type="search" class="field" id="search-mobile" placeholder="Search everything you've borked" autocomplete="off" style="margin-bottom:14px">
+    <section id="view-search">
+      <input type="search" class="field" id="search-mobile" placeholder="Search everything you've borked" autocomplete="off" aria-label="Search everything you've borked" style="margin-bottom:14px">
+      <div id="search-start" hidden>
+        <p class="hint">Titles, captions, notes, tags — every word you've ever borked.</p>
+        <div class="topic-pills" id="search-pills"></div>
+      </div>
+      <div id="search-head" hidden>
+        <div class="h-row"><h2 class="h-title" id="search-meta"></h2></div>
+        <nav class="chips" id="search-chips" aria-label="Filter results by source"></nav>
+      </div>
       <div class="grid" id="grid-search"></div>
       <div class="state" id="empty-search" hidden></div>
     </section>
 
     <section id="view-you" hidden>
-      <div class="you-card">
-        <div class="you-head">
-          <div class="avatar-big" id="avatar-big">?</div>
-          <div>
-            <b id="you-name" style="font-size:17px;font-family:var(--font-head)"></b>
-            <div class="you-email" id="you-email"></div>
+      <div class="you-grid">
+        <div class="you-col">
+          <div class="you-card">
+            <div class="you-head">
+              <div class="avatar-big" id="avatar-big" aria-hidden="true">?</div>
+              <div>
+                <b id="you-name" style="font-size:17px;font-family:var(--font-head)"></b>
+                <div class="you-email" id="you-email"></div>
+              </div>
+            </div>
+            <div class="stats">
+              <div class="stat"><b id="stat-borks">0</b><span>borks</span></div>
+              <div class="stat"><b id="stat-topics">0</b><span>topics</span></div>
+              <div class="stat"><b id="stat-week">0</b><span>this week</span></div>
+            </div>
+          </div>
+          <div class="you-card">
+            <label class="field-label" for="profile-name">Display name</label>
+            <input class="field" id="profile-name" placeholder="How should we greet you?" autocomplete="off" maxlength="40">
+            <label class="field-label" for="profile-handle">Username</label>
+            <input class="field" id="profile-handle" placeholder="lowercase, 3–24 letters, numbers, _" autocomplete="off" maxlength="24">
+            <p class="err" id="profile-err" role="alert"></p><p class="ok-msg" id="profile-ok" role="status"></p>
+            <button class="btn" data-act="save-profile" style="margin-top:6px">Save profile</button>
           </div>
         </div>
-        <div class="stats">
-          <div class="stat"><b id="stat-borks">0</b><span>borks</span></div>
-          <div class="stat"><b id="stat-topics">0</b><span>topics</span></div>
-          <div class="stat"><b id="stat-week">0</b><span>this week</span></div>
+        <div class="you-col">
+          <div class="you-card">
+            <button class="btn ghost" data-act="sign-out">Sign out</button>
+            <button class="danger-link" data-act="delete-account">Delete account</button>
+            <p class="hint" style="margin-top:12px">Deleting your account removes everything backed up on our servers. Borks on your iPhone stay on your iPhone.</p>
+          </div>
+          <p class="hint">
+            <a href="/app">Get the iPhone app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
+          </p>
         </div>
       </div>
-      <div class="you-card">
-        <label class="field-label" for="profile-name">Display name</label>
-        <input class="field" id="profile-name" placeholder="How should we greet you?" autocomplete="off" maxlength="40">
-        <label class="field-label" for="profile-handle">Username</label>
-        <input class="field" id="profile-handle" placeholder="lowercase, 3–24 letters, numbers, _" autocomplete="off" maxlength="24">
-        <p class="err" id="profile-err"></p><p class="ok-msg" id="profile-ok"></p>
-        <button class="btn" data-act="save-profile" style="margin-top:6px">Save profile</button>
-      </div>
-      <div class="you-card">
-        <button class="btn ghost" data-act="sign-out">Sign out</button>
-        <button class="danger-link" data-act="delete-account">Delete account</button>
-        <p class="hint" style="margin-top:12px">Deleting your account removes everything backed up on our servers. Borks on your iPhone stay on your iPhone.</p>
-      </div>
-      <p class="hint" style="max-width:520px">
-        <a href="/app">Get the iPhone app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
-      </p>
     </section>
   </main>
 
   <button class="fab-desktop" id="add-desktop" title="Bork a link" aria-label="Bork a link">+</button>
 
   <nav class="tabbar" aria-label="Tabs">
-    <button class="tab" data-tab-link="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</button>
-    <button class="tab" data-tab-link="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
+    <button class="tab" data-tab-link="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</button>
+    <button class="tab" data-tab-link="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
     <button class="fab-mobile" id="add-mobile" aria-label="Bork a link">+</button>
-    <button class="tab" data-tab-link="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Search</button>
-    <button class="tab" data-tab-link="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>You</button>
+    <button class="tab" data-tab-link="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Search</button>
+    <button class="tab" data-tab-link="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>You</button>
   </nav>
 </div>
 
 <!-- Add -->
-<dialog id="add-dialog">
-  <h2>Bork a link</h2>
+<dialog id="add-dialog" aria-labelledby="add-h">
+  <h2 id="add-h">Bork a link</h2>
   <label class="field-label" for="add-url">Link</label>
-  <input class="field" id="add-url" type="url" placeholder="https://…" autocomplete="off">
+  <input class="field" id="add-url" type="url" inputmode="url" placeholder="https://…" autocomplete="off" autocapitalize="off" spellcheck="false">
   <div class="preview-box" id="add-preview" hidden>
-    <img id="add-thumb" alt="" onerror="this.hidden=true">
+    <img id="add-thumb" alt="" data-fb="hide">
     <div>
       <div id="add-title" style="font-weight:700"></div>
       <div class="hint" id="add-author"></div>
@@ -485,7 +625,7 @@
   </div>
   <label class="field-label" for="add-topic">Topic (optional)</label>
   <select id="add-topic"></select>
-  <p class="err" id="add-err"></p>
+  <p class="err" id="add-err" role="alert"></p>
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-add">Not now</button>
     <button class="btn" data-act="save-add">Bork it</button>
@@ -493,7 +633,7 @@
 </dialog>
 
 <!-- Detail / edit -->
-<dialog id="edit-dialog">
+<dialog id="edit-dialog" aria-labelledby="edit-title">
   <h2 id="edit-title" style="overflow-wrap:anywhere"></h2>
   <p style="margin:0 0 4px"><a id="edit-open" target="_blank" rel="noopener">Open original ↗</a></p>
   <label class="field-label" for="edit-topic">Topic</label>
@@ -504,22 +644,22 @@
   <input class="field" id="edit-tags" autocomplete="off">
   <label class="field-label" for="edit-note">Note</label>
   <textarea id="edit-note" placeholder="Why did you save this?"></textarea>
+  <button class="danger-link" data-act="delete-bork">Delete this bork</button>
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-edit">Cancel</button>
     <button class="btn" data-act="save-edit">Save</button>
   </div>
-  <button class="danger-link" data-act="delete-bork">Delete this bork</button>
 </dialog>
 
 <!-- Side quest -->
-<dialog id="quest-dialog">
+<dialog id="quest-dialog" aria-labelledby="quest-h">
   <h2 id="quest-h">Start a side quest</h2>
   <p class="hint" style="margin:0 0 4px">A side quest is why you kept something — get better at running, pick a van, learn pottery.</p>
   <label class="field-label" for="quest-title">What are you working on?</label>
   <input class="field" id="quest-title" placeholder="Run a faster 10k" autocomplete="off" maxlength="80">
   <label class="field-label" for="quest-topic">Topic</label>
   <select id="quest-topic"></select>
-  <label class="field-label">To-dos</label>
+  <label class="field-label" for="quest-new-todo">To-dos</label>
   <div id="quest-todos"></div>
   <div style="display:flex;gap:8px;margin-top:6px">
     <input class="field" id="quest-new-todo" placeholder="Add a step…" autocomplete="off" style="flex:1">
@@ -528,15 +668,25 @@
   <label class="field-label">Borks on this quest</label>
   <div id="quest-borks"></div>
   <div id="quest-suggest"></div>
-  <p class="err" id="quest-err"></p>
+  <p class="err" id="quest-err" role="alert"></p>
+  <button class="danger-link" id="quest-delete" data-act="delete-quest" hidden>Delete this side quest</button>
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-quest">Not now</button>
     <button class="btn" data-act="save-quest">Save quest</button>
   </div>
-  <button class="danger-link" id="quest-delete" data-act="delete-quest" hidden>Delete this side quest</button>
 </dialog>
 
-<div id="toast" hidden><span id="toast-msg"></span><button id="toast-act" hidden></button></div>
+<!-- Confirm (replaces window.confirm, which iOS Safari styles as a system alert) -->
+<dialog id="confirm-dialog" class="dlg-sm" aria-labelledby="confirm-h">
+  <h2 id="confirm-h"></h2>
+  <p id="confirm-p" style="margin:0;color:var(--ink-2)"></p>
+  <div class="dialog-row">
+    <button class="btn ghost" data-act="confirm-no">Cancel</button>
+    <button class="btn" id="confirm-yes" data-act="confirm-yes">OK</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button id="toast-act" hidden></button></div>
 
 <script src="/taxonomy.js"></script>
 <script>
@@ -553,6 +703,68 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const TOPIC_BY_ID = Object.fromEntries(TAXONOMY.map(t => [t.id, t]));
+const REDUCED = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const MOBILE = () => window.innerWidth <= 760;
+
+/* ── Small helpers ── */
+function uuid() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map(x => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+/* Product analytics. Events only — the person is identified by user id, never
+   by email or anything typed. */
+function track(name, props) { try { window.posthog?.capture?.(name, props); } catch { /* analytics never break the app */ } }
+
+let storageWarned = false;
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsDel = (k) => { try { localStorage.removeItem(k); } catch { /* nothing to remove */ } };
+function lsSet(k, v) {
+  try { localStorage.setItem(k, v); }
+  catch {
+    if (storageWarned) return;
+    storageWarned = true;
+    setTimeout(() => toast("This browser is blocking storage — you'll be signed out when the tab closes."), 0);
+  }
+}
+
+/* Errors as a person would say them. Supabase's messages are for developers. */
+function humanError(e) {
+  const m = String(e?.message || e || "");
+  const st = Number(e?.status) || 0;
+  if (/signups not allowed/i.test(m)) return "No account with that email yet. Tap Sign up and we'll make one.";
+  if (e instanceof TypeError || /failed to fetch|load failed|networkerror|network request failed/i.test(m))
+    return "You look offline — check your connection and try again.";
+  if (st === 429 || /rate limit|too many|security purposes|after \d+ seconds/i.test(m))
+    return "Too many tries — give it a minute and try again.";
+  if (/expired|invalid.*(token|otp|code)|(token|otp|code).*invalid/i.test(m))
+    return "That code's wrong or expired — request a fresh one.";
+  if (st === 401 || /signed out|jwt/i.test(m)) return "Your session ended — sign in again.";
+  if (st >= 500) return "Our server hiccuped — try again in a moment.";
+  return m || "Something went wrong — try again.";
+}
+/* Disable a button while its work runs; returns the restore function. */
+function busy(btn, label) {
+  const text = btn.textContent;
+  btn.disabled = true;
+  if (label) btn.textContent = label;
+  return () => { btn.disabled = false; btn.textContent = text; };
+}
+
+/* Instagram titles arrive with HTML entities still encoded (&#x1F525; and
+   friends). Decode with a table, never by parsing HTML. */
+const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", hellip: "…", mdash: "—",
+  ndash: "–", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“", copy: "©", trade: "™", reg: "®" };
+const decodeEntities = (s) => String(s ?? "").replace(/&(#x([0-9a-f]+)|#(\d+)|[a-z]+);/gi, (m, body, hex, dec) => {
+  try {
+    if (hex) return String.fromCodePoint(parseInt(hex, 16));
+    if (dec) return String.fromCodePoint(parseInt(dec, 10));
+  } catch { return m; }
+  const k = body.toLowerCase();
+  return k in ENT ? ENT[k] : m;
+});
 
 /* ── Identity: verbatim port of Bookmark.stableID ── */
 const JUNK_PARAMS = new Set([
@@ -563,6 +775,7 @@ const JUNK_PARAMS = new Set([
 function stableID(raw) {
   let u;
   try { u = new URL(raw); } catch { return null; }
+  if (u.protocol !== "http:" && u.protocol !== "https:") return null;
   let host = u.hostname.toLowerCase();
   for (const p of ["www.", "m.", "mobile."]) if (host.startsWith(p)) { host = host.slice(p.length); break; }
   const kept = [...u.searchParams.entries()]
@@ -586,6 +799,10 @@ const PLATFORM = {
   grok: { name: "Grok", short: "GK", kind: "post" },
   web: { name: "Web", short: "WWW", kind: "article" },
 };
+const GLYPHS = new Set(["x", "instagram", "tiktok", "youtube", "shorts", "threads", "pinterest", "web"]);
+const glyph = (k) => GLYPHS.has(k)
+  ? `<svg class="pg" aria-hidden="true"><use href="#p-${k}"/></svg>`
+  : `<span class="pg-txt" aria-hidden="true">${esc(PLATFORM[k]?.short || "WWW")}</span>`;
 function detectPlatform(raw) {
   let u; try { u = new URL(raw); } catch { return "web"; }
   let host = u.hostname.toLowerCase();
@@ -616,12 +833,10 @@ function detectPlatform(raw) {
 
 /* ── Session ── */
 const store = {
-  get session() { try { return JSON.parse(localStorage.getItem("bm.session")); } catch { return null; } },
-  set session(v) { v ? localStorage.setItem("bm.session", JSON.stringify(v)) : localStorage.removeItem("bm.session"); },
-  get cache() { try { return JSON.parse(localStorage.getItem("bm.cache")) || []; } catch { return []; } },
+  get session() { try { return JSON.parse(lsGet("bm.session")); } catch { return null; } },
+  set session(v) { v ? lsSet("bm.session", JSON.stringify(v)) : lsDel("bm.session"); },
+  get cache() { try { return JSON.parse(lsGet("bm.cache")) || []; } catch { return []; } },
   set cache(v) { try { localStorage.setItem("bm.cache", JSON.stringify(v)); } catch { /* cache is optional */ } },
-  get cursor() { return localStorage.getItem("bm.cursor"); },
-  set cursor(v) { v ? localStorage.setItem("bm.cursor", v) : localStorage.removeItem("bm.cursor"); },
 };
 
 let refreshing = null; // refresh tokens are single-use: one flight only
@@ -652,7 +867,8 @@ async function validSession() {
   })();
   return refreshing;
 }
-window.addEventListener("storage", (e) => { if (e.key === "bm.session") render(); });
+// Another tab signed in or out: follow it, don't keep showing a stale library.
+window.addEventListener("storage", (e) => { if (e.key === "bm.session") rebootFromStorage(); });
 
 function supaError(body, fallback) {
   try { const d = JSON.parse(body); return d.msg || d.message || d.error_description || fallback; }
@@ -662,12 +878,12 @@ async function api(path, { method = "GET", body, headers = {}, auth = true } = {
   const h = { apikey: ANON_KEY, "Content-Type": "application/json", ...headers };
   if (auth) {
     const s = await validSession();
-    if (!s) throw new Error("Signed out.");
+    if (!s) { const err = new Error("Signed out."); err.status = 401; throw err; }
     h.Authorization = `Bearer ${s.access_token}`;
   }
   const res = await fetch(`${SUPABASE_URL}${path}`, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
   const text = await res.text();
-  if (!res.ok) throw new Error(supaError(text, `Server error (${res.status})`));
+  if (!res.ok) { const err = new Error(supaError(text, `Server error (${res.status})`)); err.status = res.status; throw err; }
   return text ? JSON.parse(text) : null;
 }
 
@@ -676,10 +892,17 @@ let borks = new Map();
 let missions = new Map();
 let questDraft = null;
 let tab = "library";
+let lastTab = null;
 let platformFilter = null;   // Library
 let topicFilter = null;      // Browse drill-in
 let query = "";              // Search
+let searchPlatform = null;   // Search, narrowed to one source
+let lastSearchCount = 0;
 let profile = { handle: null, display_name: null };
+let loading = false;         // a pull is in flight
+let pulledOnce = false;      // the first pull has finished (skeleton → real/empty)
+const justAdded = new Set(); // ids to animate in on the next render
+const memo = new Map();      // element id → key of what it currently shows
 
 const blob = (r) => [
   r.title, r.author, r.body_text, r.note_text, (r.tags || []).join(" "),
@@ -721,8 +944,14 @@ const DEMO_BORKS = DEMO_SEED.map(([title, author, platform, kind, topic, days], 
 });
 let demoMode = false;
 function enterDemo() {
-  demoMode = true; tab = "library"; platformFilter = null; topicFilter = null; query = "";
-  render(); window.scrollTo({ top: 0 });
+  demoMode = true; tab = "library"; platformFilter = null; topicFilter = null; query = ""; searchPlatform = null;
+  render(); pushRoute(); window.scrollTo({ top: 0 });
+  track("demo_entered", { signed_in: !!store.session });
+}
+function exitDemo() {
+  demoMode = false; tab = "library"; platformFilter = null; topicFilter = null; query = ""; searchPlatform = null;
+  if (!store.session) showAuthStage("choose");
+  render(); pushRoute(); window.scrollTo({ top: 0 });
 }
 function exitDemoToSignup() {
   demoMode = false; authMode = "signup";
@@ -730,41 +959,77 @@ function exitDemoToSignup() {
   $("email-input").focus();
 }
 
+/* Everything that belongs to one signed-in person, back to zero. */
+function resetLocalState() {
+  borks = new Map(); missions = new Map(); questDraft = null;
+  profile = { handle: null, display_name: null };
+  platformFilter = null; topicFilter = null; query = ""; searchPlatform = null; lastSearchCount = 0;
+  tab = "library"; lastTab = null; loading = false; pulledOnce = false;
+  justAdded.clear(); memo.clear();
+  $("search-desktop").value = ""; $("search-mobile").value = "";
+  for (const id of ["home-sections", "platform-chips", "grid-library", "grid-topic", "grid-search", "topics-grid", "sources-list", "search-pills", "search-chips"])
+    $(id).innerHTML = "";
+}
+function rebootFromStorage() {
+  resetLocalState();
+  if (!store.session) { showAuthStage("choose"); render(); return; }
+  absorb(store.cache);
+  try { absorbMissions(JSON.parse(lsGet("bm.mcache")) || []); } catch { /* fresh */ }
+  render();
+  loadProfile();
+  pull().catch(() => {});
+}
 
 function absorb(rows) {
   for (const r of rows) {
     const mine = borks.get(r.id);
     if (mine && mine.updated_at >= r.updated_at) continue; // LWW, same as iOS
-    r._blob = blob(r);
+    r._blob = blob(r); r._disp = null;
     borks.set(r.id, r);
   }
 }
-const persist = () => { store.cache = [...borks.values()].map(({ _blob, ...r }) => r); };
+const persist = () => { store.cache = [...borks.values()].map(({ _blob, _disp, ...r }) => r); };
 
-async function pull({ full = false } = {}) {
+/* Always the whole library. A persisted "since" cursor looks cheaper, but
+   updated_at is stamped by whichever device made the change, so a row can
+   reach the server carrying a stamp older than the cursor (a phone that saved
+   offline, a second tab, plain clock skew) and then never show up here. One
+   request per thousand rows is the price of never losing a bork. */
+async function pull() {
   const s = await validSession();
   if (!s) return;
-  let cursor = full ? null : store.cursor;
-  for (let page = 0; page < 30; page++) {
-    let path = `/rest/v1/bookmarks?select=*&owner_id=eq.${s.user_id}&order=updated_at.asc,id.asc&limit=1000`;
-    if (cursor) path += `&updated_at=gte.${encodeURIComponent(cursor)}`;
-    const rows = await api(path);
-    absorb(rows);
-    if (rows.length) { cursor = rows[rows.length - 1].updated_at; store.cursor = cursor; } // raw server string
-    if (rows.length < 1000) break;
+  loading = true;
+  if (!borks.size) render(); // skeleton
+  try {
+    let after = null; // page continuation only; never persisted
+    for (let page = 0; page < 30; page++) {
+      let path = `/rest/v1/bookmarks?select=*&owner_id=eq.${s.user_id}&order=updated_at.asc,id.asc&limit=1000`;
+      if (after) path += `&updated_at=gte.${encodeURIComponent(after)}`;
+      const rows = await api(path);
+      absorb(rows);
+      if (rows.length) after = rows[rows.length - 1].updated_at; // raw server string
+      persist();
+      if (page === 0) { pulledOnce = true; render(); } // big libraries: show page one while the rest streams in
+      if (rows.length < 1000) break;
+    }
+    try { await pullMissions(); } catch { /* quests are additive */ }
+  } finally {
+    loading = false; pulledOnce = true;
+    persist(); render();
   }
-  try { await pullMissions(); } catch { /* quests are additive */ }
-  persist(); render();
 }
 
-async function push(row) {
+/* keepStamp: the row already carries the moment it changed (optimistic save);
+   otherwise stamp now, exactly like the iPhone does. */
+async function push(row, { keepStamp = false } = {}) {
   const s = await validSession();
-  if (!s) throw new Error("Signed out.");
+  if (!s) { const err = new Error("Signed out."); err.status = 401; throw err; }
   // Uniform key set with explicit nulls — PGRST102 taught the iPhone this.
   const full = {
     id: row.id, owner_id: s.user_id, url: row.url, title: row.title ?? "",
     platform: row.platform ?? "web", kind: row.kind ?? "article", tags: row.tags ?? [],
-    saved_at: row.saved_at ?? new Date().toISOString(), updated_at: new Date().toISOString(),
+    saved_at: row.saved_at ?? new Date().toISOString(),
+    updated_at: keepStamp && row.updated_at ? row.updated_at : new Date().toISOString(),
     author: row.author ?? null, category_id: row.category_id ?? null,
     subcategory: row.subcategory ?? null, body_text: row.body_text ?? null,
     duration_seconds: row.duration_seconds ?? null, note_text: row.note_text ?? null,
@@ -776,6 +1041,18 @@ async function push(row) {
   });
   absorb(back || []); persist(); render();
   return (back && back[0]) || full;
+}
+
+/* Optimistic write: show it now, sync it after, roll back with a Retry if the
+   server says no. `prev` is the row as it was (null for a brand-new bork). */
+function commit(next, prev) {
+  next = { ...next, updated_at: new Date().toISOString() };
+  absorb([next]); persist(); render();
+  return push(next, { keepStamp: true }).catch((e) => {
+    if (prev) absorb([{ ...prev, updated_at: new Date().toISOString() }]); else borks.delete(next.id);
+    persist(); render();
+    toast(humanError(e), "Retry", () => commit(next, prev));
+  });
 }
 
 /* ── Side quests (public.missions) ── */
@@ -806,16 +1083,17 @@ async function pullMissions() {
   absorbMissions(rows); persistM();
 }
 
-async function pushMission(m) {
+async function pushMission(m, { keepStamp = false } = {}) {
   const s = await validSession();
-  if (!s) throw new Error("Signed out.");
+  if (!s) { const err = new Error("Signed out."); err.status = 401; throw err; }
   const full = {
     id: m.id, owner_id: s.user_id, title: m.title ?? "", detail: m.detail ?? null,
     category_id: m.category_id ?? null, bookmark_ids: m.bookmark_ids ?? [],
     habit_name: m.habit_name ?? null, completed_days: m.completed_days ?? [],
     todos: m.todos ?? [], is_archived: m.is_archived ?? false,
     created_at: m.created_at ?? new Date().toISOString(),
-    updated_at: new Date().toISOString(), deleted_at: m.deleted_at ?? null,
+    updated_at: keepStamp && m.updated_at ? m.updated_at : new Date().toISOString(),
+    deleted_at: m.deleted_at ?? null,
   };
   const back = await api(`/rest/v1/missions?on_conflict=owner_id,id`, {
     method: "POST", body: [full],
@@ -824,10 +1102,17 @@ async function pushMission(m) {
   absorbMissions(back || []); persistM(); render();
   return (back && back[0]) || full;
 }
+function commitMission(next) {
+  next = { ...next, updated_at: new Date().toISOString() };
+  absorbMissions([next]); persistM(); render();
+  return pushMission(next, { keepStamp: true }).catch((e) => {
+    toast(humanError(e), "Retry", () => commitMission(next));
+  });
+}
 
 /* ── Profile (public.profiles: handle, display_name) ── */
 async function loadProfile() {
-  const s = store.session;
+  const s = await validSession();
   if (!s) return;
   try {
     const rows = await api(`/rest/v1/profiles?id=eq.${s.user_id}&select=handle,display_name`);
@@ -837,12 +1122,14 @@ async function loadProfile() {
 }
 async function saveProfile() {
   $("profile-err").textContent = ""; $("profile-ok").textContent = "";
-  const s = store.session;
+  const s = await validSession();
+  if (!s) return;
   const name = $("profile-name").value.trim() || null;
   let handle = $("profile-handle").value.trim().toLowerCase() || null;
   if (handle && !/^[a-z0-9_]{3,24}$/.test(handle)) {
     $("profile-err").textContent = "Usernames are 3–24 lowercase letters, numbers or _."; return;
   }
+  const done = busy(document.querySelector("[data-act=save-profile]"), "Saving…");
   try {
     await api(`/rest/v1/profiles?id=eq.${s.user_id}`, {
       method: "PATCH", body: { handle, display_name: name },
@@ -853,8 +1140,8 @@ async function saveProfile() {
     render();
   } catch (e) {
     $("profile-err").textContent = /duplicate|unique/i.test(e.message)
-      ? "That username's taken — try another." : e.message;
-  }
+      ? "That username's taken — try another." : humanError(e);
+  } finally { done(); }
 }
 
 /* ── Rendering ── */
@@ -871,8 +1158,9 @@ const gradient = (hue) => `background:linear-gradient(135deg, hsl(${hue} 65% 62%
 const KIND_ASPECT = { clip: "3 / 4", reel: "3 / 4", short: "3 / 4", pin: "3 / 4", video: "16 / 9", post: "4 / 3" };
 const live = () => [...borks.values()].filter(r => !r.deleted_at);
 const initial = () => (profile.display_name || profile.handle || store.session?.email || "?").trim().charAt(0).toUpperCase() || "?";
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
-const SITE_NAMES = new Set(["x","x.com","twitter","twitter.com","instagram","instagram.com",
+const SITE_NAMES = new Set(["x","x.com","twitter","twitter.com","x (formerly twitter)","instagram","instagram.com",
   "tiktok","tiktok.com","youtube","youtube.com","shorts","threads","threads.net","pinterest",
   "pinterest.com","grok","facebook","reddit","linkedin","web","www"]);
 const cleanAuthor = (a) => {
@@ -881,53 +1169,84 @@ const cleanAuthor = (a) => {
   return SITE_NAMES.has(t) || /^[a-z0-9-]+\.(com|net|org|co|io|lol)$/.test(t) ? null : a.trim();
 };
 
-const topicArt = (id) => id ? `/img/topics/${id}.jpg` : null;
+/* What the card says. Platform page titles are built for search engines
+   ("Name (@handle) on X: …", 'Name on Instagram: "caption"'); the card wants
+   the person and the words, not the boilerplate. Memoised on the row. */
+const X_TITLE = /^(.+?) \(@([A-Za-z0-9_]+)\) on X(?: \(formerly Twitter\))?(?::\s*([\s\S]*))?$/;
+const IG_TITLE = /^(.+?) on Instagram(?::\s*"?([\s\S]*?)"?\s*)?$/;
+function displayFields(r) {
+  if (r._disp) return r._disp;
+  const raw = decodeEntities(r.title || "").trim();
+  let title = raw || r.url, author = cleanAuthor(r.author), snippet = null;
+  let m;
+  if (r.platform === "x" && (m = X_TITLE.exec(raw))) {
+    author = author || m[1].trim();
+    if (m[2]) author = `${m[1].trim()} · @${m[2]}`;
+    title = (m[3] || "").trim() || `${m[1].trim()} on X`;
+  } else if (r.platform === "instagram" && (m = IG_TITLE.exec(raw))) {
+    author = author || m[1].trim();
+    title = (m[2] || "").trim() || `${m[1].trim()} on Instagram`;
+  }
+  if (r.body_text) {
+    const b = decodeEntities(r.body_text).trim();
+    if (b && b !== title && !title.startsWith(b.slice(0, 40))) snippet = b;
+  }
+  r._disp = { title, author, snippet };
+  return r._disp;
+}
 
-function cardHTML(r) {
+const topicArt = (id) => id && TOPIC_BY_ID[id] ? `/img/topics/${id}.jpg` : null;
+
+/* Instagram (and friends) sign their image URLs and they expire after a few
+   days, so a saved image_url is a hope, not a promise. Once one fails we
+   remember it and treat that bork as picture-less from then on. */
+const badImg = new Set();
+const picOf = (r) => (r.image_url && !badImg.has(r.image_url)) ? r.image_url : null;
+function cardHTML(r, o = {}) {
   const p = PLATFORM[r.platform] || PLATFORM.web;
-  const author = cleanAuthor(r.author);
+  const d = displayFields(r);
   const topic = TOPIC_BY_ID[r.category_id];
   const hue = topic ? topic.hue : 24;
   const aspect = KIND_ASPECT[r.kind];
-  const isText = !aspect;
+  const src = picOf(r) || o.art || null;
+  const isText = !aspect || !src;
+  const cls = `card${isText ? " card-text" : ""}${o.fresh ? " card-in" : ""}`;
+  const style = o.idx != null ? ` style="--i:${o.idx}"` : "";
   const meta = `<div class="card-meta">
       ${topic ? `<span class="topic-chip" style="${chipStyle(hue)}">${esc(topic.name)}</span>` : ""}
-      ${r.note_text ? `<span class="note-dot">✎</span>` : ""}
+      ${r.note_text ? `<span class="note-dot" title="Has a note">✎</span>` : ""}
       <span class="date">${fmtDate(r.saved_at)}</span>
     </div>`;
   if (isText) {
-    return `<article class="card card-text" tabindex="0" data-id="${esc(r.id)}">
+    return `<article class="${cls}" role="button" tabindex="0" data-id="${esc(r.id)}" data-platform="${esc(r.platform)}"${style}>
       <div class="card-body">
-        <div class="card-author">${esc(author || p.name)}${author ? " · " + p.short : ""}</div>
-        <div class="card-title">${esc(r.title || r.url)}</div>
-        ${r.body_text ? `<div class="card-snippet">${esc(r.body_text)}</div>` : ""}
+        <div class="card-author">${glyph(r.platform)}<span>${esc(d.author || p.name)}</span></div>
+        <div class="card-title">${esc(d.title)}</div>
+        ${d.snippet ? `<div class="card-snippet">${esc(d.snippet)}</div>` : ""}
         ${meta}
       </div>
     </article>`;
   }
-  const art = topicArt(r.category_id);
-  const src = r.image_url || art;
-  const fallback = r.image_url && art ? `this.onerror=null;this.src='${esc(art)}'` : "this.remove()";
-  const img = src ? `<img src="${esc(src)}" alt="" loading="lazy" onerror="${fallback}">` : "";
-  const glyph = src ? "" : `<span class="cover-glyph">${p.short}</span>`;
-  return `<article class="card" tabindex="0" data-id="${esc(r.id)}">
-    <div class="cover${src ? "" : " cover-empty"}" style="aspect-ratio:${aspect};${gradient(hue)}">${img}${glyph}<span class="badge">${p.short}</span></div>
+  // The glyph sits under the image; a failed load removes the image and reveals it.
+  return `<article class="${cls}" role="button" tabindex="0" data-id="${esc(r.id)}" data-platform="${esc(r.platform)}"${style}>
+    <div class="cover" style="aspect-ratio:${aspect};${gradient(hue)}"><span class="cover-glyph">${glyph(r.platform)}</span><img src="${esc(src)}" alt="" loading="lazy" data-fb="remove"><span class="badge" role="img" aria-label="${esc(p.name)}">${glyph(r.platform)}</span></div>
     <div class="card-body">
-      ${author ? `<div class="card-author">${esc(author)}</div>` : ""}
-      <div class="card-title">${esc(r.title || r.url)}</div>
+      ${d.author ? `<div class="card-author"><span>${esc(d.author)}</span></div>` : ""}
+      <div class="card-title">${esc(d.title)}</div>
       ${meta}
     </div>
   </article>`;
 }
-function estHeight(r) {
-  const titleLines = Math.min(4, Math.ceil((r.title || r.url).length / 24));
+function estHeight(r, art) {
+  const d = displayFields(r);
+  const titleLines = Math.min(4, Math.ceil(d.title.length / 24));
   const aspect = KIND_ASPECT[r.kind];
-  if (!aspect) {
-    const snippet = r.body_text ? Math.min(3, Math.ceil(r.body_text.length / 34)) : 0;
+  if (!aspect || !(picOf(r) || art)) {
+    const snippet = d.snippet ? Math.min(3, Math.ceil(d.snippet.length / 34)) : 0;
     return 64 + titleLines * 19 + snippet * 18 + 32;
   }
   const [aw, ah] = aspect.split("/").map(Number);
-  return 240 * (ah / aw) + 58 + Math.min(2, titleLines) * 19 + (cleanAuthor(r.author) ? 17 : 0);
+  return 240 * (ah / aw) + 58 + Math.min(2, titleLines) * 19 + (d.author ? 17 : 0);
 }
 function columnCount() {
   const w = Math.min(window.innerWidth, 1280);
@@ -935,176 +1254,393 @@ function columnCount() {
   return w < 761 ? 2 : Math.max(3, Math.floor(w / 250));
 }
 // The app's Masonry.swift in three lines: next card goes to the shortest column.
-function gridHTML(rows) {
+// Borks without a picture borrow their topic's clay art — once per topic per
+// grid, so a wall of the same painting never happens.
+function gridHTML(rows, stagger) {
   const n = columnCount();
   const cols = Array.from({ length: n }, () => ({ h: 0, html: [] }));
-  for (const r of rows) {
+  const seenArt = new Set();
+  rows.forEach((r, i) => {
+    let art = null;
+    if (!picOf(r) && KIND_ASPECT[r.kind]) {
+      const a = topicArt(r.category_id);
+      if (a && !seenArt.has(a)) { seenArt.add(a); art = a; }
+    }
     const c = cols.reduce((a, b) => (b.h < a.h ? b : a));
-    c.html.push(cardHTML(r));
-    c.h += estHeight(r);
-  }
+    c.html.push(cardHTML(r, { art, idx: stagger ? Math.min(i, 30) : null, fresh: justAdded.has(r.id) }));
+    c.h += estHeight(r, art);
+  });
   return cols.map(c => `<div class="col">${c.html.join("")}</div>`).join("");
 }
+function skeletonHTML() {
+  const heights = [260, 180, 320, 200, 240, 300, 210, 280];
+  const n = columnCount();
+  return Array.from({ length: n }, (_, c) =>
+    `<div class="col">${[0, 1, 2].map(i => `<div class="skel" style="--h:${heights[(c * 3 + i) % heights.length]}px"></div>`).join("")}</div>`
+  ).join("");
+}
+/* Rebuild a grid only when what it shows has changed. A new context (another
+   filter, another view) staggers the cards in; a same-context change animates
+   only the rows in `justAdded`. */
+function renderGrid(el, rows, ctx, { skeleton = false } = {}) {
+  const cols = columnCount();
+  if (skeleton) {
+    const k = `skel|${cols}`;
+    if (memo.get(el.id) === k) return;
+    memo.set(el.id, k); el.classList.remove("grid-in"); el.innerHTML = skeletonHTML();
+    return;
+  }
+  const key = `${ctx}|${cols}|b${badImg.size}|${rows.map(r => r.id + ":" + r.updated_at).join(",")}`;
+  const prev = memo.get(el.id) || "";
+  if (prev === key) return;
+  const fresh = !prev || prev.startsWith("skel|") || !prev.startsWith(ctx + "|");
+  memo.set(el.id, key);
+  el.classList.toggle("grid-in", fresh);
+  el.innerHTML = gridHTML(rows, fresh);
+}
 const bySaved = (a, b) => (b.saved_at || "").localeCompare(a.saved_at || "");
+
+function recentCardHTML(r, art) {
+  const topic = TOPIC_BY_ID[r.category_id];
+  const hue = topic ? topic.hue : 24;
+  const src = picOf(r) || art;
+  const img = src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : "";
+  return `<div class="recent-card" data-id="${esc(r.id)}" role="button" tabindex="0">
+    <div class="rc-cover" style="${gradient(hue)}"><span class="cover-glyph">${glyph(r.platform)}</span>${img}</div>
+    <div class="rc-title">${esc(displayFields(r).title)}</div></div>`;
+}
+function topicCounts(all) {
+  const counts = new Map();
+  for (const r of all) if (r.category_id && TOPIC_BY_ID[r.category_id])
+    counts.set(r.category_id, (counts.get(r.category_id) || 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+function topicPillsHTML(all, limit) {
+  return topicCounts(all).slice(0, limit).map(([id, n]) => {
+    const t = TOPIC_BY_ID[id];
+    return `<button class="topic-pill" style="${chipStyle(t.hue)}" data-topic-go="${id}">
+      <span class="pill-art"><i class="ini">${esc(t.name.charAt(0))}</i><img src="/img/topics/${id}.jpg" alt="" loading="lazy" data-fb="remove"></span>${esc(t.name)}<span class="n">${n}</span></button>`;
+  }).join("");
+}
+const questStarterHTML = () => `
+  <div class="quest-starter">
+    <img src="/img/quests/rabbit.jpg" alt="" data-fb="remove">
+    <div><b>What are you working on?</b><p>A side quest is why you kept something — get better at running, pick a van, learn pottery.</p></div>
+    <button class="btn-sm btn-coral" data-quest="">Start one</button>
+  </div>`;
+
+function syncBannerHeight() {
+  const h = demoMode ? $("demo-banner").offsetHeight : 0;
+  document.documentElement.style.setProperty("--banner-h", `${h}px`);
+}
+function replay(el, cls) {
+  if (REDUCED()) return;
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+}
 
 function render() {
   const s = store.session;
   $("auth").hidden = !!s || demoMode;
   $("app").hidden = !s && !demoMode;
-  if (s && demoMode) { /* signed-in peek: banner offers the exit back to their own library */ }
   $("demo-banner").hidden = !demoMode;
+  syncBannerHeight();
   if (!s && !demoMode) { renderAuth(); return; }
 
   const all = demoMode ? [...DEMO_BORKS].sort(bySaved) : live().sort(bySaved);
   $("avatar-btn").textContent = demoMode ? "→" : initial();
-
-  // tab visibility
-  for (const v of ["library", "browse", "search", "you"]) $(`view-${v}`).hidden = v !== tab;
+  $("avatar-btn").title = demoMode ? "Leave the demo" : "You";
+  renderShell();
+  if (tab === "library") renderLibrary(all, s);
+  if (tab === "browse") renderBrowse(all);
+  if (tab === "search") renderSearch(all);
+  if (tab === "you") renderYou(all, s);
+  justAdded.clear();
+}
+function renderShell() {
+  for (const v of ["library", "browse", "search", "you"]) {
+    const el = $(`view-${v}`);
+    el.hidden = v !== tab;
+    if (v === tab && tab !== lastTab) replay(el, "view-enter");
+  }
+  lastTab = tab;
   document.querySelectorAll("[data-tab-link]").forEach(el => {
-    if (el.classList.contains("nav-tab") || el.classList.contains("tab"))
-      el.classList.toggle("on", el.dataset.tabLink === tab);
-    if (el.id === "avatar-btn") el.classList.toggle("on", tab === "you");
+    const on = el.dataset.tabLink === tab;
+    if (el.classList.contains("nav-tab") || el.classList.contains("tab") || el.id === "avatar-btn") {
+      el.classList.toggle("on", on);
+      if (on) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current");
+    }
   });
+}
+/* Chips: rebuild when the set changes, otherwise just move the highlight so a
+   scrolled row stays where the thumb left it. */
+function renderChips(el, items, current, attr) {
+  const key = items.map(i => `${i.key}:${i.n}`).join(",");
+  if (memo.get(el.id) !== key) {
+    memo.set(el.id, key);
+    el.innerHTML = items.map(i =>
+      `<button class="chip" ${attr}="${esc(i.key)}" aria-pressed="false">${esc(i.label)}<span class="n">${i.n}</span></button>`).join("");
+  }
+  el.querySelectorAll(".chip").forEach(c => {
+    const on = (c.getAttribute(attr) || "") === (current || "");
+    c.classList.toggle("on", on); c.setAttribute("aria-pressed", String(on));
+  });
+}
+function platformItems(rows) {
+  const counts = new Map();
+  for (const r of rows) counts.set(r.platform, (counts.get(r.platform) || 0) + 1);
+  return [{ key: "", label: "All", n: rows.length }]
+    .concat(Object.keys(PLATFORM).filter(k => counts.get(k)).map(k => ({ key: k, label: PLATFORM[k].name, n: counts.get(k) })));
+}
 
-  if (tab === "library") {
-    // Home sections: what you saved lately, and the topics you actually use —
-    // the jobs the app serves before "scroll everything".
-    const home = $("home-sections");
-    if (all.length && !platformFilter) {
-      const recents = all.slice(0, 12).map(r => {
-        const topic = TOPIC_BY_ID[r.category_id];
-        const hue = topic ? topic.hue : 24;
-        const rart = topicArt(r.category_id);
-        const rsrc = r.image_url || rart;
-        const rfall = r.image_url && rart ? `this.onerror=null;this.src='${esc(rart)}'` : "this.remove()";
-        const img = rsrc ? `<img src="${esc(rsrc)}" alt="" loading="lazy" onerror="${rfall}">` : "";
-        return `<div class="recent-card" data-id="${esc(r.id)}" role="button" tabindex="0">
-          <div class="rc-cover" style="${gradient(hue)}">${img}</div>
-          <div class="rc-title">${esc(r.title || r.url)}</div></div>`;
+function renderLibrary(all, s) {
+  // Home sections: what you saved lately, and the topics you actually use —
+  // the jobs the app serves before "scroll everything".
+  const home = $("home-sections");
+  if (all.length && !platformFilter) {
+    const recents = all.slice(0, 12);
+    const quests = liveMissions();
+    const key = ["home", demoMode, all.length, "b" + badImg.size,
+      recents.map(r => r.id + ":" + r.updated_at).join(","),
+      topicCounts(all).slice(0, 10).map(([id, n]) => id + n).join(","),
+      quests.map(m => m.id + ":" + m.updated_at).join(",")].join("|");
+    if (memo.get("home-sections") !== key) {
+      memo.set("home-sections", key);
+      const seenArt = new Set();
+      const recentsHTML = recents.map(r => {
+        let art = null;
+        if (!picOf(r)) { const a = topicArt(r.category_id); if (a && !seenArt.has(a)) { seenArt.add(a); art = a; } }
+        return recentCardHTML(r, art);
       }).join("");
-      const tCounts = new Map();
-      for (const r of all) if (r.category_id && TOPIC_BY_ID[r.category_id])
-        tCounts.set(r.category_id, (tCounts.get(r.category_id) || 0) + 1);
-      const pills = [...tCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id, n]) => {
-        const t = TOPIC_BY_ID[id];
-        return `<button class="topic-pill" style="${chipStyle(t.hue)}" data-topic-go="${id}">
-          <img class="pill-art" src="/img/topics/${id}.jpg" alt="" loading="lazy" onerror="this.remove()">${esc(t.name)}<span class="n">${n}</span></button>`;
-      }).join("");
-      const quests = liveMissions();
+      const pills = topicPillsHTML(all, 10);
       const questCards = quests.map(m => {
         const done = (m.todos || []).filter(t => t.done).length;
         const total = (m.todos || []).length;
         const meta = [total ? `${done} of ${total} done` : null,
-                      m.bookmark_ids?.length ? `${m.bookmark_ids.length} bork${m.bookmark_ids.length === 1 ? "" : "s"}` : null]
+                      m.bookmark_ids?.length ? plural(m.bookmark_ids.length, "bork") : null]
                       .filter(Boolean).join(" · ") || "just started";
         return `<button class="quest-card" data-quest="${esc(m.id)}">
-          <img class="quest-art" src="${questArt(m.category_id)}" alt="" onerror="this.remove()">
+          <img class="quest-art" src="${questArt(m.category_id)}" alt="" data-fb="remove">
           <span><span class="quest-t">${esc(m.title)}</span><span class="quest-m" style="display:block">${meta}</span></span>
         </button>`;
       }).join("");
-      const questsHTML = `
-        <div class="h-row"><span class="h-title">Side quests</span></div>
-        <div class="quests">${questCards}<button class="quest-new" data-quest="">+ Start a side quest</button></div>`;
+      const questsHTML = quests.length
+        ? `<div class="h-row"><span class="h-title">Side quests</span></div>
+           <div class="quests">${questCards}<button class="quest-new" data-quest="">+ Start another</button></div>`
+        : `<div class="h-row"><span class="h-title">Side quests</span></div>${questStarterHTML()}`;
       home.innerHTML = questsHTML + `
         <div class="h-row"><span class="h-title">Recent</span></div>
-        <div class="recents">${recents}</div>
+        <div class="recents">${recentsHTML}</div>
         ${pills ? `<div class="h-row"><span class="h-title">Your topics</span><button class="h-more" data-tab-link="browse">All topics →</button></div>
         <div class="topic-pills">${pills}</div>` : ""}
         <div class="h-row"><span class="h-title">Everything</span></div>`;
+    }
+  } else if (memo.get("home-sections") !== "") {
+    memo.set("home-sections", ""); home.innerHTML = "";
+  }
+  const rows = platformFilter ? all.filter(r => r.platform === platformFilter) : all;
+  const skeleton = loading && !all.length && !pulledOnce && !demoMode;
+  $("platform-chips").hidden = skeleton || !all.length;
+  if (!skeleton) renderChips($("platform-chips"), platformItems(all), platformFilter, "data-platform");
+  renderGrid($("grid-library"), rows, `library|${platformFilter || "all"}|${demoMode}`, { skeleton });
+  $("empty-library").hidden = skeleton || rows.length > 0;
+  if (!skeleton && !rows.length) {
+    if (all.length === 0 && !demoMode) {
+      $("empty-library").innerHTML = `
+        <div style="max-width:640px;margin:0 auto;text-align:left">
+          <h2 style="font-family:var(--font-head);font-size:24px;letter-spacing:-.02em;margin:0 0 6px">Everything you're consuming on the internet — one library.</h2>
+          <p style="color:var(--ink-2);margin:0 0 18px">Reels, threads, videos, articles. Save them here and they stop disappearing.</p>
+          <div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px">
+            <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>1 · Save</b><br><span style="color:var(--ink-2);font-size:13px">Tap +, paste any link from any app</span></div>
+            <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>2 · It files itself</b><br><span style="color:var(--ink-2);font-size:13px">Fifty topics, sorted automatically</span></div>
+            <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>3 · Find it in seconds</b><br><span style="color:var(--ink-2);font-size:13px">Search everything you ever saved</span></div>
+          </div>
+          <button class="btn" data-act="empty-add" style="max-width:280px">+ Bork your first link</button>
+          <button class="linkish" data-act="peek-demo-signedout">See what a full library looks like →</button>
+        </div>`;
     } else {
-      home.innerHTML = "";
+      $("empty-library").textContent = "No borks from that source yet.";
     }
-    const counts = new Map();
-    for (const r of all) counts.set(r.platform, (counts.get(r.platform) || 0) + 1);
-    const order = Object.keys(PLATFORM).filter(k => counts.get(k));
-    $("platform-chips").innerHTML =
-      [`<button class="chip${platformFilter === null ? " on" : ""}" data-platform="">All<span class="n">${all.length}</span></button>`]
-      .concat(order.map(k =>
-        `<button class="chip${platformFilter === k ? " on" : ""}" data-platform="${k}">${PLATFORM[k].name}<span class="n">${counts.get(k)}</span></button>`))
-      .join("");
-    const rows = platformFilter ? all.filter(r => r.platform === platformFilter) : all;
-    $("grid-library").innerHTML = gridHTML(rows);
-    $("empty-library").hidden = rows.length > 0;
-    if (!rows.length) {
-      if (all.length === 0 && !demoMode) {
-        $("empty-library").innerHTML = `
-          <div style="max-width:640px;margin:0 auto;text-align:left">
-            <h2 style="font-family:var(--font-head);font-size:24px;letter-spacing:-.02em;margin:0 0 6px">Everything you're consuming on the internet — one library.</h2>
-            <p style="color:var(--ink-2);margin:0 0 18px">Reels, threads, videos, articles. Save them here and they stop disappearing.</p>
-            <div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px">
-              <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>1 · Save</b><br><span style="color:var(--ink-2);font-size:13px">Tap +, paste any link from any app</span></div>
-              <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>2 · It files itself</b><br><span style="color:var(--ink-2);font-size:13px">Fifty topics, sorted automatically</span></div>
-              <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>3 · Find it in seconds</b><br><span style="color:var(--ink-2);font-size:13px">Search everything you ever saved</span></div>
-            </div>
-            <button class="btn" data-act="empty-add" style="max-width:280px">+ Bork your first link</button>
-            <button class="linkish" data-act="peek-demo-signedout">See what a full library looks like →</button>
-          </div>`;
-      } else {
-        $("empty-library").textContent = "No borks from that source yet.";
-      }
-    }
-  }
-
-  if (tab === "browse") {
-    $("browse-home").hidden = !!topicFilter;
-    $("browse-topic").hidden = !topicFilter;
-    if (topicFilter) {
-      const t = TOPIC_BY_ID[topicFilter];
-      $("browse-topic-title").textContent = t ? t.name : "Topic";
-      $("grid-topic").innerHTML = gridHTML(all.filter(r => r.category_id === topicFilter));
-    } else {
-      const counts = new Map();
-      for (const r of all) if (r.category_id && TOPIC_BY_ID[r.category_id])
-        counts.set(r.category_id, (counts.get(r.category_id) || 0) + 1);
-      $("topics-grid").innerHTML = [...counts.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .map(([id, n]) => {
-          const t = TOPIC_BY_ID[id];
-          return `<button class="topic-tile" data-topic="${id}">
-            <img src="/img/topics/${id}.jpg" alt="" loading="lazy" onerror="this.style.display='none'">
-            <span class="tt-text"><b>${esc(t.name)}</b><span>${n} bork${n === 1 ? "" : "s"}</span></span></button>`;
-        }).join("") || `<p class="hint">Topics appear as your borks get filed.</p>`;
-      const pCounts = new Map();
-      for (const r of all) pCounts.set(r.platform, (pCounts.get(r.platform) || 0) + 1);
-      $("sources-list").innerHTML = Object.keys(PLATFORM).filter(k => pCounts.get(k)).map(k =>
-        `<button class="source-row" data-platform-row="${k}">
-          <span class="source-badge">${PLATFORM[k].short}</span><b>${PLATFORM[k].name}</b>
-          <span>${pCounts.get(k)}</span></button>`).join("");
-    }
-  }
-
-  if (tab === "search") {
-    const rows = query ? all.filter(r => r._blob.includes(query)) : [];
-    $("grid-search").innerHTML = gridHTML(rows);
-    $("empty-search").hidden = !query || rows.length > 0;
-    if (query && !rows.length) $("empty-search").textContent = "No borks match. Different search?";
-  }
-
-  if (tab === "you") {
-    $("avatar-big").textContent = initial();
-    $("you-name").textContent = profile.display_name || profile.handle || "You";
-    $("you-email").textContent = (profile.handle ? "@" + profile.handle + " · " : "") + (s.email ?? "");
-    if (document.activeElement !== $("profile-name")) $("profile-name").value = profile.display_name || "";
-    if (document.activeElement !== $("profile-handle")) $("profile-handle").value = profile.handle || "";
-    $("stat-borks").textContent = all.length;
-    $("stat-topics").textContent = new Set(all.map(r => r.category_id).filter(Boolean)).size;
-    const cutoff = Date.now() - 7 * 86_400_000;
-    $("stat-week").textContent = all.filter(r => new Date(r.saved_at) >= cutoff).length;
   }
 }
 
-function setTab(next, { keepTopic = false } = {}) {
+function renderBrowse(all) {
+  const drill = !!topicFilter;
+  const wasDrill = memo.get("browse-panel") === "drill";
+  $("browse-home").hidden = drill;
+  $("browse-topic").hidden = !drill;
+  if (drill !== wasDrill) { memo.set("browse-panel", drill ? "drill" : "home"); replay(drill ? $("browse-topic") : $("browse-home"), "view-enter"); }
+  if (drill) {
+    const t = TOPIC_BY_ID[topicFilter];
+    const rows = all.filter(r => r.category_id === topicFilter);
+    $("browse-topic-title").textContent = t ? `${t.name} · ${plural(rows.length, "bork")}` : "Topic";
+    renderGrid($("grid-topic"), rows, `browse|${topicFilter}|${demoMode}`);
+    return;
+  }
+  const counts = topicCounts(all);
+  const tkey = `tiles|${demoMode}|${counts.map(([id, n]) => id + n).join(",")}`;
+  if (memo.get("topics-grid") !== tkey) {
+    memo.set("topics-grid", tkey);
+    $("topics-grid").innerHTML = counts.map(([id, n]) => {
+      const t = TOPIC_BY_ID[id];
+      return `<button class="topic-tile" data-topic="${id}">
+        <span class="tt-art" style="${tileStyle(t.hue)}"><i class="ini">${esc(t.name.charAt(0))}</i><img src="/img/topics/${id}.jpg" alt="" loading="lazy" data-fb="remove"></span>
+        <span class="tt-text"><b>${esc(t.name)}</b><span>${plural(n, "bork")}</span></span></button>`;
+    }).join("") || `<p class="hint">Topics appear as your borks get filed.</p>`;
+  }
+  const items = platformItems(all).slice(1);
+  const skey = `sources|${demoMode}|${items.map(i => i.key + i.n).join(",")}`;
+  if (memo.get("sources-list") !== skey) {
+    memo.set("sources-list", skey);
+    $("sources-list").innerHTML = items.map(i =>
+      `<button class="source-row" data-platform-row="${i.key}">
+        <span class="source-badge">${glyph(i.key)}</span><b>${esc(i.label)}</b>
+        <span>${i.n}</span></button>`).join("") || `<p class="hint">Sources appear as you bork.</p>`;
+  }
+}
+
+function renderSearch(all) {
+  const terms = query.split(/\s+/).filter(Boolean);
+  const hasQ = terms.length > 0;
+  $("search-start").hidden = hasQ;
+  $("search-head").hidden = !hasQ;
+  $("grid-search").hidden = !hasQ;
+  if (!hasQ) {
+    const key = `pills|${demoMode}|${all.length}`;
+    if (memo.get("search-pills") !== key) { memo.set("search-pills", key); $("search-pills").innerHTML = topicPillsHTML(all, 12); }
+    $("search-start").querySelector(".hint").textContent = all.length
+      ? "Titles, captions, notes, tags — every word you've ever borked." : "Search will find anything once you've borked something.";
+    $("empty-search").hidden = true;
+    lastSearchCount = 0;
+    return;
+  }
+  const matched = all.filter(r => terms.every(t => r._blob.includes(t)));
+  const items = platformItems(matched);
+  if (searchPlatform && !items.some(i => i.key === searchPlatform)) searchPlatform = null;
+  const rows = searchPlatform ? matched.filter(r => r.platform === searchPlatform) : matched;
+  $("search-meta").textContent = `${plural(matched.length, "bork")} for “${query}”`;
+  $("search-chips").hidden = matched.length === 0;
+  renderChips($("search-chips"), items, searchPlatform, "data-search-platform");
+  renderGrid($("grid-search"), rows, `search|${query}|${searchPlatform || "all"}|${demoMode}`);
+  $("empty-search").hidden = rows.length > 0;
+  if (!rows.length) $("empty-search").textContent = "No borks match. Different search?";
+  lastSearchCount = matched.length;
+}
+
+function renderYou(all, s) {
+  $("avatar-big").textContent = initial();
+  $("you-name").textContent = profile.display_name || profile.handle || "You";
+  $("you-email").textContent = (profile.handle ? "@" + profile.handle + " · " : "") + (s.email ?? "");
+  if (document.activeElement !== $("profile-name")) $("profile-name").value = profile.display_name || "";
+  if (document.activeElement !== $("profile-handle")) $("profile-handle").value = profile.handle || "";
+  $("stat-borks").textContent = all.length;
+  $("stat-topics").textContent = new Set(all.map(r => r.category_id).filter(Boolean)).size;
+  const cutoff = Date.now() - 7 * 86_400_000;
+  $("stat-week").textContent = all.filter(r => new Date(r.saved_at) >= cutoff).length;
+}
+
+/* ── Navigation + routes (#browse/fitness survives a reload and the back button) ── */
+function setTab(next, { keepTopic = false, focus = true, push = true } = {}) {
   if (demoMode && next === "you") { toast("Sign up first — then this is your page.", "Sign up", exitDemoToSignup); return; }
+  const changed = next !== tab;
   tab = next;
   if (next !== "browse" && !keepTopic) topicFilter = null;
+  if (next !== "search" && query) { query = ""; $("search-desktop").value = ""; $("search-mobile").value = ""; }
   render();
-  if (next === "search") setTimeout(() => $("search-mobile").focus(), 50);
+  if (push) pushRoute();
+  if (next === "search" && focus && MOBILE()) setTimeout(() => $("search-mobile").focus(), 60);
   window.scrollTo({ top: 0 });
+  if (changed) track("tab_switched", { tab: next });
+}
+function goTopic(id) {
+  if (!TOPIC_BY_ID[id]) return;
+  tab = "browse"; topicFilter = id;
+  render(); pushRoute(); window.scrollTo({ top: 0 });
+  track("topic_opened", { topic: id });
+}
+const ROUTE_RE = /^#(library|browse|search|you)(?:\/([a-z0-9]+))?$/;
+function routeFor() {
+  if (tab === "library") return "";
+  if (tab === "browse" && topicFilter) return `#browse/${topicFilter}`;
+  return `#${tab}`;
+}
+function pushRoute() {
+  const want = routeFor();
+  if ((location.hash || "") === want) return;
+  history.pushState(null, "", want || location.pathname + location.search);
+}
+function applyRoute() {
+  if (!store.session && !demoMode) { render(); return; }
+  const m = ROUTE_RE.exec(location.hash || "");
+  let next = m ? m[1] : "library";
+  const topic = m && next === "browse" && m[2] && TOPIC_BY_ID[m[2]] ? m[2] : null;
+  if (demoMode && next === "you") next = "library";
+  tab = next; topicFilter = topic;
+  if (next !== "search") { query = ""; $("search-desktop").value = ""; $("search-mobile").value = ""; }
+  render();
+}
+window.addEventListener("popstate", applyRoute);
+
+/* ── Dialogs: animated open/close, Esc + backdrop, one confirm for everything ── */
+function openDlg(d) {
+  if (d.open) return;
+  delete d.dataset.closing; d.classList.remove("closing");
+  d.showModal(); d.scrollTop = 0;
+}
+function closeDlg(d) {
+  if (!d.open || d.dataset.closing) return;
+  const finish = () => { delete d.dataset.closing; d.classList.remove("closing"); if (d.open) d.close(); };
+  if (REDUCED()) { finish(); return; }
+  d.dataset.closing = "1"; d.classList.add("closing");
+  let done = false;
+  const once = (e) => { if (done || (e && e.pseudoElement)) return; done = true; d.removeEventListener("animationend", once); finish(); };
+  d.addEventListener("animationend", once);
+  setTimeout(once, 300);
+}
+document.querySelectorAll("dialog").forEach(d => {
+  d.addEventListener("cancel", (e) => { e.preventDefault(); closeDlg(d); });
+  d.addEventListener("click", (e) => {
+    if (e.target !== d) return;
+    const r = d.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside) closeDlg(d);
+  });
+});
+function confirmDlg({ title, body, ok = "OK", danger = false }) {
+  const d = $("confirm-dialog");
+  $("confirm-h").textContent = title; $("confirm-p").textContent = body;
+  const yes = $("confirm-yes"); yes.textContent = ok; yes.classList.toggle("danger", danger);
+  d.returnValue = "";
+  return new Promise((resolve) => {
+    d.addEventListener("close", () => resolve(d.returnValue === "yes"), { once: true });
+    openDlg(d); yes.focus();
+  });
+}
+
+/* ── Toast ── */
+let toastTimer = null;
+function hideToast() { $("toast").classList.remove("show"); }
+function toast(msg, actLabel, act) {
+  $("toast-msg").textContent = msg;
+  const b = $("toast-act");
+  b.hidden = !actLabel;
+  if (actLabel) { b.textContent = actLabel; b.onclick = () => { hideToast(); act(); }; }
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, actLabel ? 8000 : 3500);
+}
+/* Shrink a card away before its row leaves the data. */
+function animateOut(id) {
+  const els = [...document.querySelectorAll(`[data-id="${CSS.escape(id)}"]`)];
+  if (!els.length || REDUCED()) return Promise.resolve();
+  els.forEach(el => el.classList.add("card-out"));
+  return new Promise(res => setTimeout(res, 180));
 }
 
 /* ── Auth ── */
 let authMode = "signup";
 let pendingEmail = "";
+let verifying = false;
+let resendTimer = null;
 function renderAuth() {
   $("google-btn").hidden = !GOOGLE_ENABLED;
   $("google-divider").hidden = !GOOGLE_ENABLED;
@@ -1120,51 +1656,72 @@ function showAuthStage(stage) {
   $("auth-email").hidden = stage !== "email";
   $("auth-code").hidden = stage !== "code";
 }
-async function sendCode() {
-  const email = $("email-input").value.trim().toLowerCase();
-  if (!email.includes("@")) { $("auth-err").textContent = "That doesn't look like an email."; return; }
-  $("auth-err").textContent = "";
-  const btn = document.querySelector("[data-act=send-code]");
-  btn.disabled = true; btn.textContent = "Sending…";
+function startResendCooldown(secs) {
+  const b = $("resend-btn");
+  clearInterval(resendTimer);
+  let left = secs;
+  const tick = () => {
+    if (left <= 0) { clearInterval(resendTimer); b.disabled = false; b.textContent = "Send a new code"; return; }
+    b.disabled = true; b.textContent = `Send a new code (${left}s)`; left--;
+  };
+  tick(); resendTimer = setInterval(tick, 1000);
+}
+async function sendCode({ resend = false } = {}) {
+  const email = resend ? pendingEmail : $("email-input").value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $("auth-err").textContent = "That doesn't look like an email."; $("email-input").focus(); return; }
+  $("auth-err").textContent = ""; $("code-err").textContent = "";
+  const btn = resend ? $("resend-btn") : document.querySelector("[data-act=send-code]");
+  const done = busy(btn, "Sending…");
   try {
     await api("/auth/v1/otp", { method: "POST", auth: false, body: { email, create_user: authMode === "signup" } });
     pendingEmail = email;
-    $("code-blurb").textContent = `We emailed a six-digit code to ${email}.`;
+    $("code-blurb").innerHTML = `We emailed a six-digit code to <b>${esc(email)}</b>. It's good for an hour.`;
     $("code-input").value = "";
     showAuthStage("code");
+    done(); startResendCooldown(30);
     $("code-input").focus();
+    if (resend) toast("New code sent.");
+    track("otp_requested", { mode: authMode, resend });
   } catch (e) {
-    $("auth-err").textContent = /signups not allowed/i.test(e.message)
-      ? "No account with that email yet. Tap Sign up and we'll make one."
-      : e.message;
-  } finally { btn.disabled = false; btn.textContent = "Email me a code"; }
+    done();
+    (resend ? $("code-err") : $("auth-err")).textContent = humanError(e);
+    if (resend) startResendCooldown(10);
+  }
 }
-async function verifyCode() {
-  const code = $("code-input").value.trim();
-  if (code.length < 6) return;
+async function verifyCode({ auto = false } = {}) {
+  const code = $("code-input").value.replace(/\D/g, "");
+  if (code.length < 6) { if (!auto) $("code-err").textContent = "Enter all six digits."; return; }
+  if (verifying) return;
+  verifying = true;
   $("code-err").textContent = "";
-  const btn = document.querySelector("[data-act=verify-code]");
-  btn.disabled = true; btn.textContent = "Checking…";
+  const done = busy(document.querySelector("[data-act=verify-code]"), "Checking…");
   try {
     const d = await api("/auth/v1/verify", { method: "POST", auth: false, body: { email: pendingEmail, token: code, type: "email" } });
-    adoptSession(d, pendingEmail);
-  } catch (e) { $("code-err").textContent = e.message; }
-  finally { btn.disabled = false; btn.textContent = "Continue"; }
+    adoptSession(d, pendingEmail, "email");
+  } catch (e) { $("code-err").textContent = humanError(e); $("code-input").select(); }
+  finally { done(); verifying = false; }
 }
-function adoptSession(d, emailHint) {
-  window.posthog?.identify(d.user?.id);
+function adoptSession(d, emailHint, method) {
+  const user = d.user || {};
+  resetLocalState();
   store.session = {
     access_token: d.access_token, refresh_token: d.refresh_token,
     expires_at: Date.now() + (Number(d.expires_in) || 3600) * 1000,
-    user_id: d.user?.id, email: d.user?.email ?? emailHint ?? null,
+    user_id: user.id, email: user.email ?? emailHint ?? null,
   };
-  borks = new Map(); store.cursor = null;
-  tab = "library"; render();
-  toast("You're in. Pulling your borks…");
+  lsDel("bm.cursor"); store.cache = [];
+  try { window.posthog?.identify?.(user.id); } catch {}
+  const brandNew = user.created_at && (Date.now() - new Date(user.created_at)) < 60_000;
+  track(brandNew ? "signed_up" : "signed_in", { method });
+  loading = true;
+  clearInterval(resendTimer);
+  render(); pushRoute();
+  toast(brandNew ? "Welcome. Your library starts here." : "You're in. Pulling your borks…");
   loadProfile();
-  pull({ full: true }).catch(e => toast(e.message));
+  pull().catch(e => toast(humanError(e), "Retry", () => pull().catch(() => {})));
 }
 function signInWithGoogle() {
+  track("google_clicked");
   const back = encodeURIComponent(location.origin + "/");
   location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${back}`;
 }
@@ -1173,20 +1730,29 @@ function signOut(msg) {
     method: "POST",
     headers: { apikey: ANON_KEY, Authorization: `Bearer ${store.session?.access_token ?? ""}` },
   }).catch(() => {});
-  store.session = null; store.cursor = null; store.cache = [];
-  localStorage.removeItem("bm.mcache");
-  borks = new Map(); missions = new Map(); platformFilter = null; topicFilter = null; query = ""; tab = "library";
-  profile = { handle: null, display_name: null };
+  track("signed_out");
+  store.session = null; lsDel("bm.cursor"); store.cache = [];
+  lsDel("bm.mcache");
+  try { window.posthog?.reset?.(); } catch {}
+  demoMode = false;
+  resetLocalState();
   showAuthStage("choose");
   render();
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
   if (msg) toast(msg);
 }
 async function deleteAccount() {
-  if (!confirm("Delete your account? This permanently removes your account and every bork backed up on our servers. Borks on your iPhone stay there. This can't be undone.")) return;
+  const ok = await confirmDlg({
+    title: "Delete your account?",
+    body: "This permanently removes your account and every bork backed up on our servers. Borks on your iPhone stay there. This can't be undone.",
+    ok: "Delete everything", danger: true,
+  });
+  if (!ok) return;
   try {
     await api("/functions/v1/delete-account", { method: "POST", body: {} });
+    track("account_deleted");
     signOut("Account deleted. Your iPhone keeps its local borks.");
-  } catch (e) { toast(e.message); }
+  } catch (e) { toast(humanError(e)); }
 }
 
 /* ── Add flow ── */
@@ -1204,17 +1770,18 @@ function openAdd() {
   if (demoMode) { toast("Sign up free and this + is yours.", "Sign up", exitDemoToSignup); return; }
   $("add-url").value = ""; $("add-err").textContent = ""; $("add-preview").hidden = true; addPreview = null;
   fillTopicSelect($("add-topic"), null);
-  $("add-dialog").showModal();
+  openDlg($("add-dialog"));
   $("add-url").focus();
+  track("add_opened");
 }
 async function fetchPreviewInto(url) {
   addPreview = null;
   $("add-preview").hidden = true;
   try {
     const d = await api("/functions/v1/preview", { method: "POST", body: { url } });
-    if (d && (d.title || d.image_url)) {
+    if (d && (d.title || d.image_url) && $("add-url").value.trim() === url) {
       addPreview = d;
-      $("add-title").textContent = d.title || "";
+      $("add-title").textContent = decodeEntities(d.title || "");
       $("add-author").textContent = d.author || "";
       const img = $("add-thumb");
       img.hidden = !d.image_url;
@@ -1223,29 +1790,32 @@ async function fetchPreviewInto(url) {
     }
   } catch { /* preview is a bonus, never a blocker */ }
 }
-async function saveAdd() {
+function saveAdd() {
   const raw = $("add-url").value.trim();
   const id = stableID(raw);
-  if (!id) { $("add-err").textContent = "That doesn't look like a link."; return; }
+  if (!id) { $("add-err").textContent = "That doesn't look like a link — it needs to start with https://"; return; }
   const existing = borks.get(id);
   if (existing && !existing.deleted_at) { $("add-err").textContent = "Already in your library."; return; }
   const platform = detectPlatform(raw);
   const slug = decodeURIComponent((new URL(id).pathname.split("/").filter(Boolean).pop() || new URL(id).hostname))
     .replace(/[-_+]/g, " ").trim();
-  const btn = $("add-dialog").querySelector("[data-act=save-add]");
-  btn.disabled = true; btn.textContent = "Saving…";
-  try {
-    await push({
-      id, url: raw, title: (addPreview?.title || slug || raw),
-      platform, kind: PLATFORM[platform].kind,
-      category_id: $("add-topic").value || null,
-      author: addPreview?.author ?? null, image_url: addPreview?.image_url ?? null,
-      duration_seconds: addPreview?.duration_seconds ?? null,
-    });
-    $("add-dialog").close();
-    toast("Borked. It's on your phone too.");
-  } catch (e) { $("add-err").textContent = e.message; }
-  finally { btn.disabled = false; btn.textContent = "Bork it"; }
+  const now = new Date().toISOString();
+  const row = {
+    id, url: raw, title: (addPreview?.title || slug || raw),
+    platform, kind: PLATFORM[platform].kind, tags: [],
+    category_id: $("add-topic").value || null, subcategory: null, body_text: null, note_text: null,
+    author: addPreview?.author ?? null, image_url: addPreview?.image_url ?? null,
+    duration_seconds: addPreview?.duration_seconds ?? null,
+    saved_at: now, updated_at: now, deleted_at: null,
+  };
+  const isFirst = live().length === 0;
+  justAdded.add(id);
+  closeDlg($("add-dialog"));
+  platformFilter = null;
+  if (tab !== "library") setTab("library", { focus: false }); else { render(); window.scrollTo({ top: 0 }); }
+  toast("Borked. It's on your phone too.");
+  track("bork_added", { platform, is_first: isFirst, had_preview: !!addPreview });
+  commit(row, existing || null);
 }
 
 /* ── Edit flow ── */
@@ -1254,41 +1824,40 @@ function openEdit(id) {
   const r = borks.get(id);
   if (!r) return;
   editing = id;
-  $("edit-title").textContent = r.title || r.url;
-  $("edit-open").href = r.url;
+  $("edit-title").textContent = displayFields(r).title;
+  const open = $("edit-open");
+  if (/^https?:/i.test(r.url)) open.href = r.url; else open.removeAttribute("href");
   fillTopicSelect($("edit-topic"), r.category_id);
   fillSubSelect($("edit-sub"), r.category_id, r.subcategory);
   $("edit-tags").value = (r.tags || []).join(", ");
   $("edit-note").value = r.note_text || "";
-  $("edit-dialog").showModal();
+  openDlg($("edit-dialog"));
+  track("bork_opened", { platform: r.platform });
 }
-async function saveEdit() {
+function saveEdit() {
   const r = borks.get(editing);
   if (!r) return;
-  const btn = $("edit-dialog").querySelector("[data-act=save-edit]");
-  btn.disabled = true;
-  try {
-    await push({ ...r,
-      category_id: $("edit-topic").value || null,
-      subcategory: $("edit-sub").value || null,
-      tags: $("edit-tags").value.split(",").map(x => x.trim().toLowerCase()).filter(Boolean),
-      note_text: $("edit-note").value.trim() || null,
-    });
-    $("edit-dialog").close();
-  } catch (e) { toast(e.message); }
-  finally { btn.disabled = false; }
+  const next = { ...r,
+    category_id: $("edit-topic").value || null,
+    subcategory: $("edit-sub").value || null,
+    tags: $("edit-tags").value.split(",").map(x => x.trim().toLowerCase()).filter(Boolean),
+    note_text: $("edit-note").value.trim() || null,
+  };
+  closeDlg($("edit-dialog"));
+  const changed = ["category_id", "subcategory", "note_text"].some(k => next[k] !== r[k]) || next.tags.join() !== (r.tags || []).join();
+  if (!changed) return;
+  track("bork_edited", { note: !!next.note_text, tags: next.tags.length });
+  commit(next, r);
 }
 async function deleteBork() {
   const r = borks.get(editing);
   if (!r) return;
-  $("edit-dialog").close();
-  try {
-    await push({ ...r, deleted_at: new Date().toISOString() });
-    toast("Bork deleted.", "Undo", async () => {
-      try { await push({ ...r, deleted_at: null }); toast("Back where it was."); }
-      catch (e) { toast(e.message); }
-    });
-  } catch (e) { toast(e.message); }
+  closeDlg($("edit-dialog"));
+  await animateOut(r.id);
+  const gone = { ...r, deleted_at: new Date().toISOString() };
+  track("bork_deleted", { platform: r.platform });
+  commit(gone, r);
+  toast("Bork deleted.", "Undo", () => { justAdded.add(r.id); commit({ ...r, deleted_at: null }, gone); toast("Back where it was."); });
 }
 
 /* ── Quest dialog ── */
@@ -1297,7 +1866,7 @@ function openQuest(id) {
   const m = id ? missions.get(id) : null;
   questDraft = m
     ? JSON.parse(JSON.stringify(m))
-    : { id: crypto.randomUUID().toUpperCase(), title: "", detail: null, category_id: null,
+    : { id: uuid().toUpperCase(), title: "", detail: null, category_id: null,
         bookmark_ids: [], habit_name: null, completed_days: [], todos: [], is_archived: false,
         created_at: new Date().toISOString() };
   $("quest-h").textContent = m ? "Side quest" : "Start a side quest";
@@ -1306,102 +1875,119 @@ function openQuest(id) {
   $("quest-err").textContent = "";
   fillTopicSelect($("quest-topic"), questDraft.category_id);
   renderQuestLists();
-  $("quest-dialog").showModal();
+  openDlg($("quest-dialog"));
   if (!m) $("quest-title").focus();
 }
 function renderQuestLists() {
   const todos = questDraft.todos || [];
   $("quest-todos").innerHTML = todos.map(t =>
     `<div class="todo-row${t.done ? " done" : ""}">
-      <input type="checkbox" data-todo="${esc(t.id)}"${t.done ? " checked" : ""}>
+      <input type="checkbox" data-todo="${esc(t.id)}"${t.done ? " checked" : ""} aria-label="${esc(t.text)}">
       <span>${esc(t.text)}</span>
-      <button class="todo-x" data-todo-x="${esc(t.id)}" title="Remove">✕</button>
+      <button class="todo-x" data-todo-x="${esc(t.id)}" title="Remove" aria-label="Remove step">✕</button>
     </div>`).join("") || `<p class="hint" style="margin:4px 0">Break it into a few steps — or don't.</p>`;
   const attached = (questDraft.bookmark_ids || []).map(id => borks.get(id)).filter(Boolean);
   $("quest-borks").innerHTML = attached.map(r =>
-    `<div class="qb-row"><b>${esc(r.title || r.url)}</b><button class="qb-x" data-qb-x="${esc(r.id)}" title="Remove">✕</button></div>`
+    `<div class="qb-row"><b>${esc(displayFields(r).title)}</b><button class="qb-x" data-qb-x="${esc(r.id)}" title="Remove" aria-label="Remove bork">✕</button></div>`
   ).join("") || `<p class="hint" style="margin:4px 0">No borks attached yet.</p>`;
   const topic = $("quest-topic").value || questDraft.category_id;
   const pool = live().filter(r => (!topic || r.category_id === topic) && !(questDraft.bookmark_ids || []).includes(r.id)).slice(0, 6);
   $("quest-suggest").innerHTML = pool.length
     ? `<p class="hint" style="margin:8px 0 2px">Add from your library:</p>` + pool.map(r =>
-      `<div class="qb-row"><b>${esc(r.title || r.url)}</b><button class="qb-add" data-qb-add="${esc(r.id)}">+ Add</button></div>`).join("")
+      `<div class="qb-row"><b>${esc(displayFields(r).title)}</b><button class="qb-add" data-qb-add="${esc(r.id)}">+ Add</button></div>`).join("")
     : "";
 }
-async function saveQuest() {
+function saveQuest() {
   questDraft.title = $("quest-title").value.trim();
   questDraft.category_id = $("quest-topic").value || null;
-  if (!questDraft.title) { $("quest-err").textContent = "Give it a name — what are you working on?"; return; }
-  const btn = $("quest-dialog").querySelector("[data-act=save-quest]");
-  btn.disabled = true;
-  try {
-    await pushMission(questDraft);
-    $("quest-dialog").close();
-    toast("Side quest saved.");
-  } catch (e) { $("quest-err").textContent = e.message; }
-  finally { btn.disabled = false; }
+  if (!questDraft.title) { $("quest-err").textContent = "Give it a name — what are you working on?"; $("quest-title").focus(); return; }
+  const isNew = !missions.has(questDraft.id);
+  const draft = questDraft;
+  closeDlg($("quest-dialog"));
+  toast(isNew ? "Side quest started." : "Side quest saved.");
+  if (isNew) track("quest_created", { todos: (draft.todos || []).length, borks: (draft.bookmark_ids || []).length });
+  commitMission(draft);
 }
 async function deleteQuest() {
-  $("quest-dialog").close();
   const m = questDraft;
-  try {
-    await pushMission({ ...m, deleted_at: new Date().toISOString() });
-    toast("Side quest deleted.", "Undo", async () => {
-      try { await pushMission({ ...m, deleted_at: null }); } catch (e) { toast(e.message); }
-    });
-  } catch (e) { toast(e.message); }
-}
-
-/* ── Toast ── */
-let toastTimer = null;
-function toast(msg, actLabel, act) {
-  $("toast-msg").textContent = msg;
-  const b = $("toast-act");
-  b.hidden = !actLabel;
-  if (actLabel) { b.textContent = actLabel; b.onclick = () => { $("toast").hidden = true; act(); }; }
-  $("toast").hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { $("toast").hidden = true; }, actLabel ? 8000 : 3500);
+  closeDlg($("quest-dialog"));
+  const gone = { ...m, deleted_at: new Date().toISOString() };
+  commitMission(gone);
+  track("quest_deleted");
+  toast("Side quest deleted.", "Undo", () => commitMission({ ...m, deleted_at: null }));
 }
 
 /* ── Wiring ── */
+// Broken images fall back the way their data-fb says — no inline handlers anywhere.
+document.addEventListener("error", (e) => {
+  const img = e.target;
+  if (!(img instanceof HTMLImageElement)) return;
+  const fb = img.dataset.fb;
+  if (fb === "hide") { img.hidden = true; return; }
+  if (fb !== "remove") return;
+  const src = img.getAttribute("src");
+  if (src && !src.startsWith("/")) badImg.add(src);
+  const card = img.closest(".card");
+  img.remove();
+  if (card) degradeCard(card);
+}, true);
+/* A grid card whose picture died becomes the text card it would have been
+   rendered as — in place, so the masonry doesn't reshuffle under the reader.
+   The next full rebuild lays it out properly via badImg. */
+function degradeCard(card) {
+  const cover = card.querySelector(".cover");
+  if (!cover) return;
+  cover.remove();
+  card.classList.add("card-text");
+  const body = card.querySelector(".card-body");
+  let au = card.querySelector(".card-author");
+  if (!au) { au = document.createElement("div"); au.className = "card-author"; au.innerHTML = `<span>${esc((PLATFORM[card.dataset.platform] || PLATFORM.web).name)}</span>`; body.prepend(au); }
+  au.insertAdjacentHTML("afterbegin", glyph(card.dataset.platform));
+}
+
 document.addEventListener("click", (e) => {
+  if (e.target.closest('a[href="/app"]')) track("get_the_app_clicked", { where: tab });
+  if (e.target.closest("#edit-open")) { track("bork_original_opened"); return; }
   const tabLink = e.target.closest("[data-tab-link]");
   if (tabLink) { e.preventDefault(); setTab(tabLink.dataset.tabLink); return; }
   const act = e.target.closest("[data-act]")?.dataset.act;
-  if (act === "peek-demo") { enterDemo(); return; }
+  if (act === "peek-demo" || act === "peek-demo-signedout") { enterDemo(); return; }
   if (act === "empty-add") { openAdd(); return; }
-  if (act === "peek-demo-signedout") { enterDemo(); return; }
-  if (act === "demo-signup") { if (store.session) { demoMode = false; render(); } else exitDemoToSignup(); return; }
-  if (act === "demo-exit") { demoMode = false; render(); return; }
+  if (act === "demo-signup") { if (store.session) exitDemo(); else exitDemoToSignup(); return; }
+  if (act === "demo-exit") { exitDemo(); return; }
   if (act === "choose-signup") { authMode = "signup"; renderAuth(); showAuthStage("email"); $("email-input").focus(); }
   if (act === "choose-signin") { authMode = "signin"; renderAuth(); showAuthStage("email"); $("email-input").focus(); }
   if (act === "switch-mode") { authMode = authMode === "signup" ? "signin" : "signup"; $("auth-err").textContent = ""; renderAuth(); }
   if (act === "back-choose") { showAuthStage("choose"); $("auth-err").textContent = ""; }
-  if (act === "back-email") { showAuthStage("email"); $("code-err").textContent = ""; }
+  if (act === "back-email") { showAuthStage("email"); $("code-err").textContent = ""; clearInterval(resendTimer); $("email-input").focus(); }
   if (act === "send-code") sendCode();
+  if (act === "resend-code") sendCode({ resend: true });
   if (act === "verify-code") verifyCode();
-  if (act === "close-add") $("add-dialog").close();
+  if (act === "close-add") closeDlg($("add-dialog"));
   if (act === "save-add") saveAdd();
-  if (act === "close-edit") $("edit-dialog").close();
+  if (act === "close-edit") closeDlg($("edit-dialog"));
   if (act === "save-edit") saveEdit();
   if (act === "delete-bork") deleteBork();
-  if (act === "browse-back") { topicFilter = null; render(); }
+  if (act === "browse-back") { topicFilter = null; render(); pushRoute(); }
   if (act === "save-profile") saveProfile();
-  if (act === "sign-out") { if (confirm("Sign out on this browser?")) signOut(); }
+  if (act === "sign-out") confirmDlg({ title: "Sign out on this browser?", body: "Your borks stay backed up. Sign back in any time with a code.", ok: "Sign out" }).then(ok => { if (ok) signOut(); });
   if (act === "delete-account") deleteAccount();
+  if (act === "confirm-no") closeDlg($("confirm-dialog"));
+  if (act === "confirm-yes") { $("confirm-dialog").returnValue = "yes"; closeDlg($("confirm-dialog")); }
   const chip = e.target.closest(".chip");
-  if (chip && chip.dataset.platform !== undefined) { platformFilter = chip.dataset.platform || null; render(); }
+  if (chip && chip.dataset.platform !== undefined) { platformFilter = chip.dataset.platform || null; render(); track("filter_platform", { platform: platformFilter || "all" }); return; }
+  if (chip && chip.dataset.searchPlatform !== undefined) { searchPlatform = chip.dataset.searchPlatform || null; render(); return; }
   const tile = e.target.closest(".topic-tile");
-  if (tile) { topicFilter = tile.dataset.topic; render(); window.scrollTo({ top: 0 }); }
+  if (tile) { goTopic(tile.dataset.topic); return; }
   const srcRow = e.target.closest("[data-platform-row]");
-  if (srcRow) { platformFilter = srcRow.dataset.platformRow; setTab("library"); }
-  if (act === "close-quest") $("quest-dialog").close();
+  if (srcRow) { platformFilter = srcRow.dataset.platformRow; setTab("library"); return; }
+  if (act === "close-quest") closeDlg($("quest-dialog"));
   if (act === "save-quest") saveQuest();
   if (act === "delete-quest") deleteQuest();
   if (act === "quest-add-todo") {
     const v = $("quest-new-todo").value.trim();
-    if (v) { (questDraft.todos ??= []).push({ id: crypto.randomUUID(), text: v, done: false }); $("quest-new-todo").value = ""; renderQuestLists(); }
+    if (v) { (questDraft.todos ??= []).push({ id: uuid(), text: v, done: false }); $("quest-new-todo").value = ""; renderQuestLists(); }
+    $("quest-new-todo").focus();
     return;
   }
   const questBtn = e.target.closest("[data-quest]");
@@ -1413,7 +1999,7 @@ document.addEventListener("click", (e) => {
   const qbX = e.target.closest("[data-qb-x]");
   if (qbX) { questDraft.bookmark_ids = (questDraft.bookmark_ids || []).filter(x => x !== qbX.dataset.qbX); renderQuestLists(); return; }
   const pill = e.target.closest("[data-topic-go]");
-  if (pill) { const id = pill.dataset.topicGo; setTab("browse"); topicFilter = id; render(); return; }
+  if (pill) { goTopic(pill.dataset.topicGo); return; }
   const card = e.target.closest(".card, .recent-card");
   if (card) {
     if (demoMode) { toast("That's a demo bork — sign up and start saving your own.", "Sign up", exitDemoToSignup); return; }
@@ -1421,33 +2007,46 @@ document.addEventListener("click", (e) => {
   }
 });
 $("google-btn").addEventListener("click", signInWithGoogle);
+// Keyboard: cards act like buttons; Enter submits the auth step you're on; Esc clears search.
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !$("auth").hidden) {
-    if (!$("auth-email").hidden) sendCode();
-    else if (!$("auth-code").hidden) verifyCode();
-  }
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches(".card, .recent-card")) { e.preventDefault(); e.target.click(); }
 });
-let searchTimer = null;
+$("email-input").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendCode(); } });
+$("code-input").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); verifyCode(); } });
+$("code-input").addEventListener("input", (e) => {
+  const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+  if (digits !== e.target.value) e.target.value = digits;
+  if (digits.length === 6) verifyCode({ auto: true });
+});
+let searchTimer = null, searchTrack = null;
 function onSearch(value) {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
     query = value.trim().toLowerCase();
-    if (tab !== "search") setTab("search"); else render();
+    if (tab !== "search") setTab("search", { focus: false }); else render();
     const other = document.activeElement === $("search-desktop") ? $("search-mobile") : $("search-desktop");
-    other.value = value;
+    if (other.value !== value) other.value = value;
+    clearTimeout(searchTrack);
+    if (query) searchTrack = setTimeout(() => track("search_performed", { terms: query.split(/\s+/).length, results: lastSearchCount }), 1200);
   }, 180);
 }
-$("search-desktop").addEventListener("input", (e) => onSearch(e.target.value));
-$("search-mobile").addEventListener("input", (e) => onSearch(e.target.value));
+for (const id of ["search-desktop", "search-mobile"]) {
+  $(id).addEventListener("input", (e) => onSearch(e.target.value));
+  $(id).addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { e.preventDefault(); $(id).value = ""; query = ""; $(id).blur(); if (tab === "search") setTab("library"); else render(); }
+  });
+}
 $("add-desktop").addEventListener("click", openAdd);
 $("add-mobile").addEventListener("click", openAdd);
 let previewTimer = null;
 $("add-url").addEventListener("input", () => {
   clearTimeout(previewTimer);
+  $("add-err").textContent = "";
   const raw = $("add-url").value.trim();
   if (!/^https?:\/\/\S+\.\S+/.test(raw)) return;
   previewTimer = setTimeout(() => fetchPreviewInto(raw), 400);
 });
+$("add-url").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); saveAdd(); } });
 $("edit-topic").addEventListener("change", () => fillSubSelect($("edit-sub"), $("edit-topic").value, null));
 $("quest-topic").addEventListener("change", renderQuestLists);
 document.addEventListener("change", (e) => {
@@ -1463,7 +2062,7 @@ $("quest-new-todo").addEventListener("keydown", (e) => {
 let resizeTimer = null;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(render, 150);
+  resizeTimer = setTimeout(() => { syncBannerHeight(); render(); }, 150);
 });
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && store.session) pull().catch(() => {});
@@ -1471,30 +2070,40 @@ document.addEventListener("visibilitychange", () => {
 
 /* ── Boot ── */
 (async function boot() {
+  const hash = location.hash || "";
   // OAuth providers land back here with tokens in the hash (implicit flow).
-  if (location.hash.includes("access_token=")) {
-    const h = new URLSearchParams(location.hash.slice(1));
+  if (hash.includes("access_token=")) {
+    const h = new URLSearchParams(hash.slice(1));
     const access = h.get("access_token"), refresh = h.get("refresh_token");
-    history.replaceState(null, "", location.pathname);
     if (access && refresh) {
       try {
-        const u = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-          headers: { apikey: ANON_KEY, Authorization: `Bearer ${access}` },
-        }).then(r => r.json());
-        adoptSession({ access_token: access, refresh_token: refresh, expires_in: h.get("expires_in"), user: u });
+        const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { apikey: ANON_KEY, Authorization: `Bearer ${access}` } });
+        if (!r.ok) throw new Error("user lookup failed");
+        const u = await r.json();
+        history.replaceState(null, "", location.pathname + location.search);
+        adoptSession({ access_token: access, refresh_token: refresh, expires_in: h.get("expires_in"), user: u }, null, "google");
         return;
       } catch { /* fall through to normal boot */ }
     }
+    history.replaceState(null, "", location.pathname + location.search);
+  } else if (/^#(error|error_code|error_description)=/.test(hash) || hash.includes("&error=")) {
+    const h = new URLSearchParams(hash.slice(1));
+    const desc = (h.get("error_description") || "").replace(/\+/g, " ");
+    $("choose-err").textContent = desc ? `Sign-in didn't go through: ${desc}` : "Sign-in didn't go through — try again.";
+    history.replaceState(null, "", location.pathname + location.search);
   }
   absorb(store.cache);
-  try { absorbMissions(JSON.parse(localStorage.getItem("bm.mcache")) || []); } catch { /* fresh */ }
+  try { absorbMissions(JSON.parse(lsGet("bm.mcache")) || []); } catch { /* fresh */ }
   showAuthStage("choose");
   renderAuth();
-  render();
   if (store.session) {
-    window.posthog?.identify(store.session.user_id);
+    try { window.posthog?.identify?.(store.session.user_id); } catch {}
+    if (!borks.size) loading = true;
+  }
+  applyRoute();
+  if (store.session) {
     loadProfile();
-    pull({ full: !store.cursor }).catch((e) => toast(e.message));
+    pull().catch((e) => toast(humanError(e), "Retry", () => pull().catch(() => {})));
   }
 })();
 </script>
