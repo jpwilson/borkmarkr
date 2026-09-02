@@ -74,6 +74,28 @@ coordination, and a crash mid-save loses nothing — the draft is still queued.
 This also respects the extension's ~120MB memory cap: booting a persistent store
 to save one URL is slow and risky while the user waits over someone else's app.
 
+**Expiring covers are copied server-side, never re-fetched by clients.** Instagram,
+Facebook and TikTok sign their CDN image URLs and let them die in about five days,
+so a library of reels goes grey a week after it was saved. `0008_thumbs.sql` queues
+a job whenever a bookmark arrives with one of those URLs (statement-level trigger:
+a phone pushing 500 rows is one wake-up, not 500) and pokes the `thumb` Edge
+Function through pg_net; pg_cron retries every minute while anything is due. The
+function copies the bytes into the public `thumbs` bucket — magic-byte sniffed,
+1.5MB cap, same SSRF guard as `preview` — and rewrites `image_url` to a permanent
+URL. Three rules fell out of the clients' sync model:
+
+1. **Nothing here may fail a save.** Bookkeeping lives in `thumb_jobs`, not on
+   `bookmarks`, every trigger swallows its own errors, and the RPCs are
+   service-role only. `select=*` on `bookmarks` is unchanged for both clients.
+2. **The rewrite must bump `updated_at`** (the existing `bookmarks_touch` trigger
+   does it) or neither client ever pulls the new cover — and it waits ~8s after
+   the client's write so the phone has stamped its sync cursor first.
+3. **A stale client re-pushing the dead URL is swapped back in-row** by a BEFORE
+   trigger, so the copy is never lost to last-writer-wins.
+
+The shared token lives in Vault and in the function's secrets, never in git — the
+hard-coded token in `0007_signup_notify.sql` is the anti-pattern this replaces.
+
 ## Accessibility
 
 **Small-text contrast.** The spec's tertiary ink `#A39A8D` on `#F6F3EE` paper is

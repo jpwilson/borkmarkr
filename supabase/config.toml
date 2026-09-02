@@ -1,0 +1,10 @@
+# Only what must not drift between deploys. Both functions below are called
+# by Postgres through pg_net, which sends no JWT, so the gateway must not ask
+# for one; each checks its own shared token instead.
+project_id = "pcjuxnhqxyfvgagnblzv"
+
+[functions.thumb]
+verify_jwt = false
+
+[functions.notify-signup]
+verify_jwt = false
