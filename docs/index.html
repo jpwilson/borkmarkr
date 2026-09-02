@@ -253,8 +253,8 @@
   .backlink { border: 0; background: none; color: var(--accent-text); font-weight: 700; padding: 0 0 12px; }
 
   /* ── Search ── */
-  #search-start .hint { margin: 4px 0 12px; }
-  #search-head .h-row { margin-top: 0; }
+  #browse-search .h-row { margin-top: 0; }
+  #search-mobile { margin-bottom: 14px; }
   #search-meta { font-size: 17px; }
 
   /* ── You ── */
@@ -284,6 +284,10 @@
   .err { color: var(--destructive); font-size: 13px; min-height: 18px; margin: 6px 0 0; }
   .ok-msg { color: #1F7A4D; font-size: 13px; min-height: 18px; margin: 6px 0 0; }
   .hint { color: var(--faint); font-size: 12.5px; }
+  textarea.field { height: auto; min-height: 124px; padding: 12px 14px; resize: vertical; line-height: 1.45; font: inherit; }
+  .fb-kinds { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 4px; }
+  .help-steps { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+  .help-steps li { margin: 0 0 10px; } .help-steps b { color: var(--ink); }
   .state { text-align: center; color: var(--ink-2); padding: 56px 20px; }
 
   /* ── Auth / signed-out story ── */
@@ -343,6 +347,37 @@
     background: var(--surface); padding: 0 10px; }
   .dialog-row { display: flex; gap: 10px; margin-top: 16px; }
   .dialog-row .btn { margin: 0; }
+
+  /* ── Topic picker (trigger in Add/Edit + the sheet itself) ── */
+  .topic-trigger { display: flex; align-items: center; gap: 10px; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+  .topic-trigger .tp-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .topic-trigger .tp-empty { color: var(--faint); font-weight: 500; }
+  .topic-trigger svg { width: 18px; height: 18px; flex: 0 0 auto; opacity: .45; }
+  .tp-sep { opacity: .45; margin: 0 5px; }
+  .tp-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+  #topic-dialog[open] { display: flex; flex-direction: column; overflow: hidden; padding: 0; height: min(640px, calc(100dvh - 48px)); }
+  .tp-head { flex: 0 0 auto; padding: 22px 22px 12px; }
+  .tp-head h2 { outline: none; }
+  #tp-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 22px 12px; }
+  .tp-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 8px 4px; border: 0;
+    border-bottom: 1px solid var(--hairline); background: none; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+  .tp-row .tp-name { flex: 1; min-width: 0; font-weight: 600; }
+  .tp-row .n { color: var(--faint); font-size: 12.5px; }
+  .tp-row svg { width: 16px; height: 16px; flex: 0 0 auto; opacity: .4; transition: transform .18s ease; }
+  .tp-row[aria-expanded="true"] svg { transform: rotate(90deg); }
+  .tp-row.tp-on .tp-name::after { content: " ✓"; color: var(--accent-text); }
+  .tp-none .tp-name { color: var(--ink-2); font-weight: 500; }
+  .tp-subs { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 4px 14px 26px; border-bottom: 1px solid var(--hairline); }
+  .tp-subs .chip { cursor: pointer; height: auto; min-height: 34px; max-width: 100%; padding: 5px 13px; white-space: normal; text-align: left; }
+  .tp-subs .chip.hit { border-color: var(--ink); }
+  .tp-subs .chip.mine::after { content: "yours"; font-size: 10px; opacity: .55; }
+  .tp-subs .chip.just { background: var(--surface); color: var(--ink-2); }
+  .tp-subs .chip.just.on { background: var(--ink); color: var(--paper); }
+  .tp-new { display: flex; gap: 8px; width: 100%; margin-top: 2px; }
+  .tp-new .field { height: 40px; flex: 1; }
+  .tp-empty-msg { padding: 18px 4px; }
+  #topic-dialog .dialog-row { flex: 0 0 auto; position: static; margin: 0; border-top: 1px solid var(--hairline);
+    padding: 12px 22px calc(14px + env(safe-area-inset-bottom)); }
   .preview-box { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
   .preview-box img { width: 84px; height: 56px; object-fit: cover; border-radius: 10px; background: var(--tint); }
 
@@ -397,6 +432,7 @@
     .dialog-row { position: sticky; bottom: 0; background: var(--surface); margin: 12px 0 calc(-22px - env(safe-area-inset-bottom));
       padding: 12px 0 calc(14px + env(safe-area-inset-bottom)); }
     #toast { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px); }
+    #topic-dialog[open] { height: calc(100dvh - 40px); }
   }
   @media (min-width: 761px) {
     .fab-mobile, #search-mobile { display: none; }
@@ -533,6 +569,7 @@
       <nav class="nav-tabs" aria-label="Sections">
         <button class="nav-tab" data-tab-link="library">Library</button>
         <button class="nav-tab" data-tab-link="browse">Browse</button>
+        <button class="nav-tab" data-tab-link="help">Help</button>
       </nav>
       <input type="search" class="nav-search" id="search-desktop" placeholder="Search your borks" autocomplete="off" aria-label="Search your borks">
       <span class="spacer"></span>
@@ -550,6 +587,7 @@
     </section>
 
     <section id="view-browse" hidden>
+      <input type="search" class="field" id="search-mobile" placeholder="Search everything you've borked" autocomplete="off" aria-label="Search everything you've borked">
       <div id="browse-home">
         <h2 class="section-title">Topics</h2>
         <div class="topics-grid" id="topics-grid"></div>
@@ -561,21 +599,14 @@
         <h2 class="section-title" id="browse-topic-title"></h2>
         <div class="grid" id="grid-topic"></div>
       </div>
-    </section>
-
-    <section id="view-search">
-      <input type="search" class="field" id="search-mobile" placeholder="Search everything you've borked" autocomplete="off" aria-label="Search everything you've borked" style="margin-bottom:14px">
-      <div id="search-start" hidden>
-        <p class="hint">Titles, captions, notes, tags — every word you've ever borked.</p>
-        <div class="topic-pills" id="search-pills"></div>
-      </div>
-      <div id="search-head" hidden>
+      <div id="browse-search" hidden>
         <div class="h-row"><h2 class="h-title" id="search-meta"></h2></div>
         <nav class="chips" id="search-chips" aria-label="Filter results by source"></nav>
+        <div class="grid" id="grid-search"></div>
+        <div class="state" id="empty-search" hidden></div>
       </div>
-      <div class="grid" id="grid-search"></div>
-      <div class="state" id="empty-search" hidden></div>
     </section>
+
 
     <section id="view-you" hidden>
       <div class="you-grid">
@@ -615,6 +646,45 @@
         </div>
       </div>
     </section>
+
+    <section id="view-help" hidden>
+      <div class="you-grid">
+        <div class="you-col">
+          <div class="you-card">
+            <h2 class="section-title" style="margin-top:0">Tell us something</h2>
+            <p class="hint" style="margin:0 0 12px">An idea, something broken, a question. It lands in a real inbox and gets read by the person who builds this.</p>
+            <div class="fb-kinds" role="radiogroup" aria-label="What kind of message">
+              <button class="chip" role="radio" data-fb-kind="idea">💡 Idea</button>
+              <button class="chip" role="radio" data-fb-kind="problem">🐛 Something's broken</button>
+              <button class="chip" role="radio" data-fb-kind="other">💬 Other</button>
+            </div>
+            <label class="field-label" for="fb-msg">What's up?</label>
+            <textarea class="field ph-no-capture" id="fb-msg" maxlength="2000" placeholder="The more specific, the better — what you did, what you expected, what happened."></textarea>
+            <div id="fb-contact-wrap">
+              <label class="field-label" for="fb-contact">Email, if you'd like a reply (optional)</label>
+              <input class="field ph-no-capture" id="fb-contact" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+            </div>
+            <p class="err" id="fb-err" role="alert"></p><p class="ok-msg" id="fb-ok" role="status"></p>
+            <button class="btn" data-act="send-feedback" style="margin-top:4px">Send</button>
+          </div>
+        </div>
+        <div class="you-col">
+          <div class="you-card">
+            <h2 class="section-title" style="margin-top:0">How bookmarker works</h2>
+            <ol class="help-steps">
+              <li><b>Bork it.</b> Share from Instagram, X, TikTok or YouTube to bookmarker on your iPhone, or tap + here and paste a link. Saving is instant — nothing to fill in.</li>
+              <li><b>It files itself.</b> Every bork lands in a topic, and usually a subtopic, on its own. Open a bork to change where it lives, add tags or a note.</li>
+              <li><b>Find it in seconds.</b> Browse by topic or by source, or search every word you've ever borked — titles, captions, notes, tags.</li>
+              <li><b>Side quests.</b> Group borks around something you're actually doing — run a faster 10k, pick a van — and tick off the steps.</li>
+              <li><b>It's yours.</b> Sign in with a one-time code, no password. Your library syncs between the iPhone app and this site, and you can delete everything from the You tab.</li>
+            </ol>
+          </div>
+          <p class="hint">
+            <a href="/app">Get the iPhone app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
+          </p>
+        </div>
+      </div>
+    </section>
     <footer class="app-foot">
       <span>© 2026 bookmarker</span>
       <a href="/app">Get the app</a>
@@ -630,8 +700,8 @@
     <button class="tab" data-tab-link="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</button>
     <button class="tab" data-tab-link="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
     <button class="fab-mobile" id="add-mobile" aria-label="Bork a link">+</button>
-    <button class="tab" data-tab-link="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Search</button>
     <button class="tab" data-tab-link="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>You</button>
+    <button class="tab" data-tab-link="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.5a2.8 2.8 0 0 1 5.4.9c0 1.8-2.7 2.2-2.7 3.6"/><path d="M12 17.2h.01"/></svg>Help</button>
   </nav>
 </div>
 
@@ -647,8 +717,9 @@
       <div class="hint" id="add-author"></div>
     </div>
   </div>
-  <label class="field-label" for="add-topic">Topic (optional)</label>
-  <select id="add-topic"></select>
+  <label class="field-label" for="add-topic">Topic</label>
+  <button type="button" class="field topic-trigger" id="add-topic" data-act="pick-topic" data-for="add" aria-haspopup="dialog"></button>
+  <p class="hint" id="add-suggest" hidden style="margin:6px 0 0">Filed for you — tap it to change.</p>
   <p class="err" id="add-err" role="alert"></p>
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-add">Not now</button>
@@ -661,9 +732,7 @@
   <h2 id="edit-title" style="overflow-wrap:anywhere"></h2>
   <p style="margin:0 0 4px"><a id="edit-open" target="_blank" rel="noopener">Open original ↗</a></p>
   <label class="field-label" for="edit-topic">Topic</label>
-  <select id="edit-topic"></select>
-  <label class="field-label" for="edit-sub">Subtopic</label>
-  <select id="edit-sub"></select>
+  <button type="button" class="field topic-trigger" id="edit-topic" data-act="pick-topic" data-for="edit" aria-haspopup="dialog"></button>
   <label class="field-label" for="edit-tags">Tags (comma separated)</label>
   <input class="field" id="edit-tags" autocomplete="off">
   <label class="field-label" for="edit-note">Note</label>
@@ -672,6 +741,19 @@
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-edit">Cancel</button>
     <button class="btn" data-act="save-edit">Save</button>
+  </div>
+</dialog>
+
+<!-- Topic picker: the app's "Pick a topic" sheet, opened over Add or Edit -->
+<dialog id="topic-dialog" aria-labelledby="tp-h">
+  <div class="tp-head">
+    <h2 id="tp-h" tabindex="-1">Pick a topic</h2>
+    <input type="search" class="field" id="tp-q" placeholder="Find a topic or subtopic" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Find a topic or subtopic">
+  </div>
+  <div id="tp-list"></div>
+  <div class="dialog-row">
+    <button class="btn ghost" data-act="tp-cancel">Cancel</button>
+    <button class="btn" data-act="tp-done">Done</button>
   </div>
 </dialog>
 
@@ -919,8 +1001,9 @@ let tab = "library";
 let lastTab = null;
 let platformFilter = null;   // Library
 let topicFilter = null;      // Browse drill-in
-let query = "";              // Search
-let searchPlatform = null;   // Search, narrowed to one source
+let query = "";              // Browse: a live query shows results instead of topics
+let searchPlatform = null;   // …narrowed to one source
+let fbKind = "idea";         // Help: what kind of message
 let lastSearchCount = 0;
 let profile = { handle: null, display_name: null };
 let loading = false;         // a pull is in flight
@@ -989,9 +1072,9 @@ function resetLocalState() {
   profile = { handle: null, display_name: null };
   platformFilter = null; topicFilter = null; query = ""; searchPlatform = null; lastSearchCount = 0;
   tab = "library"; lastTab = null; loading = false; pulledOnce = false;
-  justAdded.clear(); memo.clear();
+  justAdded.clear(); memo.clear(); addedSubs.clear();
   $("search-desktop").value = ""; $("search-mobile").value = "";
-  for (const id of ["home-sections", "platform-chips", "grid-library", "grid-topic", "grid-search", "topics-grid", "sources-list", "search-pills", "search-chips"])
+  for (const id of ["home-sections", "platform-chips", "grid-library", "grid-topic", "grid-search", "topics-grid", "sources-list", "search-chips"])
     $(id).innerHTML = "";
 }
 function rebootFromStorage() {
@@ -1491,12 +1574,12 @@ function render() {
   renderShell();
   if (tab === "library") renderLibrary(all, s);
   if (tab === "browse") renderBrowse(all);
-  if (tab === "search") renderSearch(all);
   if (tab === "you") renderYou(all, s);
+  if (tab === "help") renderHelp(s);
   justAdded.clear();
 }
 function renderShell() {
-  for (const v of ["library", "browse", "search", "you"]) {
+  for (const v of ["library", "browse", "you", "help"]) {
     const el = $(`view-${v}`);
     el.hidden = v !== tab;
     if (v === tab && tab !== lastTab) replay(el, "view-enter");
@@ -1606,12 +1689,14 @@ function renderLibrary(all, s) {
 }
 
 function renderBrowse(all) {
-  const drill = !!topicFilter;
-  const wasDrill = memo.get("browse-panel") === "drill";
-  $("browse-home").hidden = drill;
-  $("browse-topic").hidden = !drill;
-  if (drill !== wasDrill) { memo.set("browse-panel", drill ? "drill" : "home"); replay(drill ? $("browse-topic") : $("browse-home"), "view-enter"); }
-  if (drill) {
+  // A live query wins over a drilled-in topic; clearing it lands you back where you were.
+  const panel = query ? "search" : topicFilter ? "drill" : "home";
+  $("browse-home").hidden = panel !== "home";
+  $("browse-topic").hidden = panel !== "drill";
+  $("browse-search").hidden = panel !== "search";
+  if (memo.get("browse-panel") !== panel) { memo.set("browse-panel", panel); replay($(`browse-${panel === "drill" ? "topic" : panel}`), "view-enter"); }
+  if (panel === "search") { renderSearch(all); return; }
+  if (panel === "drill") {
     const t = TOPIC_BY_ID[topicFilter];
     const rows = all.filter(r => r.category_id === topicFilter);
     $("browse-topic-title").textContent = t ? `${t.name} · ${plural(rows.length, "bork")}` : "Topic";
@@ -1642,19 +1727,6 @@ function renderBrowse(all) {
 
 function renderSearch(all) {
   const terms = query.split(/\s+/).filter(Boolean);
-  const hasQ = terms.length > 0;
-  $("search-start").hidden = hasQ;
-  $("search-head").hidden = !hasQ;
-  $("grid-search").hidden = !hasQ;
-  if (!hasQ) {
-    const key = `pills|${demoMode}|${all.length}`;
-    if (memo.get("search-pills") !== key) { memo.set("search-pills", key); $("search-pills").innerHTML = topicPillsHTML(all, 12); }
-    $("search-start").querySelector(".hint").textContent = all.length
-      ? "Titles, captions, notes, tags — every word you've ever borked." : "Search will find anything once you've borked something.";
-    $("empty-search").hidden = true;
-    lastSearchCount = 0;
-    return;
-  }
   const matched = all.filter(r => terms.every(t => r._blob.includes(t)));
   const items = platformItems(matched);
   if (searchPlatform && !items.some(i => i.key === searchPlatform)) searchPlatform = null;
@@ -1666,6 +1738,38 @@ function renderSearch(all) {
   $("empty-search").hidden = rows.length > 0;
   if (!rows.length) $("empty-search").textContent = "No borks match. Different search?";
   lastSearchCount = matched.length;
+}
+
+function renderHelp(s) {
+  $("fb-contact-wrap").hidden = !!s;   // a signed-in sender is already identified
+  syncFbKinds();
+}
+function syncFbKinds() {
+  document.querySelectorAll("[data-fb-kind]").forEach(b => {
+    const on = b.dataset.fbKind === fbKind;
+    b.classList.toggle("on", on); b.setAttribute("aria-checked", on);
+  });
+}
+async function sendFeedback() {
+  $("fb-err").textContent = ""; $("fb-ok").textContent = "";
+  const message = $("fb-msg").value.trim();
+  if (message.length < 3) { $("fb-err").textContent = "Say a little more — even one sentence helps."; $("fb-msg").focus(); return; }
+  const signedIn = !!store.session;
+  const contact = signedIn ? null : ($("fb-contact").value.trim() || null);
+  if (contact && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact)) { $("fb-err").textContent = "That email doesn't look right."; $("fb-contact").focus(); return; }
+  const context = `${MOBILE() ? "mobile" : "desktop"} ${innerWidth}×${innerHeight} · ${navigator.userAgent}`.slice(0, 160);
+  const done = busy(document.querySelector("[data-act=send-feedback]"), "Sending…");
+  try {
+    await api("/rest/v1/feedback", {
+      method: "POST", auth: signedIn, headers: { Prefer: "return=minimal" },
+      body: { kind: fbKind, message: message.slice(0, 2000), contact, context },
+    });
+    $("fb-msg").value = ""; $("fb-contact").value = "";
+    $("fb-ok").textContent = "Sent — thank you. Every message gets read.";
+    track("feedback_sent", { kind: fbKind, signed_in: signedIn });
+  } catch (e) {
+    $("fb-err").textContent = humanError(e);
+  } finally { done(); }
 }
 
 function renderYou(all, s) {
@@ -1681,25 +1785,29 @@ function renderYou(all, s) {
 }
 
 /* ── Navigation + routes (#browse/fitness survives a reload and the back button) ── */
-function setTab(next, { keepTopic = false, focus = true, push = true } = {}) {
+function clearQuery() {
+  query = ""; searchPlatform = null;
+  $("search-desktop").value = ""; $("search-mobile").value = "";
+}
+function setTab(next, { keepTopic = false, push = true } = {}) {
   if (demoMode && next === "you") { toast("Sign up first — then this is your page.", "Sign up", exitDemoToSignup); return; }
   const changed = next !== tab;
   tab = next;
   if (next !== "browse" && !keepTopic) topicFilter = null;
-  if (next !== "search" && query) { query = ""; $("search-desktop").value = ""; $("search-mobile").value = ""; }
+  if (next !== "browse") clearQuery();   // typing anywhere lands on Browse, so Browse keeps the query
   render();
   if (push) pushRoute();
-  if (next === "search" && focus && MOBILE()) setTimeout(() => $("search-mobile").focus(), 60);
   window.scrollTo({ top: 0 });
   if (changed) track("tab_switched", { tab: next });
 }
 function goTopic(id) {
   if (!TOPIC_BY_ID[id]) return;
-  tab = "browse"; topicFilter = id;
+  tab = "browse"; topicFilter = id; clearQuery();
   render(); pushRoute(); window.scrollTo({ top: 0 });
   track("topic_opened", { topic: id });
 }
-const ROUTE_RE = /^#(library|browse|search|you)(?:\/([a-z0-9]+))?$/;
+// `search` stays as an alias so old links and back-stack entries still land somewhere sensible.
+const ROUTE_RE = /^#(library|browse|search|you|help)(?:\/([a-z0-9]+))?$/;
 function routeFor() {
   if (tab === "library") return "";
   if (tab === "browse" && topicFilter) return `#browse/${topicFilter}`;
@@ -1714,10 +1822,11 @@ function applyRoute() {
   if (!store.session && !demoMode) { render(); return; }
   const m = ROUTE_RE.exec(location.hash || "");
   let next = m ? m[1] : "library";
+  if (next === "search") { next = "browse"; history.replaceState(null, "", "#browse"); }
   const topic = m && next === "browse" && m[2] && TOPIC_BY_ID[m[2]] ? m[2] : null;
   if (demoMode && next === "you") next = "library";
   tab = next; topicFilter = topic;
-  if (next !== "search") { query = ""; $("search-desktop").value = ""; $("search-mobile").value = ""; }
+  clearQuery();   // a route is always a clean panel
   render();
 }
 window.addEventListener("popstate", applyRoute);
@@ -1897,21 +2006,148 @@ async function deleteAccount() {
   } catch (e) { toast(humanError(e)); }
 }
 
+/* ── Topic picker — the app's TopicPickerSheet + TopicPickerQuery, ported.
+   One sheet serves Add and Edit; `picks` is what each dialog will save. ── */
+const picks = { add: { topic: null, sub: null, source: null }, edit: { topic: null, sub: null, source: null } };
+const addedSubs = new Map();   // topic → Set of subtopics typed this session and not yet on a bork
+let tp = null;                 // the open picker: { which, snapshot, expanded, filter, adding }
+
+const tpFold = (s) => String(s ?? "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+const tpTokens = (s) => tpFold(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+/* Crude stem so "game" hits Gaming without letting "run" hit Speedruns. */
+function tpStem(w) {
+  if (w.length > 4 && w.endsWith("ing")) w = w.slice(0, -3);
+  if (w.length > 3 && w.endsWith("e")) w = w.slice(0, -1);
+  return w;
+}
+function tpTokenMatches(token, needle) {
+  if (token.startsWith(needle)) return true;
+  const ns = tpStem(needle), ts = tpStem(token);
+  if (ns.length >= 3 && token.startsWith(ns)) return true;
+  return ns.length >= 3 && ts.length >= 3 && ts === ns;
+}
+/* 0 topic token/name prefix · 1 topic name contains · 2 subtopic token prefix · null no match */
+function tpRank(t, subs, needle) {
+  needle = tpFold(needle.trim());
+  if (!needle) return 0;
+  const name = tpFold(t.name);
+  if (tpTokens(t.name).some(x => tpTokenMatches(x, needle)) || name.startsWith(needle)) return 0;
+  if (name.includes(needle)) return 1;
+  return subs.some(sub => tpTokens(sub).some(x => tpTokenMatches(x, needle))) ? 2 : null;
+}
+/* Subtopics the person made up: already on their borks (so they sync) or typed this session. */
+function ownSubs(topicID) {
+  const builtin = new Set((TOPIC_BY_ID[topicID]?.subs || []).map(x => x.toLowerCase()));
+  const out = new Map();
+  for (const r of live()) if (r.category_id === topicID && r.subcategory && !builtin.has(r.subcategory.toLowerCase())) out.set(r.subcategory.toLowerCase(), r.subcategory);
+  for (const x of addedSubs.get(topicID) || []) if (!builtin.has(x.toLowerCase())) out.set(x.toLowerCase(), x);
+  return [...out.values()].sort((a, b) => a.localeCompare(b));
+}
+const allSubs = (topicID) => [...(TOPIC_BY_ID[topicID]?.subs || []), ...ownSubs(topicID)];
+function tpShown(filter) {
+  const needle = filter.trim();
+  const list = needle ? TAXONOMY.filter(t => tpRank(t, allSubs(t.id), needle) !== null) : TAXONOMY.slice();
+  return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+}
+function tpMatchingSubs(subs, needle) {
+  needle = tpFold(needle.trim());
+  return new Set(needle ? subs.filter(sub => tpTokens(sub).some(x => tpTokenMatches(x, needle))) : []);
+}
+function tpCanAdd(raw, existing) {
+  const c = raw.trim().toLowerCase();
+  return c.length >= 2 && !existing.some(x => x.toLowerCase() === c);
+}
+/* "trail running" → "Trail running", matching the built-in style. */
+const subName = (raw) => { const x = raw.trim().replace(/\s+/g, " "); return x.charAt(0).toUpperCase() + x.slice(1); };
+const CHEV = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>`;
+
+function renderTrigger(which) {
+  const p = picks[which], t = p.topic && TOPIC_BY_ID[p.topic];
+  $(`${which}-topic`).innerHTML = (t
+    ? `<span class="tp-dot" style="background:hsl(${t.hue} 65% 55%)"></span><span class="tp-label">${esc(t.name)}${p.sub ? `<span class="tp-sep">›</span>${esc(p.sub)}` : ""}</span>`
+    : `<span class="tp-label tp-empty">Pick a topic</span>`) + CHEV;
+  if (which === "add") $("add-suggest").hidden = p.source !== "ai";
+}
+function openPicker(which) {
+  const p = picks[which];
+  tp = { which, snapshot: { ...p }, expanded: p.topic, filter: "", adding: null };
+  $("tp-q").value = "";
+  renderPicker();
+  openDlg($("topic-dialog"));
+  if (MOBILE()) $("tp-h").focus(); else $("tp-q").focus();   // on a phone the keyboard waits until asked for
+  const row = tp.expanded && $("tp-list").querySelector(`[data-tp-topic="${tp.expanded}"]`);
+  if (row) row.scrollIntoView({ block: "start" });
+}
+function renderPicker() {
+  if (!tp) return;
+  const p = picks[tp.which], needle = tp.filter.trim();
+  const shown = tpShown(tp.filter);
+  // Clearing the search must not collapse the open topic; a subtopic hit opens its topic when none is open.
+  if (needle && !(tp.expanded && shown.some(t => t.id === tp.expanded))) {
+    const hit = shown.find(t => tpRank(t, allSubs(t.id), needle) === 2);
+    if (hit) tp.expanded = hit.id;
+  }
+  const draft = $("tp-new-name")?.value ?? needle;
+  let html = needle ? "" : `<button class="tp-row tp-none${p.topic ? "" : " tp-on"}" data-tp-none><span class="tp-dot" style="background:var(--hairline)"></span><span class="tp-name">Not filed — no topic</span></button>`;
+  for (const t of shown) {
+    const subs = allSubs(t.id), open = tp.expanded === t.id, on = p.topic === t.id;
+    html += `<button class="tp-row${on ? " tp-on" : ""}" data-tp-topic="${t.id}" aria-expanded="${open}"><span class="tp-dot" style="background:hsl(${t.hue} 65% 55%)"></span><span class="tp-name">${esc(t.name)}</span><span class="n">${subs.length}</span>${CHEV}</button>`;
+    if (!open) continue;
+    const hits = tpMatchingSubs(subs, needle), mine = new Set(ownSubs(t.id));
+    html += `<div class="tp-subs">` +
+      subs.map(sub => { const sel = on && p.sub === sub;
+        return `<button class="chip${sel ? " on" : ""}${hits.has(sub) ? " hit" : ""}${mine.has(sub) ? " mine" : ""}" style="${sel ? "" : chipStyle(t.hue)}" data-tp-sub="${esc(sub)}" data-tp-of="${t.id}" aria-pressed="${sel}">${esc(sub)}</button>`; }).join("") +
+      `<button class="chip just${on && !p.sub ? " on" : ""}" data-tp-sub="" data-tp-of="${t.id}" aria-pressed="${on && !p.sub}">Just ${esc(t.name)}<span class="n">— no subtopic</span></button>` +
+      (tp.adding === t.id
+        ? `<div class="tp-new"><input class="field" id="tp-new-name" placeholder="New subtopic" maxlength="40" autocomplete="off" autocapitalize="sentences" data-tp-of="${t.id}" aria-label="New subtopic name"><button class="chip on" data-tp-add-go="${t.id}">Add</button></div>`
+        : `<button class="chip" data-tp-add="${t.id}">+ Add a subtopic</button>`) +
+      (needle && tp.adding !== t.id && tpCanAdd(needle, subs) ? `<button class="chip" data-tp-use="${t.id}">Use “${esc(needle)}” as a subtopic</button>` : "") +
+      `</div>`;
+  }
+  if (!shown.length) html = `<p class="hint tp-empty-msg">Nothing called “${esc(needle)}”. Try another word, or clear the search, open the nearest topic and add it as a subtopic.</p>`;
+  $("tp-list").innerHTML = html;
+  const nu = $("tp-new-name");
+  if (nu) { nu.value = draft; if (tp.focusNew) { nu.focus(); tp.focusNew = false; } }
+}
+/* A pick both sets the value and closes the sheet — same as the app. */
+function commitPick(topic, sub) {
+  const p = picks[tp.which];
+  p.topic = topic; p.sub = topic ? sub : null; p.source = "user";
+  renderTrigger(tp.which);
+  closePicker(true);
+}
+function addSubtopicTo(topicID, raw, dismissAfter) {
+  const name = subName(raw);
+  if (name.length < 2) { $("tp-new-name")?.focus(); return; }
+  const subs = allSubs(topicID);
+  const existing = subs.find(x => x.toLowerCase() === name.toLowerCase());
+  if (!existing) { if (!addedSubs.has(topicID)) addedSubs.set(topicID, new Set()); addedSubs.get(topicID).add(name); track("subtopic_added"); }
+  const p = picks[tp.which];
+  p.topic = topicID; p.sub = existing || name; p.source = "user";
+  tp.expanded = topicID; tp.adding = null;
+  renderTrigger(tp.which);
+  if (dismissAfter) closePicker(true); else renderPicker();
+}
+function closePicker(done) {
+  if (!tp) return;
+  if (!done) { Object.assign(picks[tp.which], tp.snapshot); renderTrigger(tp.which); }
+  tp = null;
+  closeDlg($("topic-dialog"));
+}
+
 /* ── Add flow ── */
 let addPreview = null;
+let addTags = [];     // categorize's tags ride along on a new bork
+let addSeq = 0;       // bumps per URL edit so a slow suggestion can't land on a later link
 function fillTopicSelect(sel, chosen) {
   sel.innerHTML = `<option value="">— none —</option>` +
     TAXONOMY.map(t => `<option value="${t.id}"${t.id === chosen ? " selected" : ""}>${esc(t.name)}</option>`).join("");
 }
-function fillSubSelect(sel, topicID, chosen) {
-  const subs = TOPIC_BY_ID[topicID]?.subs || [];
-  sel.innerHTML = `<option value="">— none —</option>` +
-    subs.map(x => `<option${x === chosen ? " selected" : ""}>${esc(x)}</option>`).join("");
-}
 function openAdd() {
   if (demoMode) { toast("Sign up free and this + is yours.", "Sign up", exitDemoToSignup); return; }
   $("add-url").value = ""; $("add-err").textContent = ""; $("add-preview").hidden = true; addPreview = null;
-  fillTopicSelect($("add-topic"), null);
+  picks.add = { topic: null, sub: null, source: null }; addTags = []; addSeq++;
+  renderTrigger("add");
   openDlg($("add-dialog"));
   $("add-url").focus();
   track("add_opened");
@@ -1919,6 +2155,8 @@ function openAdd() {
 async function fetchPreviewInto(url) {
   addPreview = null;
   $("add-preview").hidden = true;
+  const seq = ++addSeq;
+  if (picks.add.source !== "user") { picks.add = { topic: null, sub: null, source: null }; addTags = []; renderTrigger("add"); }
   try {
     const d = await api("/functions/v1/preview", { method: "POST", body: { url } });
     if (d && (d.title || d.image_url) && $("add-url").value.trim() === url) {
@@ -1931,6 +2169,21 @@ async function fetchPreviewInto(url) {
       $("add-preview").hidden = false;
     }
   } catch { /* preview is a bonus, never a blocker */ }
+  if (seq === addSeq) suggestTopicFor(url, seq);
+}
+/* The app files offline first and asks the model only when stuck; the web has no
+   offline filer, so a signed-in save asks straight away. A hand-picked topic wins. */
+async function suggestTopicFor(url, seq) {
+  if (demoMode || !store.session || picks.add.source === "user") return;
+  try {
+    const d = await api("/functions/v1/categorize", { method: "POST",
+      body: { url, title: addPreview?.title ? decodeEntities(addPreview.title) : null, author: addPreview?.author || null, text: null, tags: [] } });
+    if (seq !== addSeq || picks.add.source === "user" || !d?.topic || !TOPIC_BY_ID[d.topic]) return;
+    const subs = TOPIC_BY_ID[d.topic].subs;
+    picks.add = { topic: d.topic, sub: subs.includes(d.subtopic) ? d.subtopic : null, source: "ai" };
+    addTags = Array.isArray(d.tags) ? d.tags.map(x => String(x).trim().toLowerCase()).filter(Boolean).slice(0, 4) : [];
+    renderTrigger("add");
+  } catch { /* filing is a bonus; the person can always pick */ }
 }
 function saveAdd() {
   const raw = $("add-url").value.trim();
@@ -1944,8 +2197,8 @@ function saveAdd() {
   const now = new Date().toISOString();
   const row = {
     id, url: raw, title: (addPreview?.title || slug || raw),
-    platform, kind: PLATFORM[platform].kind, tags: [],
-    category_id: $("add-topic").value || null, subcategory: null, body_text: null, note_text: null,
+    platform, kind: PLATFORM[platform].kind, tags: addTags,
+    category_id: picks.add.topic, subcategory: picks.add.sub, body_text: null, note_text: null,
     author: addPreview?.author ?? null, image_url: addPreview?.image_url ?? null,
     duration_seconds: addPreview?.duration_seconds ?? null,
     saved_at: now, updated_at: now, deleted_at: null,
@@ -1956,7 +2209,7 @@ function saveAdd() {
   platformFilter = null;
   if (tab !== "library") setTab("library", { focus: false }); else { render(); window.scrollTo({ top: 0 }); }
   toast("Borked. It's on your phone too.");
-  track("bork_added", { platform, is_first: isFirst, had_preview: !!addPreview });
+  track("bork_added", { platform, is_first: isFirst, had_preview: !!addPreview, filed: picks.add.source || "none" });
   commit(row, existing || null);
 }
 
@@ -1969,8 +2222,8 @@ function openEdit(id) {
   $("edit-title").textContent = displayFields(r).title;
   const open = $("edit-open");
   if (/^https?:/i.test(r.url)) open.href = r.url; else open.removeAttribute("href");
-  fillTopicSelect($("edit-topic"), r.category_id);
-  fillSubSelect($("edit-sub"), r.category_id, r.subcategory);
+  picks.edit = { topic: TOPIC_BY_ID[r.category_id] ? r.category_id : null, sub: r.subcategory || null, source: null };
+  renderTrigger("edit");
   $("edit-tags").value = (r.tags || []).join(", ");
   $("edit-note").value = r.note_text || "";
   openDlg($("edit-dialog"));
@@ -1980,8 +2233,8 @@ function saveEdit() {
   const r = borks.get(editing);
   if (!r) return;
   const next = { ...r,
-    category_id: $("edit-topic").value || null,
-    subcategory: $("edit-sub").value || null,
+    category_id: picks.edit.topic,
+    subcategory: picks.edit.topic ? picks.edit.sub : null,
     tags: $("edit-tags").value.split(",").map(x => x.trim().toLowerCase()).filter(Boolean),
     note_text: $("edit-note").value.trim() || null,
   };
@@ -2076,7 +2329,13 @@ document.addEventListener("click", (e) => {
   if (e.target.closest('a[href="/app"]')) track("get_the_app_clicked", { where: tab });
   if (e.target.closest("#edit-open")) { track("bork_original_opened"); return; }
   const tabLink = e.target.closest("[data-tab-link]");
-  if (tabLink) { e.preventDefault(); setTab(tabLink.dataset.tabLink); return; }
+  if (tabLink) {
+    e.preventDefault();
+    if (tabLink.dataset.tabLink === "browse" && tab === "browse") { topicFilter = null; clearQuery(); }   // re-tap = back to all topics
+    setTab(tabLink.dataset.tabLink); return;
+  }
+  const fbK = e.target.closest("[data-fb-kind]");
+  if (fbK) { fbKind = fbK.dataset.fbKind; syncFbKinds(); return; }
   const act = e.target.closest("[data-act]")?.dataset.act;
   if (act === "peek-demo" || act === "peek-demo-signedout") { enterDemo(); return; }
   if (act === "empty-add") { openAdd(); return; }
@@ -2093,12 +2352,16 @@ document.addEventListener("click", (e) => {
   if (act === "close-add") closeDlg($("add-dialog"));
   if (act === "save-add") saveAdd();
   if (act === "close-edit") closeDlg($("edit-dialog"));
+  if (act === "pick-topic") openPicker(e.target.closest("[data-for]").dataset.for);
+  if (act === "tp-cancel") closePicker(false);
+  if (act === "tp-done") closePicker(true);
   if (act === "save-edit") saveEdit();
   if (act === "delete-bork") deleteBork();
   if (act === "browse-back") { topicFilter = null; render(); pushRoute(); }
   if (act === "save-profile") saveProfile();
   if (act === "sign-out") confirmDlg({ title: "Sign out on this browser?", body: "Your borks stay backed up. Sign back in any time with a code.", ok: "Sign out" }).then(ok => { if (ok) signOut(); });
   if (act === "delete-account") deleteAccount();
+  if (act === "send-feedback") sendFeedback();
   if (act === "confirm-no") closeDlg($("confirm-dialog"));
   if (act === "confirm-yes") { $("confirm-dialog").returnValue = "yes"; closeDlg($("confirm-dialog")); }
   const chip = e.target.closest(".chip");
@@ -2152,7 +2415,7 @@ function onSearch(value) {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
     query = value.trim().toLowerCase();
-    if (tab !== "search") setTab("search", { focus: false }); else render();
+    if (tab !== "browse") setTab("browse", { keepTopic: true }); else render();
     const other = document.activeElement === $("search-desktop") ? $("search-mobile") : $("search-desktop");
     if (other.value !== value) other.value = value;
     clearTimeout(searchTrack);
@@ -2162,7 +2425,7 @@ function onSearch(value) {
 for (const id of ["search-desktop", "search-mobile"]) {
   $(id).addEventListener("input", (e) => onSearch(e.target.value));
   $(id).addEventListener("keydown", (e) => {
-    if (e.key === "Escape") { e.preventDefault(); $(id).value = ""; query = ""; $(id).blur(); if (tab === "search") setTab("library"); else render(); }
+    if (e.key === "Escape") { e.preventDefault(); clearQuery(); $(id).blur(); render(); }
   });
 }
 $("add-desktop").addEventListener("click", openAdd);
@@ -2176,7 +2439,62 @@ $("add-url").addEventListener("input", () => {
   previewTimer = setTimeout(() => fetchPreviewInto(raw), 400);
 });
 $("add-url").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); saveAdd(); } });
-$("edit-topic").addEventListener("change", () => fillSubSelect($("edit-sub"), $("edit-topic").value, null));
+/* Topic picker */
+let tpTimer = null;
+$("tp-q").addEventListener("input", () => {
+  clearTimeout(tpTimer);
+  tpTimer = setTimeout(() => { if (tp) { tp.filter = $("tp-q").value; renderPicker(); } }, 120);
+});
+$("tp-q").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || !tp) return;
+  e.preventDefault();
+  const first = $("tp-list").querySelector("[data-tp-topic]");
+  if (first && tp.expanded !== first.dataset.tpTopic) { tp.expanded = first.dataset.tpTopic; renderPicker(); }
+});
+$("tp-list").addEventListener("keydown", (e) => {
+  const nu = e.target.closest("#tp-new-name");
+  if (nu && e.key === "Enter") { e.preventDefault(); addSubtopicTo(nu.dataset.tpOf, nu.value, false); }
+});
+$("tp-list").addEventListener("click", (e) => {
+  if (!tp) return;
+  const row = e.target.closest("[data-tp-topic]");
+  if (row) {
+    const id = row.dataset.tpTopic;
+    tp.expanded = tp.expanded === id ? null : id; tp.adding = null;
+    renderPicker();
+    if (tp.expanded) $("tp-list").querySelector(`[data-tp-topic="${id}"]`)?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (e.target.closest("[data-tp-none]")) { commitPick(null, null); return; }
+  const sub = e.target.closest("[data-tp-sub]");
+  if (sub) { commitPick(sub.dataset.tpOf, sub.dataset.tpSub || null); return; }
+  const add = e.target.closest("[data-tp-add]");
+  if (add) { tp.adding = add.dataset.tpAdd; tp.focusNew = true; renderPicker(); return; }
+  const go = e.target.closest("[data-tp-add-go]");
+  if (go) { addSubtopicTo(go.dataset.tpAddGo, $("tp-new-name")?.value || "", false); return; }
+  const use = e.target.closest("[data-tp-use]");
+  if (use) addSubtopicTo(use.dataset.tpUse, tp.filter, true);
+});
+// Escape / backdrop close the sheet without going through Cancel; treat that as Cancel.
+$("topic-dialog").addEventListener("close", () => {
+  if (!tp) return;
+  Object.assign(picks[tp.which], tp.snapshot); renderTrigger(tp.which); tp = null;
+});
+/* On a phone the keyboard eats the bottom of the screen; fit open sheets to what is left. */
+if (window.visualViewport) {
+  const fitSheets = () => {
+    const vv = window.visualViewport;
+    const gap = Math.max(0, Math.round(innerHeight - (vv.offsetTop + vv.height)));
+    for (const d of document.querySelectorAll("dialog[open]")) {
+      if (!MOBILE()) { d.style.maxHeight = ""; d.style.height = ""; d.style.marginBottom = ""; continue; }
+      d.style.marginBottom = gap ? `${gap}px` : "";
+      d.style.maxHeight = `${Math.round(vv.height) - 40}px`;
+      if (d.id === "topic-dialog") d.style.height = `${Math.round(vv.height) - 40}px`;
+    }
+  };
+  visualViewport.addEventListener("resize", fitSheets);
+  visualViewport.addEventListener("scroll", fitSheets);
+}
 $("quest-topic").addEventListener("change", renderQuestLists);
 document.addEventListener("change", (e) => {
   const cb = e.target.closest("[data-todo]");
