@@ -96,6 +96,36 @@ URL. Three rules fell out of the clients' sync model:
 The shared token lives in Vault and in the function's secrets, never in git — the
 hard-coded token in `0007_signup_notify.sql` is the anti-pattern this replaces.
 
+**Feedback is a write-only table, and the inbox is email.** The Help tab posts to
+`public.feedback` over REST (`0009_feedback.sql`). The table grants `insert` on
+four columns and nothing else: no `select` for anyone, `user_id` outside the grant
+so it can only be the default `auth.uid()`, and a contact address accepted only
+from signed-out senders (a signed-in user's address is already on the account).
+A trigger then mails the row through the `notify` function — the same function
+`beta_signups` uses, so there is one Vault token and one place to rotate it — and
+stops mailing after 20 rows in ten minutes, so a script hitting the public
+endpoint fills a table, not an inbox. Nothing about the sender is sent to PostHog
+beyond `{kind, signed_in}`, and the message field is `ph-no-capture`.
+
+## Web app
+
+**The topic picker is the iOS sheet, not a `<select>`.** Two native selects gave
+the web app no way to add a subtopic, and on a phone the second one sat under the
+keyboard. `#topic-dialog` ports `TopicPickerSheet`: one searchable list, A–Z,
+subtopics as wrapping pills, "Just <Topic>", and an inline "add a subtopic" —
+the same interaction on both platforms. A user's own subtopics have no table of
+their own on either platform: they are whatever non-built-in `subcategory` values
+their borks carry, so the web derives the list from the loaded library plus
+anything added this session, exactly as the app does from SwiftData.
+
+**The web app files through `categorize` on every signed-in save.** The iOS app
+has an offline word-matcher and asks the model only when that falls through; the
+web app has no such matcher, so it asks straight away — under the same per-user
+daily quota, and only after the preview has resolved so the title travels with
+the URL. The suggestion is marked `source: "ai"` and is dropped the moment the
+user touches the picker; a slow answer for an earlier URL is discarded by
+sequence number. Signed out, nothing is sent and the bork is simply "not filed".
+
 ## Accessibility
 
 **Small-text contrast.** The spec's tertiary ink `#A39A8D` on `#F6F3EE` paper is
