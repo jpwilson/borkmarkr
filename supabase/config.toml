@@ -6,5 +6,5 @@ project_id = "pcjuxnhqxyfvgagnblzv"
 [functions.thumb]
 verify_jwt = false
 
-[functions.notify-signup]
+[functions.notify]
 verify_jwt = false
