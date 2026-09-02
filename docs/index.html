@@ -2104,7 +2104,11 @@ function renderPicker() {
       (needle && tp.adding !== t.id && tpCanAdd(needle, subs) ? `<button class="chip" data-tp-use="${t.id}">Use “${esc(needle)}” as a subtopic</button>` : "") +
       `</div>`;
   }
-  if (!shown.length) html = `<p class="hint tp-empty-msg">Nothing called “${esc(needle)}”. Try another word, or clear the search, open the nearest topic and add it as a subtopic.</p>`;
+  if (!shown.length) {
+    const host = TOPIC_BY_ID[tp.expanded] || TOPIC_BY_ID[p.topic];   // the topic you were just in, most likely where this belongs
+    html = `<p class="hint tp-empty-msg">Nothing called “${esc(needle)}”.</p>` + (host && tpCanAdd(needle, allSubs(host.id))
+      ? `<div class="tp-subs" style="padding-left:4px;border:0"><button class="chip" data-tp-use="${host.id}">Use “${esc(needle)}” as a subtopic of ${esc(host.name)}</button></div>` : "");
+  }
   $("tp-list").innerHTML = html;
   const nu = $("tp-new-name");
   if (nu) { nu.value = draft; if (tp.focusNew) { nu.focus(); tp.focusNew = false; } }
@@ -2476,10 +2480,18 @@ $("tp-list").addEventListener("click", (e) => {
   if (use) addSubtopicTo(use.dataset.tpUse, tp.filter, true);
 });
 // Escape / backdrop close the sheet without going through Cancel; treat that as Cancel.
-$("topic-dialog").addEventListener("close", () => {
-  if (!tp) return;
-  Object.assign(picks[tp.which], tp.snapshot); renderTrigger(tp.which); tp = null;
-});
+// (Not via the dialog's `close` event: Chrome doesn't always fire it for a nested modal.)
+{
+  const d = $("topic-dialog");
+  const dismissed = () => { if (!tp) return; Object.assign(picks[tp.which], tp.snapshot); renderTrigger(tp.which); tp = null; };
+  d.addEventListener("cancel", dismissed);
+  d.addEventListener("click", (e) => {
+    if (e.target !== d) return;
+    const r = d.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dismissed();
+  });
+  d.addEventListener("close", dismissed);
+}
 /* On a phone the keyboard eats the bottom of the screen; fit open sheets to what is left. */
 if (window.visualViewport) {
   const fitSheets = () => {
