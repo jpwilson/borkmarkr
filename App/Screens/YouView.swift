@@ -175,13 +175,18 @@ struct YouView: View {
             .foregroundStyle(Tokens.inkMeta)
             .disabled(deletingAccount)
         } else {
+            // Said plainly, because "Only on this phone" alone was read as a
+            // setting rather than as the account state. The two words people
+            // need are "Not signed in".
             VStack(alignment: .leading, spacing: 2) {
-                Text("Only on this phone")
+                Text("Not signed in — your borks live only on this phone")
                     .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
-                Text("Sign up to back up and sync your borks")
+                    .foregroundStyle(Tokens.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Sign up and they're backed up, and on the web at bookmarker.lol.")
                     .font(Typo.ui(12, .medium))
                     .foregroundStyle(Tokens.inkMeta)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

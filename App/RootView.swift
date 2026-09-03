@@ -35,6 +35,10 @@ struct RootView: View {
     @State private var tab: AppTab = .library
     @State private var showingAdd = false
     @State private var toast: String?
+    /// Drives the You-tab dot. A count rather than a `@Query` of every
+    /// bookmark: the root view re-renders on every tab change and does not
+    /// need the rows, only how many there are.
+    @State private var borkCount = 0
     @StateObject private var account = Account()
     @AppStorage("browseAxis") private var browseAxis = "topics"
 
@@ -64,7 +68,8 @@ struct RootView: View {
                         browseAxis = BrowseView.Axis.journeys.rawValue
                         tab = .browse
                     },
-                    account: account
+                    account: account,
+                    canInterrupt: !showingAdd && hasOnboarded
                 )
                 case .browse: BrowseView(interests: interests, pendingTopic: $pendingTopic, account: account)
                 case .search: SearchView()
@@ -73,7 +78,11 @@ struct RootView: View {
             }
             .environment(\.accent, accent)
 
-            TabDock(tab: $tab, onAdd: { showingAdd = true })
+            TabDock(
+                tab: $tab,
+                onAdd: { showingAdd = true },
+                signedOutDot: SignInNudge.showsBadge(signedIn: account.isSignedIn, borks: borkCount)
+            )
                 .environment(\.accent, accent)
 
             if let toast {
@@ -89,6 +98,7 @@ struct RootView: View {
             AddSheet(onSaved: { message in
                 showToast(message)
                 tab = .library
+                refreshBorkCount()
             }, account: account)
             .environment(\.accent, accent)
         }
@@ -113,6 +123,7 @@ struct RootView: View {
             #endif
             ReviewPrompter.recordLaunch()
             drain()
+            refreshBorkCount()
             Task { await account.sync(context: context) }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -120,6 +131,7 @@ struct RootView: View {
             // them up the moment we're visible again.
             if phase == .active {
                 drain()
+                refreshBorkCount()
                 Task { await account.sync(context: context) }
             }
         }
@@ -131,6 +143,14 @@ struct RootView: View {
         .onChange(of: pendingTopic) { _, value in
             if value != nil { tab = .browse }
         }
+        .onChange(of: tab) { _, _ in refreshBorkCount() }
+    }
+
+    /// Cheap enough to run on every tab change — SwiftData counts in SQL
+    /// rather than materialising the rows.
+    private func refreshBorkCount() {
+        let descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate { $0.deletedAt == nil })
+        borkCount = (try? context.fetchCount(descriptor)) ?? 0
     }
 
     private func drain() {
@@ -153,6 +173,10 @@ struct RootView: View {
 struct TabDock: View {
     @Binding var tab: AppTab
     let onAdd: () -> Void
+    /// A small dot on You while the library is signed out — the one cue that
+    /// is visible from every tab. Subtle on purpose: it points, it doesn't
+    /// interrupt.
+    var signedOutDot: Bool = false
     @Environment(\.accent) private var accent
 
     var body: some View {
@@ -216,6 +240,15 @@ struct TabDock: View {
             VStack(spacing: 3) {
                 Image(systemName: target.symbol)
                     .font(.system(size: 17, weight: .semibold))
+                    .overlay(alignment: .topTrailing) {
+                        if target == .you, signedOutDot {
+                            Circle()
+                                .fill(accent.base)
+                                .frame(width: 7, height: 7)
+                                .overlay(Circle().stroke(Tokens.paper, lineWidth: 1.5))
+                                .offset(x: 5, y: -3)
+                        }
+                    }
                 Text(target.title)
                     .font(Typo.ui(9.5, .semibold))
             }
@@ -229,6 +262,8 @@ struct TabDock: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(tab == target ? [.isSelected] : [])
+        .accessibilityHint(target == .you && signedOutDot
+                           ? "Not signed in — your borks are only on this phone" : "")
     }
 }
 

@@ -63,6 +63,22 @@ enum TopicPickerTests {
         expect(shownRun.contains(where: { $0.id == "fitness" }), "Run lists Fitness")
         expect(!shownRun.contains(where: { $0.id == "gaming" }), "Run does not list Gaming")
 
+        // Subtopics are A–Z, built-in and yours in one list (iOS 1.0.2).
+        let fitnessSubs = TopicPickerQuery.alphabetical(fitness.subs)
+        expect(
+            fitnessSubs == fitness.subs.sorted { $0.localizedStandardCompare($1) == .orderedAscending },
+            "built-in subtopics come back A–Z"
+        )
+        expect(
+            Set(fitnessSubs) == Set(fitness.subs),
+            "sorting subtopics neither drops nor invents one"
+        )
+        let mixed = TopicPickerQuery.alphabetical(["Zone 10", "bouldering", "Zone 2", "Mobility"])
+        expect(
+            mixed == ["bouldering", "Mobility", "Zone 2", "Zone 10"],
+            "a user's own subtopics sort in with the built-ins, case-insensitively and numerically"
+        )
+
         expect(TopicPickerQuery.canAddName("Run", to: fitness.subs), "Run is a new Fitness sub")
         expect(!TopicPickerQuery.canAddName("Running", to: fitness.subs), "Running already exists")
         expect(!TopicPickerQuery.canAddName("r", to: []), "single-letter names are rejected")

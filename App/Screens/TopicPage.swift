@@ -40,7 +40,11 @@ struct TopicPage: View {
     }
 
     /// Includes subtopics you added yourself, so a custom one you filed into
-    /// shows up here rather than vanishing from the chips.
+    /// shows up here rather than vanishing from the chips. A–Z, in one list
+    /// with the built-ins — `MergedTaxonomy.subs(for:)` does the ordering, so
+    /// these chips and the picker's pills can never disagree. (The counts on
+    /// the chips are information, not the sort key: ordering *by* count would
+    /// make the row jump around as you save.)
     private var presentSubs: [(name: String, count: Int)] {
         let counts = Dictionary(grouping: inCategory.compactMap(\.subcategory)) { $0 }.mapValues(\.count)
         let merged = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)

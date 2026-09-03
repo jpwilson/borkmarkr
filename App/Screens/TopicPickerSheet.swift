@@ -8,8 +8,11 @@ import SwiftData
 /// is also how you add a whole new topic, not only a subtopic under Fitness.
 ///
 /// Search lives at the top of the sheet (not `.searchable`, which parks the
-/// field under the keyboard). The list is A–Z. Expanding a topic never
-/// replaces "Add a subtopic" with "create whatever is in the search box".
+/// field under the keyboard). Topics are A–Z, and so are the subtopic pills
+/// under an open topic — built-ins and yours in one alphabetical run, because
+/// a wrapping block of forty pills in authored order can only be read by
+/// scanning all forty. Expanding a topic never replaces "Add a subtopic" with
+/// "create whatever is in the search box".
 struct TopicPickerSheet: View {
     @Binding var categoryID: String?
     @Binding var subcategory: String?

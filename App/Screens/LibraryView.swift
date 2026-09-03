@@ -8,6 +8,9 @@ struct LibraryView: View {
     var onSearch: () -> Void = {}
     var onSeeJourneys: () -> Void = {}
     var account: Account? = nil
+    /// False while the Add sheet or the first-run tour is up. A milestone
+    /// nudge waits for a clear screen rather than stacking on top of one.
+    var canInterrupt: Bool = true
 
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
@@ -30,6 +33,10 @@ struct LibraryView: View {
     @State private var openJourney: Mission?
     @State private var creatingJourney = false
     @State private var showingInsights = false
+    @State private var showingBackupBanner = false
+    @State private var nudge: SignInMilestone?
+    @State private var showingAuth = false
+    @State private var authMode: AuthSheet.Mode = .signUp
     @StateObject private var previews = PreviewFetcher()
 
     private var visible: [Bookmark] {
@@ -53,6 +60,17 @@ struct LibraryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
+                if showingBackupBanner {
+                    SignInNudgeBanner(
+                        onSignUp: { present(.signUp) },
+                        onDismiss: {
+                            SignInNudge.dismissBanner()
+                            withAnimation(Motion.gentle) { showingBackupBanner = false }
+                        }
+                    )
+                    .padding(.horizontal, 18)
+                    .transition(.opacity)
+                }
                 searchEntry
                 insightsEntry
                 JourneyRail(
@@ -89,7 +107,37 @@ struct LibraryView: View {
             }
             .environment(\.accent, accent)
         }
-        .onAppear(perform: markRead)
+        .sheet(item: $nudge) { milestone in
+            SignInNudgeSheet(
+                milestone: milestone.id,
+                onSignUp: { nudge = nil; present(.signUp, afterSheet: true) },
+                onSignIn: { nudge = nil; present(.signIn, afterSheet: true) },
+                onNotNow: {
+                    SignInNudge.recordNotNow()
+                    nudge = nil
+                    showingBackupBanner = false
+                }
+            )
+            .environment(\.accent, accent)
+        }
+        .sheet(isPresented: $showingAuth) {
+            if let account {
+                AuthSheet(account: account, mode: authMode)
+                    .environment(\.accent, accent)
+            }
+        }
+        .onAppear {
+            markRead()
+            readNudgePolicy()
+        }
+        // Counting from the store, not from a counter the app keeps: a bork
+        // saved through the Share Extension arrives when the inbox is drained
+        // and must count exactly as much as one saved in the Add sheet.
+        .onChange(of: bookmarks.count) { _, _ in readNudgePolicy() }
+        .onChange(of: account?.isSignedIn ?? false) { _, _ in readNudgePolicy() }
+        // A milestone that had to wait for the Add sheet to close comes back
+        // the moment the screen is clear again.
+        .onChange(of: canInterrupt) { _, clear in if clear { readNudgePolicy() } }
         // Fill in real titles and thumbnails for anything still missing them.
         // Keyed on count so a fresh batch of brks triggers another pass.
         .task(id: bookmarks.count) {
@@ -276,6 +324,53 @@ struct LibraryView: View {
     private static var columnWidth: CGFloat {
         let screen = UIScreen.main.bounds.width
         return (screen - 36 - 12) / 2
+    }
+
+    /// Asks `SignInNudge` what the signed-out cues should be doing, from the
+    /// library as it stands. One call site for both surfaces.
+    private func readNudgePolicy() {
+        guard let account else {
+            showingBackupBanner = false
+            return
+        }
+        let borks = bookmarks.count
+        let signedIn = account.isSignedIn
+        showingBackupBanner = SignInNudge.showsBanner(signedIn: signedIn, borks: borks)
+
+        guard !signedIn, let milestone = SignInNudge.dueMilestone(borks: borks) else {
+            SignInNudge.recordSeen(borks)
+            return
+        }
+        // Nothing goes on top of another sheet. Leaving the watermark alone
+        // keeps this milestone due for the next time the Library is clear.
+        guard canInterrupt, nudge == nil, !showingAuth, detail == nil,
+              openJourney == nil, !creatingJourney, !showingInsights else { return }
+
+        SignInNudge.recordSheetShown(milestone)
+        SignInNudge.recordSeen(borks)
+
+        // The 5th bork is usually saved in the Add sheet, which is dismissing
+        // as this runs; a sheet presented into that transition is dropped.
+        // Same reason ReviewPrompter waits.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
+            nudge = SignInMilestone(id: milestone)
+        }
+    }
+
+    /// The sign-up flow is the You tab's `AuthSheet`, reused as-is. When the
+    /// milestone sheet is what asked for it, let that finish dismissing first
+    /// or SwiftUI drops the second presentation.
+    private func present(_ mode: AuthSheet.Mode, afterSheet: Bool = false) {
+        authMode = mode
+        guard afterSheet else {
+            showingAuth = true
+            return
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(420))
+            showingAuth = true
+        }
     }
 
     private func markRead() {
