@@ -8,16 +8,28 @@ claim is the most common avoidable rejection.
 
 ## App Information
 
+**Metadata that only moves with a build.** Name, Subtitle and Keywords are
+*version* metadata: you can type them in any time, but they go live only when a
+new version is approved. The values below ship with **1.0.1** — paste them into
+the 1.0.1 record before you submit, not into the live 1.0 one. Promotional Text
+and the URLs are the exceptions and can be changed on a live version any day.
+Until 1.0.1 is approved the store keeps showing the 1.0 subtitle,
+`All your links, organized well`.
+
 **Name** (30 char max)
 ```
-bookmarker
+Bookmarker: Save Links & Reels
 ```
+*(30/30. The searchable half of the listing: "Bookmarker" is the brand,
+"Save Links & Reels" is what someone actually types. In-app and in prose the
+product stays lowercase **bookmarker** — the App Store name is the only place it
+carries a capital, because Apple title-cases the display anyway.)*
 
 **Subtitle** (30 char max — this is the line under the name in search)
 ```
-All your links, in one place
+Organize saved posts & videos
 ```
-*(28 chars. Alternative if you prefer the source emphasis: `Save links from every app`.)*
+*(29/30. Live 1.0 subtitle, until this one is approved: `All your links, organized well`.)*
 
 **Category** · Primary: `Productivity` · Secondary: `Utilities`
 
@@ -45,8 +57,31 @@ any time without a new build.)*
 ## Promotional Text (170 char max — editable any time without a new build)
 
 ```
-Thousands of saved reels, threads and clips across five apps — and you can't find one of them. bookmarker puts every save in one library, filed by topic, searchable.
+Import your Instagram, TikTok, X and YouTube saves and finally search them. Also on the web at bookmarker.lol.
 ```
+*(110/170. Leads with the import, because that is the moment the app clicks, and
+names the web app — which 1.0's promo text never mentioned.)*
+
+---
+
+## What's New in 1.0.1 (4,000 char max — release notes, per version)
+
+```
+Sync fixes, and two things the first version should have had.
+
+SAVES THAT WOULDN'T SHOW UP ON THE OTHER DEVICE
+If you use bookmarker on your phone and at bookmarker.lol, a bork saved in one place could stay invisible in the other — the phone was asking the server only for what changed since it last looked, and a save could arrive carrying a timestamp that had already gone by. The app now reads your whole library on every sync. Nothing was ever lost: it just wasn't being asked for, and it turns up on the next sync after you update.
+
+RATE AND SHARE
+Two new rows on the You tab. Rate bookmarker on the App Store, or send someone the link. If the app has found you something you'd forgotten you saved, a rating is genuinely how anybody else finds it.
+
+SMALLER THINGS
+The app now asks for a rating only after something has actually worked — an import finishing, or an old save turning up through Search — and never on launch, and at most once per version.
+
+Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
+```
+*(Honest by construction: every line above is in the build. Nothing here claims
+the friend feed, notifications, or anything else that isn't written yet.)*
 
 ---
 
@@ -88,8 +123,13 @@ Your saves were never the problem. Finding them was.
 ## Keywords (100 char max, comma separated, no spaces)
 
 ```
-bookmark,save,links,reels,tiktok,shorts,organize,tags,offline,library,read later,collect,sort
+instagram,tiktok,youtube,shorts,manager,organizer,collections,library,read later,folders,import,tags
 ```
+*(100/100. Words already in the app **Name** and **Subtitle** are indexed anyway,
+so "bookmark", "save", "links", "reels", "posts", "videos" and "organize" are
+deliberately not repeated here — repeating them wastes characters that source
+names and intent words ("import", "read later", "collections") can use. Like the
+name and subtitle, this only takes effect with 1.0.1.)*
 
 ---
 

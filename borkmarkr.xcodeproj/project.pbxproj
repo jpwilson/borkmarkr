@@ -65,6 +65,7 @@
 		D7089D86A614BA58428D49DF /* SmartCategorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0810F447AD16FAB04860D7 /* SmartCategorizer.swift */; };
 		D7C7FAEC7DAD053716A44AE3 /* TagRecency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D6884E4D424E7446777654 /* TagRecency.swift */; };
 		DAAA31C1092CE54F9C9CC41B /* Categorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F93E7A1E9CEFD4F91EB5D0B /* Categorizer.swift */; };
+		DCAB85EBA6E027CC669F1364 /* ReviewPrompter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719C55A5DD346B1A928F944 /* ReviewPrompter.swift */; };
 		DE28BBEB32231321D56E645B /* SmartInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8181BE7C68067E61B50D0B5E /* SmartInsights.swift */; };
 		E0AAF5B400F21B8F35C87F16 /* DetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE309497176F9F4A2D78A64 /* DetailSheet.swift */; };
 		E4AD70612CDCF96B4CA5E4AC /* PreviewFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF1F7D7C8F1A3D71B054BBB /* PreviewFetcher.swift */; };
@@ -134,6 +135,7 @@
 		9046840905787DF56F670280 /* OFL-Bricolage.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "OFL-Bricolage.txt"; sourceTree = "<group>"; };
 		931EE76C8F04FB683B65ECBE /* Importers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Importers.swift; sourceTree = "<group>"; };
 		94FAEE4CF56506B42CB4F371 /* ShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		9719C55A5DD346B1A928F944 /* ReviewPrompter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPrompter.swift; sourceTree = "<group>"; };
 		9883626D300D557C8B8F2061 /* YouView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouView.swift; sourceTree = "<group>"; };
 		990CE9B08FEB9BF177C21611 /* Platform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Platform.swift; sourceTree = "<group>"; };
 		A40712F07BE93C8B2F47CACA /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
@@ -161,7 +163,7 @@
 		F91794C010FF35E650EB340F /* borkmarkr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = borkmarkr.entitlements; sourceTree = "<group>"; };
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_A917E8B0-27C0-41E6-9CF4-0044767BC083" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_BFCCF32A-EF8A-4A23-AB60-62440EAEC99D" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -229,6 +231,7 @@
 				0B848D80BD44CBC109D6C602 /* DebugSeed.swift */,
 				0C34F5782F5C8CE42FCA779B /* Info.plist */,
 				3DF1F7D7C8F1A3D71B054BBB /* PreviewFetcher.swift */,
+				9719C55A5DD346B1A928F944 /* ReviewPrompter.swift */,
 				C1CA06BC436065B1A852B227 /* RootView.swift */,
 				B01FDBE763C913D9F86D91E3 /* ScreenshotDefaults.swift */,
 				DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */,
@@ -293,12 +296,12 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		"TEMP_505802B9-A7C9-47E8-B5F3-F9046412A14A" /* tags */ = {
+		"TEMP_76E5A0F9-A084-49AB-8E30-118BD7F32201" /* ios-101 */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_A917E8B0-27C0-41E6-9CF4-0044767BC083" /* Config.xcconfig */,
+				"TEMP_BFCCF32A-EF8A-4A23-AB60-62440EAEC99D" /* Config.xcconfig */,
 			);
-			path = tags;
+			path = "ios-101";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -429,6 +432,7 @@
 				E4AD70612CDCF96B4CA5E4AC /* PreviewFetcher.swift in Sources */,
 				95796B7540B5235A1E4A3ECF /* QuestCard.swift in Sources */,
 				2FC5F0650E179480816242EB /* QuestMotif.swift in Sources */,
+				DCAB85EBA6E027CC669F1364 /* ReviewPrompter.swift in Sources */,
 				479D2D8E66358814CD4DC70B /* RootView.swift in Sources */,
 				FEA2BEEA8FF522D12E774522 /* ScreenshotDefaults.swift in Sources */,
 				FD05C7AA7B54AD7614A26410 /* SearchView.swift in Sources */,
@@ -486,7 +490,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_A917E8B0-27C0-41E6-9CF4-0044767BC083" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_BFCCF32A-EF8A-4A23-AB60-62440EAEC99D" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -521,7 +525,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 7RUN765V47;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -541,7 +545,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -567,13 +571,13 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jpwilson.borkmarkr;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_A917E8B0-27C0-41E6-9CF4-0044767BC083" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_BFCCF32A-EF8A-4A23-AB60-62440EAEC99D" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -608,7 +612,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 7RUN765V47;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -622,7 +626,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -647,7 +651,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jpwilson.borkmarkr;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -663,7 +667,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jpwilson.borkmarkr.ShareExtension;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -679,7 +683,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jpwilson.borkmarkr.ShareExtension;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
