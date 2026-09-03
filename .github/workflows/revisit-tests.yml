@@ -1,0 +1,33 @@
+name: Revisit tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/Revisit.swift"
+      - "Core/RevisitSource.swift"
+      - "Core/Platform.swift"
+      - "Core/Copy.swift"
+      - "App/Screens/RevisitView.swift"
+      - "Scripts/test_revisit.swift"
+      - ".github/workflows/revisit-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/Revisit.swift"
+      - "Core/RevisitSource.swift"
+      - "Core/Platform.swift"
+      - "Core/Copy.swift"
+      - "App/Screens/RevisitView.swift"
+      - "Scripts/test_revisit.swift"
+      - ".github/workflows/revisit-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run Revisit checks
+        run: |
+          swiftc -parse-as-library -o /tmp/revisit-tests \
+            Core/Platform.swift Core/Copy.swift Core/Revisit.swift Scripts/test_revisit.swift
+          /tmp/revisit-tests

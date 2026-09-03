@@ -203,7 +203,7 @@ struct LibraryView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 18)
-        .accessibilityHint("Opens the Search tab")
+        .accessibilityHint("Opens search at the top of Browse")
     }
 
     private var insightsEntry: some View {

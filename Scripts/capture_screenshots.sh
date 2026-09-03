@@ -57,7 +57,11 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
 echo "Capturing to Marketing/captures:"
 shoot library library
 shoot browse  browse
-shoot search  search -query "protein"
+# Search is no longer a tab: the field lives at the top of Browse, and -query
+# pre-fills it so the capture shows results rather than the topic grid.
+shoot search  browse -query "protein"
+shoot scoped  browse -query "run" -scopes "tags"
+shoot revisit revisit
 shoot you     you
 
 echo "Now: venv/bin/python Scripts/make_screenshots.py"

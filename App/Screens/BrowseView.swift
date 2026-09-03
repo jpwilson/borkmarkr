@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 /// The IA spine: two browse axes that cross. Topics lead to a topic page with
 /// source chips; Sources lead to a source page with topic chips. Either axis
@@ -7,11 +8,25 @@ import SwiftData
 struct BrowseView: View {
     let interests: [String]
     @Binding var pendingTopic: String?
+    /// Set by the Library's search row: switch to Browse *and* put the caret
+    /// in the field, so the tap lands where the user was aiming.
+    @Binding var focusSearch: Bool
     var account: Account? = nil
 
     @Environment(\.accent) private var accent
+    @Environment(\.requestReview) private var requestReview
     @AppStorage("browseAxis") private var axisRaw = Axis.topics.rawValue
     @State private var path = NavigationPath()
+
+    // Search, hosted here since 1.1 — see `BrowseSearch.swift`.
+    @State private var query = ScreenshotDefaults.searchQuery
+    @State private var debounced = ScreenshotDefaults.searchQuery
+    @State private var scopes: SearchScope = ScreenshotDefaults.searchScopes
+    @State private var sources: Set<Platform> = []
+    @State private var detail: Bookmark?
+    @FocusState private var searchFocused: Bool
+    @StateObject private var semantic = SemanticIndex()
+    @State private var related: [SemanticIndex.Hit] = []
 
     enum Axis: String, CaseIterable {
         case topics, sources, journeys
@@ -40,6 +55,12 @@ struct BrowseView: View {
     @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
     private var customSubtopics: [CustomSubtopic]
 
+    @Query(
+        filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
+        sort: \Mission.createdAt, order: .reverse
+    )
+    private var journeys: [Mission]
+
     @State private var showingPicker = false
     @State private var pickerCategory: String?
     @State private var pickerSub: String?
@@ -63,19 +84,46 @@ struct BrowseView: View {
                     .padding(.horizontal, 18)
                     .padding(.top, 12)
 
-                segmented
-                    .padding(.top, 16)
-                    .padding(.bottom, 14)
+                BrowseSearchBar(
+                    query: $query,
+                    scopes: $scopes,
+                    focus: $searchFocused,
+                    isSearching: isSearching,
+                    onCancel: clearSearch
+                )
+                .padding(.top, 14)
 
-                ScrollView {
-                    Group {
-                        switch axis {
-                        case .topics: topicsGrid
-                        case .sources: sourcesList
-                        case .journeys: MissionsView(account: account)
-                        }
+                if isSearching {
+                    ScrollView {
+                        BrowseSearchResults(
+                            results: results,
+                            query: debounced,
+                            scopes: scopes,
+                            sources: $sources,
+                            presentPlatforms: presentPlatforms,
+                            related: related,
+                            onOpen: open,
+                            onClearScopes: { scopes = [] }
+                        )
+                        .padding(.top, 14)
+                        .padding(.bottom, 120)
                     }
-                    .padding(.bottom, 120)
+                    .scrollDismissesKeyboard(.immediately)
+                } else {
+                    segmented
+                        .padding(.top, 16)
+                        .padding(.bottom, 14)
+
+                    ScrollView {
+                        Group {
+                            switch axis {
+                            case .topics: topicsGrid
+                            case .sources: sourcesList
+                            case .journeys: MissionsView(account: account)
+                            }
+                        }
+                        .padding(.bottom, 120)
+                    }
                 }
             }
             .background(Tokens.paper)
@@ -95,13 +143,95 @@ struct BrowseView: View {
                 TopicPickerSheet(categoryID: $pickerCategory, subcategory: $pickerSub)
                     .environment(\.accent, accent)
             }
+            .sheet(item: $detail) { DetailSheet(bookmark: $0).environment(\.accent, accent) }
         }
         .onChange(of: pendingTopic) { _, value in
             guard let value else { return }
             axis = .topics
+            clearSearch()
             path.append(Route.topic(value))
             pendingTopic = nil
         }
+        // Both, deliberately. Switching tabs *replaces* this view rather than
+        // revealing it, so a request made in the same gesture as the tab
+        // change arrives already-true and `onChange` never fires; a request
+        // made while Browse is already on screen never appears again.
+        .onAppear(perform: consumeFocusRequest)
+        .onChange(of: focusSearch) { _, _ in consumeFocusRequest() }
+        .task(id: query) {
+            // Debounce: wait out the typist, then commit.
+            try? await Task.sleep(for: .milliseconds(180))
+            guard !Task.isCancelled else { return }
+            debounced = query
+            updateRelated()
+        }
+    }
+
+    // MARK: Search
+
+    private var isSearching: Bool {
+        !debounced.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private var presentPlatforms: [Platform] {
+        let used = Set(bookmarks.map(\.platform))
+        return Platform.ordered.filter { used.contains($0) }
+    }
+
+    /// Matching lives in `Core/SearchScope.swift` and is tested there. This is
+    /// only the two filters the view owns: the source chips, and — unscoped
+    /// only — finding a bork by the name of a side quest it is on. Scoped means
+    /// *these fields and no others*, and a quest title is not one of them.
+    private var results: [Bookmark] {
+        guard isSearching else { return [] }
+
+        let questHits: Set<String> = {
+            guard scopes.isEmpty else { return [] }
+            let needle = SearchText.fold(debounced)
+            return Set(
+                journeys
+                    .filter { SearchText.fold($0.title).contains(needle) }
+                    .flatMap(\.bookmarkIDs)
+            )
+        }()
+
+        return bookmarks.filter { item in
+            if !sources.isEmpty && !sources.contains(item.platform) { return false }
+            if questHits.contains(item.id) { return true }
+            return item.searchSubject.matches(query: debounced, scopes: scopes)
+        }
+    }
+
+    private func consumeFocusRequest() {
+        guard focusSearch else { return }
+        path = NavigationPath()
+        searchFocused = true
+        focusSearch = false
+    }
+
+    private func open(_ bookmark: Bookmark) {
+        detail = bookmark
+        ReviewPrompter.reached(.searchResultOpened, requestReview)
+    }
+
+    /// Cancel, Escape and the ✕ all mean the same thing: put the grid back.
+    private func clearSearch() {
+        query = ""
+        debounced = ""
+        scopes = []
+        sources = []
+        related = []
+        searchFocused = false
+    }
+
+    /// The embedding index is built the first time someone actually types
+    /// something worth searching, not when Browse appears — Browse is now one
+    /// of four tabs and most visits to it never search.
+    private func updateRelated() {
+        let needle = debounced.trimmingCharacters(in: .whitespaces)
+        guard needle.count >= 3 else { related = []; return }
+        semantic.refresh(bookmarks)
+        related = semantic.search(needle, in: bookmarks, limit: 8)
     }
 
     private var segmented: some View {
