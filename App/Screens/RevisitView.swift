@@ -40,6 +40,13 @@ struct RevisitView: View {
     private var customSubtopics: [CustomSubtopic]
 
     @State private var model: Revisit.Model?
+    /// The bookmarks behind the model's ids, built once per rebuild rather
+    /// than per render. As a computed property this was four dictionary passes
+    /// over the whole library every time the body ran — the sections between
+    /// them each need it. The objects are references, so a title edited in the
+    /// detail sheet still renders; only a change in *which* borks exist needs a
+    /// new index, and that is exactly what triggers a rebuild.
+    @State private var index: [String: Bookmark] = [:]
     @State private var path = NavigationPath()
     @State private var detail: Bookmark?
     @State private var openQuest: Mission?
@@ -53,10 +60,6 @@ struct RevisitView: View {
 
     private var merged: MergedTaxonomy {
         MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
-    }
-
-    private var byID: [String: Bookmark] {
-        Dictionary(bookmarks.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     var body: some View {
@@ -96,7 +99,7 @@ struct RevisitView: View {
                     if let topic = merged.topic(id: id) { TopicPage(category: topic) }
                 case .neverOpened:
                     NeverOpenedList(
-                        items: (model?.neverOpened?.items ?? []).compactMap { byID[$0.id] }
+                        items: (model?.neverOpened?.items ?? []).compactMap { index[$0.id] }
                     )
                 }
             }
@@ -200,7 +203,7 @@ struct RevisitView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(items) { item in
-                        if let bookmark = byID[item.id] {
+                        if let bookmark = index[item.id] {
                             Button { detail = bookmark } label: {
                                 VStack(alignment: .leading, spacing: 6) {
                                     BookmarkCard(bookmark: bookmark)
@@ -242,7 +245,7 @@ struct RevisitView: View {
 
             LazyVStack(spacing: 9) {
                 ForEach(stale.preview) { item in
-                    if let bookmark = byID[item.id] {
+                    if let bookmark = index[item.id] {
                         Button { detail = bookmark } label: {
                             BookmarkRow(bookmark: bookmark)
                         }
@@ -276,7 +279,7 @@ struct RevisitView: View {
 
             LazyVStack(spacing: 9) {
                 ForEach(items) { item in
-                    if let bookmark = byID[item.id] {
+                    if let bookmark = index[item.id] {
                         Button { detail = bookmark } label: {
                             BookmarkRow(bookmark: bookmark)
                         }
@@ -369,6 +372,7 @@ struct RevisitView: View {
         let built = await Task.detached(priority: .userInitiated) {
             Revisit.build(borks: borks, quests: quests, now: now)
         }.value
+        index = Dictionary(bookmarks.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         model = built
     }
 
