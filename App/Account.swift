@@ -20,7 +20,18 @@ final class Account: ObservableObject {
     var isSignedIn: Bool { session != nil }
     var email: String? { session?.email }
 
+    /// When this device last finished a sync.
+    ///
+    /// Two jobs, and neither is "what to download". It decides which local rows
+    /// still need uploading, and it's the "Backed up 5 minutes ago" line on the
+    /// You tab. It is never sent to the server as a filter on what comes back —
+    /// see `pull(context:session:)` for what that cost us.
     private let lastSyncKey = "lastSyncedAt"
+
+    /// A thousand borks per request; most libraries are one request.
+    private static let pullPageSize = 1000
+    /// A runaway pull is worse than a short one. 30 pages is 30,000 borks.
+    private static let pullPageLimit = 30
 
     init() {
         session = Keychain.loadSession()
@@ -117,6 +128,9 @@ final class Account: ObservableObject {
     }
 
     private func push(context: ModelContext, session: Supabase.Session) async throws {
+        // Unchanged, and safe in a way the old pull wasn't: both sides of this
+        // comparison were stamped by *this* device's clock, so it can only
+        // over-send (a row we already pushed), never under-send.
         let cutoff = lastSynced
         let all = (try? context.fetch(FetchDescriptor<Bookmark>())) ?? []
         let changed = all.filter { cutoff == nil || $0.updatedAt > cutoff! }
@@ -160,57 +174,99 @@ final class Account: ObservableObject {
         }
     }
 
+    /// Read the **whole** library, every sync. Never a since-cursor.
+    ///
+    /// `updated_at` is stamped by whichever *client* wrote the row — there is no
+    /// server clock in this design — so a row routinely reaches the server
+    /// carrying a timestamp older than a cursor this device saved earlier: a
+    /// phone that saved while offline and pushed later, a second device whose
+    /// clock is a few seconds behind, or simply a phone save at 20:48Z followed
+    /// by a web edit that advanced the cursor past it. `updated_at=gt.<cursor>`
+    /// then hides that row from this device *permanently* — it is never newer
+    /// than the cursor again — and two devices editing on the same day silently
+    /// diverge. That is exactly what happened to a bork saved on the phone on
+    /// 30 Aug; the web app reached the same conclusion first and now always
+    /// pulls in full (`pull()` in `docs/index.html`).
+    ///
+    /// So: read everything, merge last-writer-wins, respect the tombstones. One
+    /// request per thousand borks, on foreground, is the price of never losing
+    /// one — and it is the cheap half of the sync anyway, since `push` still
+    /// only uploads what changed.
     private func pull(context: ModelContext, session: Supabase.Session) async throws {
-        let data = try await Supabase.fetchChanged(from: "bookmarks",
-                                                   since: lastSynced, session: session)
-        guard let rows = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
-              !rows.isEmpty else { return }
-
-        for row in rows {
-            guard
-                let id = row["id"] as? String,
-                let urlString = row["url"] as? String,
-                let url = URL(string: urlString),
-                let updatedRaw = row["updated_at"] as? String,
-                let remoteUpdated = SupabaseDate.parse(updatedRaw)
-            else { continue }
-
-            var descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate { $0.id == id })
-            descriptor.fetchLimit = 1
-            let existing = try? context.fetch(descriptor).first
-
-            // Local wins if it's newer — the user is holding this device.
-            if let existing, existing.updatedAt >= remoteUpdated { continue }
-
-            let target = existing ?? {
-                let fresh = Bookmark(url: url, title: (row["title"] as? String) ?? "")
-                context.insert(fresh)
-                return fresh
-            }()
-
-            target.title = (row["title"] as? String) ?? target.title
-            target.author = row["author"] as? String
-            target.categoryID = row["category_id"] as? String
-            target.subcategory = row["subcategory"] as? String
-            target.tags = (row["tags"] as? [String]) ?? []
-            target.text = row["body_text"] as? String
-            target.durationSeconds = row["duration_seconds"] as? Int
-            target.noteText = row["note_text"] as? String
-            target.imageURLString = row["image_url"] as? String
-            if let savedRaw = row["saved_at"] as? String,
-               let saved = SupabaseDate.parse(savedRaw) {
-                target.savedAt = saved
-            }
-            if let deletedRaw = row["deleted_at"] as? String {
-                target.deletedAt = SupabaseDate.parse(deletedRaw)
-            } else {
-                target.deletedAt = nil
-            }
-            target.updatedAt = remoteUpdated
-            target.rebuildSearchBlob()
+        // One fetch of what's already here rather than one per row. A full pull
+        // visits every row every sync, and a predicate fetch each time is
+        // thousands of SQLite round-trips on the main actor.
+        var local: [String: Bookmark] = [:]
+        for bookmark in (try? context.fetch(FetchDescriptor<Bookmark>())) ?? [] {
+            local[bookmark.id] = bookmark
         }
 
-        try? context.save()
+        for page in 0..<Self.pullPageLimit {
+            let data = try await Supabase.fetchPage(
+                from: "bookmarks", ownerID: session.userID,
+                offset: page * Self.pullPageSize, limit: Self.pullPageSize, session: session
+            )
+            guard let rows = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+                  !rows.isEmpty else { return }
+
+            for row in rows { merge(row, into: context, local: &local) }
+            // Save per page, so a pull that dies on page four keeps the first
+            // three rather than starting over.
+            try? context.save()
+
+            if rows.count < Self.pullPageSize { return }
+            await Task.yield()
+        }
+    }
+
+    /// Fold one remote row into the local store: last-writer-wins on
+    /// `updated_at`, tombstones included.
+    ///
+    /// A `deleted_at` row with no local copy is still inserted — soft-deleted,
+    /// so it stays out of every view — because that is what stops a device that
+    /// missed the delete from re-uploading the bork on its next push.
+    private func merge(_ row: [String: Any], into context: ModelContext,
+                       local: inout [String: Bookmark]) {
+        guard
+            let id = row["id"] as? String,
+            let urlString = row["url"] as? String,
+            let url = URL(string: urlString),
+            let updatedRaw = row["updated_at"] as? String,
+            let remoteUpdated = SupabaseDate.parse(updatedRaw)
+        else { return }
+
+        let existing = local[id]
+
+        // Local wins if it's newer — the user is holding this device.
+        if let existing, existing.updatedAt >= remoteUpdated { return }
+
+        let target = existing ?? {
+            let fresh = Bookmark(url: url, title: (row["title"] as? String) ?? "")
+            context.insert(fresh)
+            local[id] = fresh
+            return fresh
+        }()
+
+        target.title = (row["title"] as? String) ?? target.title
+        target.author = row["author"] as? String
+        target.categoryID = row["category_id"] as? String
+        target.subcategory = row["subcategory"] as? String
+        target.tags = (row["tags"] as? [String]) ?? []
+        target.text = row["body_text"] as? String
+        target.durationSeconds = row["duration_seconds"] as? Int
+        target.noteText = row["note_text"] as? String
+        target.imageURLString = row["image_url"] as? String
+        if let savedRaw = row["saved_at"] as? String,
+           let saved = SupabaseDate.parse(savedRaw) {
+            target.savedAt = saved
+        }
+        if let deletedRaw = row["deleted_at"] as? String {
+            target.deletedAt = SupabaseDate.parse(deletedRaw)
+        } else {
+            target.deletedAt = nil
+        }
+        target.updatedAt = remoteUpdated
+        target.rebuildSearchBlob()
     }
 }
 
