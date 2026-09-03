@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 /// Dual-axis search: free text plus multi-select Source and Topic filters.
 ///
@@ -10,6 +11,7 @@ import SwiftData
 /// triggers one pass rather than one per character.
 struct SearchView: View {
     @Environment(\.accent) private var accent
+    @Environment(\.requestReview) private var requestReview
 
     @Query(
         filter: #Predicate<Bookmark> { $0.deletedAt == nil },
@@ -368,6 +370,7 @@ struct SearchView: View {
                     Button {
                         rememberQuery()
                         detail = bookmark
+                        ReviewPrompter.reached(.searchResultOpened, requestReview)
                     } label: {
                         BookmarkRow(bookmark: bookmark)
                     }

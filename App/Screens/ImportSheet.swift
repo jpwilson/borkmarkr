@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 import UniformTypeIdentifiers
 
 /// Turn an export file into a library.
@@ -13,6 +14,7 @@ struct ImportSheet: View {
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.requestReview) private var requestReview
 
     enum Stage { case pick, reviewing, importing, done }
 
@@ -240,6 +242,7 @@ struct ImportSheet: View {
             .padding(.top, 6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { ReviewPrompter.reached(.importFinished(count: imported), requestReview) }
     }
 
     // MARK: Actions

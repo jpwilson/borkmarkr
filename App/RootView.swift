@@ -111,6 +111,7 @@ struct RootView: View {
                 hasOnboarded = true
             }
             #endif
+            ReviewPrompter.recordLaunch()
             drain()
             Task { await account.sync(context: context) }
         }

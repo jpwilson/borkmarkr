@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 /// Three steps: paste → reading → details.
 ///
@@ -19,6 +20,7 @@ struct AddSheet: View {
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.requestReview) private var requestReview
 
     @Query(filter: #Predicate<Bookmark> { $0.deletedAt == nil })
     private var allBookmarks: [Bookmark]
@@ -654,6 +656,7 @@ struct AddSheet: View {
             } ?? "your library"
             dismiss()
             onSaved("Saved to \(where_)")
+            ReviewPrompter.reached(.borkSaved, requestReview)
         } catch {
             self.error = error.localizedDescription
         }
