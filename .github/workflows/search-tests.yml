@@ -1,0 +1,33 @@
+name: Search scope tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/SearchScope.swift"
+      - "Core/Copy.swift"
+      - "Core/Bookmark.swift"
+      - "App/Screens/BrowseView.swift"
+      - "App/Screens/BrowseSearch.swift"
+      - "Scripts/test_search.swift"
+      - ".github/workflows/search-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/SearchScope.swift"
+      - "Core/Copy.swift"
+      - "Core/Bookmark.swift"
+      - "App/Screens/BrowseView.swift"
+      - "App/Screens/BrowseSearch.swift"
+      - "Scripts/test_search.swift"
+      - ".github/workflows/search-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run search scope checks
+        run: |
+          swiftc -parse-as-library -o /tmp/search-tests \
+            Core/Copy.swift Core/SearchScope.swift Scripts/test_search.swift
+          /tmp/search-tests

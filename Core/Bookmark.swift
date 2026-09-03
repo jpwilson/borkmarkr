@@ -152,6 +152,14 @@ final class Bookmark {
     var category: Topic? { Taxonomy.category(id: categoryID) }
     var hasNote: Bool { !(noteText ?? "").isEmpty }
 
+    /// What search matches against. `searchBlob` alone is the unscoped
+    /// haystack; the three named fields are what a scoped search narrows to.
+    /// Built here rather than in the view so there is exactly one definition of
+    /// "this bork's topic, for search purposes".
+    var searchSubject: SearchSubject {
+        SearchSubject(blob: searchBlob, topicName: category?.name, subtopic: subcategory, tags: tags)
+    }
+
     /// A person or handle — never "Instagram" or "X (formerly Twitter)".
     var displayAuthor: String? {
         guard let author, !author.isEmpty, !Platform.isSiteName(author) else { return nil }

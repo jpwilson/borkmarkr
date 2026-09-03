@@ -143,6 +143,78 @@ Nothing changes on the push side, and missions/side quests are untouched because
 iOS doesn't sync them at all yet — `Mission` is local SwiftData only, and the
 `missions` table has just the one client (the web app).
 
+**Search stopped being a tab, and Revisit took the slot.** Search was one of
+five tabs and the only one that opened onto nothing: an empty field, a recents
+list most people never had, and no library in sight. Meanwhile Browse *is* the
+screen you are on when you are looking for something, and it made you leave it
+to type. So in 1.1 the field moved to the top of Browse — results replace the
+topic grid while a query is live, clearing it puts the grid back — and the dock
+slot went to a tab that had something to show. `AppTab.resolve` maps a
+persisted or deep-linked `search` to `browse` rather than falling through to the
+Library: a phone updating from 1.0.x can be carrying `startingTab = "search"`,
+and dropping that person on the Library when they asked to search is the kind of
+silent wrong answer a default hides.
+
+Two things the old tab had are deliberately gone, and one is new:
+
+- **Recents** had no home once the empty state became the topic grid. There is
+  no longer a screen whose default content is a list of words you typed.
+- **The Topic and Side quest filter axes** are replaced by the scope chips.
+  Filtering to a topic is what Browse's grid already does, and two
+  differently-shaped filter systems stacked on one screen made it look like two
+  apps. Finding a bork by the name of a side quest it is on survives, unscoped.
+- **Scope chips — Topics · Subtopics · Tags.** None selected is the pre-1.1
+  behaviour exactly (`searchBlob`, one substring test per bork), which matters:
+  that is what every existing user's muscle memory is built on. With one or more
+  selected, every query term has to land in a selected field and the scopes OR
+  together per term, so "hip mobility" with Subtopics+Tags matches a bork tagged
+  `hips` filed under `Mobility`, and a two-word query can't be satisfied by one
+  word matching twice. The rules live in `Core/SearchScope.swift` as a pure
+  `SearchSubject.matches(query:scopes:)` over plain values — no SwiftData, so
+  `Scripts/test_search.swift` compiles and runs under `swiftc` in about two
+  seconds. Search is the feature people judge the app on; it should be the part
+  with tests that run in two seconds.
+
+**Revisit is the "revisited" verb, given a home.** The thesis is *everything
+interesting you scroll past every day, captured, organised, revisited, shared*.
+Capture is the Share Extension, organising is Browse, sharing is coming — and
+revisiting was the one verb with no surface. Nothing in the app ever said "you
+saved eleven things last month and opened none of them", which is the single
+most useful sentence a bookmark app can say and precisely the sentence platform
+bookmarks never say, which is why they are write-only graveyards. The tab is six
+stacked sections — saved this week, what you keep opening, **saved and never
+opened**, a month ago, side quests with steps left, what's shifting — each
+hidden when it has nothing to show, ordered by how likely they are to send
+someone back into their library rather than by how clever they are. Under ten
+borks it is one warm card naming what the sections will be, because six empty
+headings is not an empty state.
+
+It reads only what was already on the device: `openCount` and `lastOpenedAt`
+have been recorded since 1.0 — that was their entire purpose — so the tab has a
+history to show on the day someone updates rather than starting blank.
+
+**Every section is a value, not a view.** `Revisit.build` is a pure function
+over plain structs (`Core/Revisit.swift`), and `Core/RevisitSource.swift` is the
+only file where it meets `Bookmark` and `Mission`. Two reasons, one of them
+immediate:
+
+1. Every section here is a perfectly good paragraph of a weekly digest — "you
+   saved 14 things, 11 of them you never opened, a month ago you were reading
+   about X". Computing it inside a SwiftUI view means writing it all again the
+   day that ships. A digest built server-side from Postgres rows writes a second
+   adapter and reuses every line of the computation.
+2. It is testable in two seconds (`Scripts/test_revisit.swift`) against a fixed
+   `now`, which is the only honest way to check date windows. Three of them are
+   subtle: "a month ago" is a 28–35 day *window* because an exact 30-days-ago
+   lookup is empty most days and reads as broken; "never opened" needs a week of
+   age before it means anything, because not opening something the afternoon you
+   saved it is normal; and "what's shifting" compares *share* of saves rather
+   than counts, or a quiet month reads as "less of everything".
+
+The view builds the model off the main actor and never blocks the tab switch —
+on a large library the sections arrive a frame later rather than the dock
+hanging.
+
 **Signed out is a state the app has to show, not a modal it has to sell.** People
 were using bookmarker for weeks without knowing their library was only on the
 phone. Saving is never gated behind an account and never will be — which is

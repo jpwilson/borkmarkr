@@ -64,6 +64,28 @@ names the web app — which 1.0's promo text never mentioned.)*
 
 ---
 
+## What's New in 1.1 (4,000 char max — release notes, per version)
+
+```
+Search moved to where you were already looking, and there's a new tab for the thing this app is actually for.
+
+SEARCH IS AT THE TOP OF BROWSE
+Search used to be its own tab that opened onto an empty box. Now the search field sits at the top of Browse, above your topics — type and the results replace the grid, clear it and your topics come back. Under the field there are three chips: Topics, Subtopics, Tags. Leave them off and search works exactly as it did, across everything. Turn one on and "running" finds only the borks tagged running, or only the ones filed under Running, instead of every title that happens to mention it.
+
+REVISIT
+A new tab, where Search used to be, that answers one question: what should I look at again? What you saved this week and where it came from. The ones you keep opening. Things you saved a month ago. Side quests you have steps left on. What you are saving more and less of than a month ago.
+
+And the section that is the reason it exists: SAVED, NEVER OPENED. Everything you borked more than a week ago and have never once been back to. Most bookmarking ends there and no app ever mentions it. This one says the number out loud.
+
+Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
+```
+*(Every line is in the build. Revisit computes from what is already on the
+device — `openCount` and `lastOpenedAt` have been recorded since 1.0, so the
+tab has a history to show on the day someone updates. Nothing is sent
+anywhere; see the `Revisit` note in DECISIONS.md.)*
+
+---
+
 ## What's New in 1.0.2 (4,000 char max — release notes, per version)
 
 ```

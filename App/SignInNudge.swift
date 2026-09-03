@@ -146,6 +146,10 @@ struct SignInMilestone: Identifiable {
 /// Slim on purpose. It sits under the library's own stats line, so the two
 /// read as one thought — what you have, and where it is.
 struct SignInNudgeBanner: View {
+    /// The Library states where the library lives; Revisit, where the reason
+    /// you are looking at it is "these are worth keeping", asks for the backup
+    /// directly. Same component, same policy, one word of context.
+    var headline: String = "Only on this phone."
     let onSignUp: () -> Void
     let onDismiss: () -> Void
 
@@ -161,7 +165,7 @@ struct SignInNudgeBanner: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Only on this phone.")
+                Text(headline)
                     .font(Typo.ui(13.5, .bold))
                     .foregroundStyle(Tokens.ink)
 

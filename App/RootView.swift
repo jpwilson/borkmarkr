@@ -2,13 +2,13 @@ import SwiftUI
 import SwiftData
 
 enum AppTab: String, CaseIterable, Hashable {
-    case library, browse, search, you
+    case library, browse, revisit, you
 
     var title: String {
         switch self {
         case .library: "Library"
         case .browse: "Browse"
-        case .search: "Search"
+        case .revisit: "Revisit"
         case .you: "You"
         }
     }
@@ -17,9 +17,22 @@ enum AppTab: String, CaseIterable, Hashable {
         switch self {
         case .library: "square.stack.fill"
         case .browse: "square.grid.2x2.fill"
-        case .search: "magnifyingglass"
+        case .revisit: "clock.arrow.circlepath"
         case .you: "person.fill"
         }
+    }
+
+    /// Reads a persisted or deep-linked tab name, including ones this build no
+    /// longer has.
+    ///
+    /// 1.1 folded Search into Browse. A phone updating from 1.0.x can be
+    /// carrying `startingTab = "search"`, and a link or a screenshot script can
+    /// still ask for it. Falling through to the default would silently drop
+    /// someone onto the Library when they asked to search — Browse is where
+    /// searching now happens, so that is where "search" goes.
+    static func resolve(_ raw: String) -> AppTab? {
+        if raw == "search" { return .browse }
+        return AppTab(rawValue: raw)
     }
 }
 
@@ -33,6 +46,8 @@ struct RootView: View {
     @AppStorage("interests") private var interestsRaw = ""
 
     @State private var tab: AppTab = .library
+    /// One-shot: hand the caret to Browse's search field after the tab switch.
+    @State private var focusBrowseSearch = false
     @State private var showingAdd = false
     @State private var toast: String?
     /// Drives the You-tab dot. A count rather than a `@Query` of every
@@ -63,7 +78,11 @@ struct RootView: View {
                 switch tab {
                 case .library: LibraryView(
                     onAdd: { showingAdd = true },
-                    onSearch: { tab = .search },
+                    onSearch: {
+                        browseAxis = BrowseView.Axis.topics.rawValue
+                        focusBrowseSearch = true
+                        tab = .browse
+                    },
                     onSeeJourneys: {
                         browseAxis = BrowseView.Axis.journeys.rawValue
                         tab = .browse
@@ -71,8 +90,13 @@ struct RootView: View {
                     account: account,
                     canInterrupt: !showingAdd && hasOnboarded
                 )
-                case .browse: BrowseView(interests: interests, pendingTopic: $pendingTopic, account: account)
-                case .search: SearchView()
+                case .browse: BrowseView(
+                    interests: interests,
+                    pendingTopic: $pendingTopic,
+                    focusSearch: $focusBrowseSearch,
+                    account: account
+                )
+                case .revisit: RevisitView(account: account)
                 case .you: YouView(onReplayTour: { hasOnboarded = false }, account: account)
                 }
             }
@@ -114,7 +138,12 @@ struct RootView: View {
         }
         .onAppear {
             _ = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
-            if let saved = AppTab(rawValue: startingTabRaw) { tab = saved }
+            if let saved = AppTab.resolve(startingTabRaw) {
+                tab = saved
+                // Write the migrated value back so the You tab's picker has
+                // something it can show as selected.
+                if startingTabRaw != saved.rawValue { startingTabRaw = saved.rawValue }
+            }
             #if DEBUG
             if DebugSeed.isRequested {
                 DebugSeed.run(in: context)
@@ -169,7 +198,7 @@ struct RootView: View {
     }
 }
 
-/// Floating dock: Library · Browse · [+] · Search · You.
+/// Floating dock: Library · Browse · [+] · Revisit · You.
 struct TabDock: View {
     @Binding var tab: AppTab
     let onAdd: () -> Void
@@ -185,7 +214,7 @@ struct TabDock: View {
                 item(.library)
                 item(.browse)
                 Spacer().frame(width: 62)
-                item(.search)
+                item(.revisit)
                 item(.you)
             }
             .frame(height: 64)
