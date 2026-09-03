@@ -169,21 +169,32 @@ enum Supabase {
         _ = try await send(request)
     }
 
-    /// Rows changed since `since`, oldest first so a partial sync can resume.
+    /// One page of a table, in a total order, oldest change first.
+    ///
+    /// Deliberately has **no** `since` parameter: `updated_at` is client-stamped
+    /// and a since-cursor silently loses rows (the reasoning is at the call site,
+    /// `Account.pull`). `offset` is a continuation that lives for the length of
+    /// one sync and is never written down anywhere.
+    ///
     /// Returns raw JSON for the same `Sendable` reason as `upsert`; the caller
     /// decodes on its own actor.
-    static func fetchChanged(from table: String, since: Date?, session: Session) async throws -> Data {
+    static func fetchPage(from table: String, ownerID: String, offset: Int,
+                          limit: Int, session: Session) async throws -> Data {
         guard let config = Config.current else { throw Failure.notConfigured }
 
-        var items = [
+        let items = [
             URLQueryItem(name: "select", value: "*"),
-            URLQueryItem(name: "order", value: "updated_at.asc"),
-            URLQueryItem(name: "limit", value: "1000"),
+            // RLS already limits this to the caller's own rows; naming the owner
+            // lets Postgres use the index instead of filtering a whole table.
+            URLQueryItem(name: "owner_id", value: "eq.\(ownerID)"),
+            // `id` breaks ties. A bulk import stamps hundreds of rows inside the
+            // same millisecond, and without a tiebreak their order between two
+            // requests is undefined — a row could land on both sides of a page
+            // boundary, or on neither.
+            URLQueryItem(name: "order", value: "updated_at.asc,id.asc"),
+            URLQueryItem(name: "limit", value: "\(limit)"),
+            URLQueryItem(name: "offset", value: "\(offset)"),
         ]
-        if let since {
-            items.append(URLQueryItem(name: "updated_at",
-                                      value: "gt.\(SupabaseDate.string(from: since))"))
-        }
 
         var request = URLRequest(url: config.url
             .appendingPathComponent("rest/v1/\(table)")

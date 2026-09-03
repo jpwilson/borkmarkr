@@ -107,6 +107,42 @@ stops mailing after 20 rows in ten minutes, so a script hitting the public
 endpoint fills a table, not an inbox. Nothing about the sender is sent to PostHog
 beyond `{kind, signed_in}`, and the message field is `ph-no-capture`.
 
+**Sync pulls the whole library, every time — there is no since-cursor.** The
+obvious optimisation is `updated_at > lastSynced`, and 1.0 shipped it. It is
+wrong here, because `updated_at` is stamped by whichever **client** wrote the
+row and never by the database. A row therefore reaches the server routinely
+carrying a timestamp *older* than a cursor this device already saved — a phone
+that saved offline and pushed on the next foreground, a second device a few
+seconds behind, or a phone save at 20:48Z followed by a web edit that advanced
+the cursor past it. Once that happens the row is never newer than the cursor
+again and the device simply cannot see it: not a delayed sync, a permanent hole,
+and two devices editing on the same day quietly diverge. iOS 1.0.1 now reads
+every row on every sync — 1,000 per request, ordered `updated_at.asc,id.asc`
+(the `id` tiebreak matters: a bulk import stamps hundreds of rows inside one
+millisecond), merged last-writer-wins with tombstones respected, with the page
+offset held in a local variable and never written down. The web app got here
+first (`pull()` in `docs/index.html`).
+
+Two deliberate differences from the web:
+
+- **Offset paging, not the web's `updated_at=gte.<last>` keyset.** With ties —
+  and an import produces thousands — a keyset page can repeat the same rows
+  forever or skip past them. Offset with a total order can't. The cost is that a
+  row rewritten *during* a pull can shift between pages; it arrives on the next
+  sync, which is a delay rather than a hole.
+- **`lastSynced` stays, and stays persisted.** It is no longer a download
+  filter, which was the bug; it remains the *upload* watermark (`push` uploads
+  what changed since it) and the "Backed up 5 minutes ago" line. Dropping it
+  entirely would make every launch re-push the entire library, and since the
+  upsert is `resolution=merge-duplicates` — an unconditional overwrite — that
+  re-push would clobber a second device's newer edits with this device's older
+  copies. Both sides of the push comparison are stamped by the same device's
+  clock, so it can only over-send, never under-send.
+
+Nothing changes on the push side, and missions/side quests are untouched because
+iOS doesn't sync them at all yet — `Mission` is local SwiftData only, and the
+`missions` table has just the one client (the web app).
+
 ## Web app
 
 **The topic picker is the iOS sheet, not a `<select>`.** Two native selects gave

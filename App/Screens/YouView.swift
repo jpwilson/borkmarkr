@@ -6,6 +6,7 @@ struct YouView: View {
     @ObservedObject var account: Account
 
     @Environment(\.accent) private var accent
+    @Environment(\.openURL) private var openURL
     @AppStorage("accentKey") private var accentKey = AccentRamp.fallback.key
     @AppStorage("feedDensity") private var density = "cards"
     @AppStorage("startingTab") private var startingTab = AppTab.library.rawValue
@@ -42,6 +43,7 @@ struct YouView: View {
                 intake
                 if !collections.isEmpty { collectionsBlock }
                 appearance
+                spreadTheWord
                 help
             }
             .padding(.horizontal, 18)
@@ -401,6 +403,47 @@ struct YouView: View {
         }
     }
 
+    // MARK: Spread the word
+
+    /// 1.0 shipped with no way to rate the app or pass it on. The system rating
+    /// prompt fires three times a year at most and only at moments we choose —
+    /// this is the door that's always open, for the person who already likes it.
+    private var spreadTheWord: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            YouSectionLabel("Spread the word")
+            VStack(spacing: 0) {
+                YouRow(
+                    symbol: "star.fill",
+                    well: accent.base,
+                    glyph: .white,
+                    title: "Rate bookmarker",
+                    subtitle: "Thirty seconds, and it's how anyone else finds it"
+                ) { openURL(AppStoreListing.writeReview) }
+
+                insetDivider
+
+                // A ShareLink rather than a Button: the row hands the link to
+                // the system share sheet, so it lands wherever the person
+                // already talks to their friends.
+                ShareLink(
+                    item: AppStoreListing.url,
+                    subject: Text("bookmarker"),
+                    message: Text("Every link I save, from every app, in one library I can actually search.")
+                ) {
+                    YouRowFace(
+                        symbol: "paperplane.fill",
+                        well: Tokens.ink,
+                        glyph: .white,
+                        title: "Share bookmarker",
+                        subtitle: "Send someone the App Store link"
+                    )
+                }
+                .buttonStyle(PressableStyle())
+            }
+            .cardSurface(radius: Tokens.cardRadius)
+        }
+    }
+
     // MARK: Help
 
     private var help: some View {
@@ -443,33 +486,56 @@ private struct YouRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: symbol)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(glyph)
-                    .frame(width: 32, height: 32)
-                    .background(well, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(Typo.ui(14, .semibold))
-                        .foregroundStyle(Tokens.ink)
-                    Text(subtitle)
-                        .font(Typo.ui(12, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Tokens.inkFaint)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .frame(minHeight: 56)
-            .contentShape(Rectangle())
+            YouRowFace(symbol: symbol, well: well, glyph: glyph,
+                       title: title, subtitle: subtitle)
         }
         .buttonStyle(PressableStyle())
     }
+}
+
+/// The row without the tap. Split out so a `ShareLink` — which brings its own
+/// button — can be dressed as one of these rows instead of a near-copy.
+private struct YouRowFace: View {
+    let symbol: String
+    let well: Color
+    let glyph: Color
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(glyph)
+                .frame(width: 32, height: 32)
+                .background(well, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(Typo.ui(14, .semibold))
+                    .foregroundStyle(Tokens.ink)
+                Text(subtitle)
+                    .font(Typo.ui(12, .medium))
+                    .foregroundStyle(Tokens.inkMeta)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Tokens.inkFaint)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(minHeight: 56)
+        .contentShape(Rectangle())
+    }
+}
+
+/// The live listing: Apple ID 6799805479, on sale since 2 Sep 2026.
+/// `action=write-review` opens it with the rating sheet already up, which is the
+/// difference between a tap and a scavenger hunt.
+private enum AppStoreListing {
+    static let url = URL(string: "https://apps.apple.com/app/id6799805479")!
+    static let writeReview = URL(string: "https://apps.apple.com/app/id6799805479?action=write-review")!
 }
 
 private struct YouChoiceTrack: View {
