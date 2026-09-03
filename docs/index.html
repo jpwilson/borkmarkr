@@ -2165,7 +2165,10 @@ function ownSubs(topicID) {
   for (const x of addedSubs.get(topicID) || []) if (!builtin.has(x.toLowerCase())) out.set(x.toLowerCase(), x);
   return [...out.values()].sort((a, b) => a.localeCompare(b));
 }
-const allSubs = (topicID) => [...(TOPIC_BY_ID[topicID]?.subs || []), ...ownSubs(topicID)];
+// A–Z, built-in and the person's own together: taxonomy order means nothing
+// to someone scanning thirty pills for the one they want.
+const allSubs = (topicID) => [...(TOPIC_BY_ID[topicID]?.subs || []), ...ownSubs(topicID)]
+  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
 function tpShown(filter) {
   const needle = filter.trim();
   const list = needle ? TAXONOMY.filter(t => tpRank(t, allSubs(t.id), needle) !== null) : TAXONOMY.slice();
