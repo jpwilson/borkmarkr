@@ -202,6 +202,10 @@ struct SignInNudgeBanner: View {
 /// The milestone sheet. Small, factual, three ways out.
 struct SignInNudgeSheet: View {
     let milestone: Int
+    /// The library's real size. Milestones can be crossed in bulk — an import,
+    /// or saves that queued while the app was closed — and "5 borks" over a
+    /// library of 18 reads as a bug.
+    let count: Int
     let onSignUp: () -> Void
     let onSignIn: () -> Void
     let onNotNow: () -> Void
@@ -210,7 +214,7 @@ struct SignInNudgeSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("\(Copy.countedBorks(milestone)), all on this phone")
+            Text("\(Copy.countedBorks(max(count, milestone))), all on this phone")
                 .font(Typo.display(24, .heavy))
                 .tracking(-0.5)
                 .foregroundStyle(Tokens.ink)

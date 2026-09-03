@@ -110,6 +110,7 @@ struct LibraryView: View {
         .sheet(item: $nudge) { milestone in
             SignInNudgeSheet(
                 milestone: milestone.id,
+                count: bookmarks.count,
                 onSignUp: { nudge = nil; present(.signUp, afterSheet: true) },
                 onSignIn: { nudge = nil; present(.signIn, afterSheet: true) },
                 onNotNow: {
