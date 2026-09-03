@@ -382,6 +382,36 @@
   .preview-box { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
   .preview-box img { width: 84px; height: 56px; object-fit: cover; border-radius: 10px; background: var(--tint); }
 
+  /* ── Import ── */
+  .drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    width: 100%; min-height: 118px; padding: 18px; border: 2px dashed var(--hairline); border-radius: 16px;
+    background: var(--paper); color: var(--ink); text-align: center; }
+  .drop b { font-size: 15.5px; }
+  #import-dialog.dragging .drop { border-color: var(--coral); background: var(--tint); }
+  .import-h3 { font-family: var(--font-body); font-size: 10.5px; font-weight: 800; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--meta); margin: 22px 0 8px; }
+  .import-how { border: 1px solid var(--hairline); border-radius: 14px; padding: 11px 13px; margin-bottom: 8px; }
+  .import-how b { display: block; font-size: 13.5px; }
+  .import-how span { display: block; color: var(--ink-2); font-size: 12.5px; line-height: 1.45; margin-top: 2px; }
+  .import-bar { height: 8px; border-radius: 999px; background: var(--hairline); overflow: hidden; }
+  .import-bar span { display: block; height: 100%; width: 0; background: var(--coral); border-radius: 999px;
+    transition: width .18s linear; }
+  .import-count { display: flex; align-items: center; gap: 13px; margin: 2px 0 14px; }
+  .import-count b { font-family: var(--font-head); font-size: 38px; line-height: 1; color: var(--accent-text); }
+  .import-count i { font-style: normal; font-weight: 700; display: block; }
+  .import-count em { font-style: normal; font-weight: 500; color: var(--meta); font-size: 13px; display: block; }
+  .import-rows { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .import-rows .chip { cursor: default; }
+  .import-row { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--hairline); }
+  .import-row .t { flex: 1; min-width: 0; }
+  .import-row b { display: block; font-size: 13px; font-weight: 600; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .import-row small { display: block; color: var(--faint); font-size: 11px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .import-note { background: var(--tint); border-radius: 14px; padding: 13px 15px; margin: 0 0 16px; }
+  .import-note b { display: block; margin-bottom: 3px; }
+  .import-note p { margin: 0 0 11px; color: var(--ink-2); font-size: 13.5px; }
+
   #toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 14px); z-index: 60; opacity: 0;
     pointer-events: none; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 10px 18px;
     font-size: 14px; display: flex; gap: 14px; align-items: center; max-width: calc(100vw - 32px);
@@ -637,6 +667,11 @@
         </div>
         <div class="you-col">
           <div class="you-card">
+            <h2 class="section-title" style="margin:0 0 6px;font-size:17px">Import your saves</h2>
+            <p class="hint" style="margin:0 0 12px">Bring across everything you already saved on Instagram, TikTok, X, YouTube, Pinterest or in your browser. The export file is read here in your browser and never uploaded.</p>
+            <button class="btn ghost" data-act="import">Import from a file</button>
+          </div>
+          <div class="you-card">
             <button class="btn ghost" data-act="sign-out">Sign out</button>
             <button class="danger-link" data-act="delete-account">Delete account</button>
             <p class="hint" style="margin-top:12px">Deleting your account removes everything backed up on our servers. Borks on your iPhone stay on your iPhone.</p>
@@ -783,6 +818,54 @@
   </div>
 </dialog>
 
+<!-- Import: pick a file → review what we found → import. Never silently. -->
+<dialog id="import-dialog" aria-labelledby="import-h">
+  <h2 id="import-h">Import your saves</h2>
+
+  <div id="import-pick">
+    <p style="margin:0 0 14px;color:var(--ink-2)">You've already saved thousands of things. Every app has to give you your data — download it, drop the file here, and it all becomes searchable at once.</p>
+    <button type="button" class="drop" data-act="import-choose">
+      <b>Choose a file</b>
+      <span class="hint">or drag it onto this box — .zip, .json, .js, .html or .csv</span>
+    </button>
+    <input type="file" id="import-file" accept=".zip,.json,.js,.html,.htm,.csv,.txt" hidden>
+    <p class="hint" style="margin:10px 0 0">The file is read here in your browser and never uploaded — only the links you choose to import are saved to your library.</p>
+    <p class="err" id="import-err" role="alert"></p>
+    <h3 class="import-h3">Where to get it</h3>
+    <div id="import-howto"></div>
+  </div>
+
+  <div id="import-working" hidden>
+    <p id="import-working-msg" style="margin:0 0 10px;font-weight:700"></p>
+    <div class="import-bar"><span id="import-bar"></span></div>
+    <p class="hint" id="import-working-sub" style="margin:10px 0 0;overflow-wrap:anywhere"></p>
+  </div>
+
+  <div id="import-review" hidden>
+    <div class="import-count">
+      <b id="import-n">0</b>
+      <span><i id="import-n-label">links found</i><em id="import-format"></em></span>
+    </div>
+    <div id="import-breakdown" class="ph-no-capture"></div>
+    <p class="hint" id="import-filing" style="margin:0 0 10px"></p>
+    <div id="import-sample" class="ph-no-capture"></div>
+    <p class="err" id="import-review-err" role="alert"></p>
+  </div>
+
+  <div id="import-done" hidden>
+    <div class="import-count">
+      <b id="import-done-n">0</b>
+      <span><i>borks imported</i><em>sorted into topics already</em></span>
+    </div>
+    <p class="hint" style="margin:0">Titles and thumbnails keep filling in while you browse. They're on your iPhone too, next time you open the app.</p>
+  </div>
+
+  <div class="dialog-row">
+    <button class="btn ghost" data-act="import-close">Cancel</button>
+    <button class="btn" id="import-go" data-act="import-go" hidden>Import</button>
+  </div>
+</dialog>
+
 <!-- Confirm (replaces window.confirm, which iOS Safari styles as a system alert) -->
 <dialog id="confirm-dialog" class="dlg-sm" aria-labelledby="confirm-h">
   <h2 id="confirm-h"></h2>
@@ -796,6 +879,11 @@
 <div id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button id="toast-act" hidden></button></div>
 
 <script src="/taxonomy.js"></script>
+<!-- Bulk import: the export parsers and the offline filer, ported from
+     Core/Importers.swift and Core/Categorizer.swift. Loaded before the app so
+     `Importer` and `Filer` exist by the time boot() can open the dialog from an
+     #import link; what it needs from below it looks up at call time. -->
+<script src="/import.js"></script>
 <script>
 "use strict";
 /* bookmarker web — same backend, same identity rules, same look as the iPhone
@@ -1127,14 +1215,12 @@ async function pull() {
   }
 }
 
-/* keepStamp: the row already carries the moment it changed (optimistic save);
-   otherwise stamp now, exactly like the iPhone does. */
-async function push(row, { keepStamp = false } = {}) {
-  const s = await validSession();
-  if (!s) { const err = new Error("Signed out."); err.status = 401; throw err; }
-  // Uniform key set with explicit nulls — PGRST102 taught the iPhone this.
-  const full = {
-    id: row.id, owner_id: s.user_id, url: row.url, title: row.title ?? "",
+/* Uniform key set with explicit nulls — PGRST102 taught the iPhone this. Every
+   row in a request must carry the same keys, so this is the only place a row is
+   shaped for the wire; the bulk importer sends arrays of these. */
+function fullRow(row, ownerID, { keepStamp = false } = {}) {
+  return {
+    id: row.id, owner_id: ownerID, url: row.url, title: row.title ?? "",
     platform: row.platform ?? "web", kind: row.kind ?? "article", tags: row.tags ?? [],
     saved_at: row.saved_at ?? new Date().toISOString(),
     updated_at: keepStamp && row.updated_at ? row.updated_at : new Date().toISOString(),
@@ -1143,12 +1229,35 @@ async function push(row, { keepStamp = false } = {}) {
     duration_seconds: row.duration_seconds ?? null, note_text: row.note_text ?? null,
     image_url: row.image_url ?? null, deleted_at: row.deleted_at ?? null,
   };
+}
+
+/* keepStamp: the row already carries the moment it changed (optimistic save);
+   otherwise stamp now, exactly like the iPhone does. */
+async function push(row, { keepStamp = false } = {}) {
+  const s = await validSession();
+  if (!s) { const err = new Error("Signed out."); err.status = 401; throw err; }
+  const full = fullRow(row, s.user_id, { keepStamp });
   const back = await api(`/rest/v1/bookmarks?on_conflict=owner_id,id`, {
     method: "POST", body: [full],
     headers: { Prefer: "resolution=merge-duplicates,return=representation" },
   });
   absorb(back || []); persist(); render();
   return (back && back[0]) || full;
+}
+
+/* One request per batch of imported rows. Ids are already unique (stableID
+   dedupe), which matters: Postgres refuses an upsert that touches the same row
+   twice in one statement. No render per batch — 25 re-renders of a 5,000-card
+   grid is how you make an import feel broken. */
+async function pushBatch(rows) {
+  const s = await validSession();
+  if (!s) { const err = new Error("Signed out."); err.status = 401; throw err; }
+  const body = rows.map(r => fullRow(r, s.user_id));
+  const back = await api(`/rest/v1/bookmarks?on_conflict=owner_id,id`, {
+    method: "POST", body,
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+  });
+  absorb(back?.length ? back : body); persist();
 }
 
 /* Optimistic write: show it now, sync it after, roll back with a Retry if the
@@ -1680,6 +1789,11 @@ function renderLibrary(all, s) {
             <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>2 · It files itself</b><br><span style="color:var(--ink-2);font-size:13px">Fifty topics, sorted automatically</span></div>
             <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>3 · Find it in seconds</b><br><span style="color:var(--ink-2);font-size:13px">Search everything you ever saved</span></div>
           </div>
+          <div class="import-note">
+            <b>Already saved a thousand things somewhere else?</b>
+            <p>Instagram, TikTok, X, YouTube, Pinterest and every browser let you download your saves. Drop that file in and your library starts full instead of empty.</p>
+            <button class="btn" data-act="import" style="max-width:300px">Import your saves</button>
+          </div>
           <button class="btn" data-act="empty-add" style="max-width:280px">+ Bork your first link</button>
           <button class="linkish" data-act="peek-demo-signedout">See what a full library looks like →</button>
         </div>`;
@@ -1820,7 +1934,11 @@ function pushRoute() {
   history.pushState(null, "", want || location.pathname + location.search);
 }
 function applyRoute() {
-  if (!store.session && !demoMode) { render(); return; }
+  // #import is a door, not a tab: land wherever you'd normally land, with the
+  // import dialog open on top. Signed out too — that's the point of the link.
+  const wantsImport = (location.hash || "") === "#import";
+  if (wantsImport) history.replaceState(null, "", location.pathname + location.search);
+  if (!store.session && !demoMode) { render(); if (wantsImport) openImport("route"); return; }
   const m = ROUTE_RE.exec(location.hash || "");
   let next = m ? m[1] : "library";
   if (next === "search") { next = "browse"; history.replaceState(null, "", "#browse"); }
@@ -1829,6 +1947,7 @@ function applyRoute() {
   tab = next; topicFilter = topic;
   clearQuery();   // a route is always a clean panel
   render();
+  if (wantsImport) openImport("route");
 }
 window.addEventListener("popstate", applyRoute);
 
@@ -1971,6 +2090,8 @@ function adoptSession(d, emailHint, method) {
   toast(brandNew ? "Welcome. Your library starts here." : "You're in. Pulling your borks…");
   loadProfile();
   pull().catch(e => toast(humanError(e), "Retry", () => pull().catch(() => {})));
+  // Someone who parsed a file before signing up shouldn't have to find it again.
+  if (importState?.rows.length) { renderImportReview(); importStage("review"); openDlg($("import-dialog")); }
 }
 function signInWithGoogle() {
   track("google_clicked");
@@ -2260,6 +2381,190 @@ async function deleteBork() {
   toast("Bork deleted.", "Undo", () => { justAdded.add(r.id); commit({ ...r, deleted_at: null }, gone); toast("Back where it was."); });
 }
 
+/* ── Import ─────────────────────────────────────────────────────────────────
+   Pick a file → **review what we found** → import. Never silently: dropping
+   1,400 items into someone's library without showing them first is the kind of
+   thing that makes people delete an app.
+
+   The file is parsed and filed entirely in this tab (docs/import.js). Nothing
+   is uploaded, and the categorize function is never called — it is quota'd at
+   200 a day, which a single import would burn through seven times over. */
+const IMPORT_BATCH = 200;
+let importState = null;    // what the review screen is showing
+let importBusy = false;
+const frame = () => new Promise(r => setTimeout(r, 0));
+const setImportBar = (f) => { $("import-bar").style.width = `${Math.round(Math.min(1, Math.max(0, f)) * 100)}%`; };
+
+function importStage(stage) {
+  for (const s of ["pick", "working", "review", "done"]) $(`import-${s}`).hidden = s !== stage;
+  $("import-h").textContent = stage === "done" ? "All done" : "Import your saves";
+  const close = document.querySelector("[data-act=import-close]");
+  close.textContent = stage === "done" ? "See your library" : "Cancel";
+  close.classList.toggle("ghost", stage !== "done");
+  $("import-go").hidden = stage !== "review";
+}
+
+function openImport(where) {
+  if (!$("import-howto").childElementCount) {
+    $("import-howto").innerHTML = Object.values(Importer.FORMATS)
+      .map(f => `<div class="import-how"><b>${esc(f.label)}</b><span>${esc(f.howTo)}</span></div>`).join("");
+  }
+  $("import-err").textContent = ""; $("import-review-err").textContent = "";
+  $("import-file").value = "";
+  importState = null;
+  importStage("pick");
+  openDlg($("import-dialog"));
+  track("import_opened", { where, signed_in: !!store.session, demo: demoMode });
+}
+
+async function importPick(file) {
+  if (!file || importBusy) return;
+  importBusy = true;
+  $("import-err").textContent = "";
+  importStage("working");
+  $("import-working-msg").textContent = "Reading the file…";
+  $("import-working-sub").textContent = file.name;
+  setImportBar(0.04);
+  try {
+    const parsed = await Importer.parseFile(file, (p) => {
+      if (p.file) $("import-working-sub").textContent = p.file;
+      setImportBar(p.total ? 0.05 + 0.5 * (p.done / p.total) : 0.25);
+    });
+    let candidates = Importer.dedupe(parsed.candidates);
+    const capped = candidates.length > Importer.MAX_RECORDS;
+    if (capped) candidates = candidates.slice(0, Importer.MAX_RECORDS);
+    if (!candidates.length) {
+      throw new Error(`No links in ${file.name}. Drop the export itself — the .zip the platform emailed you, or the .json, .js, .html or .csv from inside it.`);
+    }
+    $("import-working-msg").textContent = `Filing ${plural(candidates.length, "link")}…`;
+    $("import-working-sub").textContent = "Matching each one against 50 topics, here in your browser.";
+    await frame();
+    importState = { rows: await fileCandidates(candidates), format: parsed.format,
+      skipped: parsed.skipped, capped, name: file.name };
+    renderImportReview();
+    importStage("review");
+    track("import_parsed", { format: importState.format || "unknown", count: importState.rows.length,
+      skipped: importState.skipped, capped, already: importState.already,
+      platform_counts: importState.platformCounts, topics: importState.topicCount });
+  } catch (e) {
+    importStage("pick");
+    // Errors name the file and what was expected; a raw exception helps nobody.
+    $("import-err").textContent = e?.message || `Couldn't read ${file.name}.`;
+    track("import_failed", { stage: "parse" });
+  } finally { importBusy = false; }
+}
+
+/* File every candidate offline, in chunks, so the tab never drops a frame. */
+async function fileCandidates(candidates) {
+  const rows = [];
+  const now = new Date().toISOString();
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i];
+    const title = c.title || Filer.fallbackTitle(c.url);
+    const s = Filer.suggest(c.url, title, c.text);
+    const platform = detectPlatform(c.url);
+    const when = c.savedAt && Number.isFinite(+c.savedAt) ? new Date(+c.savedAt).toISOString() : now;
+    rows.push({
+      id: c.id, url: c.url, title, platform, kind: PLATFORM[platform].kind,
+      tags: s.tags, category_id: s.topic, subcategory: s.subtopic,
+      author: c.author || Filer.fallbackAuthor(c.url),
+      body_text: c.text || null, note_text: null,
+      // No image_url and no preview call: the server-side thumb path and the
+      // topic-art fallback already cover a cover that isn't there yet.
+      image_url: null, duration_seconds: null,
+      // Keep when it was originally saved. An imported library with real
+      // history beats everything landing "Today" and destroying the ordering.
+      saved_at: when, updated_at: now, deleted_at: null,
+    });
+    if ((i & 127) === 127) { setImportBar(0.55 + 0.45 * (i / candidates.length)); await frame(); }
+  }
+  setImportBar(1);
+  return rows;
+}
+
+function renderImportReview() {
+  const st = importState;
+  const rows = st.rows;
+  const mine = new Set(live().map(r => r.id));
+  st.already = rows.filter(r => mine.has(r.id)).length;
+
+  const tally = (key) => {
+    const m = new Map();
+    for (const r of rows) m.set(r[key], (m.get(r[key]) || 0) + 1);
+    return [...m].sort((a, b) => b[1] - a[1]);
+  };
+  const platforms = tally("platform");
+  const topics = tally("category_id");
+  const named = topics.filter(([id]) => TOPIC_BY_ID[id]);
+  const unfiled = topics.find(([id]) => !TOPIC_BY_ID[id])?.[1] || 0;
+  st.platformCounts = Object.fromEntries(platforms);
+  st.topicCount = named.length;
+
+  $("import-n").textContent = rows.length;
+  $("import-n-label").textContent = rows.length === 1 ? "link found" : "links found";
+  $("import-format").textContent = [
+    Importer.formatLabel(st.format),
+    st.skipped ? `${st.skipped} skipped (not links)` : null,
+    st.capped ? `capped at ${Importer.MAX_RECORDS} for this go` : null,
+  ].filter(Boolean).join(" · ");
+
+  const chip = (inner, n) => `<span class="chip">${inner}<span class="n">${n}</span></span>`;
+  const platHTML = platforms.map(([p, n]) => chip(`${glyph(p)}${esc(PLATFORM[p]?.name || p)}`, n)).join("");
+  const topicHTML = named.slice(0, 10).map(([id, n]) => chip(esc(TOPIC_BY_ID[id].name), n)).join("")
+    + (named.length > 10 ? `<span class="chip">+${named.length - 10} more</span>` : "")
+    + (unfiled ? chip("Not filed yet", unfiled) : "");
+  $("import-breakdown").innerHTML =
+    `<h3 class="import-h3">From</h3><div class="import-rows">${platHTML}</div>`
+    + `<h3 class="import-h3">Filed into ${plural(named.length, "topic")}</h3><div class="import-rows">${topicHTML}</div>`
+    + (st.already ? `<p class="hint" style="margin:0 0 10px">Already in your library: ${st.already}. Importing them again just refreshes them — nothing doubles up.</p>` : "");
+
+  $("import-filing").textContent = "How we file: every link's title and address is matched against 50 topics and about 700 subtopics, offline in this browser. Nothing is sent to a model. Open any bork afterwards to move it.";
+
+  $("import-sample").innerHTML = `<h3 class="import-h3">A sample</h3>`
+    + rows.slice(0, 8).map(r =>
+      `<div class="import-row"><span class="source-badge">${glyph(r.platform)}</span>
+        <span class="t"><b>${esc(r.title)}</b><small>${esc(r.url)}</small></span></div>`).join("")
+    + (rows.length > 8 ? `<p class="hint" style="margin:10px 0 0">…and ${rows.length - 8} more</p>` : "");
+
+  $("import-go").textContent = (!store.session || demoMode)
+    ? "Sign up to import" : `Import ${plural(rows.length, "bork")}`;
+}
+
+async function runImport() {
+  if (importBusy || !importState?.rows.length) return;
+  const rows = importState.rows;
+  importBusy = true;
+  importStage("working");
+  $("import-working-msg").textContent = `Filing ${plural(rows.length, "bork")}…`;
+  $("import-working-sub").textContent = "Titles and thumbnails fill in afterwards.";
+  setImportBar(0);
+  let saved = 0;
+  try {
+    for (let i = 0; i < rows.length; i += IMPORT_BATCH) {
+      const batch = rows.slice(i, i + IMPORT_BATCH);
+      await pushBatch(batch);
+      saved += batch.length;
+      setImportBar(saved / rows.length);
+      await frame();
+    }
+  } catch (e) {
+    importStage("review");
+    $("import-review-err").textContent = humanError(e)
+      + (saved ? ` ${plural(saved, "bork")} did land — Import again for the rest.` : "");
+    track("import_failed", { stage: "save", count: rows.length, saved });
+    render();
+    return;
+  } finally { importBusy = false; }
+
+  $("import-done-n").textContent = saved;
+  importStage("done");
+  track("import_done", { format: importState.format || "unknown", count: saved,
+    platform_counts: importState.platformCounts, topics: importState.topicCount,
+    already: importState.already });
+  importState = null;
+  render();
+}
+
 /* ── Quest dialog ── */
 function openQuest(id) {
   if (demoMode) { toast("Side quests come with an account.", "Sign up", exitDemoToSignup); return; }
@@ -2344,6 +2649,27 @@ document.addEventListener("click", (e) => {
   const act = e.target.closest("[data-act]")?.dataset.act;
   if (act === "peek-demo" || act === "peek-demo-signedout") { enterDemo(); return; }
   if (act === "empty-add") { openAdd(); return; }
+  if (act === "import") { openImport(store.session ? tab : "signed-out"); return; }
+  if (act === "import-choose") { $("import-file").click(); return; }
+  if (act === "import-close") {
+    const finished = !$("import-done").hidden;
+    closeDlg($("import-dialog"));
+    if (finished) { platformFilter = null; topicFilter = null; clearQuery(); setTab("library"); }
+    return;
+  }
+  if (act === "import-go") {
+    // Signed out, the same dialog does the same work — it just can't save yet.
+    // The parse survives sign-up, so nobody redoes it.
+    if (!store.session || demoMode) {
+      track("import_signup_prompt", { count: importState?.rows.length || 0 });
+      closeDlg($("import-dialog"));
+      if (demoMode) { exitDemoToSignup(); }
+      else { authMode = "signup"; renderAuth(); showAuthStage("email"); $("email-input").focus(); }
+      return;
+    }
+    runImport();
+    return;
+  }
   if (act === "demo-signup") { if (store.session) exitDemo(); else exitDemoToSignup(); return; }
   if (act === "demo-exit") { exitDemo(); return; }
   if (act === "choose-signup") { authMode = "signup"; renderAuth(); showAuthStage("email"); $("email-input").focus(); }
@@ -2435,6 +2761,20 @@ for (const id of ["search-desktop", "search-mobile"]) {
 }
 $("add-desktop").addEventListener("click", openAdd);
 $("add-mobile").addEventListener("click", openAdd);
+/* Import: the file picker, plus dropping a file anywhere on the dialog. */
+$("import-file").addEventListener("change", (e) => { importPick(e.target.files?.[0]); e.target.value = ""; });
+{
+  const d = $("import-dialog");
+  const stop = (e) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = "copy"; };
+  d.addEventListener("dragenter", (e) => { stop(e); d.classList.add("dragging"); });
+  d.addEventListener("dragover", (e) => { stop(e); d.classList.add("dragging"); });
+  d.addEventListener("dragleave", (e) => { if (!d.contains(e.relatedTarget)) d.classList.remove("dragging"); });
+  d.addEventListener("drop", (e) => {
+    e.preventDefault(); d.classList.remove("dragging");
+    const file = e.dataTransfer?.files?.[0];
+    if (file) importPick(file); else $("import-err").textContent = "That wasn't a file — drop the export you downloaded.";
+  });
+}
 let previewTimer = null;
 $("add-url").addEventListener("input", () => {
   clearTimeout(previewTimer);
