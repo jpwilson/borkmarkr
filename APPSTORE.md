@@ -64,6 +64,25 @@ names the web app — which 1.0's promo text never mentioned.)*
 
 ---
 
+## What's New in 1.0.2 (4,000 char max — release notes, per version)
+
+```
+Two fixes, both about knowing where you are.
+
+ONLY ON THIS PHONE
+bookmarker works signed out and always will — saving is never gated behind an account. But nothing in the app said that a library saved that way lives on this phone and nowhere else, so people had no way to know they weren't backed up. Once you have a few borks the Library now says so plainly, with a Sign up button next to it, and the You tab leads with "Not signed in" instead of burying it. Signing up backs your borks up and puts them on the web at bookmarker.lol. Nothing else changes, and nothing gets locked.
+
+SUBTOPICS ARE NOW A-Z
+The subtopics under a topic — Fitness, Recipes, Cars — are in alphabetical order, with the ones you added yourself sorted in among the built-in ones rather than pushed to the end. Finding "Yoga" in a topic with forty subtopics no longer means reading all forty. Same order as the web app.
+
+Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
+```
+*(Both lines are in the build. The nudge is a banner and a sheet at 5, 25 and
+100 borks — never a modal on launch, and it goes away for good when you sign
+in; see the `SignInNudge` note in DECISIONS.md.)*
+
+---
+
 ## What's New in 1.0.1 (4,000 char max — release notes, per version)
 
 ```

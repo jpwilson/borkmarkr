@@ -68,6 +68,24 @@ enum TopicPickerQuery {
         }
     }
 
+    /// Subtopics read A–Z — built-ins and the ones you added yourself in one
+    /// list, not two.
+    ///
+    /// The taxonomy's own order is authored: Fitness opens with Running,
+    /// Strength, Mobility because that is roughly how popular they are. That
+    /// is useful to whoever wrote the list and useless to whoever is looking
+    /// for "Yoga" among forty pills — the only order you can *search with your
+    /// eyes* is alphabetical. Appending a user's own subtopics after the
+    /// built-ins made it worse again: their entries, the ones they care most
+    /// about, ended up furthest down.
+    ///
+    /// `localizedStandardCompare` is the Finder comparison: locale-aware,
+    /// case-insensitive, and numeric, so "Zone 2" sorts before "Zone 10". The
+    /// web app's picker sorts the same way.
+    static func alphabetical(_ subs: [String]) -> [String] {
+        subs.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
+
     static func matchingSubs(_ subs: [String], needle: String) -> Set<String> {
         let needle = needle.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !needle.isEmpty else { return [] }

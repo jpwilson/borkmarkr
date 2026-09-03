@@ -124,13 +124,21 @@ struct MergedTaxonomy {
 
     func isCustomTopic(_ id: String) -> Bool { customTopicIDs.contains(id) }
 
-    /// Built-ins first (familiar order), then your additions.
+    /// Built-ins and your own additions in one A–Z list.
+    ///
+    /// Sorted here rather than at each call site because this is the single
+    /// door every subtopic list goes through — the picker's pills and the
+    /// topic page's chips both come out ordered. Chips ordered by *count*
+    /// (the topic page's counts are information) are built elsewhere and are
+    /// deliberately left alone.
     func subs(for topic: Topic) -> [String] {
-        topic.subs + (custom[topic.id] ?? []).filter { name in
-            // Guard against a custom entry duplicating a built-in that was
-            // added to the app after the user created theirs.
-            !topic.subs.contains { $0.caseInsensitiveCompare(name) == .orderedSame }
-        }
+        TopicPickerQuery.alphabetical(
+            topic.subs + (custom[topic.id] ?? []).filter { name in
+                // Guard against a custom entry duplicating a built-in that was
+                // added to the app after the user created theirs.
+                !topic.subs.contains { $0.caseInsensitiveCompare(name) == .orderedSame }
+            }
+        )
     }
 
     func isCustom(_ name: String, in topic: Topic) -> Bool {

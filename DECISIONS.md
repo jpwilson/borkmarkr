@@ -143,6 +143,37 @@ Nothing changes on the push side, and missions/side quests are untouched because
 iOS doesn't sync them at all yet — `Mission` is local SwiftData only, and the
 `missions` table has just the one client (the web app).
 
+**Signed out is a state the app has to show, not a modal it has to sell.** People
+were using bookmarker for weeks without knowing their library was only on the
+phone. Saving is never gated behind an account and never will be — which is
+exactly why the app owes them the sentence: the only place that said it was the
+You tab, and the You tab is the one tab a happy user never opens. `SignInNudge`
+holds the whole policy (the `ReviewPrompter` shape: one small type, one-line
+call sites): a persistent Library banner from the third bork, a dot on the You
+tab, and a sheet at the 5th, 25th and 100th bork.
+
+Three rules keep it a statement rather than nagging:
+
+1. **Never on launch.** A milestone fires only on a crossing the app can
+   *prove*, against a watermark of the count it last looked at. A library
+   already past 25 the first time the policy sees it never gets a sheet for 25 —
+   opening the app is not an achievement, and a modal on launch is the thing we
+   refuse to ship. The count comes from the store, so a bork saved through the
+   Share Extension counts exactly as much as one saved in the app.
+2. **Never on top of something else.** A milestone that can't be shown (another
+   sheet, the Add flow, the first-run tour) leaves the watermark alone and stays
+   due for the next Library appearance, rather than being spent on a sheet
+   nobody saw.
+3. **Fourteen days of quiet after any dismissal**, ✕ or "Not now", and at most
+   one sheet per fourteen days however many milestones a bulk import crosses at
+   once. Two weeks is long enough that a second ask reads as new information
+   instead of pestering, and short enough to still reach someone before they
+   drop the phone in a river. Signing in removes every surface permanently.
+
+The banner's message is "this only lives on this phone", never "you must sign
+in": the honest fact, with the fix next to it.
+
+
 ## Web app
 
 **The topic picker is the iOS sheet, not a `<select>`.** Two native selects gave
