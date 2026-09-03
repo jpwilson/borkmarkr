@@ -98,6 +98,13 @@
   .nav-tab.on { background: var(--ink); color: var(--paper); }
   .nav-search { flex: 1; min-width: 120px; max-width: 380px; height: 38px; border: 1px solid var(--hairline);
     border-radius: 999px; padding: 0 16px; background: var(--surface); outline: none; }
+  /* Four tabs, a search field and a CTA is a lot of header. On a small laptop
+     the row tightens rather than running off the side. */
+  @media (min-width: 761px) and (max-width: 919px) {
+    .nav-in { gap: 10px; padding: 0 14px; }
+    .nav-tab { padding: 8px 10px; }
+    .nav-search { min-width: 100px; padding: 0 12px; }
+  }
   .btn-sm { display: inline-flex; align-items: center; justify-content: center; height: 38px;
     padding: 0 16px; border-radius: 999px; border: 0; font-weight: 700; font-size: 14px;
     line-height: 1; white-space: nowrap; }
@@ -257,6 +264,21 @@
   #browse-search .h-row { margin-top: 0; }
   #search-mobile { margin-bottom: 14px; }
   #search-meta { font-size: 17px; }
+  #scope-chips { padding-bottom: 12px; }
+  #empty-search .btn-sm { margin-top: 12px; }
+
+  /* ── Revisit ── */
+  .rv { margin: 0 0 30px; }
+  .rv:last-child { margin-bottom: 0; }
+  .rv .h-row { margin-top: 0; }
+  .rv-line { color: var(--ink-2); font-size: 14.5px; line-height: 1.5; margin: -2px 0 12px; }
+  .rv-line b { color: var(--ink); font-weight: 700; }
+  .rv-more { display: block; margin: 14px 0 0; }
+  /* The Recent strip, with one line of why a card is in this section. */
+  .recents.rv-strip .recent-card { height: 166px; }
+  .rc-meta { margin-top: auto; padding: 0 10px 9px; color: var(--meta); font-size: 11px; font-weight: 600; }
+  .rv-thin { max-width: 640px; }
+  .rv-thin p { margin: 4px 0 0; }
 
   /* ── You ── */
   .you-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); max-width: 980px; }
@@ -438,6 +460,7 @@
     .chips { position: sticky; top: calc(var(--banner-h) + var(--nav-h)); z-index: 20; background: var(--paper);
       margin: 0 -14px; padding: 8px 14px 12px; }
     #search-chips { position: static; margin: 0; padding: 2px 0 14px; }
+    #scope-chips, .rv .chips { position: static; margin: 0; padding: 2px 0 12px; }
     /* Thumb-sized targets */
     .chip { min-height: 44px; }
     .topic-pill { height: 44px; }
@@ -600,6 +623,7 @@
       <nav class="nav-tabs" aria-label="Sections">
         <button class="nav-tab" data-tab-link="library">Library</button>
         <button class="nav-tab" data-tab-link="browse">Browse</button>
+        <button class="nav-tab" data-tab-link="revisit">Revisit</button>
         <button class="nav-tab" data-tab-link="help">Help</button>
       </nav>
       <input type="search" class="nav-search" id="search-desktop" placeholder="Search your borks" autocomplete="off" aria-label="Search your borks">
@@ -631,6 +655,13 @@
         <div class="grid" id="grid-topic"></div>
       </div>
       <div id="browse-search" hidden>
+        <!-- Search scope. Nothing pressed searches everything, as it always has;
+             pressing one narrows to that field alone. -->
+        <nav class="chips" id="scope-chips" aria-label="Search in">
+          <button class="chip" data-scope="topics" aria-pressed="false">Topics</button>
+          <button class="chip" data-scope="subtopics" aria-pressed="false">Subtopics</button>
+          <button class="chip" data-scope="tags" aria-pressed="false">Tags</button>
+        </nav>
         <div class="h-row"><h2 class="h-title" id="search-meta"></h2></div>
         <nav class="chips" id="search-chips" aria-label="Filter results by source"></nav>
         <div class="grid" id="grid-search"></div>
@@ -638,6 +669,11 @@
       </div>
     </section>
 
+    <!-- Revisit: everything you saved, handed back to you. One container —
+         renderRevisit builds the whole page and memoises it. -->
+    <section id="view-revisit" hidden>
+      <div id="revisit-sections"></div>
+    </section>
 
     <section id="view-you" hidden>
       <div class="you-grid">
@@ -677,7 +713,7 @@
             <p class="hint" style="margin-top:12px">Deleting your account removes everything backed up on our servers. Borks on your iPhone stay on your iPhone.</p>
           </div>
           <p class="hint">
-            <a href="/app">Get the iPhone app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
+            <a href="#help" data-tab-link="help">Help &amp; feedback</a> · <a href="/app">Get the iPhone app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
           </p>
         </div>
       </div>
@@ -737,7 +773,9 @@
     <button class="tab" data-tab-link="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
     <button class="fab-mobile" id="add-mobile" aria-label="Bork a link">+</button>
     <button class="tab" data-tab-link="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>You</button>
-    <button class="tab" data-tab-link="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.5a2.8 2.8 0 0 1 5.4.9c0 1.8-2.7 2.2-2.7 3.6"/><path d="M12 17.2h.01"/></svg>Help</button>
+    <!-- Help is a form you use once; Revisit is a habit. Help moved to a link
+         on the You page, and keeps its place in the desktop header. -->
+    <button class="tab" data-tab-link="revisit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>Revisit</button>
   </nav>
 </div>
 
@@ -884,6 +922,10 @@
      `Importer` and `Filer` exist by the time boot() can open the dialog from an
      #import link; what it needs from below it looks up at call time. -->
 <script src="/import.js"></script>
+<!-- Revisit: the arithmetic behind the Revisit tab. Its own file so
+     Scripts/test_revisit.mjs can run it in node, and so a weekly digest can
+     one day build the same sections without the page. -->
+<script src="/revisit.js"></script>
 <script>
 "use strict";
 /* bookmarker web — same backend, same identity rules, same look as the iPhone
@@ -898,6 +940,9 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const TOPIC_BY_ID = Object.fromEntries(TAXONOMY.map(t => [t.id, t]));
+/* One folding for every text match in the app — search, the search blob and the
+   topic picker. Case- and accent-blind, so "index" finds "índex". */
+const fold = (s) => String(s ?? "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
 const REDUCED = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const MOBILE = () => window.innerWidth <= 760;
 
@@ -1092,6 +1137,8 @@ let platformFilter = null;   // Library
 let topicFilter = null;      // Browse drill-in
 let query = "";              // Browse: a live query shows results instead of topics
 let searchPlatform = null;   // …narrowed to one source
+const searchScopes = new Set(); // …and to Topics / Subtopics / Tags
+let revisitExpanded = false; // Revisit: "Saved, never opened" showing everything
 let fbKind = "idea";         // Help: what kind of message
 let lastSearchCount = 0;
 let profile = { handle: null, display_name: null };
@@ -1100,40 +1147,99 @@ let pulledOnce = false;      // the first pull has finished (skeleton → real/e
 const justAdded = new Set(); // ids to animate in on the next render
 const memo = new Map();      // element id → key of what it currently shows
 
-const blob = (r) => [
+const blob = (r) => fold([
   r.title, r.author, r.body_text, r.note_text, (r.tags || []).join(" "),
   TOPIC_BY_ID[r.category_id]?.name, r.subcategory, PLATFORM[r.platform]?.name, r.url,
-].filter(Boolean).join(" ").toLowerCase();
+].filter(Boolean).join(" "));
+
+/* ── Search scope ──────────────────────────────────────────────────────────
+   Nothing selected searches the whole blob, exactly as it always has. With a
+   scope on, a bork matches only when every term lands in at least one of the
+   selected fields — the difference between "running" the word and "running"
+   the tag.
+   The chips themselves are in the markup (#scope-chips); this is what each one
+   searches, and how the result line names it. */
+const SCOPES = [
+  { key: "topics", one: "in the topic", many: "topics", of: (r) => [TOPIC_BY_ID[r.category_id]?.name] },
+  { key: "subtopics", one: "in the subtopic", many: "subtopics", of: (r) => [r.subcategory] },
+  { key: "tags", one: "with the tag", many: "tags", of: (r) => r.tags || [] },
+];
+/** Pure: does this row match these already-folded terms under these scopes? */
+function matchesQuery(row, terms, scopes) {
+  if (!terms.length) return true;
+  if (!scopes || !scopes.size) return terms.every(t => row._blob.includes(t));
+  const fields = [];
+  for (const s of SCOPES) if (scopes.has(s.key))
+    for (const v of s.of(row)) if (v) fields.push(fold(v));
+  if (!fields.length) return false;
+  return terms.every(t => fields.some(f => f.includes(t)));
+}
+
+/* ── Opens ────────────────────────────────────────────────────────────────
+   Whether you ever went back to a thing is the signal platform bookmarks
+   throw away, and it's what Revisit is built on. The iPhone keeps it in
+   SwiftData (Bookmark.openCount / lastOpenedAt) and the sync row has never
+   carried it, so the web keeps its own ledger in this browser rather than
+   inventing a column. Same rule as the app: it counts when you open the
+   original, not when you peek at the sheet. */
+const opens = (() => { try { return JSON.parse(lsGet("bm.opens") || "{}"); } catch { return {}; } })();
+const applyOpens = (r) => { const o = opens[r.id]; r.open_count = o ? o.n : 0; r.last_opened_at = o ? o.at : null; };
+function bumpOpen(id) {
+  const o = opens[id] || { n: 0, at: null };
+  o.n += 1; o.at = new Date().toISOString();
+  opens[id] = o;
+  lsSet("bm.opens", JSON.stringify(opens));
+  const r = borks.get(id);
+  if (r) applyOpens(r);
+}
+function forgetOpens() {
+  for (const k of Object.keys(opens)) delete opens[k];
+  lsDel("bm.opens");
+}
 
 /* ── Demo library: the product explaining itself before it exists ── */
+/* title, author, platform, kind, topic, days ago, subtopic, tags, times opened.
+   The last four exist so the demo can show Browse's scopes and Revisit doing
+   real arithmetic — a demo of an empty page teaches nobody anything. */
 const DEMO_SEED = [
-  ["5 mobility drills that undo a desk day", "@stretchtheory", "instagram", "reel", "fitness", 1],
-  ["The 20-minute meal-prep system I use every Sunday", "@mealprepmanny", "instagram", "reel", "recipes", 1],
-  ["Thread: how I'd learn marketing from zero in 2026", "@growthnotes", "x", "thread", "marketing", 2],
-  ["Why your deadlift stalls at 100kg — form breakdown", "Squat Mechanics", "youtube", "video", "fitness", 2],
-  ["Osaka on $60 a day — full itinerary", "@wanderfrugal", "tiktok", "clip", "travel", 3],
-  ["The only knife skills video you actually need", "Kenji's Kitchen", "youtube", "video", "recipes", 3],
-  ["How the Roman concrete mystery got solved", "@historydept", "x", "thread", "history", 4],
-  ["Magnesium: what the evidence actually says", "@evidencemed", "instagram", "reel", "health", 4],
-  ["I rebuilt my sleep in 30 days — protocol inside", "@circadianclub", "x", "thread", "wellness", 5],
-  ["Watercolor basics: your first 3 exercises", "@paintwithmara", "tiktok", "clip", "art", 5],
-  ["The índex-fund order that saves you 0.4% a year", "@bogleheadd", "x", "thread", "investing", 6],
-  ["Sourdough starter troubleshooting flowchart", "@crumbcoach", "instagram", "post", "recipes", 7],
-  ["Every hip hinge cue, ranked by a physio", "@rehabroom", "instagram", "reel", "fitness", 7],
-  ["A beginner's map of the AI agent landscape", "@builderslog", "x", "thread", "ai", 8],
-  ["Van conversion: electrical system in one video", "Vanlife Garage", "youtube", "video", "outdoors", 9],
-  ["The negotiation email template that got me +18%", "@careerplays", "x", "thread", "career", 10],
-  ["Tokyo listening bars you can actually get into", "@tinytokyo", "instagram", "reel", "travel", 11],
-  ["Zone 2 explained without the bro science", "Endurance Lab", "youtube", "video", "fitness", 12],
-  ["How to read a balance sheet in 10 minutes", "@plainfinance", "youtube", "video", "money", 13],
-  ["Pottery wheel first session: what to expect", "@mudandfire", "tiktok", "clip", "crafts", 14],
+  ["5 mobility drills that undo a desk day", "@stretchtheory", "instagram", "reel", "fitness", 1, "Mobility", ["desk", "hips"], 0],
+  ["The 20-minute meal-prep system I use every Sunday", "@mealprepmanny", "instagram", "reel", "recipes", 1, "Meal prep", ["sunday", "batch"], 4],
+  ["Thread: how I'd learn marketing from zero in 2026", "@growthnotes", "x", "thread", "marketing", 2, "Social strategy", ["beginner"], 3],
+  ["Why your deadlift stalls at 100kg — form breakdown", "Squat Mechanics", "youtube", "video", "fitness", 2, "Strength", ["deadlift", "form"], 5],
+  ["Osaka on $60 a day — full itinerary", "@wanderfrugal", "tiktok", "clip", "travel", 3, "Itineraries", ["japan", "budget"], 1],
+  ["The only knife skills video you actually need", "Kenji's Kitchen", "youtube", "video", "recipes", 3, "Technique", ["knife"], 2],
+  ["How the Roman concrete mystery got solved", "@historydept", "x", "thread", "history", 4, "Ancient", ["rome"], 0],
+  ["Magnesium: what the evidence actually says", "@evidencemed", "instagram", "reel", "health", 4, "Supplements", ["magnesium", "sleep"], 0],
+  ["I rebuilt my sleep in 30 days — protocol inside", "@circadianclub", "x", "thread", "wellness", 5, "Sleep", ["sleep", "protocol"], 2],
+  ["Watercolor basics: your first 3 exercises", "@paintwithmara", "tiktok", "clip", "art", 5, "Painting", ["watercolour"], 0],
+  ["The índex-fund order that saves you 0.4% a year", "@bogleheadd", "x", "thread", "investing", 6, "Index funds", ["fees"], 0],
+  ["Sourdough starter troubleshooting flowchart", "@crumbcoach", "instagram", "post", "recipes", 7, "Baking", ["sourdough"], 2],
+  ["Every hip hinge cue, ranked by a physio", "@rehabroom", "instagram", "reel", "fitness", 7, "Mobility", ["hips", "form"], 0],
+  ["A beginner's map of the AI agent landscape", "@builderslog", "x", "thread", "ai", 8, "Agents", ["agents"], 0],
+  ["Van conversion: electrical system in one video", "Vanlife Garage", "youtube", "video", "outdoors", 9, "Vanlife", ["van", "wiring"], 2],
+  ["The negotiation email template that got me +18%", "@careerplays", "x", "thread", "career", 10, "Negotiation", ["salary"], 0],
+  ["Tokyo listening bars you can actually get into", "@tinytokyo", "instagram", "reel", "travel", 11, "Japan", ["tokyo", "bars"], 0],
+  ["Zone 2 explained without the bro science", "Endurance Lab", "youtube", "video", "fitness", 12, "Running", ["zone2", "running"], 3],
+  ["How to read a balance sheet in 10 minutes", "@plainfinance", "youtube", "video", "money", 13, "Budgeting", ["accounting"], 0],
+  ["Pottery wheel first session: what to expect", "@mudandfire", "tiktok", "clip", "crafts", 14, "Pottery", ["pottery"], 0],
+  ["My first 5k: what I'd tell myself", "@rehabroom", "instagram", "reel", "fitness", 29, "Running", ["running", "beginner"], 1],
+  ["Kyoto in the rain — a walking route", "@wanderfrugal", "tiktok", "clip", "travel", 30, "Japan", ["kyoto"], 0],
+  ["Bitcoin halving explained in 4 minutes", "@chainplain", "youtube", "video", "crypto", 32, "Bitcoin", ["halving"], 0],
+  ["Cold storage setup: the 20-minute version", "@keysafe", "x", "thread", "crypto", 36, "Security", ["wallet"], 0],
+  ["Dollar-cost averaging, backtested 20 years", "@plainfinance", "youtube", "video", "investing", 38, "Index funds", ["dca"], 0],
+  ["Why L2 fees finally dropped", "@rollupdaily", "x", "thread", "crypto", 41, "Ethereum", ["l2", "fees"], 0],
+  ["The library of Alexandria didn't burn down once", "@historydept", "x", "thread", "history", 44, "Ancient", ["alexandria"], 0],
+  ["The ETF flows chart everyone's posting", "@marketmaps", "x", "thread", "crypto", 47, "Bitcoin", ["etf"], 0],
+  ["Bond ladders for people who hate bonds", "@bogleheadd", "x", "thread", "investing", 53, "Bonds", ["bonds"], 0],
+  ["How Venice actually made its money", "Cities Past", "youtube", "video", "history", 58, "Medieval", ["venice", "trade"], 0],
 ];
-const DEMO_BORKS = DEMO_SEED.map(([title, author, platform, kind, topic, days], i) => {
+const DEMO_BORKS = DEMO_SEED.map(([title, author, platform, kind, topic, days, sub, tags, opened], i) => {
   const saved = new Date(Date.now() - days * 86_400_000).toISOString();
   const r = {
     id: `demo-${i}`, url: "https://bookmarker.lol/app", title, author, platform, kind,
-    category_id: topic, subcategory: null, tags: [], body_text: null, note_text: i === 3 ? "try this Friday" : null,
+    category_id: topic, subcategory: sub, tags, body_text: null, note_text: i === 3 ? "try this Friday" : null,
     image_url: null, duration_seconds: null, saved_at: saved, updated_at: saved, deleted_at: null,
+    open_count: opened, last_opened_at: opened ? new Date(Date.now() - i * 3_600_000).toISOString() : null,
   };
   r._blob = blob(r);
   return r;
@@ -1160,10 +1266,11 @@ function resetLocalState() {
   borks = new Map(); missions = new Map(); questDraft = null;
   profile = { handle: null, display_name: null };
   platformFilter = null; topicFilter = null; query = ""; searchPlatform = null; lastSearchCount = 0;
+  searchScopes.clear(); revisitExpanded = false;
   tab = "library"; lastTab = null; loading = false; pulledOnce = false;
   justAdded.clear(); memo.clear(); addedSubs.clear();
   $("search-desktop").value = ""; $("search-mobile").value = "";
-  for (const id of ["home-sections", "platform-chips", "grid-library", "grid-topic", "grid-search", "topics-grid", "sources-list", "search-chips"])
+  for (const id of ["home-sections", "platform-chips", "grid-library", "grid-topic", "grid-search", "topics-grid", "sources-list", "search-chips", "revisit-sections"])
     $(id).innerHTML = "";
 }
 function rebootFromStorage() {
@@ -1181,10 +1288,12 @@ function absorb(rows) {
     const mine = borks.get(r.id);
     if (mine && mine.updated_at >= r.updated_at) continue; // LWW, same as iOS
     r._blob = blob(r); r._disp = null;
+    applyOpens(r);
     borks.set(r.id, r);
   }
 }
-const persist = () => { store.cache = [...borks.values()].map(({ _blob, _disp, ...r }) => r); };
+// The cache is the wire shape and nothing else: opens live in their own key.
+const persist = () => { store.cache = [...borks.values()].map(({ _blob, _disp, open_count, last_opened_at, ...r }) => r); };
 
 /* Always the whole library. A persisted "since" cursor looks cheaper, but
    updated_at is stamped by whichever device made the change, so a row can
@@ -1525,14 +1634,28 @@ function renderGrid(el, rows, ctx, { skeleton = false } = {}) {
 }
 const bySaved = (a, b) => (b.saved_at || "").localeCompare(a.saved_at || "");
 
-function recentCardHTML(r) {
+/* `meta` is one line saying why this card is in this strip — Revisit uses it
+   for "opened 4×" and the date. Recent leaves it off. */
+function recentCardHTML(r, meta) {
   const topic = TOPIC_BY_ID[r.category_id];
   const hue = topic ? topic.hue : 24;
   const src = picOf(r);
   const img = src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : "";
   return `<div class="recent-card" data-id="${esc(r.id)}" role="button" tabindex="0">
     <div class="rc-cover" style="${gradient(hue)}"><span class="cover-glyph">${glyph(r.platform)}</span>${img}</div>
-    <div class="rc-title">${esc(displayFields(r).title)}</div></div>`;
+    <div class="rc-title">${esc(displayFields(r).title)}</div>
+    ${meta ? `<div class="rc-meta">${esc(meta)}</div>` : ""}</div>`;
+}
+function questCardHTML(m) {
+  const done = (m.todos || []).filter(t => t.done).length;
+  const total = (m.todos || []).length;
+  const meta = [total ? `${done} of ${total} done` : null,
+                m.bookmark_ids?.length ? plural(m.bookmark_ids.length, "bork") : null]
+                .filter(Boolean).join(" · ") || "just started";
+  return `<button class="quest-card" data-quest="${esc(m.id)}">
+    <img class="quest-art" src="${questArt(m.category_id)}" alt="" data-fb="remove">
+    <span><span class="quest-t">${esc(m.title)}</span><span class="quest-m" style="display:block">${meta}</span></span>
+  </button>`;
 }
 function topicCounts(all) {
   const counts = new Map();
@@ -1684,12 +1807,13 @@ function render() {
   renderShell();
   if (tab === "library") renderLibrary(all, s);
   if (tab === "browse") renderBrowse(all);
+  if (tab === "revisit") renderRevisit(all);
   if (tab === "you") renderYou(all, s);
   if (tab === "help") renderHelp(s);
   justAdded.clear();
 }
 function renderShell() {
-  for (const v of ["library", "browse", "you", "help"]) {
+  for (const v of ["library", "browse", "revisit", "you", "help"]) {
     const el = $(`view-${v}`);
     el.hidden = v !== tab;
     if (v === tab && tab !== lastTab) replay(el, "view-enter");
@@ -1741,19 +1865,9 @@ function renderLibrary(all, s) {
     if (memo.get("home-sections") !== key) {
       memo.set("home-sections", key);
       refineSeedTitles(seeds);
-      const recentsHTML = recents.map(recentCardHTML).join("");
+      const recentsHTML = recents.map(r => recentCardHTML(r)).join("");
       const pills = topicPillsHTML(all, 10);
-      const questCards = quests.map(m => {
-        const done = (m.todos || []).filter(t => t.done).length;
-        const total = (m.todos || []).length;
-        const meta = [total ? `${done} of ${total} done` : null,
-                      m.bookmark_ids?.length ? plural(m.bookmark_ids.length, "bork") : null]
-                      .filter(Boolean).join(" · ") || "just started";
-        return `<button class="quest-card" data-quest="${esc(m.id)}">
-          <img class="quest-art" src="${questArt(m.category_id)}" alt="" data-fb="remove">
-          <span><span class="quest-t">${esc(m.title)}</span><span class="quest-m" style="display:block">${meta}</span></span>
-        </button>`;
-      }).join("");
+      const questCards = quests.map(m => questCardHTML(m)).join("");
       const questsHTML = quests.length
         ? `<div class="h-row"><span class="h-title">Side quests</span></div>
            <div class="quests">${questCards}<button class="quest-new" data-quest="">+ Start another</button></div>`
@@ -1840,19 +1954,102 @@ function renderBrowse(all) {
   }
 }
 
+/* "12 borks for “running”", or, scoped, what field it looked in. */
+function searchMeta(n, q, scopes) {
+  const on = SCOPES.filter(s => scopes.has(s.key));
+  const where = !on.length ? `for “${q}”`
+    : on.length === 1 ? `${on[0].one} “${q}”`
+    : `in ${on.map(s => s.many).join(", ")} for “${q}”`;
+  return `${plural(n, "bork")} ${where}`;
+}
 function renderSearch(all) {
-  const terms = query.split(/\s+/).filter(Boolean);
-  const matched = all.filter(r => terms.every(t => r._blob.includes(t)));
+  const terms = fold(query).split(/\s+/).filter(Boolean);
+  const matched = all.filter(r => matchesQuery(r, terms, searchScopes));
   const items = platformItems(matched);
   if (searchPlatform && !items.some(i => i.key === searchPlatform)) searchPlatform = null;
   const rows = searchPlatform ? matched.filter(r => r.platform === searchPlatform) : matched;
-  $("search-meta").textContent = `${plural(matched.length, "bork")} for “${query}”`;
+  $("search-meta").textContent = searchMeta(matched.length, query, searchScopes);
+  $("scope-chips").querySelectorAll("[data-scope]").forEach(c => {
+    const on = searchScopes.has(c.dataset.scope);
+    c.classList.toggle("on", on); c.setAttribute("aria-pressed", String(on));
+  });
   $("search-chips").hidden = matched.length === 0;
   renderChips($("search-chips"), items, searchPlatform, "data-search-platform");
-  renderGrid($("grid-search"), rows, `search|${query}|${searchPlatform || "all"}|${demoMode}`);
+  const scopeKey = SCOPES.filter(s => searchScopes.has(s.key)).map(s => s.key).join("+") || "all";
+  renderGrid($("grid-search"), rows, `search|${query}|${scopeKey}|${searchPlatform || "all"}|${demoMode}`);
   $("empty-search").hidden = rows.length > 0;
-  if (!rows.length) $("empty-search").textContent = "No borks match. Different search?";
+  if (!rows.length) {
+    $("empty-search").innerHTML = searchScopes.size
+      ? `Nothing with “${esc(query)}” in those fields.<br><button class="btn-sm btn-plain" data-act="clear-scopes">Clear scopes</button>`
+      : "No borks match. Different search?";
+  }
   lastSearchCount = matched.length;
+}
+
+/* ── Revisit ───────────────────────────────────────────────────────────────
+   The arithmetic is docs/revisit.js; this turns it into the same cards, chips
+   and strips the rest of the app is made of. Cards are ordinary `.card` /
+   `.recent-card` nodes, so opening one goes through exactly the same handler
+   as the Library. */
+const rvSection = (title, body) => `<section class="rv"><div class="h-row"><span class="h-title">${title}</span></div>${body}</section>`;
+const rvTopicChips = (items, n) =>
+  `<nav class="chips">${items.map(i => `<button class="chip" data-topic-go="${esc(i.id)}">${esc(i.name)}${n ? `<span class="n">${n(i)}</span>` : ""}</button>`).join("")}</nav>`;
+
+function revisitHTML(d) {
+  const out = [];
+  if (d.week) {
+    const split = d.week.platforms.map(p => `${p.n} ${PLATFORM[p.key]?.name || p.key}`).join(" · ");
+    out.push(rvSection("Saved this week",
+      `<p class="rv-line"><b>${plural(d.week.n, "bork")}</b>${split ? ` · ${esc(split)}` : ""}</p>` +
+      (d.week.rising.length ? `<p class="rv-line">Up on last week</p>${rvTopicChips(d.week.rising, i => `+${i.delta}`)}` : "")));
+  }
+  if (d.repeat) {
+    out.push(rvSection("You keep coming back to",
+      `<div class="recents rv-strip">${d.repeat.rows.map(r => recentCardHTML(r, `opened ${r.open_count}×`)).join("")}</div>`));
+  }
+  if (d.never) {
+    const shown = revisitExpanded ? d.never.rows : d.never.rows.slice(0, d.never.shown);
+    const more = d.never.rows.length - shown.length;
+    out.push(rvSection("Saved, never opened",
+      `<p class="rv-line">${plural(d.never.n, "thing")} you saved and never looked at.</p>` +
+      `<div class="grid grid-in">${gridHTML(shown, true)}</div>` +
+      (more ? `<button class="h-more rv-more" data-act="revisit-more">and ${more} more →</button>` : "")));
+  }
+  if (d.monthAgo) {
+    out.push(rvSection("A month ago today",
+      `<div class="recents rv-strip">${d.monthAgo.rows.map(r => recentCardHTML(r, fmtDate(r.saved_at))).join("")}</div>`));
+  }
+  if (d.quests) {
+    out.push(rvSection("Side quests in progress",
+      `<div class="quests">${d.quests.missions.map(m => questCardHTML(m)).join("")}</div>`));
+  }
+  if (d.shifting) {
+    out.push(rvSection("What's shifting",
+      `<p class="rv-line"><b>${esc(d.shifting.line)}.</b> Your last 30 days against the 30 before.</p>` +
+      rvTopicChips(d.shifting.items, null)));
+  }
+  if (d.thin || !out.length) {
+    return rvSection("Revisit",
+      `<div class="quest-starter rv-thin"><div><b>Nothing to revisit yet.</b>
+        <p>Save ten things and this fills in — what you keep coming back to, what you saved and never opened, what a month ago looked like.</p></div></div>
+       <p class="hint">${plural(d.total, "bork")} so far.</p>`);
+  }
+  return out.join("");
+}
+function renderRevisit(all) {
+  const d = buildRevisit(all, demoMode ? [] : liveMissions(), Date.now());
+  const ids = (rows) => rows.map(r => r.id + ":" + r.updated_at).join(",");
+  const key = ["revisit", demoMode, revisitExpanded, columnCount(), d.total, d.thin,
+    d.week ? d.week.n + "|" + d.week.platforms.map(p => p.key + p.n).join(",") + "|" + d.week.rising.map(i => i.id + i.delta).join(",") : "",
+    d.repeat ? d.repeat.rows.map(r => r.id + ":" + r.open_count).join(",") : "",
+    d.never ? d.never.n + "|" + ids(d.never.rows.slice(0, revisitExpanded ? d.never.rows.length : d.never.shown)) : "",
+    d.monthAgo ? ids(d.monthAgo.rows) : "",
+    d.quests ? d.quests.missions.map(m => m.id + ":" + m.updated_at).join(",") : "",
+    d.shifting ? d.shifting.line : "",
+  ].join("|");
+  if (memo.get("revisit-sections") === key) return;
+  memo.set("revisit-sections", key);
+  $("revisit-sections").innerHTML = revisitHTML(d);
 }
 
 function renderHelp(s) {
@@ -1901,12 +2098,13 @@ function renderYou(all, s) {
 
 /* ── Navigation + routes (#browse/fitness survives a reload and the back button) ── */
 function clearQuery() {
-  query = ""; searchPlatform = null;
+  query = ""; searchPlatform = null; searchScopes.clear();
   $("search-desktop").value = ""; $("search-mobile").value = "";
 }
 function setTab(next, { keepTopic = false, push = true } = {}) {
   if (demoMode && next === "you") { toast("Sign up first — then this is your page.", "Sign up", exitDemoToSignup); return; }
   const changed = next !== tab;
+  if (next !== "revisit") revisitExpanded = false;
   tab = next;
   if (next !== "browse" && !keepTopic) topicFilter = null;
   if (next !== "browse") clearQuery();   // typing anywhere lands on Browse, so Browse keeps the query
@@ -1922,7 +2120,7 @@ function goTopic(id) {
   track("topic_opened", { topic: id });
 }
 // `search` stays as an alias so old links and back-stack entries still land somewhere sensible.
-const ROUTE_RE = /^#(library|browse|search|you|help)(?:\/([a-z0-9]+))?$/;
+const ROUTE_RE = /^#(library|browse|search|revisit|you|help)(?:\/([a-z0-9]+))?$/;
 function routeFor() {
   if (tab === "library") return "";
   if (tab === "browse" && topicFilter) return `#browse/${topicFilter}`;
@@ -1944,7 +2142,7 @@ function applyRoute() {
   if (next === "search") { next = "browse"; history.replaceState(null, "", "#browse"); }
   const topic = m && next === "browse" && m[2] && TOPIC_BY_ID[m[2]] ? m[2] : null;
   if (demoMode && next === "you") next = "library";
-  tab = next; topicFilter = topic;
+  tab = next; topicFilter = topic; revisitExpanded = false;
   clearQuery();   // a route is always a clean panel
   render();
   if (wantsImport) openImport("route");
@@ -2106,6 +2304,7 @@ function signOut(msg) {
   track("signed_out");
   store.session = null; lsDel("bm.cursor"); store.cache = [];
   lsDel("bm.mcache");
+  forgetOpens();   // whose library this browser opened is nobody else's business
   try { window.posthog?.reset?.(); } catch {}
   demoMode = false;
   resetLocalState();
@@ -2134,8 +2333,7 @@ const picks = { add: { topic: null, sub: null, source: null }, edit: { topic: nu
 const addedSubs = new Map();   // topic → Set of subtopics typed this session and not yet on a bork
 let tp = null;                 // the open picker: { which, snapshot, expanded, filter, adding }
 
-const tpFold = (s) => String(s ?? "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
-const tpTokens = (s) => tpFold(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+const tpTokens = (s) => fold(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 /* Crude stem so "game" hits Gaming without letting "run" hit Speedruns. */
 function tpStem(w) {
   if (w.length > 4 && w.endsWith("ing")) w = w.slice(0, -3);
@@ -2150,9 +2348,9 @@ function tpTokenMatches(token, needle) {
 }
 /* 0 topic token/name prefix · 1 topic name contains · 2 subtopic token prefix · null no match */
 function tpRank(t, subs, needle) {
-  needle = tpFold(needle.trim());
+  needle = fold(needle.trim());
   if (!needle) return 0;
-  const name = tpFold(t.name);
+  const name = fold(t.name);
   if (tpTokens(t.name).some(x => tpTokenMatches(x, needle)) || name.startsWith(needle)) return 0;
   if (name.includes(needle)) return 1;
   return subs.some(sub => tpTokens(sub).some(x => tpTokenMatches(x, needle))) ? 2 : null;
@@ -2175,7 +2373,7 @@ function tpShown(filter) {
   return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
 }
 function tpMatchingSubs(subs, needle) {
-  needle = tpFold(needle.trim());
+  needle = fold(needle.trim());
   return new Set(needle ? subs.filter(sub => tpTokens(sub).some(x => tpTokenMatches(x, needle))) : []);
 }
 function tpCanAdd(raw, existing) {
@@ -2646,7 +2844,9 @@ document.addEventListener("error", (e) => {
 
 document.addEventListener("click", (e) => {
   if (e.target.closest('a[href="/app"]')) track("get_the_app_clicked", { where: tab });
-  if (e.target.closest("#edit-open")) { track("bork_original_opened"); return; }
+  // Going back to the thing is the open that counts — same rule as the app's
+  // DetailSheet, and what Revisit's "you keep coming back to" is built on.
+  if (e.target.closest("#edit-open")) { track("bork_original_opened"); if (editing) bumpOpen(editing); return; }
   const tabLink = e.target.closest("[data-tab-link]");
   if (tabLink) {
     e.preventDefault();
@@ -2704,6 +2904,14 @@ document.addEventListener("click", (e) => {
   if (act === "send-feedback") sendFeedback();
   if (act === "confirm-no") closeDlg($("confirm-dialog"));
   if (act === "confirm-yes") { $("confirm-dialog").returnValue = "yes"; closeDlg($("confirm-dialog")); }
+  if (act === "clear-scopes") { searchScopes.clear(); render(); armSearchTrack(); return; }
+  if (act === "revisit-more") { revisitExpanded = true; render(); return; }
+  const scopeChip = e.target.closest("[data-scope]");
+  if (scopeChip) {
+    const k = scopeChip.dataset.scope;
+    if (searchScopes.has(k)) searchScopes.delete(k); else searchScopes.add(k);
+    render(); armSearchTrack(); return;
+  }
   const chip = e.target.closest(".chip");
   if (chip && chip.dataset.platform !== undefined) { platformFilter = chip.dataset.platform || null; render(); track("filter_platform", { platform: platformFilter || "all" }); return; }
   if (chip && chip.dataset.searchPlatform !== undefined) { searchPlatform = chip.dataset.searchPlatform || null; render(); return; }
@@ -2751,6 +2959,16 @@ $("code-input").addEventListener("input", (e) => {
   if (digits.length === 6) verifyCode({ auto: true });
 });
 let searchTimer = null, searchTrack = null;
+/* Counts only. What someone searched for is theirs, and never leaves the tab. */
+function armSearchTrack() {
+  clearTimeout(searchTrack);
+  if (!query) return;
+  searchTrack = setTimeout(() => track("search_performed", {
+    terms: query.split(/\s+/).length,
+    results: lastSearchCount,
+    scopes: SCOPES.filter(s => searchScopes.has(s.key)).map(s => s.key),
+  }), 1200);
+}
 function onSearch(value) {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
@@ -2758,8 +2976,7 @@ function onSearch(value) {
     if (tab !== "browse") setTab("browse", { keepTopic: true }); else render();
     const other = document.activeElement === $("search-desktop") ? $("search-mobile") : $("search-desktop");
     if (other.value !== value) other.value = value;
-    clearTimeout(searchTrack);
-    if (query) searchTrack = setTimeout(() => track("search_performed", { terms: query.split(/\s+/).length, results: lastSearchCount }), 1200);
+    armSearchTrack();
   }, 180);
 }
 for (const id of ["search-desktop", "search-mobile"]) {
