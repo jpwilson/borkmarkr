@@ -1,0 +1,17 @@
+{
+  "Activity": {
+    "Favorite Videos": {
+      "FavoriteVideoList": [
+        { "Date": "2024-05-02 09:15:22", "Link": "https://www.tiktokv.com/share/video/7231000000000000001/" },
+        { "Date": "2024-04-18 21:03:00", "Link": "https://www.tiktok.com/@mudandfire/video/7231000000000000002" },
+        { "Date": "2024-04-01 08:00:00", "Link": "" }
+      ]
+    },
+    "Like List": {
+      "ItemFavoriteList": [
+        { "date": "2024-03-11 12:00:00", "link": "https://www.tiktok.com/@wanderfrugal/video/7231000000000000003" },
+        { "Date": "2024-03-10 12:00:00", "Link": "https://www.tiktok.com/@mudandfire/video/7231000000000000002" }
+      ]
+    }
+  }
+}

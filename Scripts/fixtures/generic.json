@@ -1,0 +1,8 @@
+{
+  "collection": "misc",
+  "items": [
+    { "note": "keep", "link": "https://example.com/a-quiet-page" },
+    { "note": "skip", "link": "not a url" },
+    { "nested": { "deeper": [ "https://example.com/deep-link" ] } }
+  ]
+}
