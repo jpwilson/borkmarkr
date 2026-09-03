@@ -2484,9 +2484,11 @@ async function fileCandidates(candidates) {
 
 function renderImportReview() {
   const st = importState;
-  const rows = st.rows;
-  const mine = new Set(live().map(r => r.id));
-  st.already = rows.filter(r => mine.has(r.id)).length;
+  // Anything already in the library — including borks the person deleted — is
+  // left alone. An upsert here would overwrite a topic or a note they set by
+  // hand, and, stamped now, win last-writer-wins on their phone as well.
+  const rows = st.rows.filter(r => !borks.has(r.id));
+  st.already = st.rows.length - rows.length;
 
   const tally = (key) => {
     const m = new Map();
@@ -2516,7 +2518,7 @@ function renderImportReview() {
   $("import-breakdown").innerHTML =
     `<h3 class="import-h3">From</h3><div class="import-rows">${platHTML}</div>`
     + `<h3 class="import-h3">Filed into ${plural(named.length, "topic")}</h3><div class="import-rows">${topicHTML}</div>`
-    + (st.already ? `<p class="hint" style="margin:0 0 10px">Already in your library: ${st.already}. Importing them again just refreshes them — nothing doubles up.</p>` : "");
+    + (st.already ? `<p class="hint" style="margin:0 0 10px">Already in your library: ${st.already} — left exactly as they are. Nothing doubles up and nothing you removed comes back.</p>` : "");
 
   $("import-filing").textContent = "How we file: every link's title and address is matched against 50 topics and about 700 subtopics, offline in this browser. Nothing is sent to a model. Open any bork afterwards to move it.";
 
@@ -2527,12 +2529,16 @@ function renderImportReview() {
     + (rows.length > 8 ? `<p class="hint" style="margin:10px 0 0">…and ${rows.length - 8} more</p>` : "");
 
   $("import-go").textContent = (!store.session || demoMode)
-    ? "Sign up to import" : `Import ${plural(rows.length, "bork")}`;
+    ? "Sign up to import" : rows.length ? `Import ${plural(rows.length, "bork")}` : "Nothing new to import";
+  $("import-go").disabled = !!store.session && !demoMode && !rows.length;
 }
 
 async function runImport() {
   if (importBusy || !importState?.rows.length) return;
-  const rows = importState.rows;
+  // Re-checked here, not just at review time: the library may have changed
+  // since (a sign-in pull, a save on the phone) — see renderImportReview.
+  const rows = importState.rows.filter(r => !borks.has(r.id));
+  if (!rows.length) { renderImportReview(); return; }
   importBusy = true;
   importStage("working");
   $("import-working-msg").textContent = `Filing ${plural(rows.length, "bork")}…`;
