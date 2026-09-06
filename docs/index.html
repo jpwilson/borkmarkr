@@ -3396,8 +3396,8 @@ $("add-url").addEventListener("input", () => {
   if (picks.add.source !== "user") picks.add = { topic: null, sub: null, source: null };
   // A different link is a different bork: the last one's tags, quests and
   // title don't carry over (the phone starts its sheet fresh the same way).
-  if ((url ? url.href : null) !== addLastURL) {
-    addLastURL = url ? url.href : null;
+  if ((url || null) !== addLastURL) {   // parsedURL returns the href string
+    addLastURL = url || null;
     sheetTags.add = []; addDropped.clear(); addQuests = new Set();
     addTitleTouched = false; $("add-title-input").value = "";
   }
