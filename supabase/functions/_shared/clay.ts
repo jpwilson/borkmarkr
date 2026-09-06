@@ -184,9 +184,14 @@ export async function judgeSubject(name: string, titles: string[]): Promise<stri
     titles.length ? "Some links saved under it:\n" + titles.slice(0, 12).map((t) => `- ${subjectFrom(t)}`).join("\n")
                   : "No links saved under it yet — go by the name.",
   ].join("\n");
-  const answer = await completeJSON(system, user, 120) as { subject?: unknown } | null;
-  const subject = typeof answer?.subject === "string" ? subjectFrom(answer.subject) : "";
-  return subject.length >= 3 ? subject : null;
+  // One retry: a judge that fails leaves the image model to guess at a bare
+  // word, which is the thing this exists to prevent.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const answer = await completeJSON(system, user, 160) as { subject?: unknown } | null;
+    const subject = typeof answer?.subject === "string" ? subjectFrom(answer.subject) : "";
+    if (subject.length >= 3) return subject;
+  }
+  return null;
 }
 
 export async function clayImage(name: string, subject: string): Promise<ImageResult> {
