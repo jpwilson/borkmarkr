@@ -1,12 +1,21 @@
-// Shared OpenAI image caller. The key lives in the function environment —
+// Shared clay-scene image caller. The key lives in the function environment —
 // never in the iOS binary, same contract as `openrouter.ts`.
 //
-// Text generation in this project goes through OpenRouter; images do not,
-// because OpenRouter is a chat-completions gateway and we want the image
-// endpoint directly. That is the whole reason this file exists next to
-// `openrouter.ts` rather than inside it.
+// This goes through OpenRouter, on the same `OPENROUTER_API_KEY` as
+// categorise and name-quest, so there is exactly one AI credential to deploy.
+// It is a separate file from `openrouter.ts` because it speaks a different
+// endpoint — the dedicated Image API at `/api/v1/images` rather than
+// `/chat/completions` — not because it speaks to a different vendor.
+//
+// The model is unchanged: OpenRouter routes `openai/gpt-image-1` to OpenAI's
+// own images endpoint, and `input_references` is that endpoint's edit path.
+// Same model, same master, same prompt — so scenes drawn after this switch
+// still match the ones drawn before it, which is the whole point of the
+// locked style in Branding/ILLUSTRATION_STYLE.md.
 
-export const IMAGE_MODEL = "gpt-image-1";
+export const IMAGE_MODEL = "openai/gpt-image-1";
+
+const IMAGE_ENDPOINT = "https://openrouter.ai/api/v1/images";
 
 /** The house style, verbatim from Branding/ILLUSTRATION_STYLE.md.
  *
@@ -65,6 +74,16 @@ function decodeBase64(b64: string): Uint8Array {
   return out;
 }
 
+/** Chunked because `btoa(String.fromCharCode(...bytes))` spreads a megabyte
+ *  of arguments onto the stack and throws. 0x8000 is the usual safe stride. */
+function encodeBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
+
 /** JPEG, PNG or WebP by magic bytes — headers lie and an error page is HTML.
  *  Mirrors `sniff()` in functions/thumb/index.ts, minus GIF, which the
  *  topic-art bucket does not accept. */
@@ -77,31 +96,25 @@ function sniff(b: Uint8Array): string | null {
   return null;
 }
 
-async function reference(): Promise<Blob | null> {
+/** The master, as a data URL ready to hand to `input_references`.
+ *
+ *  We fetch it ourselves rather than passing `REFERENCE_URL` straight through
+ *  so that an unreachable master degrades to a plain generation, the way the
+ *  style guide allows, instead of failing the whole request. It also keeps
+ *  the size cap ours. */
+async function reference(): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REFERENCE_TIMEOUT_MS);
   try {
     const res = await fetch(REFERENCE_URL, { signal: controller.signal });
     if (!res.ok) return null;
-    const blob = await res.blob();
-    return blob.size > 0 && blob.size <= MAX_IMAGE_BYTES ? blob : null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) return null;
+    const type = sniff(bytes);
+    if (!type) return null;
+    return `data:${type};base64,${encodeBase64(bytes)}`;
   } catch {
     return null;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function callOpenAI(path: string, body: BodyInit, headers: Record<string, string>, key: string) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    return await fetch(`https://api.openai.com/v1/${path}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, ...headers },
-      body,
-      signal: controller.signal,
-    });
   } finally {
     clearTimeout(timer);
   }
@@ -117,6 +130,9 @@ function readImage(payload: unknown): ImageResult {
     return { error: "bad-base64" };
   }
   if (bytes.length > MAX_IMAGE_BYTES) return { error: "too-large" };
+  // `media_type` comes back alongside the bytes, but the bucket only accepts
+  // three types and a wrong Content-Type is a broken tile, so the bytes get
+  // the last word here exactly as they did before.
   const contentType = sniff(bytes);
   if (!contentType) return { error: "not-image" };
   return { bytes, contentType };
@@ -130,37 +146,42 @@ function readImage(payload: unknown): ImageResult {
  *  possible. Returns `{ error }` rather than throwing: every caller here
  *  degrades to no art, never to a failed topic. */
 export async function clayImage(name: string): Promise<ImageResult> {
-  const key = Deno.env.get("OPENAI_API_KEY");
+  const key = Deno.env.get("OPENROUTER_API_KEY");
   if (!key) {
-    console.error("OPENAI_API_KEY is not set");
+    console.error("OPENROUTER_API_KEY is not set");
     return { error: "not-configured" };
   }
 
-  const prompt = clayPrompt(name);
   const master = await reference();
+  const body: Record<string, unknown> = {
+    model: IMAGE_MODEL,
+    prompt: clayPrompt(name),
+    // gpt-image-1's 1:1 is the 1024x1024 the tiles were always drawn at.
+    aspect_ratio: "1:1",
+    n: 1,
+  };
+  if (master) {
+    body.input_references = [{ type: "image_url", image_url: { url: master } }];
+  }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    let response: Response;
-    if (master) {
-      const form = new FormData();
-      form.append("model", IMAGE_MODEL);
-      form.append("prompt", prompt);
-      form.append("size", "1024x1024");
-      form.append("n", "1");
-      form.append("image", master, "reference.jpg");
-      response = await callOpenAI("images/edits", form, {}, key);
-    } else {
-      response = await callOpenAI("images/generations", JSON.stringify({
-        model: IMAGE_MODEL,
-        prompt,
-        size: "1024x1024",
-        n: 1,
-      }), { "Content-Type": "application/json" }, key);
-    }
+    const response = await fetch(IMAGE_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://bookmarker.lol/",
+        "X-Title": "bookmarker",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
 
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 200);
-      console.error("openai", response.status, detail);
+      console.error("openrouter images", response.status, detail);
       // 401/403 is a key problem and retrying spends nothing but time.
       return { error: response.status === 401 || response.status === 403
         ? "not-authorised"
@@ -170,5 +191,7 @@ export async function clayImage(name: string): Promise<ImageResult> {
     return readImage(await response.json());
   } catch (e) {
     return { error: e instanceof Error && e.name === "AbortError" ? "timeout" : "fetch-failed" };
+  } finally {
+    clearTimeout(timer);
   }
 }

@@ -41,7 +41,7 @@ cannot be — so it is drawn on demand by the `topic-art` Edge Function, which
 `image_edit`s from `questRabbit` exactly as above.
 
 **This file is the source of truth for the style; the machine copy lives in
-`supabase/functions/_shared/openai.ts` (`STYLE` and `clayPrompt`).** They are
+`supabase/functions/_shared/clay.ts` (`STYLE` and `clayPrompt`).** They are
 the same words on purpose. Change the look here and change it there in the
 same commit, or new topics quietly stop matching the wall.
 

@@ -23,7 +23,7 @@
 // into your own library.
 
 import { consumeQuota, json } from "../_shared/openrouter.ts";
-import { clayImage } from "../_shared/openai.ts";
+import { clayImage } from "../_shared/clay.ts";
 
 const DAILY_LIMIT = 200;   // shared with categorise/name-quest, per user per UTC day
 const BUCKET = "topic-art";
@@ -150,9 +150,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const drawn = await clayImage(name);
   if ("error" in drawn) {
-    // `not-configured` means OPENAI_API_KEY was never set. Say so plainly in
-    // the log — this is the one failure a deploy fixes rather than a retry.
-    if (drawn.error === "not-configured") console.error("topic-art: OPENAI_API_KEY missing");
+    // `not-configured` means OPENROUTER_API_KEY was never set. Say so plainly
+    // in the log — this is the one failure a deploy fixes rather than a retry.
+    if (drawn.error === "not-configured") console.error("topic-art: OPENROUTER_API_KEY missing");
     return release(drawn.error);
   }
 

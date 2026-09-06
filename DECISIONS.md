@@ -363,6 +363,14 @@ does that, and falls back to a plain generation only when the master can't be
 fetched — a slightly-off scene beats a blank tile, and it's the only path where
 drift is possible.
 
+**One AI key, not two.** The drawing goes through OpenRouter's Image API on the
+same `OPENROUTER_API_KEY` as categorise and name-quest, rather than a second
+credential for `api.openai.com`. The model is still `openai/gpt-image-1` and the
+reference image still rides along as the edit source — OpenRouter routes to the
+same endpoint — so scenes drawn before and after the switch match, which is the
+only thing the style lock actually cares about. A second key would have been one
+more secret to rotate for no difference in the picture.
+
 **The spend ledger is the point of the table.** Unlike categorise and name-quest,
 each call here costs real money for an artefact that is kept forever, so
 `topic_art_begin` is a claim taken under `select … for update` *before* the model
@@ -373,7 +381,7 @@ is consumed on top of all that.
 
 **Art can never block a topic.** The phone inserts its `CustomTopic` locally and
 returns before it ever calls out — creating a topic is offline-first like
-everything else. Every failure (signed out, offline, quota spent, `OPENAI_API_KEY`
+everything else. Every failure (signed out, offline, quota spent, `OPENROUTER_API_KEY`
 not deployed, model refusing the name) returns `{ url: null }` and leaves the tile
 as paper, which is exactly what it looks like today. Browse asks for a few missing
 scenes per appearance, oldest first, rather than firing fifteen generations the

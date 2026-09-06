@@ -25,8 +25,10 @@
 -- CustomTopic locally and returns; art arrives later or never, and a topic
 -- with no art looks exactly like it does today.
 --
--- One-time setup after this migration (the key is never in git):
---   supabase secrets set OPENAI_API_KEY=<key>
+-- One-time setup after this migration (the key is never in git). The art
+-- goes through OpenRouter on the same key as categorise and name-quest, so
+-- if those are deployed there is nothing to set here:
+--   supabase secrets set OPENROUTER_API_KEY=<key>
 --   supabase functions deploy topic-art
 
 -- ── Bucket ────────────────────────────────────────────────────────────────
