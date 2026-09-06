@@ -52,7 +52,8 @@
     --paper: #F6F3EE; --surface: #FFFFFF; --ink: #191510; --ink-2: #5B554D;
     --meta: #8A8378; --faint: #A39A8D; --hairline: #EAE4DA;
     --coral: #FF5A2D; --coral-dark: #E8451C; --accent-text: #C93A12; --tint: #FFE9E1;
-    --destructive: #C0392B;
+    --destructive: #C0392B; --control: #EEE8DE; --dashed: #D7CDBD;
+    --note-top: #FFFBEA; --note-bottom: #FFF5D8; --note-border: #F0E0AC; --note-ink: #4A4130;
     --shadow-card: 0 1px 2px rgba(25,21,16,.04), 0 10px 26px -14px rgba(25,21,16,.16);
     --radius: 18px; --nav-h: 60px; --tabbar-h: 62px; --banner-h: 0px;
     --ease-out: cubic-bezier(.2, .7, .2, 1);
@@ -372,10 +373,14 @@
   .dialog-row .btn { margin: 0; }
 
   /* ── Topic picker (trigger in Add/Edit + the sheet itself) ── */
-  .topic-trigger { display: flex; align-items: center; gap: 10px; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
-  .topic-trigger .tp-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-  .topic-trigger .tp-empty { color: var(--faint); font-weight: 500; }
-  .topic-trigger svg { width: 18px; height: 18px; flex: 0 0 auto; opacity: .45; }
+  /* The app's topic button: a capsule in the topic's own colour, not a form
+     field. Same control in Add and Edit. */
+  .topic-trigger { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 40px;
+    padding: 8px 13px; border: 0; border-radius: 999px; background: var(--control); color: var(--ink-2);
+    text-align: left; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .topic-trigger .tp-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topic-trigger .tp-empty { color: var(--ink-2); }
+  .topic-trigger svg { width: 15px; height: 15px; flex: 0 0 auto; opacity: .5; }
   .tp-sep { opacity: .45; margin: 0 5px; }
   .tp-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
   #topic-dialog[open] { display: flex; flex-direction: column; overflow: hidden; padding: 0; height: min(640px, calc(100dvh - 48px)); }
@@ -401,8 +406,63 @@
   .tp-empty-msg { padding: 18px 4px; }
   #topic-dialog .dialog-row { flex: 0 0 auto; position: static; margin: 0; border-top: 1px solid var(--hairline);
     padding: 12px 22px calc(14px + env(safe-area-inset-bottom)); }
-  .preview-box { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
-  .preview-box img { width: 84px; height: 56px; object-fit: cover; border-radius: 10px; background: var(--tint); }
+  /* ── Add / Edit sheets: the parts of AddSheet.swift + DetailSheet.swift ──
+     Same components in both dialogs, so a bork looks the same whether you are
+     saving it or fixing it. */
+  .add-card { margin-top: 14px; border: 1px solid var(--hairline); border-radius: 18px; overflow: hidden;
+    background: var(--surface); box-shadow: var(--shadow-card); }
+  .add-card .cover { height: 150px; }
+  .add-card .dur { position: absolute; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 4px;
+    height: 22px; padding: 0 8px; border-radius: 999px; background: rgba(25,21,16,.66); color: #fff;
+    font-size: 10.5px; font-weight: 800; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .add-card-body { padding: 13px; }
+  .add-card-title { font-family: var(--font-head); font-size: 15px; font-weight: 600; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .add-card-meta { margin-top: 4px; color: var(--meta); font-size: 11.5px; font-weight: 600; overflow-wrap: anywhere; }
+  .add-card-meta i { color: var(--faint); font-weight: 500; font-style: normal; }
+
+  /* "Sorted for you": the topic, the tags, and where the tags say it belongs. */
+  .sorted { margin-top: 14px; padding: 15px; border-radius: 18px;
+    background: color-mix(in srgb, var(--tint) 55%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--coral) 25%, transparent); }
+  .sorted-h { display: flex; align-items: center; gap: 6px; margin-bottom: 11px;
+    color: var(--accent-text); font-size: 13px; font-weight: 800; }
+  .mini-h { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--meta); }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag-row:not(:empty) { margin-top: 10px; }
+  .tag-chip { display: inline-flex; align-items: center; gap: 5px; height: 31px; max-width: 100%; padding: 0 11px;
+    border: 0; border-radius: 999px; background: var(--control); color: var(--ink-2);
+    font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tag-chip .x { font-size: 9px; opacity: .65; }
+  .sorted .tag-chip.on { background: var(--tint); color: var(--accent-text); }
+  .tag-add { display: flex; align-items: center; gap: 6px; height: 42px; margin-top: 10px; padding: 0 4px 0 14px;
+    border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface); }
+  .tag-add input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; outline: none; font-size: 13.5px; }
+  .tag-go { height: 100%; padding: 0 12px; border: 0; background: none; color: var(--accent-text); font-size: 13px; font-weight: 700; }
+  .tag-go[disabled] { color: var(--faint); cursor: default; }
+  .place { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 12px; padding: 0;
+    border: 0; background: none; color: var(--accent-text); font-size: 12.5px; font-weight: 700; text-align: left; }
+  .quest-attach { margin-top: 18px; }
+  .quest-attach p { margin: 4px 0 0; }
+  .quest-attach .tag-row { margin-top: 9px; }
+  .quest-attach .chip.new { border-style: dashed; border-color: var(--dashed); color: var(--accent-text); background: none; }
+
+  .sheet-toggle { display: flex; align-items: center; gap: 7px; width: 100%; margin-top: 16px; padding: 0;
+    border: 0; background: none; color: var(--ink-2); font-size: 13.5px; font-weight: 700; text-align: left; }
+  .sheet-check { display: flex; align-items: center; gap: 10px; margin-top: 16px;
+    color: var(--ink-2); font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .sheet-check input { width: 19px; height: 19px; accent-color: var(--coral); }
+  .title-box { margin-top: 10px; }
+  .title-box textarea { width: 100%; min-height: 62px; padding: 13px 14px; border: 1px solid var(--hairline);
+    border-radius: 16px; background: var(--surface); outline: none; resize: vertical; font: inherit; font-size: 14.5px; }
+  /* The app's note card: the same paper, so a note looks like a note. */
+  .note-box { margin-top: 10px; padding: 14px; border: 1px solid var(--note-border); border-radius: 16px;
+    background: linear-gradient(180deg, var(--note-top), var(--note-bottom)); }
+  .note-box textarea { width: 100%; min-height: 76px; padding: 0; border: 0; border-radius: 0; background: none; outline: none; resize: vertical;
+    font: inherit; font-size: 14.5px; line-height: 1.45; color: var(--note-ink); }
+  .note-when { display: flex; align-items: center; gap: 10px; margin-top: 8px; color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
+  .note-when input { height: 34px; padding: 0 10px; border: 1px solid var(--note-border); border-radius: 10px;
+    background: rgba(255,255,255,.65); outline: none; font: inherit; font-size: 12.5px; color: var(--ink); }
 
   /* ── Import ── */
   .drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
@@ -466,6 +526,8 @@
     .topic-pill { height: 44px; }
     .todo-x, .qb-x, .demo-x, #toast button { min-width: 44px; min-height: 44px; }
     .h-more, .backlink, .linkish, .danger-link, .qb-add { min-height: 44px; }
+    .tag-chip { height: auto; min-height: 40px; }
+    .tag-go, .place, .sheet-toggle, .topic-trigger { min-height: 44px; }
     .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid;
       grid-template-columns: 1fr 1fr 74px 1fr 1fr; align-items: center;
       height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
@@ -483,8 +545,11 @@
     dialog { margin: auto 0 0; width: 100vw; max-width: 100vw; border-radius: 22px 22px 0 0;
       max-height: calc(100dvh - 40px); padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
     dialog.dlg-sm { width: 100vw; }
-    .dialog-row { position: sticky; bottom: 0; background: var(--surface); margin: 12px 0 calc(-22px - env(safe-area-inset-bottom));
-      padding: 12px 0 calc(14px + env(safe-area-inset-bottom)); }
+    /* The sticky row pins to the scrollport, whose bottom edge sits inside the
+       sheet's own 22px of padding — without that much padding of its own it
+       leaves a strip of scrolling content showing underneath it. */
+    .dialog-row { position: sticky; bottom: calc(-22px - env(safe-area-inset-bottom)); background: var(--surface);
+      margin: 12px 0 calc(-22px - env(safe-area-inset-bottom)); padding: 12px 0 calc(14px + env(safe-area-inset-bottom)); }
     #toast { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px); }
     #topic-dialog[open] { height: calc(100dvh - 40px); }
   }
@@ -783,17 +848,57 @@
 <dialog id="add-dialog" aria-labelledby="add-h">
   <h2 id="add-h">Bork a link</h2>
   <label class="field-label" for="add-url">Link</label>
-  <input class="field" id="add-url" type="url" inputmode="url" placeholder="https://…" autocomplete="off" autocapitalize="off" spellcheck="false">
-  <div class="preview-box" id="add-preview" hidden>
-    <img id="add-thumb" alt="" data-fb="hide">
-    <div>
-      <div id="add-title" style="font-weight:700"></div>
-      <div class="hint" id="add-author"></div>
+  <input class="field" id="add-url" type="url" inputmode="url" placeholder="Paste any link" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <p class="hint" id="add-paste-hint" style="margin:8px 0 0">Paste it and it fills itself in — the picture, the title, the topic.</p>
+
+  <!-- Everything below appears the moment the link parses, exactly like the
+       app's details step: you see the thing, not a form about the thing. -->
+  <div id="add-details" hidden>
+    <article class="add-card">
+      <div class="cover" id="add-cover">
+        <span class="cover-glyph" id="add-glyph"></span>
+        <img id="add-thumb" alt="" data-fb="hide" hidden>
+        <span class="badge" id="add-badge" role="img"></span>
+        <span class="dur" id="add-dur" hidden></span>
+      </div>
+      <div class="add-card-body">
+        <div class="add-card-title" id="add-title"></div>
+        <div class="add-card-meta" id="add-author"></div>
+      </div>
+    </article>
+
+    <section class="sorted">
+      <div class="sorted-h"><span aria-hidden="true">✨</span>Sorted for you</div>
+      <button type="button" class="topic-trigger" id="add-topic" data-act="pick-topic" data-for="add" aria-haspopup="dialog"></button>
+      <p class="hint" id="add-suggest" hidden style="margin:7px 0 0">Filed for you — tap it to change.</p>
+      <div class="tag-row" id="add-tag-chips"></div>
+      <div class="tag-add">
+        <input id="add-tag" placeholder="+ tag" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30" aria-label="Add a tag">
+        <button type="button" class="tag-go" data-tag-go="add" disabled>Add</button>
+      </div>
+      <div class="tag-row" id="add-tag-sugs"></div>
+      <button type="button" class="place" id="add-place" data-act="accept-place" hidden></button>
+    </section>
+
+    <div class="quest-attach">
+      <div class="mini-h">Also on a side quest</div>
+      <p class="hint">Optional. Topics file what this is. A side quest is why you kept it.</p>
+      <div class="tag-row" id="add-quest-chips"></div>
+    </div>
+
+    <button type="button" class="sheet-toggle" id="add-title-edit" data-title-edit="add"></button>
+    <div class="title-box" id="add-title-box" hidden>
+      <div class="mini-h">Title</div>
+      <textarea id="add-title-input" rows="2" placeholder="What is this?" aria-label="Title"></textarea>
+    </div>
+
+    <label class="sheet-check"><input type="checkbox" id="add-note-on">Add a note</label>
+    <div class="note-box" id="add-note-box" hidden>
+      <textarea id="add-note" placeholder="Why does this matter?" aria-label="Note"></textarea>
+      <div class="note-when"><label for="add-note-date">Note date</label><input type="date" id="add-note-date"></div>
     </div>
   </div>
-  <label class="field-label" for="add-topic">Topic</label>
-  <button type="button" class="field topic-trigger" id="add-topic" data-act="pick-topic" data-for="add" aria-haspopup="dialog"></button>
-  <p class="hint" id="add-suggest" hidden style="margin:6px 0 0">Filed for you — tap it to change.</p>
+
   <p class="err" id="add-err" role="alert"></p>
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-add">Not now</button>
@@ -805,12 +910,29 @@
 <dialog id="edit-dialog" aria-labelledby="edit-title">
   <h2 id="edit-title" style="overflow-wrap:anywhere"></h2>
   <p style="margin:0 0 4px"><a id="edit-open" target="_blank" rel="noopener">Open original ↗</a></p>
-  <label class="field-label" for="edit-topic">Topic</label>
-  <button type="button" class="field topic-trigger" id="edit-topic" data-act="pick-topic" data-for="edit" aria-haspopup="dialog"></button>
-  <label class="field-label" for="edit-tags">Tags (comma separated)</label>
-  <input class="field" id="edit-tags" autocomplete="off">
-  <label class="field-label" for="edit-note">Note</label>
-  <textarea id="edit-note" placeholder="Why did you save this?"></textarea>
+  <section class="sorted">
+    <div class="sorted-h"><span aria-hidden="true">✨</span>Filed under</div>
+    <button type="button" class="topic-trigger" id="edit-topic" data-act="pick-topic" data-for="edit" aria-haspopup="dialog"></button>
+    <div class="tag-row" id="edit-tag-chips"></div>
+    <div class="tag-add">
+      <input id="edit-tag" placeholder="+ tag" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30" aria-label="Add a tag">
+      <button type="button" class="tag-go" data-tag-go="edit" disabled>Add</button>
+    </div>
+    <div class="tag-row" id="edit-tag-sugs"></div>
+  </section>
+
+  <button type="button" class="sheet-toggle" id="edit-title-edit" data-title-edit="edit">✎ Edit title</button>
+  <div class="title-box" id="edit-title-box" hidden>
+    <div class="mini-h">Title</div>
+    <textarea id="edit-title-input" rows="2" placeholder="What is this?" aria-label="Title"></textarea>
+  </div>
+
+  <label class="sheet-check"><input type="checkbox" id="edit-note-on">Add a note</label>
+  <div class="note-box" id="edit-note-box" hidden>
+    <textarea id="edit-note" placeholder="Why does this matter?" aria-label="Note"></textarea>
+    <div class="note-when"><label for="edit-note-date">Note date</label><input type="date" id="edit-note-date"></div>
+  </div>
+
   <button class="danger-link" data-act="delete-bork">Delete this bork</button>
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-edit">Cancel</button>
@@ -917,10 +1039,11 @@
 <div id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button id="toast-act" hidden></button></div>
 
 <script src="/taxonomy.js"></script>
-<!-- Bulk import: the export parsers and the offline filer, ported from
-     Core/Importers.swift and Core/Categorizer.swift. Loaded before the app so
-     `Importer` and `Filer` exist by the time boot() can open the dialog from an
-     #import link; what it needs from below it looks up at call time. -->
+<!-- The Core ports: the export parsers, the offline filer and the tag-recency
+     rank, from Core/Importers.swift, Core/Categorizer.swift and
+     Core/TagRecency.swift. Loaded before the app so `Importer`, `Filer` and
+     `TagRecency` exist by the time boot() can open the dialog from an #import
+     link; what they need from below they look up at call time. -->
 <script src="/import.js"></script>
 <!-- Revisit: the arithmetic behind the Revisit tab. Its own file so
      Scripts/test_revisit.mjs can run it in node, and so a weekly digest can
@@ -1131,6 +1254,7 @@ async function api(path, { method = "GET", body, headers = {}, auth = true } = {
 let borks = new Map();
 let missions = new Map();
 let questDraft = null;
+let questFromAdd = false;    // the quest dialog was opened from the Add sheet
 let tab = "library";
 let lastTab = null;
 let platformFilter = null;   // Library
@@ -1336,6 +1460,11 @@ function fullRow(row, ownerID, { keepStamp = false } = {}) {
     author: row.author ?? null, category_id: row.category_id ?? null,
     subcategory: row.subcategory ?? null, body_text: row.body_text ?? null,
     duration_seconds: row.duration_seconds ?? null, note_text: row.note_text ?? null,
+    // A real column since 0001_init.sql, and the same "YYYY-MM-DD" a date input
+    // gives us. The phone keeps noteDate in SwiftData and does not sync it yet
+    // (App/Account.swift), so it ignores this on merge — nothing breaks, and the
+    // web keeps the date it was given. Wire it up on the phone next release.
+    note_date: row.note_date ?? null,
     image_url: row.image_url ?? null, deleted_at: row.deleted_at ?? null,
   };
 }
@@ -2384,12 +2513,23 @@ function tpCanAdd(raw, existing) {
 const subName = (raw) => { const x = raw.trim().replace(/\s+/g, " "); return x.charAt(0).toUpperCase() + x.slice(1); };
 const CHEV = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>`;
 
+/* The app's chip: the topic's own colour, "Topic › Subtopic", tap to change.
+   Everything downstream of the topic — the cover's fallback colour, which tags
+   we suggest, whether the tags could place it — is redrawn from here. */
 function renderTrigger(which) {
   const p = picks[which], t = p.topic && TOPIC_BY_ID[p.topic];
-  $(`${which}-topic`).innerHTML = (t
-    ? `<span class="tp-dot" style="background:hsl(${t.hue} 65% 55%)"></span><span class="tp-label">${esc(t.name)}${p.sub ? `<span class="tp-sep">›</span>${esc(p.sub)}` : ""}</span>`
+  const el = $(`${which}-topic`);
+  el.setAttribute("style", t ? chipStyle(t.hue) : "");
+  el.innerHTML = (t
+    ? `<span class="tp-label">${esc(t.name)}${p.sub ? `<span class="tp-sep">›</span>${esc(p.sub)}` : ""}</span>`
     : `<span class="tp-label tp-empty">Pick a topic</span>`) + CHEV;
-  if (which === "add") $("add-suggest").hidden = p.source !== "ai";
+  // Filed for you, however it was filed — offline or by the model. A topic you
+  // picked yourself needs no explaining.
+  if (which === "add") {
+    $("add-suggest").hidden = !p.source || p.source === "user";
+    if (!$("add-details").hidden) paintAddCard();
+  }
+  renderTags(which);
 }
 function openPicker(which) {
   const p = picks[which];
@@ -2462,82 +2602,287 @@ function closePicker(done) {
   closeDlg($("topic-dialog"));
 }
 
+/* ── The parts Add and Edit share ───────────────────────────────────────────
+   AddSheet.swift and DetailSheet.swift show the same controls over the same
+   fields, so these are written once and told which dialog they are in. ── */
+const sheetTags = { add: [], edit: [] };
+const addDropped = new Set();   // auto tags you took off; we don't put them back
+let addLastURL = null;          // the link the sheet's tags/title belong to
+
+const cleanTag = (raw) => String(raw ?? "").replace(/#/g, "").trim().toLowerCase().replace(/\s+/g, " ");
+/* Today, in the local day — not UTC, which is tomorrow for half the world. */
+const todayISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+const syncTagGo = (which) =>
+  document.querySelector(`[data-tag-go="${which}"]`).disabled = !cleanTag($(`${which}-tag`).value.split(",")[0]);
+
+/* Enter, a comma and the Add button all mean the same thing. `#` is stripped,
+   everything is lowercased, duplicates are dropped — Core's rules. */
+function commitTag(which) {
+  const field = $(`${which}-tag`);
+  for (const part of field.value.split(",")) {
+    const tag = cleanTag(part);
+    if (tag && !sheetTags[which].includes(tag)) sheetTags[which].push(tag);
+  }
+  field.value = "";
+  syncTagGo(which);
+  renderTags(which);
+}
+function dropTag(which, tag) {
+  sheetTags[which] = sheetTags[which].filter(t => t !== tag);
+  if (which === "add") addDropped.add(tag);
+  renderTags(which);
+}
+function useTag(which, tag) {
+  if (!sheetTags[which].includes(tag)) sheetTags[which].push(tag);
+  addDropped.delete(tag);
+  renderTags(which);
+  $(`${which}-tag`).focus();
+}
+/* Tags you've used on this topic + subtopic, newest first (Core/TagRecency).
+   Not the library's global greatest hits: a Marketing › Ads save should offer
+   the tags you put on Marketing › Ads. */
+function renderTags(which) {
+  const p = picks[which];
+  $(`${which}-tag-chips`).innerHTML = sheetTags[which].map(t =>
+    `<button type="button" class="tag-chip on" data-drop-tag="${esc(t)}" data-for="${which}" aria-label="Remove tag ${esc(t)}">#${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("");
+  const suggestions = TagRecency.suggestions(
+    live().map(r => ({ categoryID: r.category_id, subcategory: r.subcategory, tags: r.tags || [], at: r.updated_at })),
+    { categoryID: p.topic, subcategory: p.sub, excluding: sheetTags[which], prefix: $(`${which}-tag`).value });
+  $(`${which}-tag-sugs`).innerHTML = suggestions.map(t =>
+    `<button type="button" class="tag-chip" data-use-tag="${esc(t)}" data-for="${which}" aria-label="Add tag ${esc(t)}">#${esc(t)}</button>`).join("");
+  if (which === "add") renderPlacement();
+}
+function toggleNote(which, on) {
+  $(`${which}-note-box`).hidden = !on;
+  if (!on) return;
+  const date = $(`${which}-note-date`);
+  if (!date.value) date.value = todayISO();
+  $(`${which}-note`).focus();
+}
+function openTitleEditor(which) {
+  $(`${which}-title-edit`).hidden = true;
+  $(`${which}-title-box`).hidden = false;
+  $(`${which}-title-input`).focus();
+}
+
 /* ── Add flow ── */
-let addPreview = null;
-let addTags = [];     // categorize's tags ride along on a new bork
-let addSeq = 0;       // bumps per URL edit so a slow suggestion can't land on a later link
+let addPreview = null;      // what /preview came back with
+let addTitle = "";          // the title this would be saved under
+let addTitleFetched = false;
+let addReading = false;
+let addTitleTouched = false;   // once you edit the title, a late fetch leaves it alone
+let addOffline = null;      // the offline filer's answer for the link on screen
+let addQuests = new Set();  // side quests this bork will join
+let addSeq = 0;             // bumps per URL edit so a slow suggestion can't land on a later link
+
+/* Port of AddSheet.parsedURL: four characters, a host with a dot, and a bare
+   host counts — pasting "youtube.com/watch?v=…" is a link, not a typo. */
+function parsedURL(raw) {
+  const text = String(raw ?? "").trim();
+  if (text.length < 4) return null;
+  let u;
+  try { u = new URL(text.includes("://") ? text : `https://${text}`); } catch { return null; }
+  if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+  return u.hostname.includes(".") ? u.href : null;
+}
 function fillTopicSelect(sel, chosen) {
   sel.innerHTML = `<option value="">— none —</option>` +
     TAXONOMY.map(t => `<option value="${t.id}"${t.id === chosen ? " selected" : ""}>${esc(t.name)}</option>`).join("");
 }
 function openAdd() {
   if (demoMode) { toast("Sign up free and this + is yours.", "Sign up", exitDemoToSignup); return; }
-  $("add-url").value = ""; $("add-err").textContent = ""; $("add-preview").hidden = true; addPreview = null;
-  picks.add = { topic: null, sub: null, source: null }; addTags = []; addSeq++;
-  renderTrigger("add");
+  addSeq++;
+  addPreview = null; addTitle = ""; addTitleFetched = false; addReading = false; addOffline = null;
+  addTitleTouched = false; questFromAdd = false;
+  addQuests = new Set(); addDropped.clear(); sheetTags.add = []; addLastURL = null;
+  picks.add = { topic: null, sub: null, source: null };
+  $("add-url").value = ""; $("add-err").textContent = "";
+  $("add-tag").value = ""; syncTagGo("add");
+  $("add-title-input").value = ""; $("add-title-box").hidden = true; $("add-title-edit").hidden = false;
+  $("add-note-on").checked = false; $("add-note").value = ""; $("add-note-date").value = todayISO();
+  $("add-note-box").hidden = true;
+  $("add-thumb").removeAttribute("src");
+  renderAdd();
   openDlg($("add-dialog"));
   $("add-url").focus();
   track("add_opened");
 }
-async function fetchPreviewInto(url) {
-  addPreview = null;
-  $("add-preview").hidden = true;
-  const seq = ++addSeq;
-  if (picks.add.source !== "user") { picks.add = { topic: null, sub: null, source: null }; addTags = []; renderTrigger("add"); }
+
+/* The card you are about to save — the app's previewRow. The cover falls back
+   to the topic's own colour with the platform glyph, so there is always
+   something to look at. */
+function paintAddCard() {
+  const url = parsedURL($("add-url").value);
+  if (!url) return;
+  const platform = detectPlatform(url), topic = TOPIC_BY_ID[picks.add.topic];
+  $("add-cover").setAttribute("style", `height:150px;${gradient(topic ? topic.hue : 24)}`);
+  $("add-glyph").innerHTML = glyph(platform);
+  const badge = $("add-badge");
+  badge.innerHTML = glyph(platform);
+  badge.setAttribute("aria-label", PLATFORM[platform].name);
+
+  const img = $("add-thumb"), src = addPreview?.image_url;
+  if (src && !badImg.has(src)) {
+    if (img.getAttribute("src") !== src) img.src = src;
+    img.hidden = false;
+  } else { img.hidden = true; img.removeAttribute("src"); }
+
+  const seconds = addPreview?.duration_seconds;
+  const dur = $("add-dur");
+  dur.hidden = !seconds;
+  if (seconds) dur.innerHTML = `<span aria-hidden="true">▶</span>${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+
+  $("add-title").textContent = addTitle || "Untitled";
+  const host = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } })();
+  const who = esc(addPreview?.author || host || PLATFORM[platform].name);
+  $("add-author").innerHTML = addReading
+    ? `${who} <i>· reading the link…</i>`
+    : (addTitleFetched ? who : `${who} <i>· couldn't read the page</i>`);
+}
+
+/* Where the tags you've added would file this, when nothing is filed yet —
+   AddSheet.tagPlacement. Same offline classifier, run over the tag words. */
+function renderPlacement() {
+  const button = $("add-place");
+  const url = parsedURL($("add-url").value);
+  if (picks.add.topic || !sheetTags.add.length || !url) { button.hidden = true; return; }
+  const s = Filer.suggest(url, sheetTags.add.join(" "), null);
+  const topic = s.topic && TOPIC_BY_ID[s.topic];
+  if (!topic) { button.hidden = true; return; }
+  button.dataset.topic = s.topic;
+  button.dataset.sub = s.subtopic || "";
+  button.innerHTML = `<span aria-hidden="true">↳</span>File under ${esc(s.subtopic ? `${topic.name} › ${s.subtopic}` : topic.name)}?`;
+  button.hidden = false;
+}
+
+function renderAddQuests() {
+  const quests = liveMissions();
+  $("add-quest-chips").innerHTML = quests.map(m => {
+    const on = addQuests.has(m.id);
+    return `<button type="button" class="chip${on ? " on" : ""}" data-quest-pick="${esc(m.id)}" aria-pressed="${on}">${esc(m.title)}</button>`;
+  }).join("") + `<button type="button" class="chip new" data-act="new-quest">+ ${esc(quests.length ? "New side quest" : "Start a side quest")}</button>`;
+}
+
+function renderAdd() {
+  const url = parsedURL($("add-url").value);
+  $("add-details").hidden = !url;
+  $("add-paste-hint").hidden = !!url;
+  if (!url) return;
+  if (!addTitleTouched) $("add-title-input").value = addTitle;
+  renderAddQuests();
+  $("add-title-edit").textContent = `✎ ${addTitleFetched ? "Edit title" : "Write a title"}`;
+  renderTrigger("add");   // topic chip → cover colour, tags, placement
+}
+
+/* Filing, in the phone's order.
+
+   1. The link parses → file it offline with `Filer` (Core/Categorizer.swift).
+      That is instant, so there is nothing to wait for and nothing to spin.
+   2. The real page title arrives → file again. A headline is a far better
+      signal than a URL slug, and the score can only go up, so this never
+      un-files something.
+   3. Only if the offline filer came back with nothing, and you're signed in,
+      ask the categorize function. It is quota'd at 200 a day; a keyword match
+      that already worked is not worth a request.
+
+   A topic you picked yourself outranks all three, always. */
+function fileOffline(url) {
+  const s = Filer.suggest(url, addTitle, null);
+  addOffline = s;
+  if (picks.add.source !== "user") {
+    picks.add = s.topic
+      ? { topic: s.topic, sub: s.subtopic || null, source: "offline" }
+      : { topic: null, sub: null, source: null };
+  }
+  mergeTags(s.tags);
+  return s;
+}
+/* Automatic tags join what you typed; they never replace it, and a tag you
+   took off stays off. */
+function mergeTags(tags) {
+  for (const raw of tags || []) {
+    const tag = cleanTag(raw);
+    if (!tag || addDropped.has(tag) || sheetTags.add.includes(tag) || Filer.isSiteName(tag)) continue;
+    sheetTags.add.push(tag);
+  }
+}
+
+async function fetchPreviewInto(url, seq) {
   try {
     const d = await api("/functions/v1/preview", { method: "POST", body: { url } });
-    if (d && (d.title || d.image_url) && $("add-url").value.trim() === url) {
+    if (seq !== addSeq) return;
+    if (d && (d.title || d.image_url)) {
       addPreview = d;
-      $("add-title").textContent = decodeEntities(d.title || "");
-      $("add-author").textContent = d.author || "";
-      const img = $("add-thumb");
-      img.hidden = !d.image_url;
-      if (d.image_url) img.src = d.image_url;
-      $("add-preview").hidden = false;
+      if (d.title) { addTitle = decodeEntities(d.title); addTitleFetched = true; }
     }
   } catch { /* preview is a bonus, never a blocker */ }
-  if (seq === addSeq) suggestTopicFor(url, seq);
+  if (seq !== addSeq) return;
+  addReading = false;
+  if (!addTitle) addTitle = Filer.fallbackTitle(url);
+  fileOffline(url);            // again, now with the real headline
+  renderAdd();
+  suggestTopicFor(url, seq);
 }
-/* The app files offline first and asks the model only when stuck; the web has no
-   offline filer, so a signed-in save asks straight away. A hand-picked topic wins. */
+
+/* Second-pass filing for the links keyword matching can't place. Silent on
+   every failure — signed out, offline, quota spent, server down all just leave
+   the offline answer where it is. */
 async function suggestTopicFor(url, seq) {
-  if (demoMode || !store.session || picks.add.source === "user") return;
+  if (demoMode || !store.session || picks.add.source === "user" || addOffline?.topic) return;
   try {
-    const d = await api("/functions/v1/categorize", { method: "POST",
-      body: { url, title: addPreview?.title ? decodeEntities(addPreview.title) : null, author: addPreview?.author || null, text: null, tags: [] } });
-    if (seq !== addSeq || picks.add.source === "user" || !d?.topic || !TOPIC_BY_ID[d.topic]) return;
+    const d = await api("/functions/v1/categorize", { method: "POST", body: {
+      url, title: addTitle || null, author: addPreview?.author || null, text: null,
+      tags: sheetTags.add.filter(t => !(addOffline?.tags || []).includes(t)),
+    } });
+    // You may have picked a topic, or a later link may have landed, while this
+    // was in flight. Either way this answer is stale.
+    if (seq !== addSeq || picks.add.topic || picks.add.source === "user") return;
+    if (!d?.topic || !TOPIC_BY_ID[d.topic]) return;
     const subs = TOPIC_BY_ID[d.topic].subs;
     picks.add = { topic: d.topic, sub: subs.includes(d.subtopic) ? d.subtopic : null, source: "ai" };
-    addTags = Array.isArray(d.tags) ? d.tags.map(x => String(x).trim().toLowerCase()).filter(Boolean).slice(0, 4) : [];
-    renderTrigger("add");
+    mergeTags(Array.isArray(d.tags) ? d.tags.slice(0, 4) : []);
+    renderAdd();
   } catch { /* filing is a bonus; the person can always pick */ }
 }
+
 function saveAdd() {
-  const raw = $("add-url").value.trim();
-  const id = stableID(raw);
-  if (!id) { $("add-err").textContent = "That doesn't look like a link — it needs to start with https://"; return; }
+  const url = parsedURL($("add-url").value);
+  const id = url && stableID(url);
+  if (!id) { $("add-err").textContent = "That doesn't look like a link — paste a web address."; return; }
   const existing = borks.get(id);
   if (existing && !existing.deleted_at) { $("add-err").textContent = "Already in your library."; return; }
-  const platform = detectPlatform(raw);
-  const slug = decodeURIComponent((new URL(id).pathname.split("/").filter(Boolean).pop() || new URL(id).hostname))
-    .replace(/[-_+]/g, " ").trim();
+  commitTag("add");   // a tag typed but not yet added still counts
+
+  const platform = detectPlatform(url);
+  const note = $("add-note-on").checked ? $("add-note").value.trim() : "";
   const now = new Date().toISOString();
   const row = {
-    id, url: raw, title: (addPreview?.title || slug || raw),
-    platform, kind: PLATFORM[platform].kind, tags: addTags,
-    category_id: picks.add.topic, subcategory: picks.add.sub, body_text: null, note_text: null,
-    author: addPreview?.author ?? null, image_url: addPreview?.image_url ?? null,
+    id, url,
+    title: $("add-title-input").value.trim() || addTitle || Filer.fallbackTitle(url),
+    platform, kind: PLATFORM[platform].kind, tags: sheetTags.add.slice(),
+    category_id: picks.add.topic, subcategory: picks.add.topic ? picks.add.sub : null,
+    body_text: null,
+    note_text: note || null, note_date: note ? ($("add-note-date").value || todayISO()) : null,
+    author: addPreview?.author ?? Filer.fallbackAuthor(url),
+    image_url: addPreview?.image_url ?? null,
     duration_seconds: addPreview?.duration_seconds ?? null,
     saved_at: now, updated_at: now, deleted_at: null,
   };
+  const quests = [...addQuests].map(qid => missions.get(qid)).filter(Boolean);
   const isFirst = live().length === 0;
   justAdded.add(id);
   closeDlg($("add-dialog"));
   platformFilter = null;
   if (tab !== "library") setTab("library", { focus: false }); else { render(); window.scrollTo({ top: 0 }); }
   toast("Borked. It's on your phone too.");
-  track("bork_added", { platform, is_first: isFirst, had_preview: !!addPreview, filed: picks.add.source || "none" });
+  track("bork_added", { platform, is_first: isFirst, had_preview: !!addPreview, filed: picks.add.source || "none",
+    tags: row.tags.length, note: !!note, quest: quests.length > 0 });
   commit(row, existing || null);
+  for (const m of quests) {
+    if ((m.bookmark_ids || []).includes(id)) continue;
+    commitMission({ ...m, bookmark_ids: [...(m.bookmark_ids || []), id] });
+  }
 }
 
 /* ── Edit flow ── */
@@ -2550,23 +2895,35 @@ function openEdit(id) {
   const open = $("edit-open");
   if (/^https?:/i.test(r.url)) open.href = r.url; else open.removeAttribute("href");
   picks.edit = { topic: TOPIC_BY_ID[r.category_id] ? r.category_id : null, sub: r.subcategory || null, source: null };
-  renderTrigger("edit");
-  $("edit-tags").value = (r.tags || []).join(", ");
+  sheetTags.edit = (r.tags || []).map(cleanTag).filter(Boolean);
+  $("edit-tag").value = ""; syncTagGo("edit");
+  $("edit-title-input").value = r.title || "";
+  $("edit-title-box").hidden = true; $("edit-title-edit").hidden = false;
+  const hasNote = !!(r.note_text || "").trim();
+  $("edit-note-on").checked = hasNote;
   $("edit-note").value = r.note_text || "";
+  $("edit-note-date").value = r.note_date || todayISO();
+  $("edit-note-box").hidden = !hasNote;
+  renderTrigger("edit");   // topic chip, tag chips, suggestions
   openDlg($("edit-dialog"));
   track("bork_opened", { platform: r.platform });
 }
 function saveEdit() {
   const r = borks.get(editing);
   if (!r) return;
+  commitTag("edit");
+  const note = $("edit-note-on").checked ? $("edit-note").value.trim() : "";
   const next = { ...r,
+    title: $("edit-title-input").value.trim() || r.title,
     category_id: picks.edit.topic,
     subcategory: picks.edit.topic ? picks.edit.sub : null,
-    tags: $("edit-tags").value.split(",").map(x => x.trim().toLowerCase()).filter(Boolean),
-    note_text: $("edit-note").value.trim() || null,
+    tags: sheetTags.edit.slice(),
+    note_text: note || null,
+    note_date: note ? ($("edit-note-date").value || todayISO()) : null,
   };
   closeDlg($("edit-dialog"));
-  const changed = ["category_id", "subcategory", "note_text"].some(k => next[k] !== r[k]) || next.tags.join() !== (r.tags || []).join();
+  const changed = ["title", "category_id", "subcategory", "note_text", "note_date"]
+    .some(k => (next[k] ?? null) !== (r[k] ?? null)) || next.tags.join() !== (r.tags || []).join();
   if (!changed) return;
   track("bork_edited", { note: !!next.note_text, tags: next.tags.length });
   commit(next, r);
@@ -2819,6 +3176,8 @@ function saveQuest() {
   toast(isNew ? "Side quest started." : "Side quest saved.");
   if (isNew) track("quest_created", { todos: (draft.todos || []).length, borks: (draft.bookmark_ids || []).length });
   commitMission(draft);
+  // Started from the Add sheet: the bork you're saving joins it, obviously.
+  if (questFromAdd) { questFromAdd = false; addQuests.add(draft.id); renderAddQuests(); }
 }
 async function deleteQuest() {
   const m = questDraft;
@@ -2893,6 +3252,30 @@ document.addEventListener("click", (e) => {
   if (act === "save-add") saveAdd();
   if (act === "close-edit") closeDlg($("edit-dialog"));
   if (act === "pick-topic") openPicker(e.target.closest("[data-for]").dataset.for);
+  /* Add/Edit sheet parts. Both dialogs carry the same controls, so each one
+     says which sheet it belongs to rather than having its own handler. */
+  const tagGo = e.target.closest("[data-tag-go]");
+  if (tagGo) { commitTag(tagGo.dataset.tagGo); $(`${tagGo.dataset.tagGo}-tag`).focus(); return; }
+  const tagX = e.target.closest("[data-drop-tag]");
+  if (tagX) { dropTag(tagX.dataset.for, tagX.dataset.dropTag); return; }
+  const tagUse = e.target.closest("[data-use-tag]");
+  if (tagUse) { useTag(tagUse.dataset.for, tagUse.dataset.useTag); return; }
+  const titleEdit = e.target.closest("[data-title-edit]");
+  if (titleEdit) { openTitleEditor(titleEdit.dataset.titleEdit); return; }
+  if (act === "accept-place") {
+    const b = $("add-place");
+    picks.add = { topic: b.dataset.topic, sub: b.dataset.sub || null, source: "user" };
+    renderTrigger("add");
+    return;
+  }
+  const questPick = e.target.closest("[data-quest-pick]");
+  if (questPick) {
+    const id = questPick.dataset.questPick;
+    if (addQuests.has(id)) addQuests.delete(id); else addQuests.add(id);
+    renderAddQuests();
+    return;
+  }
+  if (act === "new-quest") { questFromAdd = true; openQuest(null); return; }
   if (act === "tp-cancel") closePicker(false);
   if (act === "tp-done") closePicker(true);
   if (act === "save-edit") saveEdit();
@@ -2919,7 +3302,7 @@ document.addEventListener("click", (e) => {
   if (tile) { goTopic(tile.dataset.topic); return; }
   const srcRow = e.target.closest("[data-platform-row]");
   if (srcRow) { platformFilter = srcRow.dataset.platformRow; setTab("library"); return; }
-  if (act === "close-quest") closeDlg($("quest-dialog"));
+  if (act === "close-quest") { questFromAdd = false; closeDlg($("quest-dialog")); }
   if (act === "save-quest") saveQuest();
   if (act === "delete-quest") deleteQuest();
   if (act === "quest-add-todo") {
@@ -3002,14 +3385,41 @@ $("import-file").addEventListener("change", (e) => { importPick(e.target.files?.
   });
 }
 let previewTimer = null;
+/* A link that parses is filed immediately, offline. The page fetch is debounced
+   so it fires once you've finished pasting, not on every character. */
 $("add-url").addEventListener("input", () => {
   clearTimeout(previewTimer);
   $("add-err").textContent = "";
-  const raw = $("add-url").value.trim();
-  if (!/^https?:\/\/\S+\.\S+/.test(raw)) return;
-  previewTimer = setTimeout(() => fetchPreviewInto(raw), 400);
+  const url = parsedURL($("add-url").value);
+  const seq = ++addSeq;     // any edit invalidates an answer already in flight
+  addPreview = null; addOffline = null;
+  if (picks.add.source !== "user") picks.add = { topic: null, sub: null, source: null };
+  // A different link is a different bork: the last one's tags, quests and
+  // title don't carry over (the phone starts its sheet fresh the same way).
+  if ((url || null) !== addLastURL) {   // parsedURL returns the href string
+    addLastURL = url || null;
+    sheetTags.add = []; addDropped.clear(); addQuests = new Set();
+    addTitleTouched = false; $("add-title-input").value = "";
+  }
+  if (!url) { addReading = false; renderAdd(); return; }
+  addTitle = Filer.fallbackTitle(url); addTitleFetched = false; addReading = true;
+  fileOffline(url);
+  renderAdd();
+  previewTimer = setTimeout(() => fetchPreviewInto(url, seq), 400);
 });
 $("add-url").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); saveAdd(); } });
+/* Tags, notes and titles: the same controls in both sheets. */
+for (const which of ["add", "edit"]) {
+  const field = $(`${which}-tag`);
+  field.addEventListener("input", () => {
+    if (field.value.includes(",")) { commitTag(which); return; }   // a comma ends a tag
+    syncTagGo(which);
+    renderTags(which);   // what you've typed filters the suggestions
+  });
+  field.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); commitTag(which); } });
+  $(`${which}-note-on`).addEventListener("change", (e) => toggleNote(which, e.target.checked));
+}
+$("add-title-input").addEventListener("input", () => { addTitleTouched = true; });
 /* Topic picker */
 let tpTimer = null;
 $("tp-q").addEventListener("input", () => {
@@ -3061,7 +3471,7 @@ $("tp-list").addEventListener("click", (e) => {
 }
 /* On a phone the keyboard eats the bottom of the screen; fit open sheets to what is left. */
 if (window.visualViewport) {
-  const fitSheets = () => {
+  const fitSheets = (keyboardMoved) => {
     const vv = window.visualViewport;
     const gap = Math.max(0, Math.round(innerHeight - (vv.offsetTop + vv.height)));
     for (const d of document.querySelectorAll("dialog[open]")) {
@@ -3070,9 +3480,15 @@ if (window.visualViewport) {
       d.style.maxHeight = `${Math.round(vv.height) - 40}px`;
       if (d.id === "topic-dialog") d.style.height = `${Math.round(vv.height) - 40}px`;
     }
+    // The sheet shrinks *after* the field takes focus, so the tag field or the
+    // note can end up behind the keyboard. Put it back in view once, on the
+    // keyboard moving — never on every scroll, which would fight the thumb.
+    if (!keyboardMoved || !MOBILE()) return;
+    const focused = document.activeElement;
+    if (focused && focused.closest && focused.closest("dialog[open]")) focused.scrollIntoView({ block: "center" });
   };
-  visualViewport.addEventListener("resize", fitSheets);
-  visualViewport.addEventListener("scroll", fitSheets);
+  visualViewport.addEventListener("resize", () => fitSheets(true));
+  visualViewport.addEventListener("scroll", () => fitSheets(false));
 }
 $("quest-topic").addEventListener("change", renderQuestLists);
 document.addEventListener("change", (e) => {
