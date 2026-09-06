@@ -122,3 +122,41 @@ enum TopicMotif {
         return "topic" + categoryID.prefix(1).uppercased() + categoryID.dropFirst()
     }
 }
+
+/// A topic's clay scene, from wherever that topic's scene comes from.
+///
+/// Built-ins are bundled and resolve instantly. A topic you made yourself has
+/// its scene drawn by the `topic-art` function and fetched over the network,
+/// so it cross-fades in the way a bookmark cover does — and until it arrives
+/// (or if it never does) the tile is paper, which is what it has always been.
+struct TopicClayArt: View {
+    let categoryID: String
+    var remote: URL?
+    var contentMode: ContentMode = .fill
+
+    var body: some View {
+        let asset = TopicMotif.asset(for: categoryID)
+        if UIImage(named: asset) != nil {
+            ClayArt(name: asset, contentMode: contentMode)
+        } else {
+            ZStack {
+                Tokens.paper
+                if let remote {
+                    AsyncImage(url: remote, transaction: Transaction(animation: .easeOut(duration: 0.22))) { phase in
+                        if case .success(let image) = phase {
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: contentMode)
+                                .transition(.opacity)
+                        }
+                    }
+                }
+            }
+            // Same reason as CoverImage: a `.fill` bitmap on a loose
+            // proposal adopts its own pixel size and blows the tile out of
+            // the grid column.
+            .frame(maxWidth: .infinity)
+            .clipped()
+        }
+    }
+}

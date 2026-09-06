@@ -44,6 +44,27 @@ final class CustomTopic {
     var updatedAt: Date
     var deletedAt: Date?
 
+    /// Clay art drawn for this topic by the `topic-art` Edge Function.
+    ///
+    /// The 50 built-ins carry a bundled `topic{Id}` imageset; a topic you
+    /// invented cannot, so Browse drew it as blank paper. This is where the
+    /// generated scene lands. Same shape as `Bookmark.imageURLString` — a
+    /// string in the store, a `URL` at the call site — so it renders through
+    /// the same `AsyncImage` path as a bookmark cover.
+    ///
+    /// Both properties are optional, which keeps this a lightweight SwiftData
+    /// migration: an existing store gains two null columns and every topic
+    /// already in it looks exactly as it did before.
+    var imageURLString: String?
+
+    /// When art was last asked for, whether or not it arrived.
+    ///
+    /// Browse asks for missing art when it appears, so without this a topic
+    /// the server has given up on would be re-requested on every visit. The
+    /// server refuses to spend after three attempts regardless; this is the
+    /// client half, so we don't make the call at all.
+    var artRequestedAt: Date?
+
     init(name: String, hue: Double) {
         self.id = Self.makeID(from: name)
         self.name = name
@@ -53,6 +74,8 @@ final class CustomTopic {
     }
 
     var asTopic: Topic { Topic(id: id, name: name, hue: hue, subs: []) }
+
+    var imageURL: URL? { imageURLString.flatMap(URL.init(string:)) }
 
     static func makeID(from name: String) -> String {
         let slug = name.lowercased().map { $0.isLetter || $0.isNumber ? String($0) : "-" }.joined()

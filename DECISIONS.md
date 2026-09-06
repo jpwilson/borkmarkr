@@ -338,6 +338,61 @@ doesn't exist and is invisible in Browse.
 
 ---
 
+## Topic art
+
+The 50 built-in topics each ship a bundled `topic{Id}` imageset, so Browse is a
+wall of clay scenes. A topic you add yourself cannot have one — nobody bundles a
+picture for "Looksmaxxing" before someone types it — so `TopicMotif.asset(for:)`
+resolved to a name with no imageset, `ClayArt` fell back to paper, and the tile
+read as a bug sitting next to Marketing and Health. **So the server draws it:**
+`topic-art` renders one scene per custom topic, once, into a public bucket, and
+the URL lands on `CustomTopic.imageURLString` to render through the same
+`AsyncImage` path as a bookmark cover.
+
+**Generated, not picked from a set.** Side quests take the opposite decision —
+`QuestMotif` resolves a free-form title onto one of ten fixed scenes, because a
+quest is a sentence and there are unbounded sentences. A topic is a noun the user
+chose and will see on a tile forever, and the style guide is explicit that no
+scene is ever shared between two topics. Ten reused scenes would put the same
+clay heart on Juice and Looksmaxxing.
+
+**Edit from the locked master, don't generate free.**
+`Branding/ILLUSTRATION_STYLE.md` requires new scenes to be `image_edit`ed from
+`questRabbit` because independent generations drift off the style. The function
+does that, and falls back to a plain generation only when the master can't be
+fetched — a slightly-off scene beats a blank tile, and it's the only path where
+drift is possible.
+
+**One AI key, not two.** The drawing goes through OpenRouter's Image API on the
+same `OPENROUTER_API_KEY` as categorise and name-quest, rather than a second
+credential for `api.openai.com`. The model is still `openai/gpt-image-1` and the
+reference image still rides along as the edit source — OpenRouter routes to the
+same endpoint — so scenes drawn before and after the switch match, which is the
+only thing the style lock actually cares about. A second key would have been one
+more secret to rotate for no difference in the picture.
+
+**The spend ledger is the point of the table.** Unlike categorise and name-quest,
+each call here costs real money for an artefact that is kept forever, so
+`topic_art_begin` is a claim taken under `select … for update` *before* the model
+is called, not a cache read afterwards. Two devices, a double tap and a retry
+loop collapse onto one generation; three failures give up permanently; a
+per-account cap bounds a client that invents topics in a loop. The daily AI quota
+is consumed on top of all that.
+
+**Art can never block a topic.** The phone inserts its `CustomTopic` locally and
+returns before it ever calls out — creating a topic is offline-first like
+everything else. Every failure (signed out, offline, quota spent, `OPENROUTER_API_KEY`
+not deployed, model refusing the name) returns `{ url: null }` and leaves the tile
+as paper, which is exactly what it looks like today. Browse asks for a few missing
+scenes per appearance, oldest first, rather than firing fifteen generations the
+first time someone with a lot of topics opens the tab.
+
+**iOS only, deliberately.** The web app has no custom topics at all — its Browse
+filters through `TOPIC_BY_ID`, the fixed taxonomy — so there is nothing there to
+draw. When the web gains custom topics it can call the same function.
+
+---
+
 ## Known gaps
 
 - **Fonts.** The spec calls for Bricolage Grotesque + Instrument Sans. Neither is
