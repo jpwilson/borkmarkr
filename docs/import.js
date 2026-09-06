@@ -5,10 +5,11 @@
  * Nothing here scrapes, uses an API key, or touches a login — it reads a file
  * you downloaded yourself, in your own browser. The file never leaves it.
  *
- * Ports two pieces of the iPhone app so a link filed on the web lands in the
+ * Ports three pieces of the iPhone app so a link filed on the web lands in the
  * same place it would have on the phone:
- *   Core/Importers.swift   → Importer  (format sniffing + parsers)
- *   Core/Categorizer.swift → Filer     (offline filing from the taxonomy)
+ *   Core/Importers.swift   → Importer    (format sniffing + parsers)
+ *   Core/Categorizer.swift → Filer       (offline filing from the taxonomy)
+ *   Core/TagRecency.swift  → TagRecency  (which tags to offer for a filing)
  * Plus a minimal zip reader, because on a computer these exports arrive zipped
  * and "unzip it first" is a step people don't take.
  *
@@ -889,5 +890,79 @@ const Filer = (() => {
   return { suggest, fallbackTitle, fallbackAuthor, isSiteName, CONFIDENT_SCORE, _normalise: normalise, _stem: stem };
 })();
 
+/* ══ TagRecency — port of Core/TagRecency.swift ════════════════════════════
+ * Recent tags for a topic + subtopic pair.
+ *
+ * Ranking every tag in the library by frequency is what made a Marketing › Ads
+ * save suggest #instagram and #injuries — the most-used tags anywhere, not the
+ * ones that belong on this filing. Recency inside the pair is what you actually
+ * want to tap. Platform names stay out: the source is already on the card.
+ *
+ * `at` may be a Date, a timestamp, or an ISO string (rows off the wire and rows
+ * this browser wrote don't format it identically, so never compare them as
+ * text).
+ */
+const TagRecency = (() => {
+  const LIMIT = 8;
+
+  const millis = (value) => {
+    if (value instanceof Date) return value.getTime();
+    if (typeof value === "number") return value;
+    const t = Date.parse(value);
+    return Number.isFinite(t) ? t : 0;
+  };
+
+  function suggestions(items, { categoryID = null, subcategory = null, excluding = [], prefix = "", limit = LIMIT } = {}) {
+    if (!categoryID) return [];
+
+    const needle = String(prefix ?? "").trim().toLowerCase();
+    const skip = new Set([...excluding].map(x => String(x).toLowerCase()));
+    const categoryLower = String(categoryID).toLowerCase();
+    const subLower = subcategory ? String(subcategory).toLowerCase() : null;
+
+    const usable = (tag) => {
+      const value = String(tag ?? "").trim().toLowerCase();
+      if (!value) return false;
+      if (skip.has(value)) return false;
+      if (Filer.isSiteName(value)) return false;
+      if (value === categoryLower) return false;
+      if (subLower && value === subLower) return false;
+      return !needle || value.startsWith(needle);
+    };
+
+    // Newest first; ties alphabetical, so the row is stable between renders.
+    const newest = (subset) => {
+      const latest = new Map();
+      for (const item of subset) {
+        const at = millis(item.at);
+        for (const tag of item.tags || []) {
+          if (!usable(tag)) continue;
+          const value = String(tag).toLowerCase();
+          if (!latest.has(value) || at > latest.get(value)) latest.set(value, at);
+        }
+      }
+      return [...latest.entries()]
+        .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+        .map(([tag]) => tag);
+    };
+
+    const inCategory = items.filter(i => i.categoryID === categoryID);
+    const exact = subcategory
+      ? inCategory.filter(i => String(i.subcategory ?? "").toLowerCase() === subLower)
+      : inCategory;
+
+    const ordered = newest(exact);
+    // A thin subtopic fills up from the rest of the topic rather than showing
+    // two chips when the person has thirty usable tags one level up.
+    if (ordered.length < limit && subcategory) {
+      const seen = new Set(ordered);
+      for (const tag of newest(inCategory)) if (!seen.has(tag)) ordered.push(tag);
+    }
+    return ordered.slice(0, limit);
+  }
+
+  return { suggestions, limit: LIMIT };
+})();
+
 /* Node (the parser tests) rather than a browser. */
-if (typeof module === "object" && module.exports) module.exports = { Zip, Importer, Filer };
+if (typeof module === "object" && module.exports) module.exports = { Zip, Importer, Filer, TagRecency };
