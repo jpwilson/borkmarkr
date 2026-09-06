@@ -2607,6 +2607,7 @@ function closePicker(done) {
    fields, so these are written once and told which dialog they are in. ── */
 const sheetTags = { add: [], edit: [] };
 const addDropped = new Set();   // auto tags you took off; we don't put them back
+let addLastURL = null;          // the link the sheet's tags/title belong to
 
 const cleanTag = (raw) => String(raw ?? "").replace(/#/g, "").trim().toLowerCase().replace(/\s+/g, " ");
 /* Today, in the local day — not UTC, which is tomorrow for half the world. */
@@ -2694,7 +2695,7 @@ function openAdd() {
   addSeq++;
   addPreview = null; addTitle = ""; addTitleFetched = false; addReading = false; addOffline = null;
   addTitleTouched = false; questFromAdd = false;
-  addQuests = new Set(); addDropped.clear(); sheetTags.add = [];
+  addQuests = new Set(); addDropped.clear(); sheetTags.add = []; addLastURL = null;
   picks.add = { topic: null, sub: null, source: null };
   $("add-url").value = ""; $("add-err").textContent = "";
   $("add-tag").value = ""; syncTagGo("add");
@@ -3393,6 +3394,13 @@ $("add-url").addEventListener("input", () => {
   const seq = ++addSeq;     // any edit invalidates an answer already in flight
   addPreview = null; addOffline = null;
   if (picks.add.source !== "user") picks.add = { topic: null, sub: null, source: null };
+  // A different link is a different bork: the last one's tags, quests and
+  // title don't carry over (the phone starts its sheet fresh the same way).
+  if ((url ? url.href : null) !== addLastURL) {
+    addLastURL = url ? url.href : null;
+    sheetTags.add = []; addDropped.clear(); addQuests = new Set();
+    addTitleTouched = false; $("add-title-input").value = "";
+  }
   if (!url) { addReading = false; renderAdd(); return; }
   addTitle = Filer.fallbackTitle(url); addTitleFetched = false; addReading = true;
   fileOffline(url);
