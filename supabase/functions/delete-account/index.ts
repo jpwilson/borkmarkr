@@ -6,9 +6,10 @@
 // trusting anything in the body — the caller can only ever delete themself.
 //
 // Postgres does the rest: auth.users → profiles → bookmarks, collections,
-// grants, ai_usage and thumb_jobs all cascade. Storage does not cascade, so
-// the cached covers under thumbs/<user id>/ are removed here afterwards —
-// best effort: an orphaned thumbnail is cheaper than a failed deletion.
+// grants, ai_usage, thumb_jobs and topic_art all cascade. Storage does not
+// cascade, so the objects under thumbs/<user id>/ and topic-art/<user id>/
+// are removed here afterwards — best effort: an orphaned image is cheaper
+// than a failed deletion.
 
 // The web app's You page calls this from bookmarker.lol, so the browser's
 // preflight must be answered before the gateway's JWT check gates the POST.
@@ -56,21 +57,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ error: "Couldn't delete the account. Try again." }, 502);
   }
 
-  await purgeThumbs(base, serviceKey, user.id).catch((e) => console.error("thumbs purge", e));
+  // One bucket failing must not stop the other, and neither may fail the
+  // deletion itself — the account is already gone by this point.
+  for (const bucket of ["thumbs", "topic-art"]) {
+    await purgeBucket(base, serviceKey, bucket, user.id)
+      .catch((e) => console.error(`${bucket} purge`, e));
+  }
   return json({ ok: true });
 });
 
-async function purgeThumbs(base: string, serviceKey: string, userId: string): Promise<void> {
+async function purgeBucket(base: string, serviceKey: string, bucket: string, userId: string): Promise<void> {
   const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" };
   for (let round = 0; round < 20; round++) {
-    const list = await fetch(`${base}/storage/v1/object/list/thumbs`, {
+    const list = await fetch(`${base}/storage/v1/object/list/${bucket}`, {
       method: "POST", headers,
       body: JSON.stringify({ prefix: `${userId}/`, limit: 100, offset: 0 }),
     });
     if (!list.ok) throw new Error(`list ${list.status}`);
     const names = ((await list.json()) as { name: string }[]).map((o) => `${userId}/${o.name}`);
     if (!names.length) return;
-    const gone = await fetch(`${base}/storage/v1/object/thumbs`, {
+    const gone = await fetch(`${base}/storage/v1/object/${bucket}`, {
       method: "DELETE", headers, body: JSON.stringify({ prefixes: names }),
     });
     if (!gone.ok) throw new Error(`delete ${gone.status}`);

@@ -15,6 +15,7 @@ struct BrowseView: View {
 
     @Environment(\.accent) private var accent
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.modelContext) private var context
     @AppStorage("browseAxis") private var axisRaw = Axis.topics.rawValue
     @State private var path = NavigationPath()
 
@@ -165,6 +166,43 @@ struct BrowseView: View {
             debounced = query
             updateRelated()
         }
+        // Keyed on which topics exist, not on which have art. Creating a
+        // topic re-fires this — which is what makes a brand new topic draw
+        // itself immediately, from any of the four sheets that can create
+        // one, without threading an Account through all of them. Art landing
+        // does not change the key, so the task doesn't restart itself.
+        .task(id: customTopics.map(\.id).joined(separator: ",")) {
+            await fillMissingTopicArt()
+        }
+    }
+
+    /// Draw the topics that never got a scene.
+    ///
+    /// A few at a time, oldest first — see `TopicArt.backfillBatch`. The
+    /// server refuses to spend twice on the same topic, so the cost of being
+    /// wrong here is a wasted round trip, not a wasted image. Nothing on
+    /// screen waits for this: tiles render as paper meanwhile, exactly as
+    /// they do today, and each one fills in as its URL lands.
+    private func fillMissingTopicArt() async {
+        let wanted = TopicArt.backfillOrder(
+            customTopics,
+            id: \.id, hasArt: { $0.imageURLString != nil },
+            requestedAt: \.artRequestedAt, created: \.createdAt
+        )
+        guard !wanted.isEmpty else { return }
+
+        let session = await account?.currentSession()
+        guard session != nil else { return }
+
+        for topic in wanted {
+            guard !Task.isCancelled else { return }
+            let url = await TopicArt.fetch(id: topic.id, name: topic.name, session: session)
+            // Stamped whether or not it worked — that is what stops a topic
+            // the server has given up on being asked again every visit.
+            topic.artRequestedAt = .now
+            if let url { topic.imageURLString = url.absoluteString }
+            try? context.save()
+        }
     }
 
     // MARK: Search
@@ -283,6 +321,14 @@ struct BrowseView: View {
         bookmarks.filter { $0.categoryID == nil }.count
     }
 
+    /// Generated scenes, by topic id. Empty for a library with no topics of
+    /// its own, which is most of them.
+    private var topicArt: [String: URL] {
+        Dictionary(uniqueKeysWithValues: customTopics.compactMap { topic in
+            topic.imageURL.map { (topic.id, $0) }
+        })
+    }
+
     @ViewBuilder
     private var topicsGrid: some View {
         if usedCategories.isEmpty && uncategorisedCount == 0 {
@@ -306,7 +352,8 @@ struct BrowseView: View {
                     Button {
                         path.append(Route.topic(category.id))
                     } label: {
-                        TopicTile(category: category, count: topicCounts[category.id] ?? 0)
+                        TopicTile(category: category, count: topicCounts[category.id] ?? 0,
+                                  artURL: topicArt[category.id])
                     }
                     .buttonStyle(.plain)
                 }
@@ -417,10 +464,13 @@ struct BrowseView: View {
 private struct TopicTile: View {
     let category: Topic
     let count: Int
+    /// Set only for a topic the user made: built-ins resolve to a bundled
+    /// imageset and never consult this.
+    var artURL: URL? = nil
 
     var body: some View {
         VStack(spacing: 0) {
-            ClayArt(name: TopicMotif.asset(for: category.id))
+            TopicClayArt(categoryID: category.id, remote: artURL)
                 .frame(maxWidth: .infinity)
                 .frame(height: 92)
                 .clipped()

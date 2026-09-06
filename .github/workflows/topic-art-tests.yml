@@ -1,0 +1,33 @@
+name: Topic art tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/TopicArt.swift"
+      - "Core/CustomSubtopic.swift"
+      - "Core/Supabase.swift"
+      - "App/Screens/BrowseView.swift"
+      - "App/Components/QuestMotif.swift"
+      - "Scripts/test_topic_art.swift"
+      - ".github/workflows/topic-art-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/TopicArt.swift"
+      - "Core/CustomSubtopic.swift"
+      - "Core/Supabase.swift"
+      - "App/Screens/BrowseView.swift"
+      - "App/Components/QuestMotif.swift"
+      - "Scripts/test_topic_art.swift"
+      - ".github/workflows/topic-art-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run topic art checks
+        run: |
+          swiftc -parse-as-library -o /tmp/topic-art-tests \
+            Core/Supabase.swift Core/TopicArt.swift Scripts/test_topic_art.swift
+          /tmp/topic-art-tests

@@ -33,3 +33,18 @@ generations drift.
 - Every topic has its own `topic{Id}` imageset. Never share a scene across
   two topics. Never use a quest asset (`questRabbit`, `questRun`, …) on a topic.
 - Wordmark lives in type (Bricolage Grotesque), never in the bitmap.
+
+## Topics people add themselves
+
+The 50 built-ins are drawn here, by hand, and bundled. A topic a user invents
+cannot be — so it is drawn on demand by the `topic-art` Edge Function, which
+`image_edit`s from `questRabbit` exactly as above.
+
+**This file is the source of truth for the style; the machine copy lives in
+`supabase/functions/_shared/openai.ts` (`STYLE` and `clayPrompt`).** They are
+the same words on purpose. Change the look here and change it there in the
+same commit, or new topics quietly stop matching the wall.
+
+The one-scene-per-topic rule holds for generated art too: the ledger in
+`supabase/migrations/0010_topic_art.sql` is keyed per topic, so a topic is
+drawn once and keeps that scene.
