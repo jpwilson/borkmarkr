@@ -30,6 +30,13 @@ const STYLE = [
   "Palette: muted coral, sage, warm brown, terracotta, cream.",
   "No text, no letters, no numbers, no watermark, no frame, no logo,",
   "no drop shadow behind the whole canvas. One clear subject, generous margin.",
+  // The all-ages rule. Every bundled scene is wholesome — a candle, a stack
+  // of stones, two clay figures holding hands — and a topic someone types
+  // can be anything. The subject is chosen by the judge below, but the
+  // drawing model gets the rule too, so a slip upstream still draws kindly.
+  "Wholesome, friendly and suitable for all ages: no violence, weapons, gore,",
+  "drugs, alcohol, nudity, politics, religion or anything unkind or scary.",
+  "If the topic is edgy, draw its gentlest everyday object.",
 ].join(" ");
 
 /** The scene every new one is edited from. The guide is explicit that an
@@ -55,10 +62,14 @@ export function subjectFrom(name: string): string {
     .slice(0, 48);
 }
 
-export function clayPrompt(name: string): string {
-  const subject = subjectFrom(name);
+/** What the drawing model is told to draw. `subject` is the judge's answer
+ *  (one concrete object, already wholesome); `name` is the topic it stands
+ *  for, kept in the prompt so the model knows what the object means. */
+export function clayPrompt(name: string, subject: string): string {
+  const topic = subjectFrom(name);
+  const object = subjectFrom(subject) || topic;
   return [
-    `Replace the subject of this illustration with a single object that represents the topic “${subject}”.`,
+    `Replace the subject of this illustration with: ${object} — a single object that represents the topic “${topic}”.`,
     "Keep the existing art style, background, lighting and palette exactly as they are.",
     "Draw only the new subject — do not keep the bird, the burrow or the charts.",
     STYLE,
@@ -145,7 +156,40 @@ function readImage(payload: unknown): ImageResult {
  *  worth more than a blank tile, and it is the only case where drift is
  *  possible. Returns `{ error }` rather than throwing: every caller here
  *  degrades to no art, never to a failed topic. */
-export async function clayImage(name: string): Promise<ImageResult> {
+/** The judge. A topic is a word somebody typed — "Juice", "Retention",
+ *  "Looksmaxxing" — and the drawing model is bad at deciding what a word
+ *  *means* and worse at deciding what is kind to draw for it. So a language
+ *  model decides first, from the name and a handful of the titles filed
+ *  under it, and answers with one concrete everyday object. The rule in
+ *  `STYLE` is repeated here because this is where the real choice is made.
+ *  Returns null when the model can't answer; the caller falls back to the
+ *  bare name, which is what happened before the judge existed. */
+export async function judgeSubject(name: string, titles: string[]): Promise<string | null> {
+  const { completeJSON } = await import("./openrouter.ts");
+  const system = [
+    "You choose what to draw for a topic in a bookmarking app.",
+    "The illustration style is a soft clay-3D toy: one isolated everyday object on cream paper.",
+    "You are given the topic's name and, when there are any, titles of links a person saved under it.",
+    "Work out what the person means by the topic, then answer with ONE concrete, physical object",
+    "(or a small pair of objects) that a stranger would recognise as that topic at a glance.",
+    "Rules: wholesome, friendly, suitable for all ages — never weapons, violence, gore, drugs,",
+    "alcohol, nudity, politics, religion, hate, or anything unkind, scary or mocking.",
+    "If the topic is edgy or adult, choose its gentlest everyday object (a magnifying glass for",
+    "conspiracies, a comb and hand mirror for looksmaxxing, a glass of orange juice for juice).",
+    "No text on the object. No people's faces. No logos or brands.",
+    "Answer as JSON: {\"subject\": \"<object, 3 to 12 words, e.g. a tall glass of orange juice with a paper straw>\"}.",
+  ].join(" ");
+  const user = [
+    `Topic name: "${subjectFrom(name)}"`,
+    titles.length ? "Some links saved under it:\n" + titles.slice(0, 12).map((t) => `- ${subjectFrom(t)}`).join("\n")
+                  : "No links saved under it yet — go by the name.",
+  ].join("\n");
+  const answer = await completeJSON(system, user, 120) as { subject?: unknown } | null;
+  const subject = typeof answer?.subject === "string" ? subjectFrom(answer.subject) : "";
+  return subject.length >= 3 ? subject : null;
+}
+
+export async function clayImage(name: string, subject: string): Promise<ImageResult> {
   const key = Deno.env.get("OPENROUTER_API_KEY");
   if (!key) {
     console.error("OPENROUTER_API_KEY is not set");
@@ -155,7 +199,7 @@ export async function clayImage(name: string): Promise<ImageResult> {
   const master = await reference();
   const body: Record<string, unknown> = {
     model: IMAGE_MODEL,
-    prompt: clayPrompt(name),
+    prompt: clayPrompt(name, subject),
     // gpt-image-1's 1:1 is the 1024x1024 the tiles were always drawn at.
     aspect_ratio: "1:1",
     n: 1,
