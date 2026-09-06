@@ -70,7 +70,7 @@ enum TopicArt {
     /// therefore been staring at blank the longest — is drawn first.
     static func backfillOrder<T>(_ candidates: [T], id: (T) -> String, hasArt: (T) -> Bool,
                                  requestedAt: (T) -> Date?, created: (T) -> Date,
-                                 now: Date = .now, limit: Int = backfillBatch) -> [T] {
+                                 now: Date = .now, limit: Int = TopicArt.backfillBatch) -> [T] {
         candidates
             .filter { wants(id: id($0), hasArt: hasArt($0), requestedAt: requestedAt($0), now: now) }
             .sorted { created($0) < created($1) }
