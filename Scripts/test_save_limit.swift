@@ -1,7 +1,7 @@
 import Foundation
 
 /// Compile:
-/// `swiftc -parse-as-library -o /tmp/save-limit-tests Core/Copy.swift Core/SaveLimit.swift Scripts/test_save_limit.swift`
+/// `swiftc -parse-as-library -o /tmp/save-limit-tests Core/Copy.swift Core/SaveLimit.swift Core/DuplicateSave.swift Scripts/test_save_limit.swift`
 ///
 /// `SaveLimit` decides whether the next save works. Every rule that can lose
 /// someone's bork, or wrongly tell a paying-attention user that it did, is
@@ -216,6 +216,42 @@ enum SaveLimitTests {
                "signed in there is nothing to be out of")
         expect(SaveLimit.youLine.contains("Free limit: 20 borks"), "the You line names the limit")
         expect(SaveLimit.youLine.contains("unlimited"), "and what an account removes")
+
+        // ── Saving a link you already have ────────────────────────────────
+        // The other gate on a save. `Store.save` has always merged a repeat
+        // save into the bork that is already there; the Add sheet never said
+        // so, and quietly re-filed it. `DuplicateSave` is what the sheet asks
+        // before it shows the form.
+        struct Row { let id: String; let deletedAt: Date? }
+        let library = [
+            Row(id: "https://instagram.com/reel/a", deletedAt: nil),
+            Row(id: "https://x.com/u/status/1", deletedAt: nil),
+            Row(id: "https://youtu.be/gone", deletedAt: at(50)),
+        ]
+        func found(_ id: String) -> Row? {
+            DuplicateSave.match(stableID: id, in: library, id: \.id, deletedAt: \.deletedAt)
+        }
+        expect(found("https://x.com/u/status/1")?.id == "https://x.com/u/status/1",
+               "a link already in the library is found")
+        expect(found("https://instagram.com/reel/b") == nil,
+               "a link that isn't there is not a duplicate")
+        expect(found("https://youtu.be/gone") == nil,
+               "a bork you deleted is not a duplicate — saving it again is a new save")
+        expect(DuplicateSave.match(stableID: "anything", in: [Row](), id: \.id, deletedAt: \.deletedAt) == nil,
+               "an empty library has no duplicates")
+
+        expect(DuplicateSave.savedPhrase(daysAgo: 0) == "saved today", "0 days is today")
+        expect(DuplicateSave.savedPhrase(daysAgo: 1) == "saved yesterday", "1 day is yesterday")
+        expect(DuplicateSave.savedPhrase(daysAgo: 3) == "saved 3 days ago", "3 days counts days")
+        expect(DuplicateSave.savedPhrase(daysAgo: 13) == "saved 13 days ago", "so does 13")
+        expect(DuplicateSave.savedPhrase(daysAgo: 14) == nil, "past a fortnight the caller prints a date")
+
+        expect(DuplicateSave.filedPhrase(topic: "Fitness", subtopic: "Running") == "filed under Fitness › Running",
+               "topic and subtopic read as a path")
+        expect(DuplicateSave.filedPhrase(topic: "Fitness", subtopic: nil) == "filed under Fitness",
+               "a topic with no subtopic stops there")
+        expect(DuplicateSave.filedPhrase(topic: nil, subtopic: nil) == "not filed yet",
+               "an unfiled bork says so rather than inventing a topic")
 
         print(failures == 0 ? "\nAll save limit checks passed."
                             : "\n\(failures) save limit check(s) failed.")

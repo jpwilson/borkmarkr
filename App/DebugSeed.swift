@@ -112,6 +112,15 @@ enum DebugSeed {
         // round trip re-drawing a topic that has its scene.
         custom.artRequestedAt = .now
         context.insert(custom)
+        // `-myTopics "Running"` — extra topics of the user's own, for the
+        // shots that need one with a particular name. See ScreenshotDefaults.
+        var extras = [custom]
+        for name in ScreenshotDefaults.seedCustomTopics {
+            let topic = CustomTopic(name: TaxonomyName.formatted(name),
+                                    hue: CustomTopic.nextHue(existing: extras))
+            context.insert(topic)
+            extras.append(topic)
+        }
         for name in ["Races", "Shoes", "Ultras"] {
             context.insert(CustomSubtopic(categoryID: custom.id, name: name))
         }

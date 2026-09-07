@@ -63,6 +63,45 @@ enum TopicPickerTests {
         expect(shownRun.contains(where: { $0.id == "fitness" }), "Run lists Fitness")
         expect(!shownRun.contains(where: { $0.id == "gaming" }), "Run does not list Gaming")
 
+        // ── Best match first ──────────────────────────────────────────────
+        // The founder's report: typing "runn" listed Fitness above their own
+        // Running topic, because Fitness has a Running subtopic and F sorts
+        // before R. A topic whose own name matches beats one that matches only
+        // through a subtopic; the picker auto-expands the first row, so the
+        // wrong first row is also the wrong open row.
+        let running = Topic(id: "custom.running", name: "Running", hue: 21, subs: ["Intervals", "Races"])
+        let withCustom = Taxonomy.all + [running]
+        let ranked = TopicPickerQuery.shown(topics: withCustom, subs: { $0.subs }, filter: "runn")
+        expect(ranked.first?.id == "custom.running",
+               "runn puts the user's own Running topic first, not Fitness\n     got      \(ranked.first?.name ?? "nothing")")
+        expect(ranked.contains(where: { $0.id == "fitness" }),
+               "…and Fitness is still listed, below it")
+        if let mine = ranked.firstIndex(where: { $0.id == "custom.running" }),
+           let fit = ranked.firstIndex(where: { $0.id == "fitness" }) {
+            expect(mine < fit, "a name match outranks a subtopic match")
+        }
+
+        // Within a tier the old order stands: a name-token match, then a
+        // name that merely contains the letters, then a subtopic match — and
+        // A–Z inside each of those.
+        let aardvark = Topic(id: "custom.aardvark", name: "Aardvark running", hue: 5, subs: [])
+        let prerunner = Topic(id: "custom.prerunner", name: "Prerunner", hue: 7, subs: [])
+        let tiered = TopicPickerQuery.shown(topics: [prerunner, running, fitness, aardvark],
+                                            subs: { $0.subs }, filter: "runn")
+        expect(tiered.map(\.id) == ["custom.aardvark", "custom.running", "custom.prerunner", "fitness"],
+               "name token (A–Z), then name-contains, then subtopic\n     got      \(tiered.map(\.id))")
+
+        // Being a custom topic is not itself a tier — it wins here on the name.
+        let strength = Topic(id: "custom.strength", name: "Strength", hue: 9, subs: [])
+        let byName = TopicPickerQuery.shown(topics: [strength, fitness], subs: { $0.subs }, filter: "strength")
+        expect(byName.map(\.id) == ["custom.strength", "fitness"],
+               "a custom topic is ranked by the same rule, not floated or sunk")
+
+        // Nothing matching still returns nothing — the sheet is what offers
+        // "Add topic", and only then does it sit above the (empty) list.
+        expect(TopicPickerQuery.shown(topics: withCustom, subs: { $0.subs }, filter: "zzzzqq").isEmpty,
+               "a query nothing matches shows no topics")
+
         // Subtopics are A–Z, built-in and yours in one list (iOS 1.0.2).
         let fitnessSubs = TopicPickerQuery.alphabetical(fitness.subs)
         expect(

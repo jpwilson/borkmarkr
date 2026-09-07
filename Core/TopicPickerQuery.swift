@@ -53,19 +53,34 @@ enum TopicPickerQuery {
         return nil
     }
 
+    /// The filtered topic list, **best match first**.
+    ///
+    /// This used to sort by name alone and throw the rank away, which put the
+    /// wrong row on top of the one case people actually search: typing "runn"
+    /// listed Fitness above the user's own Running topic, because Fitness has
+    /// a Running subtopic and F sorts before R. A topic whose *own name*
+    /// matches is what you meant; a topic that matches only through one of its
+    /// forty subtopics is a second-best guess, and second-best guesses do not
+    /// go first.
+    ///
+    /// So: sort by `matchRank` (0 name prefix, 1 name contains, 2 subtopic
+    /// only), then A–Z inside each tier. Custom topics are ranked by exactly
+    /// the same rule as the built-ins — being yours is not a tier. An empty
+    /// filter ranks everything 0, so the unsearched list is still plain A–Z.
     static func shown(topics: [Topic], subs: (Topic) -> [String], filter: String) -> [Topic] {
         let needle = filter.trimmingCharacters(in: .whitespacesAndNewlines)
-        let filtered: [Topic]
-        if needle.isEmpty {
-            filtered = topics
-        } else {
-            filtered = topics.filter {
-                matchRank(topicName: $0.name, subs: subs($0), needle: needle) != nil
-            }
+        guard !needle.isEmpty else {
+            return topics.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         }
-        return filtered.sorted {
-            $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        let ranked = topics.compactMap { topic -> (Topic, Int)? in
+            guard let rank = matchRank(topicName: topic.name, subs: subs(topic), needle: needle)
+            else { return nil }
+            return (topic, rank)
         }
+        return ranked.sorted { left, right in
+            if left.1 != right.1 { return left.1 < right.1 }
+            return left.0.name.localizedStandardCompare(right.0.name) == .orderedAscending
+        }.map(\.0)
     }
 
     /// Subtopics read A–Z — built-ins and the ones you added yourself in one

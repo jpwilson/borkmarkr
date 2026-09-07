@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import OSLog
 
 enum AppTab: String, CaseIterable, Hashable {
     case library, browse, revisit, you
@@ -190,6 +191,13 @@ struct RootView: View {
             .environment(\.accent, accent)
         }
         .onAppear {
+            // Before the merged taxonomy is built, so it never installs a
+            // topic under an id that is about to change underneath it.
+            let folded = Store.foldCustomTopicIDs(in: context)
+            if folded > 0 {
+                Logger(subsystem: "com.jpwilson.borkmarkr", category: "migration")
+                    .notice("Folded custom topic ids: \(folded, privacy: .public) rows re-keyed")
+            }
             _ = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
             if let saved = AppTab.resolve(startingTabRaw) {
                 tab = saved
@@ -204,6 +212,13 @@ struct RootView: View {
             }
             #endif
             ReviewPrompter.recordLaunch()
+            #if DEBUG
+            if ScreenshotDefaults.openAdd {
+                pendingSave = ScreenshotDefaults.addURL
+                hasOnboarded = true
+                showingAdd = true
+            }
+            #endif
             drain()
             Store.admitWaiting(in: context, signedIn: account.isSignedIn)
             refreshBorkCount()

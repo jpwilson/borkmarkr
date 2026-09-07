@@ -657,6 +657,94 @@ what may be on screen.
 
 ---
 
+## The Add sheet (build 13)
+
+**The paste card is a system `PasteButton` over a `Transferable` that accepts
+both a URL and text.** The card used to be `PasteButton(payloadType:
+String.self)`, and it showed three different faces after copying a link out of
+Instagram or X: a working button, no button, and a greyed-out one. All three
+are the control matching the pasteboard's *content types* against the declared
+payload. "Copy link" in a number of apps writes a `public.url` item and no
+plain-text item, which a `String` payload does not match, and the control
+re-evaluates asynchronously, which is the third face. `PastedLink` declares an
+importing `ProxyRepresentation` for each, so both match; the URL is then pulled
+out of whatever arrives by one pure function with its own test.
+
+**It stays a system control.** A custom `Button` that reads
+`UIPasteboard.general.string` is what produced "bookmarker would like to paste
+from…" on every tap. iOS grants the system paste control the same access with
+no dialog, so the control is not negotiable and the payload type is the only
+thing that could be fixed.
+
+**The card exists only when there is a link to paste** — gated on `hasURLs`,
+then `hasStrings`, then `detectPatterns(for: [.probableWebURL])` for text that
+might have a link inside it. None of the three exposes a byte of the value, so
+none of them raises the banner; the pasteboard is still never read. It is
+re-asked on `scenePhase == .active` as well as on `UIPasteboard.changedNotification`,
+because that notification only fires for changes this process can see, and
+coming back from Instagram is the case that matters. An empty pasteboard is
+still `hasStrings == true`, which is why the pattern check is the last word
+rather than the first.
+
+**Saving a link you already have now says so.** `Store.save` has always merged
+a repeat save into the existing bork rather than making a second one, which is
+what `stableID` is for — but the sheet gave no sign, so a link you saved a
+month ago and filed by hand came back, got re-categorised by the guesser, and
+merged silently. The sheet now looks the id up before it shows the form and
+offers the bork instead: where it is filed, when it was saved, **Open it** (the
+same `DetailSheet` as the Library, where the filing can be changed) and **Save
+again anyway**. That second button keeps the existing bork's topic rather than
+the guess for the link, because a re-save is not a re-filing. A tombstoned
+match is not a duplicate: deleting a bork and saving it again is a new save.
+The Share Extension is deliberately unchanged — one tap over someone else's
+app, no screen to ask on, and merging silently is the right answer there.
+
+**The topic picker ranks name matches above subtopic matches.** `matchRank`
+already scored them (0 name token/prefix, 1 name contains, 2 subtopic) and
+`shown` threw the score away and sorted A–Z, so typing "runn" listed Fitness —
+which has a Running subtopic — above the user's own topic called Running. The
+list is now ordered by rank and then A–Z within each tier, the auto-expanded
+row is the first one rather than the first subtopic hit, and "Add topic “runn”"
+moved below the matches, since offering to make a second topic with a name you
+already have is not the first thing to read. Being a custom topic is not a
+tier: yours and the built-ins are ranked by the same rule.
+
+---
+
+## Custom topic ids fold to ASCII (build 13)
+
+`CustomTopic.makeID` kept any character Unicode calls a letter, so "Café
+culture" was stored as `custom.café-culture` — while `TopicArt.isCustomID`, the
+`topic-art` function's `TOPIC_ID` and the web's `ART_ID` all require ASCII. The
+topic could never be sent for art and sat as blank paper, and because the web
+derives its whole idea of a custom topic from `bookmarks.category_id`, the two
+platforms disagreed about which topic a bork was in. The slug now lives in
+`TopicArt.customID`, beside the check it has to satisfy: NFD, drop combining
+marks, lowercase, everything still outside `[a-z0-9]` becomes a separator.
+`makeTopicID` in `docs/index.html` is the same three steps in the same order —
+spelled out with `normalize("NFD")` and `\p{M}` rather than ICU folding, so the
+two are one algorithm rather than two that agree on the cases someone tried.
+One table of names and ids is duplicated between `Scripts/test_topic_art.swift`
+and `Scripts/test_browse.mjs` to hold them together.
+
+**Deviation: a hash tail when the fold loses letters.** Folding alone maps every
+name with no Latin in it — Chinese, Cyrillic, Greek, Arabic — onto the empty
+slug and therefore onto one id, and `CustomTopic.id` is `.unique`: a Russian
+speaker's second custom topic would silently overwrite their first. So when a
+letter or digit is lost, eight hex digits of FNV-1a over the folded name are
+appended. Unreadable, deterministic, identical in both languages, and drawable.
+
+**Migration.** `Store.foldCustomTopicIDs` re-keys topics, their subtopics and
+their borks on launch. It runs every launch rather than once behind a flag: it
+is idempotent by construction (a folded id folds to itself), and the case that
+keeps happening is a bork syncing down from an account whose other device is
+still on the old build, long after any one-time flag was set. Two topics that
+fold onto one id merge, oldest keeps the id. A bork carrying a custom id with
+no topic row behind it — which is everything the web sends — is repaired from
+its own slug.
+
+---
+
 ## Known gaps
 
 - **Fonts.** The spec calls for Bricolage Grotesque + Instrument Sans. Neither is
