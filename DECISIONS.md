@@ -421,6 +421,93 @@ links for someone who will tap them, a picture for someone who will look.
 
 ---
 
+## The signed-out save limit
+
+**Twenty live borks without an account** (`Core/SaveLimit.swift`). Signed in
+there is no limit and none of it applies.
+
+**Why a limit at all.** The app has always worked signed out and the You tab
+has always said the library lives only on this phone. People did not know: the
+tab a happy user never opens is where that sentence lived. 1.0.2 added a
+Library banner and a milestone sheet (`SignInNudge`), which made the fact
+visible without making it land — someone with four hundred borks and no account
+still loses all four hundred with the phone, and still can't open
+bookmarker.lol and find anything. The limit is the first version of that
+sentence that has consequences.
+
+**Why twenty.** Twenty is past *trying it* — you have borked from three apps,
+watched it file things, found one again — and short of the point where losing
+the library would actually hurt. A limit that bites at two hundred arrives
+after the damage it exists to prevent; one that bites at five arrives before
+the app has shown what it does. The countdown starts at fifteen, which is
+roughly a week of use in hand.
+
+**Why waiting instead of refusing.** *Saving must always be instant and a save
+is never gated* is the core product rule (`CLAUDE.md`), and it is not
+negotiable — so the limit gates the twenty-first **slot**, never the act of
+saving:
+
+- The **Share Extension is untouched**. It writes its JSON draft to the App
+  Group inbox in the same few milliseconds, over the top of Instagram, knowing
+  nothing about the library. It cannot fail on a limit it never reads.
+- A draft that drains over the limit is **saved as a real `Bookmark`** and
+  flagged `waitingSince`. It is in the Library, greyed, with a "Waiting" pill,
+  and it can be opened and deleted like anything else. It is held out of
+  Browse, search, topic counts and the stats line, and never pushed to the
+  server. Signing in admits every one; a delete admits the oldest first.
+- The only place anything is refused is the **Add sheet and the + button**,
+  where a person is in the app, looking at the screen, and can read a sheet.
+
+Refusing the share instead would have meant a toast in an extension the user
+has already dismissed, or worse, a silent drop — the one failure this
+architecture was built to make impossible (see *Share Extension writes to an
+inbox* above).
+
+**Why signed-in is unlimited.** Because that is the offer, and an offer with an
+asterisk is not one. A cap behind the sign-up would make the sign-up a lie and
+the limit a toll rather than a reason.
+
+**The privacy line is a promise the code keeps.** The wall says *"Your borks
+are always private. Never sold, never shared, never visible to anyone else."*
+That is checkable, not marketing: `bookmarks` rows are owner-scoped by RLS
+(`supabase/migrations/0001_init.sql`), there is no sharing feature to leak them
+through — the friend feed is schema-only and deliberately unwired — and there
+is no analytics SDK in the app at all. If any of those three change, that
+sentence has to change with them, and `Scripts/test_save_limit.swift` asserts
+its exact wording so it cannot drift quietly.
+
+**Deviations from the brief, and why.**
+
+- *"Make room instead" was specified to show a toast reading "Swipe a bork to
+  delete it."* There is no swipe-to-delete, on the masonry feed or the compact
+  list — deleting is a tap into a bork and the bin in its footer. Shipping copy
+  that names a gesture the app does not have would send someone swiping at a
+  card until they gave up, which is worse than the wall it was trying to
+  soften. The toast reads **"Open any bork and tap the bin to make room"**.
+  Building swipe-to-delete was out of scope and would have been a second
+  feature smuggled in under a toast.
+- *The Library card and the wall were specified to read "20 borks on this
+  phone".* They count the **real** library instead, so someone who signed out
+  of an account holding thirty-four sees thirty-four. At exactly twenty the
+  rendered string is identical to the brief's; over it, printing "20" would
+  have the app arguing with the screen behind it.
+- *The milestone sheet's 25 and 100.* Both are now unreachable signed out, so
+  as sign-up prompts they are dead code. They survive as **signed-in backup
+  reminders, and only when the account has never once synced** — the one case
+  where a signed-in library is still in the danger the account was supposed to
+  remove. When the backup is working, which is the normal case, both are
+  skipped entirely.
+
+**Known limitation.** A library that is *over* the limit — someone who signed
+out of an account holding more than twenty — can view everything and add
+nothing until they sign back in or delete down under twenty. Viewing is never
+blocked, and deleting is the same delete as always. Re-saving a soft-deleted
+bork also resurrects it past the limit rather than re-queuing it as waiting;
+that is a one-tap edge case and the limit is a save gate, not a hard ceiling on
+what may be on screen.
+
+---
+
 ## Known gaps
 
 - **Fonts.** The spec calls for Bricolage Grotesque + Instrument Sans. Neither is

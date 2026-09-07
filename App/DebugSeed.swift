@@ -25,8 +25,18 @@ enum DebugSeed {
             calendar.date(byAdding: .day, value: -days, to: .now) ?? .now
         }
 
+        // `-borks N` caps the live library so the save-limit surfaces can be
+        // photographed at an exact count; `-waiting M` then adds borks flagged
+        // as having arrived over the limit. Both are DEBUG-only — see
+        // `ScreenshotDefaults`.
+        let cap = ScreenshotDefaults.seedBorks
+        let liveSamples = cap.map { Array(samples.prefix(max(0, $0))) } ?? samples
+        let waitingSamples = cap == nil
+            ? []
+            : Array(samples.dropFirst(liveSamples.count).prefix(ScreenshotDefaults.seedWaiting))
+
         var saved: [Bookmark] = []
-        for (offset, sample) in samples.enumerated() {
+        for (offset, sample) in liveSamples.enumerated() {
             guard let url = URL(string: sample.url) else { continue }
             let age = sample.days ?? offset
             let bookmark = Bookmark(
@@ -61,6 +71,30 @@ enum DebugSeed {
         // `topic-art` function draws it — which makes this the seed's only
         // exercise of the hero band's tint fallback, and of a custom topic
         // mixing into the grid under A–Z.
+        // A bork the share sheet accepted after the limit was reached: saved,
+        // on the phone, greyed in the Library, waiting for an account.
+        for (offset, sample) in waitingSamples.enumerated() {
+            guard let url = URL(string: sample.url) else { continue }
+            let bookmark = Bookmark(
+                url: url, title: sample.title, author: sample.author,
+                platform: sample.platform, kind: sample.kind,
+                categoryID: sample.category, subcategory: sample.sub,
+                tags: sample.tags, text: sample.text,
+                durationSeconds: sample.duration,
+                savedAt: Date.now.addingTimeInterval(Double(offset) * -600)
+            )
+            bookmark.waitingSince = Date.now.addingTimeInterval(Double(offset) * -600)
+            context.insert(bookmark)
+        }
+
+        // A capped seed is a save-limit screenshot, not a Browse one: the
+        // custom topic and the side quest would push the live count past the
+        // number that was asked for.
+        guard cap == nil else {
+            try? context.save()
+            return
+        }
+
         let custom = CustomTopic(name: "Trail running", hue: CustomTopic.nextHue(existing: []))
         context.insert(custom)
         for name in ["Races", "Shoes", "Ultras"] {

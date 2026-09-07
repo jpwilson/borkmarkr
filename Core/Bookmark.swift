@@ -73,6 +73,20 @@ final class Bookmark {
     /// opened since.
     var isUnread: Bool
 
+    /// Set when this arrived over the signed-out save limit, cleared when it
+    /// is admitted. See `SaveLimit`.
+    ///
+    /// A waiting bork is a **real, saved bookmark** — the share sheet never
+    /// refuses, and nothing is parked in a queue the user cannot see. It is
+    /// simply held out of Browse, search and topic counts, drawn greyed in the
+    /// Library with a "Waiting" pill, and never pushed to the server. Signing
+    /// in admits every one of them; a delete admits the oldest.
+    ///
+    /// Additive and optional, so SwiftData migrates existing stores in place —
+    /// `stableID` and every property that was already here are untouched, and
+    /// a library from 1.0 opens with every bork live, which is exactly right.
+    var waitingSince: Date?
+
     /// Lowercased concatenation of every searchable field, maintained on write.
     /// Search then does one substring test per item instead of six.
     private(set) var searchBlob: String
@@ -149,6 +163,9 @@ final class Bookmark {
         lastOpenedAt = .now
     }
     var kind: ItemKind { ItemKind(rawValue: kindRaw) ?? .article }
+
+    /// Saved, kept, visible — and waiting for an account before it counts.
+    var isWaiting: Bool { waitingSince != nil }
     var category: Topic? { Taxonomy.category(id: categoryID) }
     var hasNote: Bool { !(noteText ?? "").isEmpty }
 

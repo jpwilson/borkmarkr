@@ -182,6 +182,7 @@ struct BookmarkCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardSurface(strong: bookmark.isMedia)
+        .waitingForAnAccount(bookmark.isWaiting)
     }
 
     // MARK: Text post — X / Threads
@@ -300,7 +301,13 @@ struct BookmarkCard: View {
 
     private func footer(label: String?) -> some View {
         HStack(spacing: 6) {
-            if let label {
+            // The pill takes the topic chip's place rather than sitting beside
+            // it. Both together crush a masonry column to "Wai…" and "Stren…",
+            // and a waiting bork is not counted under that topic yet anyway —
+            // "Waiting" is the truer of the two labels until it is admitted.
+            if bookmark.isWaiting {
+                WaitingPill()
+            } else if let label {
                 Text(label)
                     .font(Typo.ui(10.5, .semibold))
                     .foregroundStyle(palette.deep)
@@ -406,7 +413,9 @@ struct BookmarkRow: View {
                     .multilineTextAlignment(.leading)
 
                 HStack(spacing: 5) {
-                    if let sub = bookmark.subcategory, !sub.isEmpty {
+                    if bookmark.isWaiting {
+                        WaitingPill()
+                    } else if let sub = bookmark.subcategory, !sub.isEmpty {
                         Text("#\(sub)")
                             .font(Typo.ui(10.5, .semibold))
                             .foregroundStyle(palette.deep)
@@ -432,6 +441,7 @@ struct BookmarkRow: View {
         .padding(11)
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardSurface(radius: 18)
+        .waitingForAnAccount(bookmark.isWaiting)
     }
 }
 
@@ -470,5 +480,45 @@ enum RelativeDate {
         let liked = label(for: saved, now: now, calendar: calendar)
         guard let posted, !calendar.isDate(posted, inSameDayAs: saved) else { return liked }
         return "\(liked) · posted \(Self.calendar(posted))"
+    }
+}
+
+/// The mark on a bork that is saved but not yet counted — it arrived over the
+/// signed-out limit and is waiting for an account or for room. See `SaveLimit`.
+///
+/// Small and factual. "Waiting" rather than "Locked" or "Blocked", because
+/// nothing was refused: the bork is right there, on the phone, and the only
+/// thing it is short of is a slot.
+struct WaitingPill: View {
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "clock").font(.system(size: 8, weight: .black))
+            Text("Waiting").font(Typo.ui(10, .heavy))
+        }
+        .lineLimit(1)
+        .fixedSize()
+        .foregroundStyle(Tokens.inkSecondary)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(Tokens.mutedControl, in: Capsule())
+        .accessibilityLabel("Waiting — sign up to keep this bork")
+    }
+}
+
+extension View {
+    /// Greys a bork that is waiting on an account.
+    ///
+    /// Colour is what the Library uses to mean "filed under something", so a
+    /// waiting bork having none is the difference a glance can read. Desaturate
+    /// rather than fade to near-nothing: the card still has to be legible and
+    /// still has to be tappable, because deleting one of *these* is one of the
+    /// ways a person makes room.
+    @ViewBuilder
+    func waitingForAnAccount(_ waiting: Bool) -> some View {
+        if waiting {
+            self.saturation(0).opacity(0.72)
+        } else {
+            self
+        }
     }
 }

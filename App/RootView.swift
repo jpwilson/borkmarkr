@@ -49,6 +49,17 @@ struct RootView: View {
     /// One-shot: hand the caret to Browse's search field after the tab switch.
     @State private var focusBrowseSearch = false
     @State private var showingAdd = false
+    /// A link the person had already pasted when the wall went up. Signing up
+    /// hands it straight back to a fresh Add sheet — being asked to find and
+    /// paste the same link again is the part that would make this feel like a
+    /// punishment.
+    @State private var pendingSave: URL?
+    /// The save-limit wall, and the auth flow it leads to. Both live here
+    /// rather than in the Library because the + button, the Add sheet and a
+    /// share that landed over the limit all raise the same one sheet.
+    @State private var wall: SaveLimitReason?
+    @State private var showingWallAuth = false
+    @State private var wallAuthMode: AuthSheet.Mode = .signUp
     @State private var toast: String?
     /// Drives the You-tab dot. A count rather than a `@Query` of every
     /// bookmark: the root view re-renders on every tab change and does not
@@ -77,7 +88,7 @@ struct RootView: View {
             Group {
                 switch tab {
                 case .library: LibraryView(
-                    onAdd: { showingAdd = true },
+                    onAdd: requestAdd,
                     onSearch: {
                         browseAxis = BrowseView.Axis.topics.rawValue
                         focusBrowseSearch = true
@@ -87,8 +98,9 @@ struct RootView: View {
                         browseAxis = BrowseView.Axis.journeys.rawValue
                         tab = .browse
                     },
+                    onShowWall: { wall = $0 },
                     account: account,
-                    canInterrupt: !showingAdd && hasOnboarded
+                    canInterrupt: !showingAdd && wall == nil && hasOnboarded
                 )
                 case .browse: BrowseView(
                     interests: interests,
@@ -104,7 +116,7 @@ struct RootView: View {
 
             TabDock(
                 tab: $tab,
-                onAdd: { showingAdd = true },
+                onAdd: requestAdd,
                 signedOutDot: SignInNudge.showsBadge(signedIn: account.isSignedIn, borks: borkCount)
             )
                 .environment(\.accent, accent)
@@ -119,12 +131,53 @@ struct RootView: View {
         .tint(accent.base)
         .preferredColorScheme(.light)
         .sheet(isPresented: $showingAdd) {
-            AddSheet(onSaved: { message in
-                showToast(message)
-                tab = .library
-                refreshBorkCount()
-            }, account: account)
+            AddSheet(
+                initialURL: pendingSave,
+                onSaved: { message in
+                    pendingSave = nil
+                    showToast(message)
+                    tab = .library
+                    refreshBorkCount()
+                },
+                // The limit was reached while the sheet was open. Keep the
+                // link, close the sheet, raise the wall — and never lose what
+                // they pasted.
+                onLimitReached: { url in
+                    pendingSave = url
+                    showingAdd = false
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(420))
+                        wall = .addSheet
+                    }
+                },
+                account: account
+            )
             .environment(\.accent, accent)
+        }
+        .sheet(item: $wall) { _ in
+            SaveLimitWall(
+                liveCount: borkCount,
+                onSignUp: { wall = nil; presentWallAuth(.signUp) },
+                onSignIn: { wall = nil; presentWallAuth(.signIn) },
+                onMakeRoom: {
+                    wall = nil
+                    pendingSave = nil
+                    tab = .library
+                    // No multi-select delete exists and this is not the moment
+                    // to build one — deleting is a tap into a bork and the bin
+                    // in its footer, so say that rather than inventing a
+                    // gesture the app does not have.
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(380))
+                        showToast("Open any bork and tap the bin to make room")
+                    }
+                }
+            )
+            .environment(\.accent, accent)
+        }
+        .sheet(isPresented: $showingWallAuth) {
+            AuthSheet(account: account, mode: wallAuthMode)
+                .environment(\.accent, accent)
         }
         .fullScreenCover(isPresented: .constant(!hasOnboarded)) {
             OnboardingView(
@@ -152,6 +205,7 @@ struct RootView: View {
             #endif
             ReviewPrompter.recordLaunch()
             drain()
+            Store.admitWaiting(in: context, signedIn: account.isSignedIn)
             refreshBorkCount()
             Task { await account.sync(context: context) }
         }
@@ -160,14 +214,36 @@ struct RootView: View {
             // them up the moment we're visible again.
             if phase == .active {
                 drain()
+                // Room may have been made on another device, or by a delete
+                // in this one before it was backgrounded.
+                Store.admitWaiting(in: context, signedIn: account.isSignedIn)
                 refreshBorkCount()
                 Task { await account.sync(context: context) }
             }
         }
         .onChange(of: account.isSignedIn) { _, signedIn in
+            guard signedIn else { return }
+            // Admit before syncing, not after. A waiting bork is deliberately
+            // never pushed, so anything still flagged when `push` runs would
+            // sit out its own first backup and wait for the next foreground.
+            Store.admitWaiting(in: context, signedIn: true)
+            refreshBorkCount()
             // Back up the moment someone signs in, not at the next foreground.
             // Push runs before pull, so what's on the phone is never at risk.
-            if signedIn { Task { await account.sync(context: context) } }
+            Task { await account.sync(context: context) }
+        }
+        // Finish the save they were making when the wall went up — but only
+        // once the auth sheet is actually gone. Signing in happens *inside*
+        // that sheet, and a presentation raised while it is still up is
+        // silently dropped, which would lose the link this whole dance exists
+        // to keep.
+        .onChange(of: showingWallAuth) { _, showing in
+            guard !showing, account.isSignedIn, pendingSave != nil else { return }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(450))
+                guard pendingSave != nil else { return }
+                showingAdd = true
+            }
         }
         .onChange(of: pendingTopic) { _, value in
             if value != nil { tab = .browse }
@@ -175,17 +251,54 @@ struct RootView: View {
         .onChange(of: tab) { _, _ in refreshBorkCount() }
     }
 
+    /// The + button, from the dock and from the empty Library.
+    ///
+    /// At the limit this raises the wall instead of the Add sheet. It is the
+    /// one place the app says no, and it says it before the keyboard comes up
+    /// rather than after a link has been pasted and a title fetched — being
+    /// stopped at the door is kinder than being stopped at the till.
+    private func requestAdd() {
+        if SaveLimit.shouldWall(liveCount: borkCount, signedIn: account.isSignedIn) {
+            wall = .add
+        } else {
+            showingAdd = true
+        }
+    }
+
+    private func presentWallAuth(_ mode: AuthSheet.Mode) {
+        wallAuthMode = mode
+        // Let the wall finish dismissing; SwiftUI drops a presentation raised
+        // into another sheet's transition.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(420))
+            showingWallAuth = true
+        }
+    }
+
     /// Cheap enough to run on every tab change — SwiftData counts in SQL
     /// rather than materialising the rows.
+    ///
+    /// Counts the **live** library: a waiting bork is saved, but it is not one
+    /// of the twenty and must not push the limit further out of reach.
     private func refreshBorkCount() {
-        let descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate { $0.deletedAt == nil })
-        borkCount = (try? context.fetchCount(descriptor)) ?? 0
+        borkCount = Store.liveCount(in: context)
     }
 
     private func drain() {
-        let count = Store.drainInbox(into: context)
-        if count > 0 {
-            showToast(count == 1 ? "1 new save" : "\(count) new saves")
+        let result = Store.drainInbox(into: context, signedIn: account.isSignedIn)
+        guard result.saved > 0 else { return }
+        showToast(result.saved == 1 ? "1 new save" : "\(result.saved) new saves")
+
+        // A share that landed over the limit is already saved and already on
+        // screen, greyed, in the Library. The wall is what explains it — and
+        // this is the one path where it is raised by something other than a
+        // tap, which is exactly why it is gated on borks actually waiting.
+        guard result.waiting > 0, hasOnboarded, !showingAdd, wall == nil else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(900))
+            guard wall == nil, !showingAdd else { return }
+            tab = .library
+            wall = .waiting
         }
     }
 

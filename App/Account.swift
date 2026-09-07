@@ -34,6 +34,22 @@ final class Account: ObservableObject {
     private static let pullPageLimit = 30
 
     init() {
+        #if DEBUG
+        // Screenshot and QA states. `-signedOut` ignores a real session on a
+        // device that has one; `-signedIn` fakes one so the signed-in screens
+        // can be captured without an email round-trip. Neither is parsed
+        // outside DEBUG, so no launch argument can put a shipped build here.
+        if ScreenshotDefaults.forceSignedOut {
+            session = nil
+            lastSynced = nil
+            return
+        }
+        if let fake = ScreenshotDefaults.fakeSession {
+            session = fake
+            lastSynced = .now
+            return
+        }
+        #endif
         session = Keychain.loadSession()
         lastSynced = UserDefaults.standard.object(forKey: lastSyncKey) as? Date
     }
@@ -133,7 +149,12 @@ final class Account: ObservableObject {
         // over-send (a row we already pushed), never under-send.
         let cutoff = lastSynced
         let all = (try? context.fetch(FetchDescriptor<Bookmark>())) ?? []
-        let changed = all.filter { cutoff == nil || $0.updatedAt > cutoff! }
+        // A waiting bork is never uploaded. In practice it cannot be — waiting
+        // only happens signed out, and sign-in admits every one of them before
+        // this ever runs (`RootView`) — but the rule belongs where the upload
+        // is, not only where the admission is. `admitWaiting` restamps
+        // `updatedAt`, so an admitted bork is in the very next push.
+        let changed = all.filter { !$0.isWaiting && (cutoff == nil || $0.updatedAt > cutoff!) }
         guard !changed.isEmpty else { return }
 
         // PostgREST rejects a bulk upsert whose rows don't share an identical

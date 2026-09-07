@@ -7,8 +7,10 @@ struct TopicPage: View {
     let category: Topic
 
     @Environment(\.accent) private var accent
+    // Waiting borks are saved and visible in the Library, but held out of
+    // every count, tile and result until admitted. See `SaveLimit`.
     @Query(
-        filter: #Predicate<Bookmark> { $0.deletedAt == nil },
+        filter: #Predicate<Bookmark> { $0.deletedAt == nil && $0.waitingSince == nil },
         sort: \Bookmark.savedAt, order: .reverse
     )
     private var all: [Bookmark]
@@ -391,8 +393,10 @@ struct TopicPage: View {
 /// the app exists to prevent.
 struct UncategorisedPage: View {
     @Environment(\.accent) private var accent
+    // Waiting borks are saved and visible in the Library, but held out of
+    // every count, tile and result until admitted. See `SaveLimit`.
     @Query(
-        filter: #Predicate<Bookmark> { $0.deletedAt == nil },
+        filter: #Predicate<Bookmark> { $0.deletedAt == nil && $0.waitingSince == nil },
         sort: \Bookmark.savedAt, order: .reverse
     )
     private var all: [Bookmark]

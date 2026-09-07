@@ -86,6 +86,9 @@ Tap a topic and it opens on a banner of that topic's clay scene, with the name a
 SHARING A TOPIC IS WORTH SENDING NOW
 It used to paste fifty links and every caption that came with them, which nobody read. Now it is the ten most recent, titles only, with short tappable links and one line at the end saying where to get the app. Or share the topic as a picture: the art, the name and the first six titles as a card built for a story or a group chat.
 
+20 SAVES WITHOUT AN ACCOUNT
+Twenty borks work with no account at all, exactly as before. Past twenty, saving asks you to sign up — it's free, it's an email and a six-digit code, and it makes the library unlimited, backed up, and readable on the web. Anything you share in from another app while you're at the limit is still saved: it sits in your Library marked "Waiting" and joins the library the moment you sign up, or the moment you delete something to make room. Nothing you sent is ever thrown away. And your borks are always private — never sold, never shared, never visible to anyone else.
+
 Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
 ```
 *(Every line is in the build. Revisit computes from what is already on the
@@ -163,7 +166,7 @@ BRING THE THOUSANDS YOU ALREADY HAVE
 Import your browser bookmarks, or your data export from X, Instagram, TikTok or YouTube. Years of saves become a sorted, searchable library in one step. That's the moment it clicks.
 
 YOURS, AND ONLY YOURS
-bookmarker stores links, not content — opening a save takes you to the original post, in the app it came from. Everything works offline and lives on your phone. Sign in with just an email, no password, if you want it backed up and synced. No ads. No tracking. No analytics.
+bookmarker stores links, not content — opening a save takes you to the original post, in the app it came from. Everything works offline and lives on your phone. No account needed for your first 20 saves; after that, sign up with just an email and no password for unlimited saves, backed up and on the web. Your borks are always private — never sold, never shared, never visible to anyone else. No ads. No tracking. No analytics.
 
 Your saves were never the problem. Finding them was.
 ```
@@ -186,8 +189,11 @@ name and subtitle, this only takes effect with 1.0.1.)*
 ## App Review Information
 
 **Sign-in required?** → **Yes.** Apple's first review (28 Aug 2026, Guideline
-2.1 "Information Needed") asked for a demo login even though no feature needs
-an account, so we give them one.
+2.1 "Information Needed") asked for a demo login, and from 1.1 there is a real
+reason for one: a signed-out library holds twenty borks, and an account makes
+it unlimited. Everything a reviewer needs to test is reachable without signing
+in — twenty saves is far more than a review pass makes — but the demo account
+exists and works.
 
 - User name: `review@bookmarker.lol`
 - Password: whatever you set when you created that user in Supabase
@@ -205,7 +211,7 @@ rather Apple call a different one.
 **Notes** (paste the block below; keep it under 4,000 characters)
 ```
 DEMO ACCOUNT
-Use the sign-in details above (review@bookmarker.lol). You tab → Sign in → enter the email → the app asks for the password. This is the one address that uses a password: every other user receives a six-digit code by email, and a review address can't receive mail. No account is needed for any feature; tapping "Not now" also works.
+Use the sign-in details above (review@bookmarker.lol). You tab → Sign in → enter the email → the app asks for the password. This is the one address that uses a password: every other user receives a six-digit code by email, and a review address can't receive mail. Every feature can be tested signed out; tapping "Not now" works. The one thing an account changes is the number of saves: a signed-out library holds 20 borks (free, no trial, no purchase), and signing up makes it unlimited and backs it up. There is no paid tier and nothing in the app costs money.
 
 WHAT THE APP IS, AND FOR WHOM
 bookmarker is a personal bookmark manager for people who save reels, threads, videos and articles across several apps and can't find them again. Users save links they chose — via the Share sheet or by pasting — into one library. Each save is filed under a topic, tagged, searchable, and can carry a note. "Side quests" group saves into a small to-do (recipes to cook, places to visit). Audience: general, rated 4+; typical users are adults who save a lot on social apps.

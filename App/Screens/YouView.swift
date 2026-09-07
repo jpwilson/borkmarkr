@@ -28,12 +28,19 @@ struct YouView: View {
 
     private var thisWeek: Int {
         let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? .now
-        return bookmarks.filter { $0.savedAt >= cutoff }.count
+        return live.filter { $0.savedAt >= cutoff }.count
     }
 
     private var topicCount: Int {
-        Set(bookmarks.compactMap(\.categoryID)).count
+        Set(live.compactMap(\.categoryID)).count
     }
+
+    /// Borks that count. A waiting one is saved and visible in the Library,
+    /// but it is not part of the library's totals until it is admitted —
+    /// see `SaveLimit`.
+    private var live: [Bookmark] { bookmarks.filter { !$0.isWaiting } }
+    private var liveCount: Int { live.count }
+    private var waitingCount: Int { bookmarks.count { $0.isWaiting } }
 
     var body: some View {
         ScrollView {
@@ -78,7 +85,7 @@ struct YouView: View {
             Text(deleteError ?? "")
         }
         .sheet(isPresented: $showingInsights) {
-            InsightsSheet(bookmarks: bookmarks, account: account) { title in
+            InsightsSheet(bookmarks: live, account: account) { title in
                 creatingQuestTitle = title
             }
             .environment(\.accent, accent)
@@ -187,6 +194,39 @@ struct YouView: View {
                     .font(Typo.ui(12, .medium))
                     .foregroundStyle(Tokens.inkMeta)
                     .fixedSize(horizontal: false, vertical: true)
+                freeLimit
+            }
+        }
+    }
+
+    /// The limit, said plainly, where someone goes when they want to know
+    /// what their account status actually means.
+    ///
+    /// The count is the point. "Free limit: 20 borks" is a rule; "17 of 20" is
+    /// a fact about your library, and it is the number that decides whether
+    /// this line is worth reading today.
+    @ViewBuilder
+    private var freeLimit: some View {
+        if let counter = SaveLimit.youCount(liveCount: liveCount, signedIn: false) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(SaveLimit.youLine)
+                    .font(Typo.ui(12, .medium))
+                    .foregroundStyle(Tokens.inkMeta)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                Text(counter)
+                    .font(Typo.ui(12, .heavy))
+                    .foregroundStyle(waitingCount > 0 || liveCount >= SaveLimit.limit
+                                     ? Tokens.destructive : accent.deep)
+                    .monospacedDigit()
+            }
+            .padding(.top, 6)
+
+            if let waitingLine = SaveLimit.waitingBanner(count: waitingCount) {
+                Text(waitingLine)
+                    .font(Typo.ui(12, .semibold))
+                    .foregroundStyle(Tokens.destructive)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -238,14 +278,14 @@ struct YouView: View {
 
     private var statsStrip: some View {
         HStack(spacing: 0) {
-            statColumn(value: "\(bookmarks.count)", label: Copy.borks(bookmarks.count), accented: false)
+            statColumn(value: "\(liveCount)", label: Copy.borks(liveCount), accented: false)
             Rectangle().fill(Tokens.divider).frame(width: 1, height: 36)
             statColumn(value: "\(topicCount)", label: topicCount == 1 ? "topic" : "topics", accented: false)
             Rectangle().fill(Tokens.divider).frame(width: 1, height: 36)
             statColumn(value: "\(thisWeek)", label: "this week", accented: true)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(Copy.countedBorks(bookmarks.count)), \(topicCount) \(topicCount == 1 ? "topic" : "topics"), \(thisWeek) this week")
+        .accessibilityLabel("\(Copy.countedBorks(liveCount)), \(topicCount) \(topicCount == 1 ? "topic" : "topics"), \(thisWeek) this week")
     }
 
     private func statColumn(value: String, label: String, accented: Bool) -> some View {
@@ -264,7 +304,7 @@ struct YouView: View {
 
     private var insights: some View {
         Button { showingInsights = true } label: {
-            InsightsEntry(bookmarks: bookmarks)
+            InsightsEntry(bookmarks: live)
         }
         .buttonStyle(PressableStyle())
     }
