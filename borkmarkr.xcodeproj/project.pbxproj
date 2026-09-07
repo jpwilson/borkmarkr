@@ -190,7 +190,7 @@
 		F91794C010FF35E650EB340F /* borkmarkr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = borkmarkr.entitlements; sourceTree = "<group>"; };
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_B547CEDF-4C2F-4C37-B0E4-1C2AA37743C0" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_9F20E963-FDBA-49AF-AF7E-43972B0938FA" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -333,10 +333,10 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		"TEMP_4CA52C5E-F9C4-414E-9B9D-C9BC3C012B13" /* ios-gate */ = {
+		"TEMP_1266491E-4F41-43AA-90F2-AB9227B8E61D" /* ios-gate */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_B547CEDF-4C2F-4C37-B0E4-1C2AA37743C0" /* Config.xcconfig */,
+				"TEMP_9F20E963-FDBA-49AF-AF7E-43972B0938FA" /* Config.xcconfig */,
 			);
 			path = "ios-gate";
 			sourceTree = "<group>";
@@ -544,7 +544,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_B547CEDF-4C2F-4C37-B0E4-1C2AA37743C0" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_9F20E963-FDBA-49AF-AF7E-43972B0938FA" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -631,7 +631,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_B547CEDF-4C2F-4C37-B0E4-1C2AA37743C0" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_9F20E963-FDBA-49AF-AF7E-43972B0938FA" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
