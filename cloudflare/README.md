@@ -188,3 +188,13 @@ Everything reverts to the GitHub Pages A/AAAA records that were there all
 along, and `/c/<slug>` falls back to `docs/404.html`, which still fetches the
 function client-side. Nothing is lost but the unfurls. Deleting the Worker or
 the route is the smaller rollback if the problem is only the `/c/*` path.
+
+## Why the Worker sets the content type itself
+
+Supabase's `*.supabase.co` functions domain serves HTML bodies as `text/plain`
+with a `Content-Security-Policy: default-src 'none'; sandbox` header on GET
+(verified 7 Sep 2026 — it is an anti-phishing rule for their shared domain).
+That is fine for `docs/404.html`, which reads the text and writes it into the
+document itself, but a scraper hitting the Worker must see `text/html`. The
+Worker therefore sets `Content-Type: text/html; charset=utf-8` and drops the
+upstream CSP header; the page's own CSP lives in a `<meta>` tag.

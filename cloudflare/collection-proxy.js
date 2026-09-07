@@ -70,6 +70,15 @@ export default {
     // The page is being served from bookmarker.lol now; nothing needs to read
     // it cross-origin from here.
     headers.delete("Access-Control-Allow-Origin");
+    // Supabase's default functions domain refuses to serve HTML as HTML: on a
+    // GET it rewrites the type to text/plain and adds a sandboxing CSP header
+    // (an anti-phishing measure for *.supabase.co). Verified 2026-09-07. We
+    // are not that domain — the page carries its own CSP in a <meta> tag and
+    // is served from bookmarker.lol — so the type and the header are ours.
+    headers.set("Content-Type", "text/html; charset=utf-8");
+    headers.delete("Content-Security-Policy");
+    headers.set("X-Frame-Options", "DENY");
+    headers.set("Referrer-Policy", "no-referrer");
 
     return new Response(request.method === "HEAD" ? null : upstream.body, {
       status: upstream.status,
