@@ -743,6 +743,120 @@ fold onto one id merge, oldest keeps the id. A bork carrying a custom id with
 no topic row behind it — which is everything the web sends — is repaired from
 its own slug.
 
+## Shared collections
+
+The recipient's half: `bookmarker.lol/c/<slug>` — a page a stranger opens, and
+the backend that answers it. `supabase/migrations/0011_shared_collections.sql`,
+`supabase/functions/collection-page/`, `cloudflare/`. Nothing in the client
+creates a collection yet; that is PR 2.
+
+**The model is server-authoritative, and the RPC is the only anonymous door.**
+0001 imagined sharing as a widening of row-level security: mark a collection
+`public` and let the policy hand out the rows. That was the wrong shape twice
+over. It made *every* signed-in account able to read *every* public collection
+through PostgREST — `GET /rest/v1/collections?select=*` was a directory of
+everything anyone had ever shared, and `collection_items` plus 0001's additive
+bookmarks policy made it a directory of the contents — and it could not serve
+an anonymous reader at all, which is the only reader that matters for a link
+you send to a friend. So the public branch is gone from
+`can_view_collection`, `anon` is revoked on all three tables, and the single
+way in is `collection_by_slug(text)`: security definer, given a slug, returning
+one fixed JSON shape. The shape is the policy. There is no query string a
+caller can build to widen it, no column it forgot to exclude, and nothing to
+enumerate — a wrong slug, a revoked link and a deleted collection all return
+`null`, so the page cannot be asked whether a collection exists.
+
+**`public` means "anyone with the link", not "published".** The slug is twelve
+characters of `[a-z0-9]` from `gen_random_bytes` — 36¹² ≈ 4.7 × 10¹⁸, the whole
+security model of an unlisted link, which is why it is a CSPRNG and not
+`random()` or the name. The page sends `robots: noindex`. Nothing lists it.
+This is the one place the ROADMAP's framing is deliberately not followed: it
+calls a shared collection "an SEO asset", and indexing someone's curated links
+under their display name is not a thing to do to people by default. Making a
+collection indexable is a switch we can add when someone asks for it; making
+one *un*-indexed after Google has it is not.
+
+**Turning the link off keeps the slug.** `visibility = 'private'` is the link
+off; the slug stays on the row, so turning sharing back on restores the same
+URL instead of orphaning every copy of it already sent. The trade is explicit —
+an old link starts working again when the owner re-enables it — and someone who
+wants a permanently dead link deletes the collection.
+
+**A leak in 0001, found while wiring this up.** The policy "own collection
+items writable" checked that you owned the *collection* and never that you
+owned the *bookmark*. Since a bookmark's id is its normalised URL, any signed-in
+account could save the same reel, learn the id, insert `(a-stranger's-uuid,
+that-id)` into a collection of its own, and read the stranger's row back —
+`note_text` included — through the additive "bookmarks visible through shared
+collections" policy. `bookmark_owner = auth.uid()` is now required on write,
+and `collection_by_slug` refuses to serve an item whose owner is not the
+collection's owner regardless, so a collection assembled before the fix cannot
+leak through the new page either. The one `for all` policy is now three, split
+by command: a `for all` policy is how four commands get widened by someone
+thinking about one.
+
+**Both caps are triggers, and that is not a style choice.** The obvious home
+for "at most 200 items in a collection" is the policy's `with check`, and
+Postgres refuses it: a policy on `collection_items` that counts
+`collection_items` re-enters the table's own policies and every insert dies
+with `infinite recursion detected in policy for relation "collection_items"` —
+including the legitimate ones, and with an error that names recursion rather
+than the cap, which masked the leak fix above until the probe found it. So 200
+items per collection and 100 collections per account are `after` triggers,
+where the new row is there to be counted and `security definer` means the count
+is the real one.
+
+**Why Cloudflare.** The page has to be server-rendered at a `bookmarker.lol`
+URL, because the thing that decides whether a shared link gets tapped is the
+card Messages and X draw for it, and every link scraper reads the HTML the
+server returned and runs no JavaScript. GitHub Pages cannot proxy, rewrite or
+render. The alternatives were pre-rendering each collection into
+`docs/c/<slug>.html` — which makes a stale page the default and turns "turn the
+link off" into a deploy — or moving the whole site to another host to add one
+route. A Worker on the free plan changes nothing else about the site and is
+reversible by putting the nameservers back. `cloudflare/README.md` is the
+runbook; until it is run, `docs/404.html` fetches the same function from the
+browser, so links work for people today and only the unfurls wait.
+
+**The page trusts none of its own data.** Every string on it — the name, the
+note, a title, an author, a URL, a thumbnail host — was written by the person
+who made the collection, so `_shared/collection_html.ts` escapes every
+interpolation, emits an `href` only for plain http(s) (a saved `javascript:`
+URL renders as a card you cannot click), and renders an `<img>` only for hosts
+known to serve permanent thumbnails. That last one is stricter than the "our
+storage bucket" the brief asked for and stricter than "any https image" would
+be: without it a collection could be assembled to make every viewer's browser
+call a host of the owner's choosing. Instagram and TikTok covers are absent
+from that list because everything those CDNs hand out expires — 0008 already
+mirrors them into our own bucket, which is on it. The page's CSP is the
+backstop, with a per-response nonce, which is why there is not one inline
+`onerror` or `style=` attribute in the file. The image-error listener lives in
+the `<head>` for a reason found by looking: at the end of the body it is
+registered after the covers have already failed, and the reader gets Chrome's
+broken-image icon instead of the topic gradient.
+
+**What it measures.** One event, `collection_viewed {items}`, with
+`persistence: 'memory'` — no cookie, no localStorage, no replay, no
+autocapture, no pageview, no `identify`. A viewer arriving from someone else's
+link is not someone to give an identity to; the only question worth asking is
+whether shared links are opened at all.
+
+**Copies, not references.** `collection_save` inserts the collection's live
+borks into the caller's own library — `on conflict do nothing`, so tapping
+twice adds nothing, and `note_text` starts empty because the curator's note is
+theirs. The copies carry `source_collection_id` and survive the collection
+being deleted or turned off. A bork the saver had previously deleted stays
+deleted rather than being resurrected by somebody else's link.
+
+**One thing this PR knowingly leaves wrong.** `Core/SaveLimit.swift` promises
+*"Never sold, never shared, never visible to anyone else"*, and
+`Scripts/test_save_limit.swift` asserts that wording so it cannot drift
+quietly. It is still true today — nothing in the client can create a
+collection, and a collection is private until its owner turns a link on — but
+the sentence has to change in the PR that ships the sharing UI, along with the
+App Store copy that repeats it. Shipping the change now would make the app
+claim a feature it does not have.
+
 ---
 
 ## Known gaps
