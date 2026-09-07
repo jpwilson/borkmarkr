@@ -1,0 +1,29 @@
+name: Browse sort tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/BrowseSort.swift"
+      - "App/Screens/BrowseView.swift"
+      - "App/Screens/MissionsView.swift"
+      - "Scripts/test_browse_sort.swift"
+      - ".github/workflows/browse-sort-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/BrowseSort.swift"
+      - "App/Screens/BrowseView.swift"
+      - "App/Screens/MissionsView.swift"
+      - "Scripts/test_browse_sort.swift"
+      - ".github/workflows/browse-sort-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run browse sort checks
+        run: |
+          swiftc -parse-as-library -o /tmp/browse-sort-tests \
+            Core/BrowseSort.swift Scripts/test_browse_sort.swift
+          /tmp/browse-sort-tests

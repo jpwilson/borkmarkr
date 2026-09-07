@@ -56,6 +56,32 @@ enum DebugSeed {
             saved.append(bookmark)
         }
 
+        // A topic the user invented, with subtopics to match. The 50 built-ins
+        // carry bundled clay art; a topic you made has none until the
+        // `topic-art` function draws it — which makes this the seed's only
+        // exercise of the hero band's tint fallback, and of a custom topic
+        // mixing into the grid under A–Z.
+        let custom = CustomTopic(name: "Trail running", hue: CustomTopic.nextHue(existing: []))
+        context.insert(custom)
+        for name in ["Races", "Shoes", "Ultras"] {
+            context.insert(CustomSubtopic(categoryID: custom.id, name: name))
+        }
+        for (offset, sample) in customSamples.enumerated() {
+            guard let url = URL(string: sample.url) else { continue }
+            context.insert(Bookmark(
+                url: url,
+                title: sample.title,
+                author: sample.author,
+                platform: sample.platform,
+                kind: sample.kind,
+                categoryID: custom.id,
+                subcategory: sample.sub,
+                tags: sample.tags,
+                durationSeconds: sample.duration,
+                savedAt: daysAgo(offset * 3 + 2)
+            ))
+        }
+
         let quest = Mission(title: "Improve mobility for running", categoryID: "fitness")
         quest.bookmarkIDs = saved.filter { $0.categoryID == "fitness" }.map(\.id)
         quest.todos = [
@@ -67,6 +93,31 @@ enum DebugSeed {
 
         try? context.save()
     }
+
+    /// Filed under the seeded custom topic rather than a built-in, so the
+    /// `category` field is left off — `run` supplies it.
+    private static let customSamples: [Sample] = [
+        Sample(url: "https://www.youtube.com/watch?v=utmb2026",
+               title: "UTMB, from the back of the pack", author: "@longwaydown",
+               platform: .youtube, kind: .video, category: "", sub: "Races",
+               tags: ["ultra", "utmb"], duration: 1840),
+        Sample(url: "https://www.instagram.com/reel/C13trailshoes",
+               title: "Three trail shoes, six hundred kilometres",
+               author: "@dirt.miles", platform: .instagram, kind: .reel,
+               category: "", sub: "Shoes", tags: ["shoes", "gear"], duration: 74),
+        Sample(url: "https://www.tiktok.com/@vertgang/video/9912",
+               title: "Power hiking is not cheating", author: "@vertgang",
+               platform: .tiktok, kind: .clip, category: "", sub: "Ultras",
+               tags: ["vert", "technique"], duration: 58),
+        Sample(url: "https://www.irunfar.com/2026/07/night-running-kit",
+               title: "What to carry when the race runs into the dark",
+               author: "irunfar.com", platform: .web, kind: .article,
+               category: "", sub: "Ultras", tags: ["kit", "night"]),
+        Sample(url: "https://www.youtube.com/shorts/downhillform",
+               title: "Downhill form drills for beaten quads",
+               author: "@dirt.miles", platform: .shorts, kind: .short,
+               category: "", sub: "Ultras", tags: ["downhill", "quads"], duration: 44),
+    ]
 
     private struct Sample {
         let url: String, title: String, author: String

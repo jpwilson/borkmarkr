@@ -36,6 +36,20 @@ enum ScreenshotDefaults {
             }
     }
 
+    /// `-topic fitness` opens Browse straight onto a topic page.
+    ///
+    /// The topic page is reachable only by tapping a tile, so without this
+    /// there is no reproducible way to capture it — and the hero band and the
+    /// share card both live there.
+    static var openTopic: String? { value(for: "-topic") }
+
+    /// `-dumpShareCard <path>` writes the rendered share card to a PNG.
+    ///
+    /// The card is an `ImageRenderer` product, not a screen: nothing exists
+    /// for `simctl io screenshot` to point at until someone has opened the
+    /// share sheet. This writes exactly the image that gets shared.
+    static var shareCardDumpPath: String? { value(for: "-dumpShareCard") }
+
     private static func value(for flag: String) -> String? {
         #if DEBUG
         let arguments = CommandLine.arguments
