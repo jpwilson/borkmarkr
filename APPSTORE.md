@@ -461,6 +461,21 @@ Two things worth knowing before you re-run them:
   `browse` and written back into the container, and from then on the container
   value shadows the global one and every capture comes out on the same screen.
   If the captures all look identical, uninstall the app and start again.
+- Every seeded card carries a real cover (`DebugSeed.Cover`), and the seeded
+  custom topic carries real art. `CoverImage`'s gradient and Browse's blank
+  paper tile are correct, deliberate fallbacks in the app, and both photograph
+  as missing images. The covers are fetched over the network at capture time,
+  so the simulator has to be online, and `shoot` waits `SETTLE` seconds
+  (default 3) after the screen is up for them to land. If a cover comes out
+  half faded, raise it: `SETTLE=6 bash Scripts/capture_screenshots.sh`.
+
+Two things that are supposed to look like that:
+- The X and Threads cards have no cover. A text post has none in the real app
+  either — it renders as the post itself, with the handle and the platform
+  mark — so leave them alone.
+- "Trail running" is the one topic tile that isn't bundled clay art. It is a
+  topic the seeded user invented, and it carries the scene the `topic-art`
+  function draws for a topic like it.
 
 Three practical notes:
 - Apple accepts as few as one, but 3–5 is normal. You can reorder them later.
