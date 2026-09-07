@@ -314,6 +314,103 @@ enum Store {
             bookmark.touch()
         }
     }
+
+    // MARK: - Custom topic id fold (build 13)
+
+    /// Re-key any custom topic whose id predates the ASCII fold.
+    ///
+    /// Up to 1.1, `CustomTopic.makeID` kept any Unicode letter, so "Café
+    /// culture" was stored as `custom.café-culture`. `TopicArt.isCustomID` and
+    /// the `topic-art` function's `TOPIC_ID` both require ASCII, so that topic
+    /// could never be asked for art; and the web derives its topics from
+    /// `bookmarks.category_id`, so the two platforms disagreed about which
+    /// topic a bork was even in. `TopicArt.customID` folds now — this brings
+    /// stores that were written before it did.
+    ///
+    /// Runs on **every launch**, not once behind a flag. It is idempotent by
+    /// construction (an already-folded id folds to itself, so the loop finds
+    /// nothing and writes nothing), and a one-shot flag would miss the case
+    /// that keeps happening: a bork pulled down from an account whose other
+    /// device is still on 1.1 arrives carrying an unfolded `category_id` long
+    /// after any flag was set. The cost is two fetches of rows the app was
+    /// about to read anyway.
+    ///
+    /// Returns how many rows it changed, for the caller to log.
+    @discardableResult
+    static func foldCustomTopicIDs(in context: ModelContext) -> Int {
+        var changed = 0
+        var rekeyed: [String: String] = [:]   // old id -> new id
+
+        // 1. Topics. The name is the source of truth, so the new id comes from
+        //    it rather than from the old slug.
+        let topics = (try? context.fetch(FetchDescriptor<CustomTopic>())) ?? []
+        var claimed = Set(topics.map(\.id))
+        for topic in topics {
+            let folded = CustomTopic.makeID(from: topic.name)
+            guard folded != topic.id else { continue }
+            rekeyed[topic.id] = folded
+            if claimed.contains(folded) {
+                // Two topics folding onto one id — "Café" and "Cafe" typed on
+                // different days. The one that already holds the folded id
+                // keeps it; this row becomes a tombstone and its borks move
+                // across in step 3.
+                topic.deletedAt = topic.deletedAt ?? .now
+            } else {
+                claimed.remove(topic.id)
+                claimed.insert(folded)
+                topic.id = folded
+            }
+            topic.updatedAt = .now
+            changed += 1
+        }
+
+        // 2. Subtopics hang off the topic id, and their own id embeds it — so
+        //    two topics folding into one can land two subtopics on one id.
+        let subtopics = (try? context.fetch(FetchDescriptor<CustomSubtopic>())) ?? []
+        var subtopicIDs = Set(subtopics.map(\.id))
+        for entry in subtopics {
+            guard let folded = rekeyed[entry.categoryID] else { continue }
+            entry.categoryID = folded
+            let newID = "\(folded)|\(entry.name.lowercased())"
+            if newID != entry.id {
+                if subtopicIDs.contains(newID) {
+                    entry.deletedAt = entry.deletedAt ?? .now
+                } else {
+                    subtopicIDs.remove(entry.id)
+                    subtopicIDs.insert(newID)
+                    entry.id = newID
+                }
+            }
+            changed += 1
+        }
+
+        // 3. Borks. Anything filed under a re-keyed topic follows it. A bork
+        //    can also carry a custom id with no `CustomTopic` row behind it —
+        //    the web never sends one, because there is no topics table on the
+        //    server — so an id that simply isn't foldable is repaired from its
+        //    own slug. Best effort: for a name that lost letters *and* had
+        //    punctuation, the slug's hash won't match the name's. It is still
+        //    a valid, stable, drawable id, which is the point.
+        let all = (try? context.fetch(FetchDescriptor<Bookmark>())) ?? []
+        for bookmark in all {
+            guard let id = bookmark.categoryID else { continue }
+            let folded: String
+            if let mapped = rekeyed[id] {
+                folded = mapped
+            } else if id.hasPrefix("custom."), !TopicArt.isCustomID(id) {
+                folded = TopicArt.customID(from: String(id.dropFirst("custom.".count)))
+            } else {
+                continue
+            }
+            guard folded != id else { continue }
+            bookmark.categoryID = folded
+            bookmark.touch()
+            changed += 1
+        }
+
+        if changed > 0 { try? context.save() }
+        return changed
+    }
 }
 
 /// What the extension queues and the Add flow submits. Codable so it can cross

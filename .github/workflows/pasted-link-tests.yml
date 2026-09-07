@@ -1,0 +1,27 @@
+name: Pasted link tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/PastedLink.swift"
+      - "App/Screens/AddSheet.swift"
+      - "Scripts/test_pasted_link.swift"
+      - ".github/workflows/pasted-link-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/PastedLink.swift"
+      - "App/Screens/AddSheet.swift"
+      - "Scripts/test_pasted_link.swift"
+      - ".github/workflows/pasted-link-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run pasted link checks
+        run: |
+          swiftc -parse-as-library -o /tmp/pasted-link-tests \
+            Core/PastedLink.swift Scripts/test_pasted_link.swift
+          /tmp/pasted-link-tests

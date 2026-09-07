@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "Core/SaveLimit.swift"
+      - "Core/DuplicateSave.swift"
       - "Core/Copy.swift"
       - "Core/Store.swift"
       - "Core/Bookmark.swift"
@@ -16,6 +17,7 @@ on:
     branches: [main]
     paths:
       - "Core/SaveLimit.swift"
+      - "Core/DuplicateSave.swift"
       - "Core/Copy.swift"
       - "Core/Store.swift"
       - "Core/Bookmark.swift"
@@ -33,5 +35,6 @@ jobs:
       - name: Compile and run save limit checks
         run: |
           swiftc -parse-as-library -o /tmp/save-limit-tests \
-            Core/Copy.swift Core/SaveLimit.swift Scripts/test_save_limit.swift
+            Core/Copy.swift Core/SaveLimit.swift Core/DuplicateSave.swift \
+            Scripts/test_save_limit.swift
           /tmp/save-limit-tests

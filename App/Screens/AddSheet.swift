@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import StoreKit
+import UIKit
 
 /// Three steps: paste → reading → details.
 ///
@@ -25,6 +26,7 @@ struct AddSheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.scenePhase) private var scenePhase
 
     @Query(filter: #Predicate<Bookmark> { $0.deletedAt == nil })
     private var allBookmarks: [Bookmark]
@@ -59,6 +61,16 @@ struct AddSheet: View {
     @State private var editingTitle = false
     @State private var selectedJourneyIDs: Set<String> = []
     @State private var showingNewJourney = false
+    /// Whether the pasteboard holds text or a URL. Drives whether the paste
+    /// card is on screen at all; see `refreshClipboard`.
+    @State private var clipboardHasContent = false
+    /// Set by "Save again anyway". The save that follows enriches the bork in
+    /// place exactly as it always has; this is only so the card does not come
+    /// straight back if that save is refused (the limit wall) rather than
+    /// dismissing the sheet.
+    @State private var saveAnyway = false
+    /// The bork the duplicate card's "Open it" is showing.
+    @State private var openingDuplicate: Bookmark?
     @FocusState private var urlFocused: Bool
 
     /// Borks that count against the signed-out limit. `allBookmarks` also
@@ -108,11 +120,26 @@ struct AddSheet: View {
         .sheet(isPresented: $showingNewJourney) {
             NewMissionSheet().environment(\.accent, accent)
         }
+        // Where they change the topic, add a note, or delete it — the sheet
+        // they would have opened from the Library, opened from here instead.
+        .sheet(item: $openingDuplicate) { bork in
+            DetailSheet(bookmark: bork).environment(\.accent, accent)
+        }
         .onAppear {
             if let initialURL, urlText.isEmpty {
                 urlText = initialURL.absoluteString
                 submit()
             }
+            #if DEBUG
+            // Let this sheet finish presenting first; SwiftUI drops a
+            // presentation raised into another sheet's transition.
+            if ScreenshotDefaults.pickerQuery != nil {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(800))
+                    showingPicker = true
+                }
+            }
+            #endif
         }
     }
 
@@ -126,6 +153,13 @@ struct AddSheet: View {
     /// tap — and users would get the same dialog from Instagram, Safari, etc.
     /// `PasteButton` is a system control; iOS grants paste without asking.
     /// Long-press in the field, or the keyboard paste key, also never prompts.
+    ///
+    /// `hasURLs`, `hasStrings` and `detectPatterns` are the one exception, and
+    /// they are not an exception to the rule so much as the reason it can be
+    /// kept: they report which *types* and which *patterns* are on the
+    /// pasteboard without exposing a single byte of the value, which is
+    /// precisely what the paste alert is gated on. They are how the card below
+    /// knows whether to exist at all. See `refreshClipboard`.
     private var pasteStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -143,24 +177,27 @@ struct AddSheet: View {
                                     lineWidth: parsedURL != nil ? 1.5 : 1)
                     )
 
-                if urlText.isEmpty {
+                if urlText.isEmpty && clipboardHasContent {
                     HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Have a link copied?")
-                                .font(Typo.ui(13, .semibold))
-                                .foregroundStyle(Tokens.ink)
-                            Text("Uses the system paste control, so iOS will not ask.")
-                                .font(Typo.ui(11.5))
-                                .foregroundStyle(Tokens.inkMeta)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                        Text("Paste the link you copied")
+                            .font(Typo.ui(13, .semibold))
+                            .foregroundStyle(Tokens.ink)
+                            .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 8)
-                        PasteButton(payloadType: String.self) { strings in
-                            applyPasted(strings.first ?? "")
+                        PasteButton(payloadType: PastedLink.self) { links in
+                            applyPasted(links.first)
                         }
                         .labelStyle(.titleAndIcon)
                         .tint(accent.base)
                         .buttonBorderShape(.capsule)
+                        // The control sizes itself from its own label, and it
+                        // re-renders when the pasteboard changes underneath it.
+                        // A floor under that keeps the card the same shape
+                        // through the re-render instead of twitching; a floor
+                        // rather than a fixed size so a longer system label in
+                        // another language is never clipped.
+                        .frame(minWidth: 104, minHeight: 36, alignment: .trailing)
+                        .accessibilityLabel("Paste the link you copied")
                     }
                     .padding(13)
                     .cardSurface(radius: 16)
@@ -179,6 +216,17 @@ struct AddSheet: View {
             try? await Task.sleep(for: .milliseconds(250))
             urlFocused = true
         }
+        .onAppear(perform: refreshClipboard)
+        // `changedNotification` only fires for changes this process can see, so
+        // it catches a copy made inside the app and nothing else. Coming back
+        // from Instagram is the case that matters and it arrives as a scene
+        // phase change instead — both are needed, neither is enough.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { refreshClipboard() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
+            refreshClipboard()
+        }
         // Debounced so it fires once you've finished pasting, not on every
         // character of a typed URL.
         .task(id: urlText) {
@@ -189,24 +237,62 @@ struct AddSheet: View {
         }
     }
 
-    private func applyPasted(_ raw: String) {
-        guard let url = firstURL(in: raw) else { return }
-        urlText = url.absoluteString
+    /// Is there a link on the pasteboard worth offering to paste?
+    ///
+    /// The old card was unconditional, so an empty clipboard got "Have a link
+    /// copied?" over a control that could not be tapped — a prompt to do
+    /// something the app had already decided was impossible. Now the card is
+    /// simply absent unless there is a link to paste.
+    ///
+    /// Three questions, none of which reads a byte or raises the "would like
+    /// to paste from…" dialog:
+    ///
+    /// - `hasURLs` — a URL-typed item, which is what "Copy link" writes. Free
+    ///   and synchronous; it is the common case and it ends here.
+    /// - `hasStrings` — is there any text at all. Note that an *empty* string
+    ///   still counts, which is why this cannot be the last word: pasteboards
+    ///   in that state are common and the card would be back to lying.
+    /// - `detectPatterns(for: [.probableWebURL])` — is there a link somewhere
+    ///   *inside* that text. This is the API Apple added for exactly this
+    ///   question; it reports the pattern, never the value, and so does not
+    ///   notify the user. It is asynchronous, hence the `Task`.
+    ///
+    /// If detection fails the card is shown. A failure is not evidence that
+    /// there is no link, and hiding the only paste affordance on a maybe is
+    /// worse than offering one that turns out to have nothing behind it.
+    private func refreshClipboard() {
+        let board = UIPasteboard.general
+        if board.hasURLs {
+            clipboardHasContent = true
+            return
+        }
+        guard board.hasStrings else {
+            clipboardHasContent = false
+            return
+        }
+        Task { @MainActor in
+            clipboardHasContent = await Self.pasteboardHasProbableLink()
+        }
     }
 
-    private func firstURL(in raw: String) -> URL? {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.hasPrefix("http"), let url = URL(string: trimmed), url.host != nil {
-            return url
+    /// `detectPatterns` is callback-shaped; this is the same call as an await.
+    ///
+    /// The handler is `@Sendable` on purpose. UIKit delivers it on its own
+    /// pasteboard queue, and a closure written inside a `@MainActor` member
+    /// otherwise inherits that isolation and traps the moment it runs.
+    @MainActor
+    private static func pasteboardHasProbableLink() async -> Bool {
+        let board = UIPasteboard.general
+        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            board.detectPatterns(for: [.probableWebURL]) { @Sendable result in
+                continuation.resume(returning: (try? result.get())?.contains(.probableWebURL) ?? true)
+            }
         }
-        let withScheme = trimmed.contains("://") ? trimmed : "https://\(trimmed)"
-        if let url = URL(string: withScheme), url.host?.contains(".") == true {
-            return url
-        }
-        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
-        else { return nil }
-        let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
-        return detector.firstMatch(in: trimmed, range: range)?.url
+    }
+
+    private func applyPasted(_ link: PastedLink?) {
+        guard let url = link?.url else { return }
+        urlText = url.absoluteString
     }
 
     // MARK: Step 2 — reading
@@ -226,16 +312,134 @@ struct AddSheet: View {
     private var detailsStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                previewRow
-                sortedForYou
-                journeyAttach
-                titleField
-                noteSection
-                saveButton
+                if let duplicate {
+                    duplicateCard(duplicate)
+                } else {
+                    previewRow
+                    sortedForYou
+                    journeyAttach
+                    titleField
+                    noteSection
+                    saveButton
+                }
             }
             .padding(18)
             .padding(.bottom, 30)
         }
+    }
+
+    // MARK: Already saved
+
+    /// The bork this link would land on, if it is already in the library.
+    ///
+    /// `allBookmarks` is already filtered to `deletedAt == nil`, so a bork you
+    /// deleted and are saving again reads as new — which is the right answer;
+    /// `DuplicateSave.match` checks the tombstone again anyway, because that
+    /// rule is the one worth being sure of.
+    private var duplicate: Bookmark? {
+        guard !saveAnyway, let url = parsedURL else { return nil }
+        return DuplicateSave.match(
+            stableID: Bookmark.stableID(for: url),
+            in: allBookmarks,
+            id: \.id,
+            deletedAt: \.deletedAt
+        )
+    }
+
+    /// Save over the bork that is already there.
+    ///
+    /// Their filing wins. `Store.save` takes any topic the draft carries, and
+    /// the draft carries the categoriser's guess for this link — so without
+    /// this, "save again" would quietly re-file a bork the user had already
+    /// put somewhere on purpose, which is a worse version of the bug this
+    /// whole card exists for. Everything else — a title that reads now, a
+    /// cover, a duration, new tags — enriches exactly as it always has.
+    private func saveAgain(over bork: Bookmark) {
+        if let existing = bork.categoryID {
+            categoryID = existing
+            subcategory = bork.subcategory
+        }
+        saveAnyway = true
+        save()
+    }
+
+    /// Not a warning and not a wall — a fact and two ways forward.
+    ///
+    /// Re-saving used to merge into the existing bork with nothing on screen to
+    /// say it had, so the two things someone actually wants here are the two
+    /// buttons: go and look at the one you have (and change where it's filed,
+    /// which is what people usually meant), or go ahead and save over it.
+    /// "Bork it" is gone in this state rather than disabled: a live button that
+    /// does something you weren't told about is what caused this.
+    @ViewBuilder
+    private func duplicateCard(_ bork: Bookmark) -> some View {
+        let topic = Taxonomy.category(id: bork.categoryID)
+        let palette = topic?.palette ?? NeutralPalette.value
+        let days = Calendar.current.dateComponents(
+            [.day],
+            from: Calendar.current.startOfDay(for: bork.savedAt),
+            to: Calendar.current.startOfDay(for: .now)
+        ).day ?? 0
+        let when = DuplicateSave.savedPhrase(daysAgo: days) ?? "saved \(RelativeDate.calendar(bork.savedAt))"
+        let filed = DuplicateSave.filedPhrase(topic: topic?.name, subtopic: bork.subcategory)
+
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Already in your library")
+                    .font(Typo.display(16, .semibold))
+                    .foregroundStyle(Tokens.ink)
+                Text("\(filed) · \(when)")
+                    .font(Typo.ui(12.5, .medium))
+                    .foregroundStyle(Tokens.inkMeta)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(alignment: .top, spacing: 12) {
+                CoverImage(url: bork.imageURL, palette: palette)
+                    .frame(width: 64, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(bork.title.isEmpty ? "Untitled" : bork.title)
+                        .font(Typo.display(14, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+                    Text(bork.author ?? bork.url?.host ?? bork.platform.name)
+                        .font(Typo.ui(11.5, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+            }
+
+            VStack(spacing: 9) {
+                Button { openingDuplicate = bork } label: {
+                    Text("Open it")
+                        .font(Typo.ui(15, .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                Button { saveAgain(over: bork) } label: {
+                    Text("Save again anyway")
+                        .font(Typo.ui(14, .semibold))
+                        .foregroundStyle(Tokens.inkSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous)
+                                .stroke(Tokens.hairline, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(15)
+        .cardSurface(radius: 18)
     }
 
     /// The actual card you're about to save — thumbnail, real title, author.

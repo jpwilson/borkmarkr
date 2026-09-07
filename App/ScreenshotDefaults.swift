@@ -43,6 +43,43 @@ enum ScreenshotDefaults {
     /// share card both live there.
     static var openTopic: String? { value(for: "-topic") }
 
+    /// `-add` opens the Add sheet on launch; `-add <url>` opens it with that
+    /// link already in the field, so the capture lands on the details step.
+    ///
+    /// Same reason as `-topic`: the Add sheet is behind a tap on the dock's +,
+    /// and its three most interesting states — the paste card, the paste card
+    /// absent, and "Already in your library" — differ only by what is on the
+    /// pasteboard and in the store. None of them is reachable from a launch
+    /// argument otherwise, and all three have to be re-photographed whenever
+    /// the sheet changes.
+    static var openAdd: Bool {
+        #if DEBUG
+        return CommandLine.arguments.contains("-add")
+        #else
+        return false
+        #endif
+    }
+
+    static var addURL: URL? { value(for: "-add").flatMap { URL(string: $0) } }
+
+    /// `-picker "runn"` opens the topic picker over the Add sheet with that
+    /// already typed, which is the only state where the picker's ordering —
+    /// the thing being photographed — exists at all.
+    static var pickerQuery: String? { value(for: "-picker") }
+
+    /// `-myTopics "Running"` seeds those as custom topics (comma-separated).
+    ///
+    /// The seed makes one, "Trail running". The picker's ordering rule is
+    /// about a topic whose *name* is what you typed beating a built-in that
+    /// only holds a matching subtopic, so photographing it needs a topic named
+    /// exactly that, and which one it is depends on the shot.
+    static var seedCustomTopics: [String] {
+        (value(for: "-myTopics") ?? "")
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
     /// `-dumpShareCard <path>` writes the rendered share card to a PNG.
     ///
     /// The card is an `ImageRenderer` product, not a screen: nothing exists

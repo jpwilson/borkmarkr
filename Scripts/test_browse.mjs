@@ -22,9 +22,25 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => fs.readFileSync(p, "utf8");
 
-const ctx = vm.createContext({ console, URL });
+const ctx = vm.createContext({ console, URL, TextEncoder });
 vm.runInContext(read(path.join(ROOT, "docs", "browse.js")), ctx, { filename: "browse.js" });
 const { BrowseSort, TopicShare } = vm.runInContext("({ BrowseSort, TopicShare })", ctx);
+
+/* makeTopicID lives inline in index.html, above the helper block the other
+   .mjs tests borrow, so it is sliced out on its own. If the block moves this
+   throws rather than silently testing nothing. */
+function topicIDHelpers() {
+  const html = read(path.join(ROOT, "docs", "index.html"));
+  const from = html.indexOf('const CUSTOM_PREFIX = "custom.";');
+  const to = html.indexOf("/* CustomTopic.nextHue walks");
+  if (from < 0 || to < 0 || to < from) {
+    throw new Error("docs/index.html: couldn't find the topic-id block "
+      + "(const CUSTOM_PREFIX … CustomTopic.nextHue). If it moved, update this test.");
+  }
+  return html.slice(from, to);
+}
+vm.runInContext(topicIDHelpers(), ctx, { filename: "index.html topic ids" });
+const { makeTopicID, ART_ID } = vm.runInContext("({ makeTopicID, ART_ID })", ctx);
 
 /* ── Tiny runner ── */
 let failures = 0, checks = 0;
@@ -282,6 +298,39 @@ group("The image card's titles", () => {
     "and a caption is cut shorter for the card than for the message");
   ok([...TopicShare.cardTitles([item(caption, "https://example.com/a", -1)])[0]].length <= 53,
     "to about 52 characters");
+});
+
+group("Topic ids match the phone", () => {
+  /* Duplicated verbatim from Scripts/test_topic_art.swift. A topic invented
+     here and the same topic invented on the phone have to land on one id, or
+     the two disagree about which topic a bork is even in — and the web derives
+     everything it knows about a custom topic from that id. If you change one
+     table, change both. */
+  const ids = [
+    ["Juice", "custom.juice"],
+    ["Looksmaxxing", "custom.looksmaxxing"],
+    ["Trail running", "custom.trail-running"],
+    ["Zone 2", "custom.zone-2"],
+    ["Hair & grooming", "custom.hair-grooming"],
+    ["  spaced  ", "custom.spaced"],
+    ["Café culture", "custom.cafe-culture"],
+    ["Cafe culture", "custom.cafe-culture"],
+    ["Über alles", "custom.uber-alles"],
+    ["Crème brûlée", "custom.creme-brulee"],
+    ["Naïve", "custom.naive"],
+    ["ÅNGSTRÖM", "custom.angstrom"],
+    ["!!!", "custom.topic"],
+    ["北京", "custom.topic-36943181"],
+    ["Готовка", "custom.topic-9888f5f3"],
+    ["Ελλάδα", "custom.topic-f49bab5a"],
+  ];
+  for (const [name, id] of ids) {
+    eq(makeTopicID(name), id, `makeTopicID(${JSON.stringify(name)})`);
+    ok(ART_ID.test(id), `${id} can be sent for art`);
+  }
+  eq(makeTopicID("Café culture"), makeTopicID("Cafe culture"), "the accent is not a second topic");
+  ok(makeTopicID("北京") !== makeTopicID("Готовка"),
+    "two names with no Latin in them are still two topics");
 });
 
 console.log(`\n${checks - failures}/${checks} checks passed`);

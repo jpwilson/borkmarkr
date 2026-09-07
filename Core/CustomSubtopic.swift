@@ -77,13 +77,13 @@ final class CustomTopic {
 
     var imageURL: URL? { imageURLString.flatMap(URL.init(string:)) }
 
-    static func makeID(from name: String) -> String {
-        let slug = name.lowercased().map { $0.isLetter || $0.isNumber ? String($0) : "-" }.joined()
-        let collapsed = slug.replacingOccurrences(of: "-{2,}", with: "-", options: .regularExpression)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-        let base = collapsed.isEmpty ? "topic" : collapsed
-        return "custom.\(base)"
-    }
+    /// The slug lives in `TopicArt.customID` — next to `isCustomID`, the check
+    /// it has to satisfy, and next to the test that holds the two together.
+    /// This built the slug itself and kept any Unicode letter, which is how
+    /// "Café culture" ended up with an id neither the art function nor the web
+    /// tab would accept. `Store.foldCustomTopicIDs` re-keys stores that already
+    /// hold one.
+    static func makeID(from name: String) -> String { TopicArt.customID(from: name) }
 
     /// First unused hue, walking in steps of 7° so a new topic doesn't land
     /// on top of a built-in neighbour.
