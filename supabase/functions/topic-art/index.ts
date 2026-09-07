@@ -23,7 +23,7 @@
 // into your own library.
 
 import { consumeQuota, json } from "../_shared/openrouter.ts";
-import { clayImage } from "../_shared/clay.ts";
+import { clayImage, judgeSubject } from "../_shared/clay.ts";
 
 const DAILY_LIMIT = 200;   // shared with categorise/name-quest, per user per UTC day
 const BUCKET = "topic-art";
@@ -82,6 +82,25 @@ class Backend {
 type Claim = { outcome: "done" | "claimed" | "busy" | "failed"; public_url: string | null };
 
 addEventListener("unhandledrejection", (e) => { console.error("unhandled", e.reason); e.preventDefault(); });
+
+/** Up to a dozen titles the caller filed under this topic, newest first.
+ *  Read with the caller's own token so row-level security is the gate. */
+async function recentTitles(base: string, anonKey: string, authorization: string, topicID: string): Promise<string[]> {
+  try {
+    const q = new URLSearchParams({
+      select: "title", category_id: `eq.${topicID}`, deleted_at: "is.null",
+      order: "saved_at.desc", limit: "12",
+    });
+    const r = await fetch(`${base}/rest/v1/bookmarks?${q}`, {
+      headers: { apikey: anonKey, Authorization: authorization },
+    });
+    if (!r.ok) return [];
+    const rows = await r.json() as { title?: unknown }[];
+    return rows.map((x) => typeof x.title === "string" ? x.title.trim() : "").filter((t) => t.length > 0);
+  } catch {
+    return [];
+  }
+}
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return json({}, 200);
@@ -148,7 +167,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (!await consumeQuota(authorization, DAILY_LIMIT)) return release("quota");
 
-  const drawn = await clayImage(name);
+  // What is this topic, really? Read a few of the titles filed under it — as
+  // the caller, so RLS decides what we may see — and let the judge pick the
+  // object. A topic with no borks yet is judged on its name alone.
+  const titles = await recentTitles(base, anonKey, authorization, topicID);
+  const subject = await judgeSubject(name, titles) ?? name;
+  console.log(JSON.stringify({ topic: topicID, titles: titles.length, subject }));
+
+  const drawn = await clayImage(name, subject);
   if ("error" in drawn) {
     // `not-configured` means OPENROUTER_API_KEY was never set. Say so plainly
     // in the log — this is the one failure a deploy fixes rather than a retry.
