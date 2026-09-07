@@ -54,6 +54,27 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
   echo "  $name.png"
 }
 
+# ── DEBUG-only launch arguments (ScreenshotDefaults / DebugSeed) ──────────
+#
+#   -query "protein"      pre-fills the search field at the top of Browse
+#   -scopes "topics,tags" pre-selects the scope chips under it
+#   -topic fitness        opens Browse straight onto a topic page
+#   -dumpShareCard PATH   writes the rendered topic share card to a PNG
+#
+# and, for the signed-out save limit (Core/SaveLimit.swift), whose surfaces
+# appear only at particular library sizes:
+#
+#   -borks 15             seed exactly 15 live borks — the Library card at
+#                         "5 saves left before you'll need a free account."
+#   -borks 20             the limit: the card asks, and + raises the wall
+#   -waiting 3            add 3 borks flagged as having arrived over the limit
+#                         (needs -borks; produces the greyed cards + banner)
+#   -signedOut            ignore any real session in the Keychain
+#   -signedIn             fake a session, to confirm none of the limit shows
+#
+# None of these are parsed outside DEBUG, so no launch argument can put a
+# shipped build into one of these states.
+
 echo "Capturing to Marketing/captures:"
 shoot library library
 shoot browse  browse

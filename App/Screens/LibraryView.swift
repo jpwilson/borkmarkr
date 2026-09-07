@@ -7,6 +7,10 @@ struct LibraryView: View {
     let onAdd: () -> Void
     var onSearch: () -> Void = {}
     var onSeeJourneys: () -> Void = {}
+    /// Raise the save-limit wall. Owned by `RootView` because the wall is also
+    /// the answer to the + button and to a share that landed over the limit,
+    /// and one sheet with one owner is the only way it never double-presents.
+    var onShowWall: (SaveLimitReason) -> Void = { _ in }
     var account: Account? = nil
     /// False while the Add sheet or the first-run tour is up. A milestone
     /// nudge waits for a clear screen rather than stacking on top of one.
@@ -39,6 +43,19 @@ struct LibraryView: View {
     @State private var authMode: AuthSheet.Mode = .signUp
     @StateObject private var previews = PreviewFetcher()
 
+    /// Everything that counts. A waiting bork is saved and on screen, but it
+    /// is not part of the library yet — not in the stats line, not in
+    /// Highlights, not in a side quest's suggestions. See `SaveLimit`.
+    private var live: [Bookmark] {
+        bookmarks.filter { !$0.isWaiting }
+    }
+
+    private var waiting: [Bookmark] {
+        bookmarks.filter(\.isWaiting)
+    }
+
+    /// The feed, which shows waiting borks — greyed, pilled, and deletable.
+    /// Hiding them would turn "your share was saved" into a disappearing act.
     private var visible: [Bookmark] {
         guard let sourceFilter else { return bookmarks }
         return bookmarks.filter { $0.platform == sourceFilter }
@@ -50,9 +67,9 @@ struct LibraryView: View {
     }
 
     private var statsLine: String {
-        let borks = bookmarks.count
-        let apps = Set(bookmarks.map(\.platform)).count
-        let topics = Set(bookmarks.compactMap(\.categoryID)).count
+        let borks = live.count
+        let apps = Set(live.map(\.platform)).count
+        let topics = Set(live.compactMap(\.categoryID)).count
         return "\(borks) \(Copy.borks(borks)) · \(apps) app\(apps == 1 ? "" : "s") · \(topics) topic\(topics == 1 ? "" : "s")"
     }
 
@@ -60,8 +77,21 @@ struct LibraryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
+                if !waiting.isEmpty {
+                    WaitingBanner(count: waiting.count) { onShowWall(.waiting) }
+                        .padding(.horizontal, 18)
+                        .transition(.opacity)
+                }
                 if showingBackupBanner {
                     SignInNudgeBanner(
+                        headline: SaveLimit.bannerHeadline(
+                            liveCount: live.count,
+                            signedIn: account?.isSignedIn ?? false
+                        ) ?? "Only on this phone.",
+                        dismissable: SaveLimit.bannerIsDismissable(
+                            liveCount: live.count,
+                            signedIn: account?.isSignedIn ?? false
+                        ),
                         onSignUp: { present(.signUp) },
                         onDismiss: {
                             SignInNudge.dismissBanner()
@@ -75,7 +105,7 @@ struct LibraryView: View {
                 insightsEntry
                 JourneyRail(
                     journeys: journeys,
-                    bookmarks: bookmarks,
+                    bookmarks: live,
                     onOpen: { openJourney = $0 },
                     onSeeAll: onSeeJourneys,
                     onStart: { creatingJourney = true },
@@ -99,7 +129,7 @@ struct LibraryView: View {
             NewMissionSheet().environment(\.accent, accent)
         }
         .sheet(isPresented: $showingInsights) {
-            InsightsSheet(bookmarks: bookmarks, account: account) { title in
+            InsightsSheet(bookmarks: live, account: account) { title in
                 let quest = Mission(title: title)
                 context.insert(quest)
                 try? context.save()
@@ -110,8 +140,18 @@ struct LibraryView: View {
         .sheet(item: $nudge) { milestone in
             SignInNudgeSheet(
                 milestone: milestone.id,
-                count: bookmarks.count,
-                onSignUp: { nudge = nil; present(.signUp, afterSheet: true) },
+                count: live.count,
+                signedIn: account?.isSignedIn ?? false,
+                // Signed in, the primary button is "Back up now" and the only
+                // thing missing is a sync that has never run — so run one.
+                onSignUp: {
+                    nudge = nil
+                    if account?.isSignedIn == true {
+                        Task { await account?.sync(context: context) }
+                    } else {
+                        present(.signUp, afterSheet: true)
+                    }
+                },
                 onSignIn: { nudge = nil; present(.signIn, afterSheet: true) },
                 onNotNow: {
                     SignInNudge.recordNotNow()
@@ -208,7 +248,7 @@ struct LibraryView: View {
 
     private var insightsEntry: some View {
         Button { showingInsights = true } label: {
-            InsightsEntry(bookmarks: bookmarks)
+            InsightsEntry(bookmarks: live)
         }
         .buttonStyle(PressableStyle())
         .padding(.horizontal, 18)
@@ -334,11 +374,19 @@ struct LibraryView: View {
             showingBackupBanner = false
             return
         }
-        let borks = bookmarks.count
+        let borks = live.count
         let signedIn = account.isSignedIn
+
+        // Deletes make room, and signing in makes all of it. Cheap and a no-op
+        // when nothing is waiting, so it runs on every reading rather than on
+        // a guess about which change could have freed a slot.
+        Store.admitWaiting(in: context, signedIn: signedIn)
+
         showingBackupBanner = SignInNudge.showsBanner(signedIn: signedIn, borks: borks)
 
-        guard !signedIn, let milestone = SignInNudge.dueMilestone(borks: borks) else {
+        guard let milestone = SignInNudge.dueMilestone(
+            borks: borks, signedIn: signedIn, hasSynced: account.lastSynced != nil
+        ) else {
             SignInNudge.recordSeen(borks)
             return
         }

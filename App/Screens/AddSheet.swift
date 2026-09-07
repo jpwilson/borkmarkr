@@ -13,6 +13,10 @@ import StoreKit
 struct AddSheet: View {
     var initialURL: URL?
     let onSaved: (String) -> Void
+    /// The signed-out limit was reached before this save could land. Hands the
+    /// link back so the wall can raise and, after sign-up, the sheet can reopen
+    /// with it already pasted. See `SaveLimit`.
+    var onLimitReached: (URL) -> Void = { _ in }
     /// Only used to reach AI categorisation, which needs a signed-in session.
     /// Optional so the sheet still works in previews and when signed out.
     var account: Account?
@@ -56,6 +60,13 @@ struct AddSheet: View {
     @State private var selectedJourneyIDs: Set<String> = []
     @State private var showingNewJourney = false
     @FocusState private var urlFocused: Bool
+
+    /// Borks that count against the signed-out limit. `allBookmarks` also
+    /// feeds tag suggestions, where a waiting bork's tags are perfectly good
+    /// history — so the filter lives here rather than in the query.
+    private var liveCount: Int {
+        allBookmarks.count { !$0.isWaiting }
+    }
 
     private var parsedURL: URL? {
         let trimmed = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -626,6 +637,23 @@ struct AddSheet: View {
 
     private func save() {
         guard let url = parsedURL else { return }
+
+        // The button still works — it just does something else. Disabling it
+        // would leave someone tapping a dead control with no idea why, which
+        // is the one outcome worse than a sheet. Nothing typed is lost: the
+        // URL goes back to `RootView`, and after sign-up the sheet reopens
+        // with it already in the field.
+        //
+        // This is the last line of defence rather than the usual path — the +
+        // button raises the wall before the sheet ever opens. It fires when
+        // the limit is reached *while* this sheet is up: a share draining in
+        // the background, or a second device syncing.
+        if SaveLimit.shouldWall(liveCount: liveCount, signedIn: account?.isSignedIn ?? false) {
+            onLimitReached(url)
+            dismiss()
+            return
+        }
+
         let finalTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? Categorizer.fallbackTitle(for: url)
             : title

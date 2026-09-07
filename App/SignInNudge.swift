@@ -37,6 +37,20 @@ import SwiftUI
 ///   than as pestering, and short enough to still catch someone before they
 ///   drop their phone in a river.
 /// - **Gone the moment you sign in**, on every surface, permanently.
+///
+/// ## 1.1: the same card, now counting
+///
+/// `SaveLimit` puts a ceiling on a signed-out library, so from fifteen borks
+/// this card stops describing where the library lives and starts saying how
+/// many saves are left. It is the *same* card in the same place — a second
+/// banner would be two things nagging where one was enough — and the only rule
+/// that changes is the ✕: once the countdown is running the card is the only
+/// warning before a save stops working, so it stays put. Below fifteen the ✕
+/// buys fourteen days exactly as it always did.
+///
+/// The milestone sheet narrows to match. Twenty-five and a hundred borks are
+/// now unreachable signed out, so they can only fire for someone who *has* an
+/// account and has never once synced — see `dueMilestone`.
 @MainActor
 enum SignInNudge {
 
@@ -45,7 +59,8 @@ enum SignInNudge {
     static let bannerFloor = 3
 
     /// The three sheet moments. Each is a point where the library stops being
-    /// an experiment.
+    /// an experiment. Which of them is eligible now depends on whether there
+    /// is an account — see `dueMilestone`.
     static let milestones = [5, 25, 100]
 
     /// What any dismissal buys.
@@ -58,8 +73,13 @@ enum SignInNudge {
 
     // MARK: - What to show
 
+    /// `borks` is the **live** count — waiting borks are not yet part of the
+    /// library the limit is about, and are announced by their own banner.
     static func showsBanner(signedIn: Bool, borks: Int) -> Bool {
         guard !signedIn, borks >= bannerFloor else { return false }
+        // Past the counter floor the card is a warning, not a remark, and a ✕
+        // pressed three weeks ago is not consent to lose the next save.
+        if SaveLimit.showsCounter(liveCount: borks, signedIn: signedIn) { return true }
         return quietIsOver(bannerDismissedKey)
     }
 
@@ -77,13 +97,32 @@ enum SignInNudge {
     /// `recordSeen` once it knows nothing is due — which is what lets a
     /// milestone crossed behind another sheet stay due for the next Library
     /// appearance instead of being silently spent.
-    static func dueMilestone(borks: Int) -> Int? {
+    ///
+    /// 1.1 splits the three in half, because the save limit made the old set
+    /// incoherent:
+    ///
+    /// - **5, signed out.** Unchanged. The one moment where "this only lives
+    ///   on this phone" is news and the library is worth something.
+    /// - **25 and 100, signed in only, and only if the account has never
+    ///   synced.** Twenty-five borks can no longer be reached without an
+    ///   account, so as a *sign-up* prompt they are dead code. They survive as
+    ///   the one thing still worth saying to someone who signed up and whose
+    ///   backup has never actually run — a signed-in library that is not backed
+    ///   up is the failure the account was meant to prevent. When the backup is
+    ///   working, which is the normal case, both are skipped entirely.
+    static func dueMilestone(borks: Int, signedIn: Bool, hasSynced: Bool) -> Int? {
         // No watermark yet means this policy has never looked at this library.
         // Whatever it has already passed is history, not an achievement.
         guard let watermark = seenCount, quietIsOver(lastSheetKey) else { return nil }
+        let eligible = signedIn ? (hasSynced ? [] : backupMilestones) : signUpMilestones
         let shown = shownMilestones
-        return milestones.last { $0 <= borks && $0 > watermark && !shown.contains($0) }
+        return eligible.last { $0 <= borks && $0 > watermark && !shown.contains($0) }
     }
+
+    /// The one signed-out moment.
+    static let signUpMilestones = [5]
+    /// Reachable only with an account, so only ever a backup reminder.
+    static let backupMilestones = [25, 100]
 
     // MARK: - Recording
 
@@ -150,6 +189,11 @@ struct SignInNudgeBanner: View {
     /// you are looking at it is "these are worth keeping", asks for the backup
     /// directly. Same component, same policy, one word of context.
     var headline: String = "Only on this phone."
+    /// False once `SaveLimit` has the card counting down. The ✕ is an honest
+    /// answer to "your library is only on this phone"; it is not an answer to
+    /// "your next save will not work", so past the counter floor there isn't
+    /// one to press.
+    var dismissable: Bool = true
     let onSignUp: () -> Void
     let onDismiss: () -> Void
 
@@ -188,15 +232,17 @@ struct SignInNudgeBanner: View {
 
             Spacer(minLength: 0)
 
-            Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Tokens.inkMeta)
-                    .frame(width: 30, height: 30)
-                    .contentShape(Rectangle())
+            if dismissable {
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Tokens.inkMeta)
+                        .frame(width: 30, height: 30)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Hide this")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Hide this")
         }
         .padding(12)
         .cardSurface(radius: 16)
@@ -210,6 +256,10 @@ struct SignInNudgeSheet: View {
     /// or saves that queued while the app was closed — and "5 borks" over a
     /// library of 18 reads as a bug.
     let count: Int
+    /// Signed in, this is not a sign-up prompt: the account exists and the
+    /// backup has simply never run. Same sheet, one primary button, honest
+    /// about which of the two problems it is.
+    var signedIn: Bool = false
     let onSignUp: () -> Void
     let onSignIn: () -> Void
     let onNotNow: () -> Void
@@ -218,16 +268,155 @@ struct SignInNudgeSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("\(Copy.countedBorks(max(count, milestone))), all on this phone")
+            Text(signedIn
+                 ? "\(Copy.countedBorks(max(count, milestone))), not backed up yet"
+                 : "\(Copy.countedBorks(max(count, milestone))), all on this phone")
                 .font(Typo.display(24, .heavy))
                 .tracking(-0.5)
                 .foregroundStyle(Tokens.ink)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Sign up and they're backed up, and on the web at bookmarker.lol. Nothing else changes.")
+            Text(signedIn
+                 ? "You have an account, but this library has never reached it. Back up now and it's safe, and on the web at bookmarker.lol."
+                 : "Sign up and they're backed up, and on the web at bookmarker.lol. Nothing else changes.")
                 .font(Typo.ui(14))
                 .foregroundStyle(Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 10) {
+                Button(action: onSignUp) {
+                    Text(signedIn ? "Back up now" : "Sign up")
+                        .font(Typo.ui(15, .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(accent.base, in: Capsule())
+                }
+                .buttonStyle(PressableStyle())
+
+                if !signedIn {
+                    Button(action: onSignIn) {
+                        Text("Sign in")
+                            .font(Typo.ui(15, .bold))
+                            .foregroundStyle(accent.deep)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(accent.tint, in: Capsule())
+                            .overlay(Capsule().stroke(accent.base.opacity(0.35), lineWidth: 1))
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+            }
+
+            Button(action: onNotNow) {
+                Text("Not now")
+                    .font(Typo.ui(13.5, .semibold))
+                    .foregroundStyle(Tokens.inkSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: Tokens.minTapTarget)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Tokens.paper)
+        // Small on purpose: title, one line, three ways out. The second
+        // detent is the escape hatch for large Dynamic Type sizes, which the
+        // fixed height would otherwise clip.
+        .presentationDetents([.height(272), .medium])
+        .presentationCornerRadius(Tokens.sheetRadius)
+    }
+}
+
+// MARK: - The save limit wall
+
+/// Why a save is being asked to wait, and therefore why this sheet is up.
+///
+/// `sheet(item:)` wants an `Identifiable`, and the reason is the identity —
+/// arriving here from the + button and arriving here from a share that landed
+/// over the limit are different moments, even though the sheet is the same.
+struct SaveLimitReason: Identifiable, Equatable {
+    enum Kind: String {
+        /// The + button, before the Add sheet ever opens.
+        case add
+        /// The Save button, when the limit was reached while the sheet was up.
+        case addSheet
+        /// Borks are waiting: a share landed over the limit, or the Library's
+        /// waiting banner was tapped.
+        case waiting
+    }
+    let kind: Kind
+    var id: String { kind.rawValue }
+
+    static let add = SaveLimitReason(kind: .add)
+    static let addSheet = SaveLimitReason(kind: .addSheet)
+    static let waiting = SaveLimitReason(kind: .waiting)
+}
+
+/// The wall. Shown when a save has nowhere to go, and never otherwise.
+///
+/// **This is the answer to an action, never a greeting.** It cannot appear on
+/// launch, because nothing is walled until either the person tries to save or
+/// a share has already landed over the limit and is sitting greyed in the
+/// Library waiting to be explained. A modal that opens the app is the exact
+/// behaviour `SignInNudge` exists to refuse, and the limit does not get to
+/// change that.
+///
+/// Three ways out, in the order the design asks for them, and the third is a
+/// real one: **Make room instead** takes the ask away entirely and points at
+/// the delete that is already in the app. Someone who does not want an account
+/// should not have to want one.
+///
+/// The privacy paragraph is not decoration. "Sign up" is being asked of
+/// someone who chose not to, and the honest objection is *what happens to my
+/// borks*. It is a promise the code keeps: rows are owner-scoped by RLS, there
+/// is no sharing feature to leak them through, and nothing is sold — see
+/// DECISIONS.md.
+struct SaveLimitWall: View {
+    /// The live library, so the headline counts the real thing.
+    let liveCount: Int
+    let onSignUp: () -> Void
+    let onSignIn: () -> Void
+    let onMakeRoom: () -> Void
+
+    @Environment(\.accent) private var accent
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(SaveLimit.wallHeadline(liveCount: liveCount))
+                .font(Typo.display(24, .heavy))
+                .tracking(-0.5)
+                .foregroundStyle(Tokens.ink)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(SaveLimit.wallBody)
+                .font(Typo.ui(14))
+                .foregroundStyle(Tokens.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Its own paragraph, on its own ground. Buried in the body it
+            // reads as a disclaimer; given a card it reads as the promise it
+            // is, and it is the sentence that answers the actual objection.
+            VStack(alignment: .leading, spacing: 2) {
+                Text(SaveLimit.privacyLead)
+                    .font(Typo.ui(13.5, .bold))
+                    .foregroundStyle(Tokens.ink)
+                Text(SaveLimit.privacyBody)
+                    .font(Typo.ui(13))
+                    .foregroundStyle(Tokens.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(13)
+            .background(accent.tint.opacity(0.55), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(accent.base.opacity(0.25), lineWidth: 1)
+            )
+            .accessibilityElement(children: .combine)
 
             Spacer(minLength: 0)
 
@@ -254,8 +443,8 @@ struct SignInNudgeSheet: View {
                 .buttonStyle(PressableStyle())
             }
 
-            Button(action: onNotNow) {
-                Text("Not now")
+            Button(action: onMakeRoom) {
+                Text("Make room instead")
                     .font(Typo.ui(13.5, .semibold))
                     .foregroundStyle(Tokens.inkSecondary)
                     .frame(maxWidth: .infinity)
@@ -267,10 +456,49 @@ struct SignInNudgeSheet: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Tokens.paper)
-        // Small on purpose: title, one line, three ways out. The second
-        // detent is the escape hatch for large Dynamic Type sizes, which the
-        // fixed height would otherwise clip.
-        .presentationDetents([.height(272), .medium])
+        // Taller than the milestone sheet by exactly the privacy card, and
+        // measured rather than guessed — a detent with slack in it reads as a
+        // sheet that failed to load its own content. `.large` is the Dynamic
+        // Type escape hatch, as on the milestone sheet.
+        .presentationDetents([.height(330), .large])
         .presentationCornerRadius(Tokens.sheetRadius)
+    }
+}
+
+/// "3 borks waiting — sign up to keep them." Sits at the very top of the
+/// Library, above everything, because it is about borks the user has already
+/// sent and cannot yet see working.
+struct WaitingBanner: View {
+    let count: Int
+    let onTap: () -> Void
+
+    @Environment(\.accent) private var accent
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 11) {
+                Image(systemName: "clock.badge.exclamationmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(accent.deep)
+                    .frame(width: 30, height: 30)
+                    .background(accent.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .accessibilityHidden(true)
+
+                Text(SaveLimit.waitingBanner(count: count) ?? "")
+                    .font(Typo.ui(13, .bold))
+                    .foregroundStyle(Tokens.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Tokens.inkMeta)
+            }
+            .padding(12)
+            .cardSurface(radius: 16)
+        }
+        .buttonStyle(PressableStyle())
     }
 }

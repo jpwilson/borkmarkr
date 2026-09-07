@@ -50,6 +50,48 @@ enum ScreenshotDefaults {
     /// share sheet. This writes exactly the image that gets shared.
     static var shareCardDumpPath: String? { value(for: "-dumpShareCard") }
 
+    // MARK: - Save-limit states
+
+    /// `-borks 18` seeds exactly that many live borks instead of the full set.
+    ///
+    /// The save-limit surfaces are the first thing in the app whose appearance
+    /// depends on *how many* borks there are — the countdown at 15, the wall at
+    /// 20 — and the seed's fixed ~38 is past both. Without this there is no
+    /// reproducible way to photograph "5 saves left".
+    static var seedBorks: Int? { value(for: "-borks").flatMap(Int.init) }
+
+    /// `-waiting 3` adds that many borks flagged `waitingSince`, on top of
+    /// whatever `-borks` seeded. Waiting borks arrive from the Share Extension
+    /// over the limit, which a simulator cannot reproduce on demand.
+    static var seedWaiting: Int { value(for: "-waiting").flatMap(Int.init) ?? 0 }
+
+    /// `-signedOut` ignores any real session in the Keychain.
+    static var forceSignedOut: Bool {
+        #if DEBUG
+        return CommandLine.arguments.contains("-signedOut")
+        #else
+        return false
+        #endif
+    }
+
+    /// `-signedIn` fakes a session, so the signed-in screens — where none of
+    /// the limit exists — can be captured without an emailed code. The token
+    /// is nonsense and every network call it makes will fail, which is fine:
+    /// what is being photographed is what the UI does with `isSignedIn`.
+    static var fakeSession: Supabase.Session? {
+        #if DEBUG
+        guard CommandLine.arguments.contains("-signedIn") else { return nil }
+        return Supabase.Session(
+            accessToken: "debug", refreshToken: "debug",
+            expiresAt: .now.addingTimeInterval(3600),
+            userID: "00000000-0000-0000-0000-000000000000",
+            email: "you@bookmarker.lol"
+        )
+        #else
+        return nil
+        #endif
+    }
+
     private static func value(for flag: String) -> String? {
         #if DEBUG
         let arguments = CommandLine.arguments

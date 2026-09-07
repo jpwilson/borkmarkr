@@ -75,8 +75,10 @@ struct BrowseView: View {
         }
     }
 
+    // Waiting borks are saved and visible in the Library, but held out of
+    // every count, tile and result until admitted. See `SaveLimit`.
     @Query(
-        filter: #Predicate<Bookmark> { $0.deletedAt == nil },
+        filter: #Predicate<Bookmark> { $0.deletedAt == nil && $0.waitingSince == nil },
         sort: \Bookmark.savedAt, order: .reverse
     )
     private var bookmarks: [Bookmark]

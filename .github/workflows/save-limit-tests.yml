@@ -1,0 +1,37 @@
+name: Save limit tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/SaveLimit.swift"
+      - "Core/Copy.swift"
+      - "Core/Store.swift"
+      - "Core/Bookmark.swift"
+      - "App/SignInNudge.swift"
+      - "App/Screens/LibraryView.swift"
+      - "App/Screens/AddSheet.swift"
+      - "Scripts/test_save_limit.swift"
+      - ".github/workflows/save-limit-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/SaveLimit.swift"
+      - "Core/Copy.swift"
+      - "Core/Store.swift"
+      - "Core/Bookmark.swift"
+      - "App/SignInNudge.swift"
+      - "App/Screens/LibraryView.swift"
+      - "App/Screens/AddSheet.swift"
+      - "Scripts/test_save_limit.swift"
+      - ".github/workflows/save-limit-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run save limit checks
+        run: |
+          swiftc -parse-as-library -o /tmp/save-limit-tests \
+            Core/Copy.swift Core/SaveLimit.swift Scripts/test_save_limit.swift
+          /tmp/save-limit-tests
