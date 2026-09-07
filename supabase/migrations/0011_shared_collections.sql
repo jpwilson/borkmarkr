@@ -112,6 +112,10 @@ alter table public.collections drop constraint if exists collections_slug_format
 alter table public.collections add constraint collections_slug_format
   check (slug is null or slug ~ '^[a-z0-9]{8,16}$');
 
+-- Production drifted here too: `collection_items.added_at` (0001) does not
+-- exist on the live table. The read below orders by it, so re-assert it.
+alter table public.collection_items add column if not exists added_at timestamptz not null default now();
+
 -- Every collection gets a slug at birth, private or not.
 --
 -- `visibility` is what the slug *means*:
