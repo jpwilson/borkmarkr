@@ -280,6 +280,46 @@
   .source-row span { color: var(--meta); font-size: 13px; }
   .backlink { border: 0; background: none; color: var(--accent-text); font-weight: 700; padding: 0 0 12px; }
 
+  /* ── Topic page hero: the tile you tapped, opened out ──
+     The old header was a line of text, so every topic page looked like every
+     other one and none of them looked like the tile that got you there. Same
+     composition as the tile at full width — clay scene on top, name and count
+     on the topic's own tint underneath. The text sits below the art, never
+     over it: nothing then depends on the contrast of a scene we can't predict,
+     and a long name grows the band instead of overflowing a fixed image. */
+  .hero { position: relative; border: 1px solid var(--hairline); border-radius: 18px; overflow: hidden;
+    box-shadow: var(--shadow-card); margin: 0 0 14px; }
+  .hero-art { position: relative; height: 120px; display: grid; place-items: center;
+    font: 800 40px var(--font-head); opacity: .95; }
+  .hero-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+    mix-blend-mode: multiply; z-index: 1; }
+  .hero-art::before { content: ""; position: absolute; inset: 0;
+    background: radial-gradient(120% 95% at 18% 0%, rgba(255,255,255,.42), transparent 58%); }
+  .hero-text { display: block; padding: 12px 18px 14px; }
+  .hero-text b { display: block; font-family: var(--font-head); font-size: 26px; letter-spacing: -.023em;
+    line-height: 1.12; }
+  .hero-text span { display: block; margin-top: 3px; font-size: 12.5px; font-weight: 600; opacity: .78; }
+  /* Deliberately compact — two chip rows' worth — so the first bork stays
+     above the fold on the smallest phone we support. */
+  @media (max-width: 760px) { .hero-art { height: 96px; } .hero-text b { font-size: 22px; } }
+
+  /* ── Share a topic ── */
+  .hero-share { position: absolute; right: 12px; top: 12px; z-index: 2; display: inline-flex; align-items: center;
+    gap: 5px; height: 32px; padding: 0 13px; border: 0; border-radius: 999px; background: var(--ink);
+    color: #fff; font-size: 12.5px; font-weight: 600; }
+  .hero-share svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .share-menu { position: absolute; right: 12px; top: 50px; z-index: 3; min-width: 190px; padding: 6px;
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px;
+    box-shadow: 0 18px 44px -16px rgba(25,21,16,.34); }
+  .share-menu button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 11px; border: 0;
+    border-radius: 10px; background: none; text-align: left; font-size: 13.5px; font-weight: 600; }
+  .share-menu button:hover { background: var(--paper); }
+  .share-menu button[disabled] { color: var(--faint); cursor: default; }
+  .share-menu svg { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor;
+    stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; opacity: .72; }
+  @media (max-width: 760px) { .share-menu button { min-height: 44px; } }
+
   /* ── Search ── */
   #browse-search .h-row { margin-top: 0; }
   #search-mobile { margin-bottom: 14px; }
@@ -549,7 +589,7 @@
     .chips { position: sticky; top: calc(var(--banner-h) + var(--nav-h)); z-index: 20; background: var(--paper);
       margin: 0 -14px; padding: 8px 14px 12px; }
     #search-chips { position: static; margin: 0; padding: 2px 0 14px; }
-    #scope-chips, .rv .chips { position: static; margin: 0; padding: 2px 0 12px; }
+    #scope-chips, #sort-chips, .rv .chips { position: static; margin: 0; padding: 2px 0 12px; }
     /* Thumb-sized targets */
     .chip { min-height: 44px; }
     .topic-pill { height: 44px; }
@@ -745,6 +785,7 @@
           <button data-seg="sources" aria-pressed="false">Sources</button>
           <button data-seg="quests" aria-pressed="false">Side quests</button>
         </nav>
+        <nav class="chips" id="sort-chips" aria-label="Sort"></nav>
         <div id="seg-topics">
           <div class="topics-grid" id="topics-grid"></div>
           <p class="hint" id="topics-hint" hidden>Topics appear here once something is filed under them.</p>
@@ -754,7 +795,7 @@
       </div>
       <div id="browse-topic" hidden>
         <button class="backlink" data-act="browse-back">← All topics</button>
-        <h2 class="section-title" id="browse-topic-title"></h2>
+        <div class="hero" id="browse-hero"></div>
         <div class="grid" id="grid-topic"></div>
       </div>
       <div id="browse-search" hidden>
@@ -1087,6 +1128,11 @@
      Scripts/test_revisit.mjs can run it in node, and so a weekly digest can
      one day build the same sections without the page. -->
 <script src="/revisit.js"></script>
+<!-- Browse's ordering and the topic share message: ports of
+     Core/BrowseSort.swift and Core/TopicShare.swift. Their own file for the
+     same reason revisit.js is — Scripts/test_browse.mjs runs them in node, and
+     the labels and the message are a contract with the iPhone. -->
+<script src="/browse.js"></script>
 <script>
 "use strict";
 /* bookmarker web — same backend, same identity rules, same look as the iPhone
@@ -1522,8 +1568,10 @@ function resetLocalState() {
   searchScopes.clear(); revisitExpanded = false; browseAxis = "topics";
   tab = "library"; lastTab = null; loading = false; pulledOnce = false;
   justAdded.clear(); memo.clear(); addedSubs.clear(); addedTopics.clear();
+  shareMenuOpen = false;
+  if (shareCard) { URL.revokeObjectURL(shareCard.url); shareCard = null; }
   $("search-desktop").value = ""; $("search-mobile").value = "";
-  for (const id of ["home-sections", "platform-chips", "grid-library", "grid-topic", "grid-search", "topics-grid", "sources-list", "quests-list", "search-chips", "revisit-sections"])
+  for (const id of ["home-sections", "platform-chips", "grid-library", "grid-topic", "grid-search", "topics-grid", "sources-list", "quests-list", "sort-chips", "browse-hero", "search-chips", "revisit-sections"])
     $(id).innerHTML = "";
 }
 function rebootFromStorage() {
@@ -2254,14 +2302,17 @@ function renderBrowse(all) {
   $("browse-topic").hidden = panel !== "drill";
   $("browse-search").hidden = panel !== "search";
   if (memo.get("browse-panel") !== panel) { memo.set("browse-panel", panel); replay($(`browse-${panel === "drill" ? "topic" : panel}`), "view-enter"); }
+  if (panel !== "drill" && shareMenuOpen) shareMenuOpen = false;
   if (panel === "search") { renderSearch(all); return; }
   if (panel === "drill") {
     const t = topicFor(topicFilter);
     const rows = all.filter(r => r.category_id === topicFilter);
-    $("browse-topic-title").textContent = t ? `${t.name} · ${plural(rows.length, "bork")}` : "Topic";
+    renderTopicHero(t, rows);
+    if (t && !demoMode) buildShareCard(t, rows);
     renderGrid($("grid-topic"), rows, `browse|${topicFilter}|${demoMode}`);
     return;
   }
+  renderSortChips();
   // Topics · Sources · Side quests, and only the one on screen is built.
   for (const axis of BROWSE_AXES) {
     $(`seg-${axis}`).hidden = axis !== browseAxis;
@@ -2274,18 +2325,68 @@ function renderBrowse(all) {
   if (browseAxis === "quests") renderBrowseQuests();
 }
 
-/* Built-ins you actually use first, biggest first, exactly as before; then the
-   topics you made, A–Z (the phone's MergedTaxonomy.allTopics order); then the
-   tile that makes another one. A topic of yours with nothing filed under it
-   still shows, so naming one doesn't look like it did nothing. */
+/* ── The sort chips (docs/browse.js) ──────────────────────────────────────
+   Persisted per segment, because "what am I looking for" is a different
+   question on Topics than on Sources, and picking A–Z once to find a platform
+   should not permanently reorder the topic grid. */
+const sortFor = (axis) => BrowseSort.named(lsGet(BrowseSort.KEY[axis]));
+function renderSortChips() {
+  const current = sortFor(browseAxis);
+  const key = `sort|${browseAxis}|${current}`;
+  const el = $("sort-chips");
+  el.setAttribute("aria-label", `Sort ${browseAxis === "quests" ? "side quests" : browseAxis}`);
+  if (memo.get("sort-chips") === key) return;
+  memo.set("sort-chips", key);
+  el.innerHTML = BrowseSort.ALL.map(o =>
+    `<button class="chip${o === current ? " on" : ""}" data-sort="${o}" aria-pressed="${o === current}">${esc(BrowseSort.title(o))}</button>`).join("");
+}
+
+/* Built-ins you actually use, then the topics you made, A–Z — the phone's
+   MergedTaxonomy.allTopics — and that order is also the `rank` every sort
+   falls back to when it cannot decide, so equal rows never reshuffle. A topic
+   of yours with nothing filed under it still shows, so naming one doesn't look
+   like it did nothing; under "Most recent" it sits at the bottom until it has
+   a bork to be recent about. Then the tile that makes another one. */
 function browseTiles(all) {
-  const counts = new Map(topicCounts(all));
-  const built = [...counts].filter(([id]) => !topicFor(id).custom);
-  const ids = new Set([...counts.keys()].filter(isCustom));
-  for (const id of addedTopics.keys()) ids.add(id);
-  const mine = [...ids].map(id => [id, counts.get(id) || 0])
-    .sort((a, b) => topicFor(a[0]).name.localeCompare(topicFor(b[0]).name, undefined, { numeric: true, sensitivity: "base" }));
-  return built.concat(mine);
+  const counts = new Map(), newest = new Map();
+  for (const r of all) {
+    const id = r.category_id;
+    if (!id || !topicFor(id)) continue;
+    counts.set(id, (counts.get(id) || 0) + 1);
+    const at = Date.parse(r.saved_at) || 0;
+    if (at > (newest.get(id) || 0)) newest.set(id, at);
+  }
+  const mine = [...new Set([...[...counts.keys()].filter(isCustom), ...addedTopics.keys()])]
+    .map(topicFor).sort((a, b) => BrowseSort.byName(a.name, b.name));
+  const shown = TAXONOMY.filter(t => counts.has(t.id)).concat(mine);
+  const entries = shown.map((t, rank) => ({
+    id: t.id, name: t.name, count: counts.get(t.id) || 0, recent: newest.get(t.id) ?? null, rank,
+  }));
+  return BrowseSort.order(sortFor("topics"), entries).map(e => [e.id, e.count]);
+}
+/* Every source you have actually saved from, ranked in PLATFORM order. */
+function sourceEntries(all) {
+  const counts = new Map(), newest = new Map();
+  for (const r of all) {
+    counts.set(r.platform, (counts.get(r.platform) || 0) + 1);
+    const at = Date.parse(r.saved_at) || 0;
+    if (at > (newest.get(r.platform) || 0)) newest.set(r.platform, at);
+  }
+  return Object.keys(PLATFORM).filter(k => counts.get(k)).map((k, rank) => ({
+    id: k, name: PLATFORM[k].name, count: counts.get(k), recent: newest.get(k) ?? null, rank,
+  }));
+}
+/* "Most borks" counts only the borks that still exist — a quest whose links
+   you deleted should not keep its place. "Most recent" is the later of created
+   and updated, so working on an old quest brings it back to the top. */
+function questEntries() {
+  const alive = new Set(live().map(r => r.id));
+  return liveMissions().map((m, rank) => ({
+    id: m.id, name: m.title || "",
+    count: (m.bookmark_ids || []).filter(id => alive.has(id)).length,
+    recent: Math.max(Date.parse(m.created_at) || 0, Date.parse(m.updated_at) || 0) || null,
+    rank,
+  }));
 }
 function topicTileHTML(t, n) {
   const src = topicArtSrc(t);
@@ -2295,7 +2396,7 @@ function topicTileHTML(t, n) {
 }
 function renderTopicTiles(all) {
   const tiles = browseTiles(all);
-  const key = `tiles|${demoMode}|${tiles.map(([id, n]) => `${id}:${n}:${topicArt.get(id) || ""}`).join(",")}`;
+  const key = `tiles|${demoMode}|${sortFor("topics")}|${tiles.map(([id, n]) => `${id}:${n}:${topicArt.get(id) || ""}`).join(",")}`;
   if (memo.get("topics-grid") !== key) {
     memo.set("topics-grid", key);
     $("topics-grid").innerHTML = tiles.map(([id, n]) => topicTileHTML(topicFor(id), n)).join("")
@@ -2306,23 +2407,303 @@ function renderTopicTiles(all) {
   askTopicArt(tiles.map(([id]) => id).filter(wantsArt));
 }
 function renderSources(all) {
-  const items = platformItems(all).slice(1);
-  const key = `sources|${demoMode}|${items.map(i => i.key + i.n).join(",")}`;
+  const items = BrowseSort.order(sortFor("sources"), sourceEntries(all));
+  const key = `sources|${demoMode}|${sortFor("sources")}|${items.map(i => i.id + i.count).join(",")}`;
   if (memo.get("sources-list") === key) return;
   memo.set("sources-list", key);
   $("sources-list").innerHTML = items.map(i =>
-    `<button class="source-row" data-platform-row="${i.key}">
-      <span class="source-badge">${glyph(i.key)}</span><b>${esc(i.label)}</b>
-      <span>${i.n}</span></button>`).join("") || `<p class="hint">Sources appear as you bork.</p>`;
+    `<button class="source-row" data-platform-row="${esc(i.id)}">
+      <span class="source-badge">${glyph(i.id)}</span><b>${esc(i.name)}</b>
+      <span>${i.count}</span></button>`).join("") || `<p class="hint">Sources appear as you bork.</p>`;
 }
 function renderBrowseQuests() {
-  const quests = liveMissions();
-  const key = `quests|${demoMode}|${quests.map(m => m.id + ":" + m.updated_at).join(",")}`;
+  const byID = new Map(liveMissions().map(m => [m.id, m]));
+  const quests = BrowseSort.order(sortFor("quests"), questEntries()).map(e => byID.get(e.id)).filter(Boolean);
+  const key = `quests|${demoMode}|${sortFor("quests")}|${quests.map(m => m.id + ":" + m.updated_at).join(",")}`;
   if (memo.get("quests-list") === key) return;
   memo.set("quests-list", key);
   $("quests-list").innerHTML = quests.length
     ? `<div class="quests">${quests.map(m => questCardHTML(m)).join("")}<button class="quest-new" data-quest="">+ Start a side quest</button></div>`
     : questStarterHTML();
+}
+
+/* ── The topic page hero, and sharing what's on it ─────────────────────────
+   TopicPage.hero and TopicPage.shareControl, ported. The band is the tile you
+   tapped at full width, so arriving reads as a continuation rather than a
+   jump; the name and count sit on the topic's tint *below* the art, never over
+   it, so nothing depends on the contrast of a scene we cannot predict. */
+const SHARE_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="m8 8 4-4 4 4"/><path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>`;
+const LINK_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 13.5a4.5 4.5 0 0 0 6.4 0l2-2a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M13.5 10.5a4.5 4.5 0 0 0-6.4 0l-2 2a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>`;
+const IMAGE_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15.5-4.5-4.5L5 19.5"/></svg>`;
+
+let shareMenuOpen = false;
+let shareCard = null;        // { key, blob, url } — the rendered PNG
+let shareCardBuilding = null;
+
+/* The borks the page is showing, newest first — what both share options send. */
+const topicRows = () => (demoMode ? DEMO_BORKS : live())
+  .filter(r => r.category_id === topicFilter).sort(bySaved);
+
+function renderTopicHero(t, rows) {
+  if (!t) {
+    if (memo.get("browse-hero") === "none") return;
+    memo.set("browse-hero", "none");
+    $("browse-hero").innerHTML = `<span class="hero-text"><b>Topic</b><span>${plural(rows.length, "bork")}</span></span>`;
+    return;
+  }
+  const src = topicArtSrc(t);
+  const ready = !!shareCard && shareCard.key === shareCardKey(t, rows);
+  const key = `hero|${t.id}|${t.name}|${rows.length}|${src || ""}|${shareMenuOpen}|${ready}|${demoMode}`;
+  if (memo.get("browse-hero") === key) return;
+  memo.set("browse-hero", key);
+  $("browse-hero").innerHTML =
+    `<span class="hero-art" style="${tileStyle(t.hue)}"><i class="ini">${esc(t.name.charAt(0))}</i>${
+      src ? `<img src="${esc(src)}" alt="" crossorigin="anonymous" data-fb="remove">` : ""}</span>
+    <button class="hero-share" data-act="share-topic" aria-haspopup="true" aria-expanded="${shareMenuOpen}" aria-label="Share this topic">${SHARE_ICON}Share</button>${
+      shareMenuOpen ? `<div class="share-menu" id="share-menu" role="menu">
+        <button role="menuitem" data-act="share-links">${LINK_ICON}Share links</button>
+        ${ready
+          ? `<button role="menuitem" data-act="share-image">${IMAGE_ICON}Share as image</button>`
+          : `<button role="menuitem" disabled>${IMAGE_ICON}Preparing image…</button>`}
+      </div>` : ""}
+    <span class="hero-text" style="${chipStyle(t.hue)}"><b>${esc(t.name)}</b><span>${plural(rows.length, "bork")}</span></span>`;
+}
+
+/* ── Share links ── */
+const shareItems = (rows) => rows.map(r => ({
+  title: displayFields(r).title, url: r.url, savedAt: Date.parse(r.saved_at) || 0,
+}));
+/* Clipboard first; the textarea is for the browsers that still refuse it
+   outside a very narrow definition of a gesture. */
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* fall through */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:-9999px";
+    document.body.appendChild(ta); ta.select();
+    const done = document.execCommand("copy");
+    ta.remove();
+    return done;
+  } catch { return false; }
+}
+async function shareTopicLinks() {
+  const t = topicFor(topicFilter);
+  if (!t) return;
+  const rows = topicRows();
+  // Built before anything is awaited, so the share sheet still counts as
+  // something the person just did.
+  const text = TopicShare.message({ topic: t.name, items: shareItems(rows) });
+  const title = TopicShare.heading(t.name);
+  shareMenuOpen = false; render();
+  track("topic_shared", { kind: "links", count: rows.length });
+  if (navigator.share) {
+    try { await navigator.share({ title, text }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  toast(await copyText(text) ? "Copied — paste it anywhere" : "Couldn't copy that — try again.");
+}
+
+/* ── Share as image ───────────────────────────────────────────────────────
+   App/Components/TopicShareCard.swift on a canvas: 4:5 at 1080×1350, which
+   is what Instagram, Threads and every other feed crops least. Laid out in the
+   same points the app uses and multiplied by 3, so the two cards are the same
+   design rather than two designs that rhyme.
+
+   Rendered when the topic page appears rather than when the button is pressed
+   — the app does the same, because a share sheet that stalls on an image is
+   worse than one that only offers a link. */
+const CARD_PT = 3;                 // 360×450pt at scale 3
+const CARD_W = 360 * CARD_PT, CARD_H = 450 * CARD_PT, CARD_BAND = 138 * CARD_PT;
+const pt = (n) => n * CARD_PT;
+const shareCardKey = (t, rows) =>
+  `${t.id}|${t.name}|${rows.length}|${topicArtSrc(t) || ""}|${rows.slice(0, TopicShare.cardLimit).map(r => r.id).join(",")}`;
+
+/* `crossorigin` on both the hero and here, so the band is a cache hit and the
+   canvas stays readable: the public topic-art bucket sends
+   access-control-allow-origin, and /img is our own. A scene we cannot read
+   resolves to null and the card falls back to the tint band. */
+function loadArt(src) {
+  return new Promise((resolve) => {
+    if (!src) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+async function cardFontsReady() {
+  if (!document.fonts || !document.fonts.load) return;
+  try {
+    await Promise.all([
+      document.fonts.load(`800 ${pt(28)}px "Bricolage Grotesque"`),
+      document.fonts.load(`600 ${pt(13)}px "Instrument Sans"`),
+      document.fonts.load(`700 ${pt(12.5)}px "Instrument Sans"`),
+    ]);
+  } catch { /* the fallback stack still draws something */ }
+}
+/* Wrap to at most `max` lines, the last one ellipsised — the canvas has no
+   line-clamp. */
+function wrapLines(ctx, text, width, max) {
+  const words = String(text ?? "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width <= width || !line) { line = next; continue; }
+    lines.push(line);
+    line = word;
+    if (lines.length === max) break;
+  }
+  if (lines.length < max && line) lines.push(line);
+  if (lines.length === max && (words.length > lines.join(" ").split(/\s+/).length)) {
+    let last = lines[max - 1];
+    while (last.length > 1 && ctx.measureText(last + "…").width > width) last = last.slice(0, -1);
+    lines[max - 1] = last.replace(/\s+$/, "") + "…";
+  }
+  return lines;
+}
+async function drawShareCard(t, rows, art) {
+  const canvas = document.createElement("canvas");
+  canvas.width = CARD_W; canvas.height = CARD_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  const css = getComputedStyle(document.documentElement);
+  const token = (name, fallback) => (css.getPropertyValue(name) || "").trim() || fallback;
+  const paper = token("--paper", "#F6F3EE"), meta = token("--meta", "#8A8378");
+  const ink = token("--ink", "#191510"), body = token("--ink-2", "#5B554D");
+  const tint = `hsl(${t.hue} 70% 92%)`, deep = `hsl(${t.hue} 60% 28%)`;
+
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, CARD_W, CARD_H);
+
+  // The band: the topic's tint, with the scene over it where there is one.
+  const grad = ctx.createLinearGradient(0, 0, CARD_W, CARD_BAND);
+  grad.addColorStop(0, tint);
+  grad.addColorStop(1, `hsl(${t.hue} 70% 96%)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, CARD_W, CARD_BAND);
+  if (art && art.naturalWidth) {
+    const scale = Math.max(CARD_W / art.naturalWidth, CARD_BAND / art.naturalHeight);
+    const w = art.naturalWidth * scale, h = art.naturalHeight * scale;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, CARD_W, CARD_BAND); ctx.clip();
+    ctx.globalCompositeOperation = "multiply";   // the clay has cream baked in, exactly as the tiles do it
+    ctx.drawImage(art, (CARD_W - w) / 2, (CARD_BAND - h) / 2, w, h);
+    ctx.restore();
+  }
+
+  const pad = pt(22);
+  const left = pad;
+  const width = CARD_W - pad * 2;
+  let y = CARD_BAND + pad;
+
+  // Heading, up to two lines, shrinking before it wraps to a third.
+  ctx.textBaseline = "top";
+  ctx.fillStyle = deep;
+  let size = pt(28);
+  const heading = TopicShare.heading(t.name);
+  const headFont = (px) => `800 ${px}px "Bricolage Grotesque", ${css.getPropertyValue("--font-head") || "sans-serif"}`;
+  ctx.font = headFont(size);
+  try { ctx.letterSpacing = `${pt(-0.8)}px`; } catch { /* not everywhere yet */ }
+  while (size > pt(17) && wrapLines(ctx, heading, width, 2).join(" ") !== heading) {
+    size -= pt(1); ctx.font = headFont(size);
+  }
+  for (const line of wrapLines(ctx, heading, width, 2)) {
+    ctx.fillText(line, left, y);
+    y += size * 1.08;
+  }
+  try { ctx.letterSpacing = "0px"; } catch { /* ignore */ }
+
+  y += pt(4);
+  ctx.font = `600 ${pt(12.5)}px "Instrument Sans", sans-serif`;
+  ctx.fillStyle = meta;
+  ctx.fillText(`${TopicShare.countedBorks(rows.length)} I saved with bookmarker`, left, y);
+  y += pt(12.5) * 1.25 + pt(14);
+
+  // Titles: numbered, two lines each, clipped rather than pushing the footer
+  // off — the line that says where the app is must never be the casualty.
+  const footTop = CARD_H - pad - pt(24);
+  const numberX = left + pt(14);
+  const titleX = left + pt(14) + pt(9);
+  const titleWidth = width - pt(23);
+  TopicShare.cardTitles(shareItems(rows)).forEach((title, i) => {
+    ctx.font = `600 ${pt(13)}px "Instrument Sans", sans-serif`;
+    const lines = wrapLines(ctx, title, titleWidth, 2);
+    const height = lines.length * pt(13) * 1.32;
+    if (y + height > footTop) return;
+    ctx.textAlign = "right";
+    ctx.font = `500 ${pt(11)}px ui-monospace, Menlo, monospace`;
+    ctx.fillStyle = `hsl(${t.hue} 60% 28% / .7)`;
+    ctx.fillText(String(i + 1), numberX, y + pt(1.5));
+    ctx.textAlign = "left";
+    ctx.font = `600 ${pt(13)}px "Instrument Sans", sans-serif`;
+    ctx.fillStyle = body;
+    lines.forEach((line, l) => ctx.fillText(line, titleX, y + l * pt(13) * 1.32));
+    y += height + pt(9);
+  });
+
+  // Footer: the mark, the name, and where to get it.
+  const mark = await loadArt("/img/mark-192.png");
+  const markSize = pt(22), markY = CARD_H - pad - markSize;
+  if (mark) {
+    const r = pt(6);
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(left + r, markY);
+    ctx.arcTo(left + markSize, markY, left + markSize, markY + markSize, r);
+    ctx.arcTo(left + markSize, markY + markSize, left, markY + markSize, r);
+    ctx.arcTo(left, markY + markSize, left, markY, r);
+    ctx.arcTo(left, markY, left + markSize, markY, r);
+    ctx.closePath(); ctx.clip();
+    ctx.drawImage(mark, left, markY, markSize, markSize);
+    ctx.restore();
+  }
+  ctx.fillStyle = ink;
+  ctx.font = `700 ${pt(12.5)}px "Instrument Sans", sans-serif`;
+  ctx.fillText("bookmarker", left + markSize + pt(8), markY);
+  ctx.fillStyle = meta;
+  ctx.font = `500 ${pt(10.5)}px "Instrument Sans", sans-serif`;
+  ctx.fillText(TopicShare.footer(), left + markSize + pt(8), markY + pt(12.5));
+
+  return new Promise((resolve) => {
+    try { canvas.toBlob(resolve, "image/png"); } catch { resolve(null); }
+  });
+}
+async function buildShareCard(t, rows) {
+  const key = shareCardKey(t, rows);
+  if ((shareCard && shareCard.key === key) || shareCardBuilding === key) return;
+  shareCardBuilding = key;
+  try {
+    const art = await loadArt(topicArtSrc(t));
+    await cardFontsReady();
+    const blob = await drawShareCard(t, rows, art);
+    if (!blob) return;
+    if (shareCard) URL.revokeObjectURL(shareCard.url);
+    shareCard = { key, blob, url: URL.createObjectURL(blob) };
+    memo.delete("browse-hero");
+    render();
+  } catch { /* the links option never needed it */ }
+  finally { if (shareCardBuilding === key) shareCardBuilding = null; }
+}
+async function shareTopicImage() {
+  const t = topicFor(topicFilter);
+  if (!t || !shareCard) return;
+  const rows = topicRows();
+  const name = `${t.id.replace(/[^a-z0-9]+/gi, "-")}-bookmarker.png`;
+  const file = typeof File === "function" ? new File([shareCard.blob], name, { type: "image/png" }) : null;
+  const url = shareCard.url;
+  shareMenuOpen = false; render();
+  track("topic_shared", { kind: "image", count: rows.length });
+  if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+    try { await navigator.share({ files: [file], title: TopicShare.heading(t.name) }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  // Nowhere to share it to: hand over the picture and say how to keep it.
+  const opened = window.open(url, "_blank");
+  toast(opened ? "Long-press or right-click the image to save it."
+               : "Couldn't open the image — allow pop-ups and try again.");
 }
 
 /* "12 borks for “running”", or, scoped, what field it looked in. */
@@ -3620,6 +4001,20 @@ document.addEventListener("click", (e) => {
     if (searchScopes.has(k)) searchScopes.delete(k); else searchScopes.add(k);
     render(); armSearchTrack(); return;
   }
+  const sortChip = e.target.closest("[data-sort]");
+  if (sortChip) {
+    lsSet(BrowseSort.KEY[browseAxis], BrowseSort.named(sortChip.dataset.sort));
+    render(); track("browse_sorted", { axis: browseAxis, sort: sortFor(browseAxis) });
+    return;
+  }
+  if (act === "share-topic") {
+    if (demoMode) { toast("These are demo borks — sign up and share your own.", "Sign up", exitDemoToSignup); return; }
+    shareMenuOpen = !shareMenuOpen; render(); return;
+  }
+  if (act === "share-links") { shareTopicLinks(); return; }
+  if (act === "share-image") { shareTopicImage(); return; }
+  // Anywhere else closes the menu, the way a menu closes.
+  if (shareMenuOpen && !e.target.closest("#share-menu")) { shareMenuOpen = false; render(); }
   const segBtn = e.target.closest("[data-seg]");
   if (segBtn) {
     browseAxis = segBtn.dataset.seg; topicFilter = null;
@@ -3664,6 +4059,7 @@ $("google-btn").addEventListener("click", signInWithGoogle);
 // Keyboard: cards act like buttons; Enter submits the auth step you're on; Esc clears search.
 document.addEventListener("keydown", (e) => {
   if ((e.key === "Enter" || e.key === " ") && e.target.matches(".card, .recent-card")) { e.preventDefault(); e.target.click(); }
+  if (e.key === "Escape" && shareMenuOpen) { shareMenuOpen = false; render(); }
 });
 $("email-input").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendCode(); } });
 $("code-input").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); verifyCode(); } });

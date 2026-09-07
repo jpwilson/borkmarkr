@@ -292,6 +292,63 @@ itself stays the shipped 50, so the picker and the quest form still list the
 built-ins as a group, and the model's answer from `categorize` is still checked
 against `BUILTIN_IDS` rather than "every topic we happen to know".
 
+**Browse's three segments share one sort, and one set of labels.** Topics,
+Sources and Side quests each get *Most borks · Most recent · A–Z*, because it is
+the same three questions on each of them, and answering "how is this list
+ordered" three different ways would make Browse look like three screens. The
+ordering itself is `BrowseSort` in `docs/browse.js` — a port of
+`Core/BrowseSort.swift`, entry for entry — so a chip cannot come to mean
+something different on the two platforms; the labels are asserted in both test
+suites for the same reason. The choice persists per segment
+(`bm.browseSort.<segment>`): picking A–Z once to find a platform should not
+permanently reorder the topic grid. Every branch that cannot decide falls
+through to `rank`, the list's own canonical order — taxonomy order, `PLATFORM`
+order, newest quest — so a grid of equal-count topics does not reshuffle on
+each redraw, and the answer does not depend on the order the rows arrived in.
+
+**One consequence, deliberately taken: "Most borks" now ranks your topics by
+their borks like any other.** The first custom-topics pass put every built-in
+before every custom one. That grouping cannot survive a chip that claims to
+order by count — a topic of yours with eleven borks sitting below a built-in
+with one is not "most borks" — and the phone has always mixed them. So the
+grouping now lives only in `rank`, where it decides ties, and A–Z mixes them
+alphabetically exactly as `MergedTaxonomy` does.
+
+**The topic page opens with the tile you tapped, not with a line of text.** The
+old header meant every topic page looked like every other topic page and none of
+them looked like the tile that got you there. The hero band is the tile's own
+composition at full width. Two details are load-bearing: the name and count sit
+on the topic's tint *below* the art rather than over it — nothing then depends
+on the contrast of a generated scene we cannot predict, and a long name grows
+the band instead of overflowing a fixed image — and the band is deliberately
+compact (120px, 96px on a phone), because the thing a topic page is for is the
+borks, and the first one has to stay above the fold at 390×700.
+
+**Sharing a topic is two different jobs, so it is two options.** *Share links*
+is for someone who is going to tap them; *Share as image* is for a story or a
+group chat, where nothing is tappable and the only job is to look like something
+worth asking about. The message is `TopicShare` in `docs/browse.js`, the same
+port as the phone's, and its rules are the interesting part: titles only and
+never body text (an Instagram "title" is the whole caption), ten of them newest
+first, a count line that says how many there really are, and links shortened
+only where shortening leaves a link that still works — a query string carrying
+the identity, a fragment, or a path too long to fit prints in full instead,
+because a truncated URL is not a link and the entire point is that the other
+person can tap it.
+
+**The share card is rendered when the page opens, not when the button is
+pressed.** A share sheet that stalls on an image is worse than one that only
+offers a link, so the canvas runs on arrival and the image option appears once
+it exists — the same thing `TopicPage` does with `ImageRenderer`. It is laid out
+in the app's points and multiplied by three to 1080×1350, which is the 4:5 every
+feed crops least, so the two cards are one design rather than two that rhyme.
+The art is loaded `crossorigin="anonymous"` (the public `topic-art` bucket sends
+the header and `/img` is ours); a scene that cannot be read falls back to the
+tint band rather than tainting the canvas. Where `navigator.share` cannot take
+files the PNG opens in a tab with a line about long-pressing it, and where there
+is no share sheet at all the message goes to the clipboard — the point is that
+every browser can do *something*, not that every browser does the same thing.
+
 **"+ New topic" opens the Add sheet, not a bare naming dialog.** On the phone,
 creating a topic from Browse inserts a row that persists on its own. On the web
 a topic is only a `category_id`, so a name with nothing filed under it survives
