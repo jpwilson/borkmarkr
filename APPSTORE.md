@@ -67,41 +67,53 @@ names the web app — which 1.0's promo text never mentioned.)*
 ## What's New in 1.1 (4,000 char max — release notes, per version)
 
 ```
-Search moved to where you were already looking, there's a new tab for the thing this app is actually for, and you can make topics of your own.
+Search moved to where you were already looking, there's a new tab for the thing this app is for, and you can make topics of your own.
 
 SEARCH IS AT THE TOP OF BROWSE
-Search used to be its own tab that opened onto an empty box. Now the search field sits at the top of Browse, above your topics — type and the results replace the grid, clear it and your topics come back. Under the field there are three chips: Topics, Subtopics, Tags. Leave them off and search works exactly as it did, across everything. Turn one on and "running" finds only the borks tagged running, or only the ones filed under Running, instead of every title that happens to mention it.
+Search used to be its own tab that opened onto an empty box. Now the field sits at the top of Browse — type and the results replace the grid, clear it and your topics come back. Under it are three chips: Topics, Subtopics, Tags. Leave them off and search works across everything. Turn one on and "running" finds only the borks tagged running, or only the ones filed under it.
 
 REVISIT
-A new tab, where Search used to be, that answers one question: what should I look at again? What you saved this week and where it came from. The ones you keep opening. Things you saved a month ago. Side quests you have steps left on. What you are saving more and less of than a month ago.
+A new tab, where Search used to be, that answers one question: what should I look at again? What you saved this week and where it came from. The ones you keep opening. Things from a month ago. Side quests you have steps left on. What you are saving more and less of.
 
-And the section that is the reason it exists: SAVED, NEVER OPENED. Everything you borked more than a week ago and have never once been back to. Most bookmarking ends there and no app ever mentions it. This one says the number out loud.
+And the section that is the reason it exists: SAVED, NEVER OPENED. Everything you borked more than a week ago and have never once been back to. Most bookmarking ends there and no app mentions it. This one says the number out loud.
 
 TOPICS OF YOUR OWN
-Fifty topics and six hundred subtopics still won't have the one you need. Add your own, from the Add sheet or the topic picker, and it sits in the grid alongside the built-in ones instead of in a leftover pile at the end. Signed in, it gets a clay scene drawn for it, so it doesn't sit there as blank paper next to Fitness and Recipes.
+Fifty topics and six hundred subtopics still won't have the one you need. Add your own, from the Add sheet or the topic picker, and it sits in the grid alongside the built-in ones. Signed in, it gets a clay scene drawn for it, so it doesn't sit there as blank paper.
+
+YOUR OWN TOPIC COMES FIRST
+In the topic picker, a topic whose name matches what you typed now comes first, and opens. Topics that match only through one of their subtopics follow. Typing "runn" used to put Fitness above your own topic called Running.
 
 SUBTOPICS ARE NOW A–Z
-The subtopics under a topic — Fitness, Recipes, Cars — are in alphabetical order, with the ones you added yourself sorted in among the built-in ones rather than pushed to the end. Finding "Yoga" in a topic with forty subtopics no longer means reading all forty. Same order as the web app.
+The subtopics under a topic are alphabetical, with the ones you added yourself sorted in among the built-in ones rather than pushed to the end. Finding "Yoga" in a topic with forty subtopics no longer means reading all forty.
 
-SORT BROWSE THE WAY YOU ARE LOOKING
-Topics, Sources and Side quests each get the same three: Most borks, Most recent, A–Z. Most borks is the order you already had. Most recent puts whatever you last saved into at the top. A–Z is for when you know the name and just want to find it. Each list remembers its own choice.
+SORT BROWSE THE WAY YOU'RE LOOKING
+Topics, Sources and Side quests each get the same three: Most borks, Most recent, A–Z. Each list remembers its own choice.
 
 TOPICS OPEN WITH THEIR OWN ART
-Tap a topic and it opens on a banner of that topic's clay scene, with the name and the count under it — the tile you tapped, opened out, instead of a flat coloured header.
+Tap a topic and it opens on a banner of its own clay scene, name and count under it — the tile you tapped, opened out.
+
+PASTE, WHEN THERE'S SOMETHING TO PASTE
+The paste card in the Add sheet only turns up when there is actually a link on your clipboard, and it takes links copied as links, not only as text — so "Copy link" in Instagram and X now works like copying an address bar. Copy nothing and the card is gone rather than greyed out.
+
+ALREADY IN YOUR LIBRARY
+Paste a link you have already saved and the sheet says so — where it is filed, and when. Open it to go to that bork and change its topic, or Save again anyway. It used to merge quietly into the one you had, and re-file it.
 
 SHARING A TOPIC IS WORTH SENDING NOW
-It used to paste fifty links and every caption that came with them, which nobody read. Now it is the ten most recent, titles only, with short tappable links and one line at the end saying where to get the app. Or share the topic as a picture: the art, the name and the first six titles as a card built for a story or a group chat.
+It used to paste fifty links and every caption with them, which nobody read. Now it is the ten most recent, titles only, with short tappable links and a line saying where to get the app. Or share it as a picture: the art, the name and the first six titles, built for a story or a group chat.
 
 ONLY ON THIS PHONE
-bookmarker works signed out and always will — saving is never gated behind an account. But nothing in the app said that a library saved that way lives on this phone and nowhere else. Once you have a few borks the Library says so plainly, with a Sign up button next to it, and the You tab leads with "Not signed in" and your count instead of burying it.
+bookmarker works signed out and always will — saving is never gated behind an account. But nothing in it said that a library saved that way lives on this phone and nowhere else. Once you have a few borks the Library says so, with a Sign up button next to it, and the You tab leads with "Not signed in" and your count.
 
 20 SAVES WITHOUT AN ACCOUNT
-Twenty borks work with no account at all. Past twenty, saving asks you to sign up — it's free, it's an email and a six-digit code, and it makes the library unlimited, backed up, and readable on the web. Anything you share in from another app while you're at the limit is still saved: it sits in your Library marked "Waiting" and joins the library the moment you sign up, or the moment you delete something to make room. Nothing you sent is ever thrown away. And your borks are always private — never sold, never shared, never visible to anyone else.
+Twenty borks work with no account. Past twenty, saving asks you to sign up — it's free, it's an email and a six-digit code, and it makes the library unlimited, backed up, and readable on the web. Anything you share in from another app while you're at the limit is still saved: it sits in your Library marked "Waiting" and joins the moment you sign up, or the moment you delete something to make room. Your borks are always private — never sold, never shared, never visible to anyone else.
 
 Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
 ```
-*(Every line is in the build, and every line is new since 1.0.1 — the version
-currently on the store. The "Only on this phone" and "Subtopics are now A–Z"
+*(1.1 ships as build 13, which folds in three fixes made after build 12 was
+uploaded: the paste card, the "Already in your library" card and the topic
+picker's order. There is no separate 1.1.1 — it is one submission, so these are
+release notes for one version. Every line is in the build, and every line is
+new since 1.0.1 — the version currently on the store. The "Only on this phone" and "Subtopics are now A–Z"
 sections are the 1.0.2 notes below, which were written but never shipped; 1.1
 is the first build that carries them to anyone. 1.0.1's own two items — the
 full-library sync fix and the Rate/Share rows on You — are deliberately **not**
@@ -461,6 +473,21 @@ Two things worth knowing before you re-run them:
   `browse` and written back into the container, and from then on the container
   value shadows the global one and every capture comes out on the same screen.
   If the captures all look identical, uninstall the app and start again.
+- Every seeded card carries a real cover (`DebugSeed.Cover`), and the seeded
+  custom topic carries real art. `CoverImage`'s gradient and Browse's blank
+  paper tile are correct, deliberate fallbacks in the app, and both photograph
+  as missing images. The covers are fetched over the network at capture time,
+  so the simulator has to be online, and `shoot` waits `SETTLE` seconds
+  (default 3) after the screen is up for them to land. If a cover comes out
+  half faded, raise it: `SETTLE=6 bash Scripts/capture_screenshots.sh`.
+
+Two things that are supposed to look like that:
+- The X and Threads cards have no cover. A text post has none in the real app
+  either — it renders as the post itself, with the handle and the platform
+  mark — so leave them alone.
+- "Trail running" is the one topic tile that isn't bundled clay art. It is a
+  topic the seeded user invented, and it carries the scene the `topic-art`
+  function draws for a topic like it.
 
 Three practical notes:
 - Apple accepts as few as one, but 3–5 is normal. You can reorder them later.

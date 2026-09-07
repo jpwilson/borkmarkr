@@ -51,8 +51,82 @@ enum TopicArt {
     /// closer to how the tiles get looked at.
     static let backfillBatch = 3
 
+    /// The id a custom topic gets from its name.
+    ///
+    /// Lives here rather than on `CustomTopic` so the maker and the checker
+    /// (`isCustomID`, below) sit in one file, under one test, and cannot drift
+    /// apart — which is exactly what had happened. `makeID` kept any character
+    /// the Unicode tables call a letter, so "Café culture" became
+    /// `custom.café-culture`; `isCustomID` and the server's `TOPIC_ID` both
+    /// require ASCII, so that topic could never be asked for art and sat as
+    /// blank paper next to every other topic. Folding at the source fixes it
+    /// for the phone, the web and the function at once.
+    ///
+    /// Two rules, and `makeTopicID` in docs/index.html implements the same two
+    /// so a topic invented in either place lands on one id:
+    ///
+    /// 1. Decompose and drop combining marks (NFD + `\p{M}`), then lowercase.
+    ///    "Café" → "cafe", "Über" → "uber". Anything still outside `[a-z0-9]`
+    ///    becomes a separator, runs of separators collapse, ends are trimmed.
+    /// 2. If a **letter or digit was lost** to that — a name in Chinese,
+    ///    Cyrillic, Greek, Arabic — append a short hash of the folded name.
+    ///
+    /// Rule 2 is a deviation worth stating. Folding alone maps every name with
+    /// no Latin in it onto the same slug, and `CustomTopic.id` is `.unique`: a
+    /// Russian speaker's second custom topic would silently overwrite their
+    /// first. The hash is FNV-1a over UTF-8, eight hex digits, chosen because
+    /// it is four lines in Swift and four in JavaScript and gives both the same
+    /// answer. The id stops being readable in that case; it stays unique and
+    /// drawable, which matters more.
+    static func customID(from name: String) -> String {
+        let folded = foldedForID(name)
+        var slug = ""
+        var lostLetters = false
+        for character in folded {
+            if character.isASCII, character.isLowercase || character.isNumber {
+                slug.append(character)
+            } else {
+                if character.isLetter || character.isNumber { lostLetters = true }
+                slug.append("-")
+            }
+        }
+        var base = slug.replacingOccurrences(of: "-{2,}", with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        if base.isEmpty { base = "topic" }
+        if lostLetters { base += "-" + shortHash(folded) }
+        return "custom.\(base)"
+    }
+
+    /// NFD, combining marks removed, lowercased — spelled out with the same
+    /// primitives JavaScript has (`normalize("NFD")`, `\p{M}`, `toLowerCase`)
+    /// rather than `folding(options: .diacriticInsensitive)`, whose exact
+    /// behaviour is ICU's and is not something the web half can promise to
+    /// match. Two implementations that must agree should be the same algorithm,
+    /// not two algorithms that happen to agree on the cases anyone tried.
+    private static func foldedForID(_ name: String) -> String {
+        var scalars = String.UnicodeScalarView()
+        for scalar in name.decomposedStringWithCanonicalMapping.unicodeScalars {
+            switch scalar.properties.generalCategory {
+            case .nonspacingMark, .spacingMark, .enclosingMark: continue
+            default: scalars.append(scalar)
+            }
+        }
+        return String(scalars).lowercased()
+    }
+
+    /// FNV-1a, 32-bit, over UTF-8. Not a security hash — a stable one that
+    /// JavaScript can reproduce exactly with `Math.imul`.
+    private static func shortHash(_ text: String) -> String {
+        var hash: UInt32 = 2_166_136_261
+        for byte in text.utf8 {
+            hash ^= UInt32(byte)
+            hash = hash &* 16_777_619
+        }
+        return String(format: "%08x", hash)
+    }
+
     /// Mirrors `TOPIC_ID` in supabase/functions/topic-art/index.ts and the
-    /// slug half of `CustomTopic.makeID`. Only these are drawable: a built-in
+    /// slug half of `customID(from:)`. Only these are drawable: a built-in
     /// already has bundled art, and the function rejects anything else.
     static func isCustomID(_ id: String) -> Bool {
         guard id.hasPrefix("custom.") else { return false }

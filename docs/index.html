@@ -490,6 +490,30 @@
   .add-card-meta { margin-top: 4px; color: var(--meta); font-size: 11.5px; font-weight: 600; overflow-wrap: anywhere; }
   .add-card-meta i { color: var(--faint); font-weight: 500; font-style: normal; }
 
+  /* Already in your library: the same preview card laid on its side, because
+     this is a bork you have rather than one you are making. It replaces the
+     whole sheet — filing a link twice is a form filled in twice — and answers
+     the only question worth asking, which is where the first one went. */
+  .dupe-card { display: flex; align-items: stretch; }
+  .add-card.dupe-card .cover { flex: 0 0 88px; width: 88px; height: auto; min-height: 92px; }
+  .dupe-card .cover-glyph .pg { width: 26px; height: 26px; }
+  .dupe-card .add-card-body { flex: 1; min-width: 0; padding: 12px 14px; }
+  .dupe-h { color: var(--accent-text); font-size: 10px; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase; margin-bottom: 5px; }
+  .dupe-filed { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+    color: var(--meta); font-size: 11.5px; font-weight: 600; }
+  /* The dot belongs to the date, so a narrow sheet wraps them together
+     rather than leaving a "·" hanging off the end of the line. */
+  .dupe-filed .when { white-space: nowrap; }
+  .dupe-filed .sep { opacity: .5; margin-right: 6px; }
+  .dupe-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .dupe-actions .btn { margin: 0; }
+  /* Three buttons on one sheet need three weights, or the eye reads a row of
+     equals: Open it is the answer, saving again is the other answer, and the
+     tinted "Not now" below is the way out. */
+  .dupe-actions .btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--hairline); }
+  @media (max-width: 420px) { .dupe-actions { flex-direction: column; } }
+
   /* "Sorted for you": the topic, the tags, and where the tags say it belongs. */
   .sorted { margin-top: 14px; padding: 15px; border-radius: 18px;
     background: color-mix(in srgb, var(--tint) 55%, var(--surface));
@@ -708,6 +732,7 @@
     <div id="auth-choose">
       <h1>Every save.<br>One library.</h1>
       <p>Sign in and your borks follow you — phone, laptop, everywhere.</p>
+      <p class="hint" style="margin-bottom:16px">Free on iPhone with no account for your first 20 saves; sign up (free) for unlimited, backed up, and on the web.</p>
       <button class="btn g-btn" id="google-btn" hidden>
         <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
         Continue with Google
@@ -978,10 +1003,32 @@
     </div>
   </div>
 
+  <!-- …unless you already have it. Then the sheet is this instead: the bork
+       you have, where it is filed, when you saved it, and the two things you
+       might have meant. Mirrors iOS 1.1.1's AddSheet. -->
+  <div id="add-dupe" hidden>
+    <article class="add-card dupe-card">
+      <div class="cover" id="dupe-cover">
+        <span class="cover-glyph" id="dupe-glyph"></span>
+        <img id="dupe-thumb" alt="" data-fb="hide" hidden>
+      </div>
+      <div class="add-card-body">
+        <div class="dupe-h">Already in your library</div>
+        <div class="add-card-title" id="dupe-title"></div>
+        <div class="dupe-filed" id="dupe-filed"></div>
+      </div>
+    </article>
+    <p class="hint" style="margin:10px 0 0">Open it to change where it's filed, or save it again — either way it stays one bork.</p>
+    <div class="dupe-actions">
+      <button type="button" class="btn" data-act="dupe-open">Open it</button>
+      <button type="button" class="btn ghost" data-act="dupe-save">Save again anyway</button>
+    </div>
+  </div>
+
   <p class="err" id="add-err" role="alert"></p>
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-add">Not now</button>
-    <button class="btn" data-act="save-add">Bork it</button>
+    <button class="btn" id="add-save" data-act="save-add">Bork it</button>
   </div>
 </dialog>
 
@@ -1133,6 +1180,11 @@
      same reason revisit.js is — Scripts/test_browse.mjs runs them in node, and
      the labels and the message are a contract with the iPhone. -->
 <script src="/browse.js"></script>
+<!-- The topic picker's matching and ordering: a port of
+     Core/TopicPickerQuery.swift, and where `fold` now lives. Its own file so
+     Scripts/test_picker.mjs can rank topics in node, and because which topic
+     tops a search is a contract with the iPhone. -->
+<script src="/picker.js"></script>
 <script>
 "use strict";
 /* bookmarker web — same backend, same identity rules, same look as the iPhone
@@ -1166,19 +1218,42 @@ const BUILTIN_IDS = new Set(TAXONOMY.map(t => t.id));
 const CUSTOM_PREFIX = "custom.";
 const isCustom = (id) => typeof id === "string" && id.startsWith(CUSTOM_PREFIX);
 /* The only shape that can be drawn: mirrors TopicArt.isCustomID and the
-   TOPIC_ID regex in supabase/functions/topic-art/index.ts. A slug with an
-   accent in it is a perfectly good topic; it just never gets a picture. */
+   TOPIC_ID regex in supabase/functions/topic-art/index.ts. Every id makeTopicID
+   produces now satisfies it — before build 13 an accented name did not, and a
+   topic called "Café culture" could never be sent for art on either platform. */
 const ART_ID = /^custom\.[a-z0-9]+(-[a-z0-9]+)*$/;
 
-/* Port of CustomTopic.makeID, so a topic invented here and the same topic
-   invented on the phone land on one id and merge instead of doubling up.
-   Swift maps every Character that is not a letter or a number to "-"; \p{L}
-   and \p{N} are those two Unicode categories. Collapsing runs of dashes makes
-   the code-point/grapheme difference between the two languages moot. */
+/* NFD, combining marks dropped, lowercased. TopicArt.foldedForID spells the
+   Swift side out with these same three primitives rather than using ICU's
+   folding, so the two are one algorithm and not two that happen to agree. */
+function foldForID(name) {
+  return String(name ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+/* FNV-1a, 32-bit, over UTF-8 — TopicArt.shortHash, byte for byte. */
+function idHash(text) {
+  let h = 2166136261 >>> 0;
+  for (const byte of new TextEncoder().encode(text)) h = Math.imul(h ^ byte, 16777619) >>> 0;
+  return h.toString(16).padStart(8, "0");
+}
+/* Port of TopicArt.customID (CustomTopic.makeID), so a topic invented here and
+   the same topic invented on the phone land on one id and merge instead of
+   doubling up. Fold, map everything still outside [a-z0-9] to "-", collapse —
+   and then, only when a letter or digit was lost to the fold, append the hash.
+   Without that last step every name written in a script with no Latin in it —
+   Chinese, Cyrillic, Greek, Arabic — slugs to the empty string and they all
+   become the one topic. Swift iterates graphemes and this iterates code points;
+   marks are already gone by then, and runs of dashes collapse, so the two land
+   in the same place. */
 function makeTopicID(name) {
-  const slug = String(name ?? "").toLowerCase()
-    .replace(/[^\p{L}\p{N}]/gu, "-").replace(/-{2,}/g, "-").replace(/^-+|-+$/g, "");
-  return CUSTOM_PREFIX + (slug || "topic");
+  const folded = foldForID(name);
+  let slug = "", lost = false;
+  for (const ch of folded) {
+    if ((ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9")) { slug += ch; continue; }
+    if (/[\p{L}\p{N}]/u.test(ch)) lost = true;
+    slug += "-";
+  }
+  const base = slug.replace(/-{2,}/g, "-").replace(/^-+|-+$/g, "") || "topic";
+  return CUSTOM_PREFIX + (lost ? base + "-" + idHash(folded) : base);
 }
 /* And back out: custom.hair-grooming → "Hair grooming", in the built-in style
    (TaxonomyName.formatted). A name typed in this tab beats the derived one. */
@@ -1238,8 +1313,9 @@ function myTopics() {
 }
 
 /* One folding for every text match in the app — search, the search blob and the
-   topic picker. Case- and accent-blind, so "index" finds "índex". */
-const fold = (s) => String(s ?? "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+   topic picker. Case- and accent-blind, so "index" finds "índex". It lives in
+   docs/picker.js so the node tests fold exactly the way the page does. */
+const fold = TopicPickerQuery.fold;
 const REDUCED = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const MOBILE = () => window.innerWidth <= 760;
 
@@ -3098,28 +3174,10 @@ const picks = { add: { topic: null, sub: null, source: null }, edit: { topic: nu
 const addedSubs = new Map();   // topic → Set of subtopics typed this session and not yet on a bork
 let tp = null;                 // the open picker: { which, snapshot, expanded, filter, adding }
 
-const tpTokens = (s) => fold(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-/* Crude stem so "game" hits Gaming without letting "run" hit Speedruns. */
-function tpStem(w) {
-  if (w.length > 4 && w.endsWith("ing")) w = w.slice(0, -3);
-  if (w.length > 3 && w.endsWith("e")) w = w.slice(0, -1);
-  return w;
-}
-function tpTokenMatches(token, needle) {
-  if (token.startsWith(needle)) return true;
-  const ns = tpStem(needle), ts = tpStem(token);
-  if (ns.length >= 3 && token.startsWith(ns)) return true;
-  return ns.length >= 3 && ts.length >= 3 && ts === ns;
-}
-/* 0 topic token/name prefix · 1 topic name contains · 2 subtopic token prefix · null no match */
-function tpRank(t, subs, needle) {
-  needle = fold(needle.trim());
-  if (!needle) return 0;
-  const name = fold(t.name);
-  if (tpTokens(t.name).some(x => tpTokenMatches(x, needle)) || name.startsWith(needle)) return 0;
-  if (name.includes(needle)) return 1;
-  return subs.some(sub => tpTokens(sub).some(x => tpTokenMatches(x, needle))) ? 2 : null;
-}
+/* Matching, ranking and the two "can I add this?" questions live in
+   docs/picker.js (Core/TopicPickerQuery.swift's port) so node can test them. */
+const tpMatchingSubs = TopicPickerQuery.matchingSubs;
+const tpCanAdd = TopicPickerQuery.canAdd;
 /* Subtopics the person made up: already on their borks (so they sync) or typed this session. */
 function ownSubs(topicID) {
   const builtin = new Set((TOPIC_BY_ID[topicID]?.subs || []).map(x => x.toLowerCase()));
@@ -3132,25 +3190,28 @@ function ownSubs(topicID) {
 // to someone scanning thirty pills for the one they want.
 const allSubs = (topicID) => [...(TOPIC_BY_ID[topicID]?.subs || []), ...ownSubs(topicID)]
   .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
-/* The shipped 50 and the ones you made, each A–Z, kept apart so the sheet can
-   put a heading between them — the phone runs them together in one list, but
-   it also has a "yours" badge on every row and a menu to rename and delete;
-   here the group is what says which is which. */
+/* What the sheet lists, and in what order.
+
+   Nothing typed: the shipped 50 A–Z, then a heading, then yours A–Z. There is
+   nothing to rank by, and with fifty rows to scan the heading is what says
+   which is which.
+
+   Something typed: one list, ranked, both kinds mixed — because "runn" has to
+   put your own Running topic above Fitness, which merely has a Running inside
+   it, and a group heading can only ever put all of one kind above all of the
+   other. Every row of yours still carries its "yours" badge, so running them
+   together loses nothing. `TopicPickerQuery.order` is the rule, shared with
+   the iPhone: name matches (tier 2) before subtopic-only matches (tier 1),
+   exact then prefix then anywhere-else inside each, then A–Z. */
 function tpShown(filter) {
   const needle = filter.trim();
   const az = (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
-  const keep = (list) => (needle ? list.filter(t => tpRank(t, allSubs(t.id), needle) !== null) : list.slice()).sort(az);
-  return { builtin: keep(TAXONOMY), mine: keep(myTopics()) };
+  if (!needle) return { builtin: TAXONOMY.slice().sort(az), mine: myTopics(), ranked: null };
+  const ranked = TopicPickerQuery.order(
+    TAXONOMY.concat(myTopics()).map(t => ({ topic: t, name: t.name, subs: allSubs(t.id) })), needle);
+  return { builtin: [], mine: [], ranked: ranked.map(x => x.topic) };
 }
 const allTopicNames = () => TAXONOMY.map(t => t.name).concat(myTopics().map(t => t.name));
-function tpMatchingSubs(subs, needle) {
-  needle = fold(needle.trim());
-  return new Set(needle ? subs.filter(sub => tpTokens(sub).some(x => tpTokenMatches(x, needle))) : []);
-}
-function tpCanAdd(raw, existing) {
-  const c = raw.trim().toLowerCase();
-  return c.length >= 2 && !existing.some(x => x.toLowerCase() === c);
-}
 /* "trail running" → "Trail running", matching the built-in style. */
 const subName = (raw) => { const x = raw.trim().replace(/\s+/g, " "); return x.charAt(0).toUpperCase() + x.slice(1); };
 const CHEV = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>`;
@@ -3215,22 +3276,31 @@ function tpTopicRowHTML(t, p, needle) {
 function renderPicker() {
   if (!tp) return;
   const p = picks[tp.which], needle = tp.filter.trim();
-  const { builtin, mine } = tpShown(tp.filter);
-  const shown = builtin.concat(mine);
-  // Clearing the search must not collapse the open topic; a subtopic hit opens its topic when none is open.
-  if (needle && !(tp.expanded && shown.some(t => t.id === tp.expanded))) {
-    const hit = shown.find(t => tpRank(t, allSubs(t.id), needle) === 2);
-    if (hit) tp.expanded = hit.id;
-  }
+  const { builtin, mine, ranked } = tpShown(tp.filter);
+  const shown = ranked || builtin.concat(mine);
+  // Clearing the search must not collapse the open topic. Otherwise the best
+  // answer opens itself: it is the row you were going to tap, and its
+  // subtopics are the next question.
+  if (needle && shown.length && !(tp.expanded && shown.some(t => t.id === tp.expanded))) tp.expanded = shown[0].id;
   const draft = $("tp-new-name")?.value ?? needle;
   const topicDraft = $("tp-new-topic")?.value ?? needle;
+  // "Add topic “runn”" is the answer when nothing matched and an afterthought
+  // when something did, so with matches on screen it goes below them — the
+  // list a search returns should start with what the search found.
+  const addRow = addTopicRowHTML(needle);
+  const addLast = !!needle && !tp.newTopic && shown.length > 0;
   let html = needle ? "" : `<button class="tp-row tp-none${p.topic ? "" : " tp-on"}" data-tp-none><span class="tp-dot" style="background:var(--hairline)"></span><span class="tp-name">Not filed — no topic</span></button>`;
-  html += addTopicRowHTML(needle);
-  for (const t of builtin) html += tpTopicRowHTML(t, p, needle);
-  if (mine.length) {
-    html += `<div class="tp-group">Your topics</div>`;
-    for (const t of mine) html += tpTopicRowHTML(t, p, needle);
+  if (!addLast) html += addRow;
+  if (ranked) {
+    for (const t of ranked) html += tpTopicRowHTML(t, p, needle);
+  } else {
+    for (const t of builtin) html += tpTopicRowHTML(t, p, needle);
+    if (mine.length) {
+      html += `<div class="tp-group">Your topics</div>`;
+      for (const t of mine) html += tpTopicRowHTML(t, p, needle);
+    }
   }
+  if (addLast) html += addRow;
   if (!shown.length) {
     const host = topicFor(tp.expanded) || topicFor(p.topic);   // the topic you were just in, most likely where this belongs
     html = addTopicRowHTML(needle) + `<p class="hint tp-empty-msg">Nothing called “${esc(needle)}”.</p>` + (host && tpCanAdd(needle, allSubs(host.id))
@@ -3370,6 +3440,7 @@ let addTitleTouched = false;   // once you edit the title, a late fetch leaves i
 let addOffline = null;      // the offline filer's answer for the link on screen
 let addQuests = new Set();  // side quests this bork will join
 let addSeq = 0;             // bumps per URL edit so a slow suggestion can't land on a later link
+let addDupe = null;         // id of the live bork this link already is, if any
 
 /* Port of AddSheet.parsedURL: four characters, a host with a dot, and a bare
    host counts — pasting "youtube.com/watch?v=…" is a link, not a typo. */
@@ -3395,6 +3466,7 @@ function openAdd() {
   addPreview = null; addTitle = ""; addTitleFetched = false; addReading = false; addOffline = null;
   addTitleTouched = false; questFromAdd = false;
   addQuests = new Set(); addDropped.clear(); sheetTags.add = []; addLastURL = null;
+  addDupe = null;
   picks.add = { topic: null, sub: null, source: null };
   $("add-url").value = ""; $("add-err").textContent = "";
   $("add-tag").value = ""; syncTagGo("add");
@@ -3465,13 +3537,66 @@ function renderAddQuests() {
 
 function renderAdd() {
   const url = parsedURL($("add-url").value);
-  $("add-details").hidden = !url;
+  const twin = addDupe && borks.get(addDupe);
   $("add-paste-hint").hidden = !!url;
+  $("add-dupe").hidden = !twin;
+  $("add-details").hidden = !url || !!twin;
+  $("add-save").hidden = !!twin;   // there is nothing to bork; there are two other things to do
+  if (twin) { renderDupe(twin); return; }
   if (!url) return;
   if (!addTitleTouched) $("add-title-input").value = addTitle;
   renderAddQuests();
   $("add-title-edit").textContent = `✎ ${addTitleFetched ? "Edit title" : "Write a title"}`;
   renderTrigger("add");   // topic chip → cover colour, tags, placement
+}
+
+/* The bork you already have, drawn from the row rather than from the sheet:
+   its cover, its title, its topic in the topic's own colour, and the day it
+   was saved. Same pieces as a library card, laid out for one line of answer. */
+function renderDupe(r) {
+  const d = displayFields(r), topic = topicFor(r.category_id), hue = topic ? topic.hue : 24;
+  $("dupe-cover").setAttribute("style", gradient(hue));
+  $("dupe-glyph").innerHTML = glyph(r.platform);
+  const img = $("dupe-thumb"), src = picOf(r);
+  if (src && !isAvatar(src)) {
+    if (img.getAttribute("src") !== src) img.src = src;
+    img.hidden = false;
+  } else { img.hidden = true; img.removeAttribute("src"); }
+  $("dupe-title").textContent = d.title;
+  $("dupe-filed").innerHTML = (topic
+      ? `filed under <span class="topic-chip" style="${chipStyle(hue)}">${esc(topic.name)}${r.subcategory ? `<span class="tp-sep">›</span>${esc(r.subcategory)}` : ""}</span>`
+      : `<span class="topic-chip" style="${chipStyle(24)}">Not filed</span>`)
+    + `<span class="when"><span class="sep" aria-hidden="true">·</span>saved ${esc(fmtDate(r.saved_at))}</span>`;
+}
+
+/* Everything the save path reads, seeded from the bork you already have — so
+   "Save again anyway" re-saves *that* bork and cannot quietly re-file it,
+   drop its tags or lose its note. Core/Store.save's rule, which is that a
+   second save enriches a link in place and never replaces it.
+   `source: "user"` because that filing was chosen by a person: it also stops
+   the offline filer and the model from having another go at it. */
+function seedFromDupe(r) {
+  addPreview = (r.image_url || r.author || r.duration_seconds != null)
+    ? { image_url: r.image_url ?? null, author: r.author ?? null, duration_seconds: r.duration_seconds ?? null }
+    : null;
+  addTitle = r.title || ""; addTitleFetched = !!r.title; addReading = false; addTitleTouched = false;
+  addOffline = null;
+  $("add-title-input").value = r.title || "";
+  picks.add = { topic: topicFor(r.category_id) ? r.category_id : null, sub: r.subcategory || null, source: "user" };
+  sheetTags.add = (r.tags || []).map(cleanTag).filter(Boolean);
+  const hasNote = !!(r.note_text || "").trim();
+  $("add-note-on").checked = hasNote;
+  $("add-note").value = r.note_text || "";
+  $("add-note-date").value = r.note_date || todayISO();
+  $("add-note-box").hidden = !hasNote;
+}
+/* Leaving a duplicate behind for a different link: the topic, the note and
+   the picture on the sheet belonged to the other bork, not to this one. */
+function clearDupe() {
+  addDupe = null; addPreview = null; addTitleFetched = false;
+  picks.add = { topic: null, sub: null, source: null };
+  $("add-note-on").checked = false; $("add-note").value = "";
+  $("add-note-date").value = todayISO(); $("add-note-box").hidden = true;
 }
 
 /* Filing, in the phone's order.
@@ -3547,12 +3672,17 @@ async function suggestTopicFor(url, seq) {
   } catch { /* filing is a bonus; the person can always pick */ }
 }
 
-function saveAdd() {
+/* `again` is "Save again anyway" from the duplicate card. It is the same save
+   path, on the same stable ID, so it upserts the bork you already have — there
+   is no way for it to make a second row. The sheet was seeded from that row,
+   so what it writes back is that row with a fresh timestamp. */
+function saveAdd({ again = false } = {}) {
   const url = parsedURL($("add-url").value);
   const id = url && stableID(url);
   if (!id) { $("add-err").textContent = "That doesn't look like a link — paste a web address."; return; }
   const existing = borks.get(id);
-  if (existing && !existing.deleted_at) { $("add-err").textContent = "Already in your library."; return; }
+  const dupe = !!(existing && !existing.deleted_at);
+  if (dupe && !again) { $("add-err").textContent = "Already in your library."; return; }
   commitTag("add");   // a tag typed but not yet added still counts
 
   const platform = detectPlatform(url);
@@ -3563,7 +3693,9 @@ function saveAdd() {
     title: $("add-title-input").value.trim() || addTitle || Filer.fallbackTitle(url),
     platform, kind: PLATFORM[platform].kind, tags: sheetTags.add.slice(),
     category_id: picks.add.topic, subcategory: picks.add.topic ? picks.add.sub : null,
-    body_text: null,
+    // Nothing on this sheet writes body_text, so a re-save must not erase the
+    // one the importer or the phone put there.
+    body_text: dupe ? (existing.body_text ?? null) : null,
     note_text: note || null, note_date: note ? ($("add-note-date").value || todayISO()) : null,
     author: addPreview?.author ?? Filer.fallbackAuthor(url),
     image_url: addPreview?.image_url ?? null,
@@ -3577,8 +3709,10 @@ function saveAdd() {
   platformFilter = null;
   if (tab !== "library") setTab("library", { focus: false }); else { render(); window.scrollTo({ top: 0 }); }
   toast("Borked. It's on your phone too.");
-  track("bork_added", { platform, is_first: isFirst, had_preview: !!addPreview, filed: picks.add.source || "none",
-    tags: row.tags.length, note: !!note, quest: quests.length > 0 });
+  const props = { platform, is_first: isFirst, had_preview: !!addPreview, filed: picks.add.source || "none",
+    tags: row.tags.length, note: !!note, quest: quests.length > 0 };
+  if (again) props.duplicate = true;   // only ever true; a first save says nothing about it
+  track("bork_added", props);
   commit(row, existing || null);
   // A topic of yours becomes real the moment something is filed under it, so
   // that is also the moment to ask for its picture.
@@ -3956,6 +4090,11 @@ document.addEventListener("click", (e) => {
   if (act === "verify-code") verifyCode();
   if (act === "close-add") closeDlg($("add-dialog"));
   if (act === "save-add") saveAdd();
+  // The duplicate card. "Open it" hands you the bork's own sheet, which is
+  // where you change what it is filed under; "Save again anyway" goes down the
+  // ordinary save path, which upserts on the stable ID.
+  if (act === "dupe-open") { const id = addDupe; closeDlg($("add-dialog")); if (id) openEdit(id); return; }
+  if (act === "dupe-save") { saveAdd({ again: true }); return; }
   if (act === "close-edit") closeDlg($("edit-dialog"));
   if (act === "pick-topic") openPicker(e.target.closest("[data-for]").dataset.for);
   /* Add/Edit sheet parts. Both dialogs carry the same controls, so each one
@@ -4127,14 +4266,23 @@ $("add-url").addEventListener("input", () => {
     addLastURL = url || null;
     sheetTags.add = []; addDropped.clear(); addQuests = new Set();
     addTitleTouched = false; $("add-title-input").value = "";
+    if (addDupe) clearDupe();
   }
-  if (!url) { addReading = false; renderAdd(); return; }
+  if (!url) { addDupe = null; addReading = false; renderAdd(); return; }
+  // A link you already have needs no filing and no preview: the answer is the
+  // bork, not a second form. A tombstoned one is a new link again, exactly as
+  // it is to `saveAdd` and to the phone.
+  const twin = borks.get(stableID(url) || "");
+  if (twin && !twin.deleted_at) { addDupe = twin.id; seedFromDupe(twin); renderAdd(); return; }
+  addDupe = null;
   addTitle = Filer.fallbackTitle(url); addTitleFetched = false; addReading = true;
   fileOffline(url);
   renderAdd();
   previewTimer = setTimeout(() => fetchPreviewInto(url, seq), 400);
 });
-$("add-url").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); saveAdd(); } });
+// Enter is "Bork it"; with the duplicate card up there is no Bork it, and the
+// two buttons under it say what the choices are.
+$("add-url").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (!addDupe) saveAdd(); } });
 /* Tags, notes and titles: the same controls in both sheets. */
 for (const which of ["add", "edit"]) {
   const field = $(`${which}-tag`);

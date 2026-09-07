@@ -18,9 +18,9 @@ enum TopicArtTests {
         }
 
         // ── Which ids are drawable ────────────────────────────────────────
-        // Must agree with CustomTopic.makeID and with TOPIC_ID in
-        // supabase/functions/topic-art/index.ts. A built-in has bundled art
-        // and must never reach the function.
+        // Must agree with TopicArt.customID (CustomTopic.makeID forwards to
+        // it) and with TOPIC_ID in supabase/functions/topic-art/index.ts. A
+        // built-in has bundled art and must never reach the function.
         expect(TopicArt.isCustomID("custom.juice"), "a custom id is drawable")
         expect(TopicArt.isCustomID("custom.looksmaxxing"), "the screenshot's blank topic is drawable")
         expect(TopicArt.isCustomID("custom.trail-running"), "a hyphenated slug is drawable")
@@ -35,15 +35,53 @@ enum TopicArtTests {
         expect(!TopicArt.isCustomID("custom.juice/../etc"), "a path is not a topic id")
         expect(!TopicArt.isCustomID(""), "an empty id is not drawable")
 
-        // makeID's own output must satisfy the check — this is the contract
-        // between the two, and the reason the app can trust the server's 400.
-        for raw in ["Juice", "Looksmaxxing", "Trail running", "Zone 2", "Hair & grooming", "  spaced  "] {
-            let id = "custom." + raw.lowercased()
-                .map { $0.isLetter || $0.isNumber ? String($0) : "-" }.joined()
-                .replacingOccurrences(of: "-{2,}", with: "-", options: .regularExpression)
-                .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-            expect(TopicArt.isCustomID(id), "makeID(\"\(raw)\") → \(id) is drawable")
+        // ── The id a name gets ────────────────────────────────────────────
+        // This table is duplicated verbatim in Scripts/test_browse.mjs against
+        // docs/index.html's makeTopicID. That is the whole point: a topic
+        // invented on the phone and the same topic invented in the web tab
+        // have to land on one id, or the two disagree about which topic a bork
+        // is even in. If you change one table, change both.
+        let ids: [(String, String)] = [
+            ("Juice", "custom.juice"),
+            ("Looksmaxxing", "custom.looksmaxxing"),
+            ("Trail running", "custom.trail-running"),
+            ("Zone 2", "custom.zone-2"),
+            ("Hair & grooming", "custom.hair-grooming"),
+            ("  spaced  ", "custom.spaced"),
+            // The build 13 fix. "Café culture" used to keep its é, which no
+            // TOPIC_ID and no ART_ID accepts, so it never got art.
+            ("Café culture", "custom.cafe-culture"),
+            ("Cafe culture", "custom.cafe-culture"),
+            ("Über alles", "custom.uber-alles"),
+            ("Crème brûlée", "custom.creme-brulee"),
+            ("Naïve", "custom.naive"),
+            ("ÅNGSTRÖM", "custom.angstrom"),
+            ("!!!", "custom.topic"),
+            // Nothing Latin survives the fold, so the hash is what keeps two
+            // of them from being one topic. See TopicArt.customID.
+            ("北京", "custom.topic-36943181"),
+            ("Готовка", "custom.topic-9888f5f3"),
+            ("Ελλάδα", "custom.topic-f49bab5a"),
+        ]
+        for (name, id) in ids {
+            let made = TopicArt.customID(from: name)
+            expect(made == id, "customID(\"\(name)\") is \(id)\n     got      \(made)")
+            expect(TopicArt.isCustomID(id), "\(id) is drawable")
         }
+        expect(TopicArt.customID(from: "Café culture") == TopicArt.customID(from: "Cafe culture"),
+               "the accent is not a second topic")
+        expect(TopicArt.customID(from: "北京") != TopicArt.customID(from: "Готовка"),
+               "two names with no Latin in them are still two topics")
+
+        // Store.foldCustomTopicIDs repairs an id it finds in the store by
+        // folding its slug, which has to land where the *name* lands and has
+        // to be a no-op the second time it runs.
+        expect(TopicArt.customID(from: "café-culture") == "custom.cafe-culture",
+               "re-folding an old accented id lands where the name does")
+        expect(TopicArt.customID(from: "trail-running") == "custom.trail-running",
+               "re-folding an id that was already fine changes nothing")
+        expect(TopicArt.customID(from: "topic-36943181") == "custom.topic-36943181",
+               "and a hashed id is stable under a second fold")
 
         // ── When to ask ───────────────────────────────────────────────────
         let now = Date(timeIntervalSince1970: 1_800_000_000)

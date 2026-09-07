@@ -77,19 +77,40 @@ struct TopicPickerSheet: View {
 
                 ScrollViewReader { proxy in
                     ScrollView {
+                        // Hoisted: `shown` filters and ranks, and the body
+                        // asks for it three times.
+                        let rows = shown
+                        let searching = !trimmedFilter.isEmpty && !rows.isEmpty
                         LazyVStack(spacing: 8) {
-                            addTopicRow
+                            // "Add topic “runn”" sat above the results, so a
+                            // search that found the topic still offered to
+                            // make a second one with the same name first.
+                            // While searching it goes under the matches; with
+                            // nothing typed it reads "Add a topic" and stays
+                            // at the top, where burying it under fifty rows
+                            // would only hide it.
+                            if !searching { addTopicRow }
 
-                            ForEach(shown) { topic in
+                            ForEach(rows) { topic in
                                 topicRow(topic)
                                     .id(topic.id)
                             }
+
+                            if searching { addTopicRow }
                         }
                         .padding(.horizontal, 18)
                         .padding(.bottom, 24)
                     }
                     .scrollDismissesKeyboard(.interactively)
-                    .onAppear { scrollToExpanded(proxy) }
+                    .onAppear {
+                        #if DEBUG
+                        if let seeded = ScreenshotDefaults.pickerQuery, filter.isEmpty {
+                            filter = seeded
+                            reconcileExpansion(needle: seeded)
+                        }
+                        #endif
+                        scrollToExpanded(proxy)
+                    }
                     .onChange(of: expanded) { _, _ in scrollToExpanded(proxy) }
                     .onChange(of: trimmedFilter) { _, needle in
                         reconcileExpansion(needle: needle)
@@ -379,22 +400,20 @@ struct TopicPickerSheet: View {
     }
 
     /// Clearing search must not collapse the open topic. Auto-expand only
-    /// when nothing is open (or the open row filtered out) and a sub matched.
+    /// when nothing is open (or the open row filtered out).
+    ///
+    /// The row that opens is the **first** one, which `TopicPickerQuery.shown`
+    /// now ranks as the best match. It used to be the first row that matched
+    /// through a *subtopic*, which is how "runn" opened Fitness while the
+    /// user's own Running topic sat underneath it, closed — the app expanding
+    /// its second-best guess and leaving the right answer looking like a
+    /// dead end.
     private func reconcileExpansion(needle: String) {
         if let expanded, shown.contains(where: { $0.id == expanded }) {
             return
         }
         guard !needle.isEmpty else { return }
-        let subHit = shown.first { topic in
-            TopicPickerQuery.matchRank(
-                topicName: topic.name,
-                subs: merged.subs(for: topic),
-                needle: needle
-            ) == 2
-        }
-        if let subHit {
-            expanded = subHit.id
-        }
+        expanded = shown.first?.id
     }
 
     private func scrollToExpanded(_ proxy: ScrollViewProxy) {

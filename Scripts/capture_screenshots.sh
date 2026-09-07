@@ -44,12 +44,22 @@ xcrun simctl install "$SIM" "$DD/Build/Products/Debug-iphonesimulator/borkmarkr.
 xcrun simctl launch "$SIM" "$BUNDLE" -seed >/dev/null
 sleep 5
 
+# Card covers are real remote thumbnails (see `DebugSeed.Cover`), so a screen
+# is laid out before it is finished: `AsyncImage` starts its fetch when the
+# card appears and cross-fades in over 0.22s. Shooting on the layout catches
+# cards mid-fade, and a half-faded cover in an App Store screenshot is
+# indistinguishable from one that never loaded. SETTLE is the wait after the
+# screen is up, on top of the wait for the launch itself.
+LAUNCH_WAIT="${LAUNCH_WAIT:-4}"
+SETTLE="${SETTLE:-3}"
+
 shoot() { # shoot <name> <startingTab> [extra launch args...]
   local name="$1" tab="$2"; shift 2
   xcrun simctl terminate "$SIM" "$BUNDLE" 2>/dev/null || true
   xcrun simctl spawn "$SIM" defaults write "$BUNDLE" startingTab -string "$tab"
   xcrun simctl launch "$SIM" "$BUNDLE" "$@" >/dev/null
-  sleep 4
+  sleep "$LAUNCH_WAIT"
+  sleep "$SETTLE"
   xcrun simctl io "$SIM" screenshot "$OUT/$name.png" 2>/dev/null
   echo "  $name.png"
 }
