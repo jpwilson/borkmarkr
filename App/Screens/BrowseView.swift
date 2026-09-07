@@ -196,11 +196,12 @@ struct BrowseView: View {
 
         for topic in wanted {
             guard !Task.isCancelled else { return }
-            let url = await TopicArt.fetch(id: topic.id, name: topic.name, session: session)
+            let outcome = await TopicArt.fetchOutcome(id: topic.id, name: topic.name, session: session)
             // Stamped whether or not it worked — that is what stops a topic
-            // the server has given up on being asked again every visit.
-            topic.artRequestedAt = .now
-            if let url { topic.imageURLString = url.absoluteString }
+            // the server has given up on being asked again every visit. A
+            // failure that can recover comes back within the hour.
+            topic.artRequestedAt = TopicArt.requestStamp(reason: outcome.reason)
+            if let url = outcome.url { topic.imageURLString = url.absoluteString }
             try? context.save()
         }
     }
