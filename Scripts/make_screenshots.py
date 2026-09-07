@@ -17,11 +17,17 @@ Output: Marketing/screenshots/*.png at 1320x2868, ready to upload.
 """
 
 import math
+import os
 import pathlib
+
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / "Marketing" / "screenshots"
+# Overridable so a dry run can build somewhere else without overwriting the
+# committed set. Defaults are the repo's own folders, so the documented
+# two-command recipe is unchanged.
+SHOTS = pathlib.Path(os.environ.get("SHOTS", ROOT / "Marketing" / "captures"))
+OUT = pathlib.Path(os.environ.get("OUT", ROOT / "Marketing" / "screenshots"))
 
 W, H = 1320, 2868
 
@@ -33,7 +39,7 @@ PANELS = [
     {
         "shot": "library.png",
         "top": "#FF6B3D", "bottom": "#D8380F",
-        "head": ["Everything you", "saved. One place."],
+        "head": ["Everything you", "scrolled past.", "One library."],
         "sub": "Instagram, X, TikTok, YouTube — one library you can actually search.",
     },
     {
@@ -46,10 +52,24 @@ PANELS = [
         "sub": "50 topics, 600+ subtopics. Change anything it gets wrong.",
     },
     {
-        "shot": "search.png",
+        # Warm amber against the topic page's own tint band, which is green
+        # for Fitness — the two would fight if the panel were green too.
+        "shot": "topic.png",
+        "top": "#F5A623", "bottom": "#C46A05",
+        "head": ["Every topic,", "already sorted."],
+        "sub": "Open a topic and it opens on its own art, with every save under it.",
+    },
+    {
+        "shot": "revisit.png",
+        "top": "#2FBF87", "bottom": "#127150",
+        "head": ["What's worth", "another look."],
+        "sub": "What you saved and never opened, what you keep coming back to, what you were reading a month ago.",
+    },
+    {
+        "shot": "scoped.png",
         "top": "#8B6BFF", "bottom": "#4F2FC4",
         "head": ["Find it again", "in seconds."],
-        "sub": "Search titles, tags, notes and people across every app at once.",
+        "sub": "Search everything at once, or narrow it to topics, subtopics or tags.",
     },
 ]
 
@@ -159,6 +179,16 @@ def build(panel: dict, shots: pathlib.Path, index: int) -> pathlib.Path:
 
     y = HEAD_TOP
     for line in panel["head"]:
+        # Headlines are hand-broken, not wrapped — the break is a design
+        # decision. That makes an over-long line silently run off the right
+        # edge, which is invisible here and glaring on the store page. Fail
+        # instead: shorten the line or add another one.
+        width = draw.textlength(line, font=head)
+        if width > W - MARGIN * 2:
+            raise SystemExit(
+                f"{panel['shot']}: headline line {line!r} is {width:.0f}px wide, "
+                f"which is past the {W - MARGIN * 2}px the panel has. Break it differently."
+            )
         draw.text((MARGIN, y), line, font=head, fill=(255, 255, 255))
         y += HEAD_LEAD
 
@@ -199,11 +229,10 @@ def wrap(text: str, f: ImageFont.FreeTypeFont, width: int, draw) -> list[str]:
 
 
 def main() -> None:
-    shots = ROOT / "Marketing" / "captures"
-    if not shots.exists():
-        raise SystemExit(f"No captures in {shots} — run Scripts/capture_screenshots.sh first")
+    if not SHOTS.exists():
+        raise SystemExit(f"No captures in {SHOTS} — run Scripts/capture_screenshots.sh first")
     for i, panel in enumerate(PANELS, start=1):
-        print("wrote", build(panel, shots, i).relative_to(ROOT))
+        print("wrote", build(panel, SHOTS, i))
 
 
 if __name__ == "__main__":
@@ -222,5 +251,5 @@ def also_65(path):
 
 if __name__ == "__main__":
     import pathlib as _pl
-    for f in sorted(_pl.Path("Marketing/screenshots").glob("*.png")):
+    for f in sorted(OUT.glob("*.png")):
         also_65(f)

@@ -67,7 +67,7 @@ names the web app — which 1.0's promo text never mentioned.)*
 ## What's New in 1.1 (4,000 char max — release notes, per version)
 
 ```
-Search moved to where you were already looking, and there's a new tab for the thing this app is actually for.
+Search moved to where you were already looking, there's a new tab for the thing this app is actually for, and you can make topics of your own.
 
 SEARCH IS AT THE TOP OF BROWSE
 Search used to be its own tab that opened onto an empty box. Now the search field sits at the top of Browse, above your topics — type and the results replace the grid, clear it and your topics come back. Under the field there are three chips: Topics, Subtopics, Tags. Leave them off and search works exactly as it did, across everything. Turn one on and "running" finds only the borks tagged running, or only the ones filed under Running, instead of every title that happens to mention it.
@@ -77,26 +77,42 @@ A new tab, where Search used to be, that answers one question: what should I loo
 
 And the section that is the reason it exists: SAVED, NEVER OPENED. Everything you borked more than a week ago and have never once been back to. Most bookmarking ends there and no app ever mentions it. This one says the number out loud.
 
+TOPICS OF YOUR OWN
+Fifty topics and six hundred subtopics still won't have the one you need. Add your own, from the Add sheet or the topic picker, and it sits in the grid alongside the built-in ones instead of in a leftover pile at the end. Signed in, it gets a clay scene drawn for it, so it doesn't sit there as blank paper next to Fitness and Recipes.
+
+SUBTOPICS ARE NOW A–Z
+The subtopics under a topic — Fitness, Recipes, Cars — are in alphabetical order, with the ones you added yourself sorted in among the built-in ones rather than pushed to the end. Finding "Yoga" in a topic with forty subtopics no longer means reading all forty. Same order as the web app.
+
 SORT BROWSE THE WAY YOU ARE LOOKING
 Topics, Sources and Side quests each get the same three: Most borks, Most recent, A–Z. Most borks is the order you already had. Most recent puts whatever you last saved into at the top. A–Z is for when you know the name and just want to find it. Each list remembers its own choice.
 
 TOPICS OPEN WITH THEIR OWN ART
-Tap a topic and it opens on a banner of that topic's clay scene, with the name and the count under it — the tile you tapped, opened out, instead of a flat coloured header. Topics you made yourself carry the scene drawn for them.
+Tap a topic and it opens on a banner of that topic's clay scene, with the name and the count under it — the tile you tapped, opened out, instead of a flat coloured header.
 
 SHARING A TOPIC IS WORTH SENDING NOW
 It used to paste fifty links and every caption that came with them, which nobody read. Now it is the ten most recent, titles only, with short tappable links and one line at the end saying where to get the app. Or share the topic as a picture: the art, the name and the first six titles as a card built for a story or a group chat.
 
+ONLY ON THIS PHONE
+bookmarker works signed out and always will — saving is never gated behind an account. But nothing in the app said that a library saved that way lives on this phone and nowhere else. Once you have a few borks the Library says so plainly, with a Sign up button next to it, and the You tab leads with "Not signed in" and your count instead of burying it.
+
 20 SAVES WITHOUT AN ACCOUNT
-Twenty borks work with no account at all, exactly as before. Past twenty, saving asks you to sign up — it's free, it's an email and a six-digit code, and it makes the library unlimited, backed up, and readable on the web. Anything you share in from another app while you're at the limit is still saved: it sits in your Library marked "Waiting" and joins the library the moment you sign up, or the moment you delete something to make room. Nothing you sent is ever thrown away. And your borks are always private — never sold, never shared, never visible to anyone else.
+Twenty borks work with no account at all. Past twenty, saving asks you to sign up — it's free, it's an email and a six-digit code, and it makes the library unlimited, backed up, and readable on the web. Anything you share in from another app while you're at the limit is still saved: it sits in your Library marked "Waiting" and joins the library the moment you sign up, or the moment you delete something to make room. Nothing you sent is ever thrown away. And your borks are always private — never sold, never shared, never visible to anyone else.
 
 Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
 ```
-*(Every line is in the build. Revisit computes from what is already on the
-device — `openCount` and `lastOpenedAt` have been recorded since 1.0, so the
-tab has a history to show on the day someone updates. Nothing is sent
-anywhere; see the `Revisit` note in DECISIONS.md.)*
+*(Every line is in the build, and every line is new since 1.0.1 — the version
+currently on the store. The "Only on this phone" and "Subtopics are now A–Z"
+sections are the 1.0.2 notes below, which were written but never shipped; 1.1
+is the first build that carries them to anyone. 1.0.1's own two items — the
+full-library sync fix and the Rate/Share rows on You — are deliberately **not**
+repeated here: they are already live, and listing a shipped fix as new is the
+kind of small dishonesty that costs more than the line is worth.*
 
----
+*Revisit computes from what is already on the device — `openCount` and
+`lastOpenedAt` have been recorded since 1.0, so the tab has a history to show
+on the day someone updates. Nothing is sent anywhere; see the `Revisit` note in
+DECISIONS.md. Custom topic art needs a session, which is why that line says
+"signed in": `TopicArt.fetchOutcome` returns nothing without one.)*
 
 ## What's New in 1.0.2 (4,000 char max — release notes, per version)
 
@@ -106,7 +122,7 @@ Two fixes, both about knowing where you are.
 ONLY ON THIS PHONE
 bookmarker works signed out and always will — saving is never gated behind an account. But nothing in the app said that a library saved that way lives on this phone and nowhere else, so people had no way to know they weren't backed up. Once you have a few borks the Library now says so plainly, with a Sign up button next to it, and the You tab leads with "Not signed in" instead of burying it. Signing up backs your borks up and puts them on the web at bookmarker.lol. Nothing else changes, and nothing gets locked.
 
-SUBTOPICS ARE NOW A-Z
+SUBTOPICS ARE NOW A–Z
 The subtopics under a topic — Fitness, Recipes, Cars — are in alphabetical order, with the ones you added yourself sorted in among the built-in ones rather than pushed to the end. Finding "Yoga" in a topic with forty subtopics no longer means reading all forty. Same order as the web app.
 
 Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
@@ -402,8 +418,11 @@ archive, open the dashboard and confirm the project says ACTIVE (it does as of
 ## Screenshots
 
 Required size: 6.9" iPhone — **1320 × 2868**. The finished files are in
-`Marketing/screenshots/` (`01-library.png`, `02-browse.png`, `03-search.png`),
-ready to upload as-is: no resizing.
+`Marketing/screenshots/`, ready to upload as-is: no resizing. 1.1 is a set of
+five, in this order — `01-library.png`, `02-browse.png`, `03-topic.png`,
+`04-revisit.png`, `05-scoped.png`: the library, the topic grid, a topic page
+opened on its art, Revisit, and a scoped search showing results. The last three
+are all 1.1, which is the point of re-shooting them.
 
 They are *designed* screenshots — a real capture of the app inside a phone
 frame on a coloured panel with a headline — which is what nearly every top
@@ -425,7 +444,23 @@ python3 Scripts/make_screenshots.py        # composes the panels into Marketing/
 
 The captures use a DEBUG-only seed (`-seed` launch argument), so nothing
 personal is ever on screen. The panel headlines live at the top of
-`make_screenshots.py` if you want different copy.
+`make_screenshots.py` if you want different copy; a headline too wide for the
+panel now fails the script instead of running off the right edge.
+
+Two things worth knowing before you re-run them:
+
+- The Library and Revisit captures pass `-signedIn`. The seed is 39 borks,
+  which is past the signed-out limit of 20, so **signed out** those two screens
+  capture the app mid-nag — "39 borks on this phone — sign up to keep saving."
+  True, and a terrible first frame for a store listing. Signed in is equally
+  true and is what those screens are actually for.
+- `shoot` sets the starting tab with `simctl spawn … defaults write`, which
+  writes the simulator's *global* preferences, not the app's sandboxed ones.
+  That works only because the app never writes its own `startingTab` — with one
+  exception: a stored value of `search` (from a 1.0.x phone) is migrated to
+  `browse` and written back into the container, and from then on the container
+  value shadows the global one and every capture comes out on the same screen.
+  If the captures all look identical, uninstall the app and start again.
 
 Three practical notes:
 - Apple accepts as few as one, but 3–5 is normal. You can reorder them later.
