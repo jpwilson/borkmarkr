@@ -257,8 +257,18 @@ struct RootView: View {
     /// one place the app says no, and it says it before the keyboard comes up
     /// rather than after a link has been pasted and a title fetched — being
     /// stopped at the door is kinder than being stopped at the till.
+    ///
+    /// The count is read here rather than taken from `borkCount`. That cache
+    /// is refreshed on appearance, on foreground, on a save and on a tab
+    /// change — and a **delete** is none of those. So the wall's own "Make
+    /// room instead", which tells you to open a bork and tap the bin, left the
+    /// count at twenty and put the wall straight back up on the next +: the
+    /// one escape hatch the sheet offers did not work. `liveCount` counts in
+    /// SQL, and this runs on a tap.
     private func requestAdd() {
-        if SaveLimit.shouldWall(liveCount: borkCount, signedIn: account.isSignedIn) {
+        let live = Store.liveCount(in: context)
+        borkCount = live
+        if SaveLimit.shouldWall(liveCount: live, signedIn: account.isSignedIn) {
             wall = .add
         } else {
             showingAdd = true

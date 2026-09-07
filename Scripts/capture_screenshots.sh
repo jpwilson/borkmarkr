@@ -58,7 +58,7 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
 #
 #   -query "protein"      pre-fills the search field at the top of Browse
 #   -scopes "topics,tags" pre-selects the scope chips under it
-#   -topic fitness        opens Browse straight onto a topic page
+#   -topic fitness        opens Browse straight onto a topic page (hero band)
 #   -dumpShareCard PATH   writes the rendered topic share card to a PNG
 #
 # and, for the signed-out save limit (Core/SaveLimit.swift), whose surfaces
@@ -76,13 +76,22 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
 # shipped build into one of these states.
 
 echo "Capturing to Marketing/captures:"
-shoot library library
+# `-signedIn` on the two screens that carry the sign-in card. The seed is 39
+# borks, which is past the signed-out limit of 20, so signed out these two
+# capture the app mid-nag: "39 borks on this phone — sign up to keep saving."
+# That is a true state of the app and a terrible first frame for a store
+# listing. Signed in is equally true and is what the screens are actually for.
+shoot library library -signedIn
 shoot browse  browse
+# The topic page is reachable only by tapping a tile, so `-topic` is the only
+# reproducible way to capture it — and the hero band and the share menu both
+# live there.
+shoot topic   browse -topic fitness
 # Search is no longer a tab: the field lives at the top of Browse, and -query
 # pre-fills it so the capture shows results rather than the topic grid.
 shoot search  browse -query "protein"
 shoot scoped  browse -query "run" -scopes "tags"
-shoot revisit revisit
+shoot revisit revisit -signedIn
 shoot you     you
 
 echo "Now: venv/bin/python Scripts/make_screenshots.py"
