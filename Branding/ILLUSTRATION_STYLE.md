@@ -26,6 +26,15 @@ When generating a new scene, **image_edit from `questRabbit`** and replace
 only the subject. Do not start from a blank `image_gen` — independent
 generations drift.
 
+## All ages, always
+
+Every scene is wholesome and friendly — something a child could look at. No
+violence, weapons, gore, drugs, alcohol, nudity, politics, religion, or
+anything unkind, scary or mocking. When a topic is edgy, draw its gentlest
+everyday object: a magnifying glass for conspiracies, a comb and hand mirror
+for looksmaxxing. This rule is in the machine prompt (`_shared/clay.ts`) and
+in the judge that chooses the subject; it applies to hand-drawn scenes too.
+
 ## Rules
 
 - No words on the object (no “OPEN”, no book titles).
@@ -37,7 +46,10 @@ generations drift.
 ## Topics people add themselves
 
 The 50 built-ins are drawn here, by hand, and bundled. A topic a user invents
-cannot be — so it is drawn on demand by the `topic-art` Edge Function, which
+cannot be — so it is drawn on demand by the `topic-art` Edge Function. A
+language model first reads the topic's name and a few of the titles saved
+under it and names one concrete object ("a tall glass of orange juice"); the
+image model draws that object into the locked style. The function
 `image_edit`s from `questRabbit` exactly as above.
 
 **This file is the source of truth for the style; the machine copy lives in

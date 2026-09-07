@@ -113,6 +113,21 @@ enum TopicArtTests {
         )
         expect(noTopics.isEmpty, "a library with no topics of its own asks for nothing")
 
+        // A transient failure comes back within the hour; a server give-up waits a day.
+        let stampNow = Date()
+        let transient = TopicArt.requestStamp(reason: "http-402", now: stampNow)
+        expect(TopicArt.wants(id: "custom.juice", hasArt: false, requestedAt: transient,
+                              now: stampNow.addingTimeInterval(TopicArt.transientRetryInterval + 1)),
+               "a 402 is asked about again after an hour")
+        expect(!TopicArt.wants(id: "custom.juice", hasArt: false, requestedAt: transient,
+                               now: stampNow.addingTimeInterval(TopicArt.transientRetryInterval - 60)),
+               "…but not before")
+        let gaveUp = TopicArt.requestStamp(reason: "given-up", now: stampNow)
+        expect(!TopicArt.wants(id: "custom.juice", hasArt: false, requestedAt: gaveUp,
+                               now: stampNow.addingTimeInterval(TopicArt.transientRetryInterval + 1)),
+               "a give-up still waits the full day")
+        expect(TopicArt.requestStamp(reason: nil, now: stampNow) == stampNow, "success stamps now")
+
         if failures > 0 { print("\n\(failures) failed"); exit(1) }
         print("\nall passed")
     }

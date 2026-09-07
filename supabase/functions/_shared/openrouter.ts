@@ -47,7 +47,13 @@ export async function completeJSON(
   try {
     return JSON.parse(cleaned);
   } catch {
-    console.error("openrouter json parse failed");
+    // Models still sometimes wrap the object in a sentence despite
+    // `response_format`. Take the outermost braces before giving up.
+    const first = cleaned.indexOf("{"), last = cleaned.lastIndexOf("}");
+    if (first >= 0 && last > first) {
+      try { return JSON.parse(cleaned.slice(first, last + 1)); } catch { /* fall through */ }
+    }
+    console.error("openrouter json parse failed", cleaned.slice(0, 120));
     return null;
   }
 }

@@ -25,6 +25,24 @@ enum TopicArt {
     /// tomorrow rather than either never or on every Browse appearance.
     static let retryInterval: TimeInterval = 24 * 60 * 60
 
+    /// A day is right when the server has *given up* on a topic. It is far
+    /// too long when the failure was the kind that fixes itself — no credit on
+    /// the account, the daily quota spent, a timeout — where the picture is
+    /// usually there within the hour and the tile sits blank for a day. So a
+    /// transient failure is stamped as if it happened most of a day ago, and
+    /// the topic comes back after this much instead. (Stamping, rather than a
+    /// second stored date, keeps the model unchanged.)
+    static let transientRetryInterval: TimeInterval = 60 * 60
+
+    /// The stamp to write after a request, given the server's reason (nil
+    /// when the art arrived, or when the server didn't say).
+    static func requestStamp(reason: String?, now: Date = .now) -> Date {
+        guard let reason else { return now }
+        // The server's own "stop asking" answer; everything else may recover.
+        if reason == "given-up" { return now }
+        return now.addingTimeInterval(transientRetryInterval - retryInterval)
+    }
+
     /// At most this many requests per Browse appearance.
     ///
     /// Backfill is the reason: someone with fifteen blank topics should not
@@ -96,21 +114,27 @@ enum TopicArt {
     /// The timeout is long because an image model is slow — the function's
     /// own budget is 60s and there is no point giving up before it does.
     static func fetch(id: String, name: String, session: Supabase.Session?) async -> URL? {
-        guard let session, Supabase.isConfigured, isCustomID(id) else { return nil }
+        await fetchOutcome(id: id, name: name, session: session).url
+    }
+
+    /// The URL if the art is there, and otherwise the server's reason — which
+    /// decides how soon the topic is asked about again (`requestStamp`).
+    static func fetchOutcome(id: String, name: String, session: Supabase.Session?) async -> (url: URL?, reason: String?) {
+        guard let session, Supabase.isConfigured, isCustomID(id) else { return (nil, "fetch-failed") }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 2 else { return nil }
+        guard trimmed.count >= 2 else { return (nil, "given-up") }
 
         guard
             let body = try? JSONEncoder().encode(Request(id: id, name: trimmed)),
             let data = try? await Supabase.invoke(
                 function: "topic-art", bodyJSON: body, session: session, timeout: 75
             ),
-            let decoded = try? JSONDecoder().decode(Response.self, from: data),
-            let raw = decoded.url,
-            let url = URL(string: raw),
-            url.scheme == "https"
-        else { return nil }
+            let decoded = try? JSONDecoder().decode(Response.self, from: data)
+        else { return (nil, "fetch-failed") }
 
-        return url
+        if let raw = decoded.url, let url = URL(string: raw), url.scheme == "https" {
+            return (url, nil)
+        }
+        return (nil, decoded.reason ?? "fetch-failed")
     }
 }
