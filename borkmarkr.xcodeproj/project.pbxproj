@@ -187,7 +187,7 @@
 		F91794C010FF35E650EB340F /* borkmarkr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = borkmarkr.entitlements; sourceTree = "<group>"; };
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_6E86FCCA-CF33-4BF6-9A5C-B2F3B7401170" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_D6EDA6DA-35B1-4934-8016-E601FFA619AB" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -329,12 +329,12 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		"TEMP_4AE6791A-CF57-4544-880A-BF55A07A06A2" /* ios-browse */ = {
+		"TEMP_22ECFF1A-693D-4BFA-9358-784983D0D0E8" /* ios-gate */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_6E86FCCA-CF33-4BF6-9A5C-B2F3B7401170" /* Config.xcconfig */,
+				"TEMP_D6EDA6DA-35B1-4934-8016-E601FFA619AB" /* Config.xcconfig */,
 			);
-			path = "ios-browse";
+			path = "ios-gate";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -538,7 +538,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_6E86FCCA-CF33-4BF6-9A5C-B2F3B7401170" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_D6EDA6DA-35B1-4934-8016-E601FFA619AB" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -573,7 +573,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 7RUN765V47;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -625,7 +625,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_6E86FCCA-CF33-4BF6-9A5C-B2F3B7401170" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_D6EDA6DA-35B1-4934-8016-E601FFA619AB" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -660,7 +660,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 7RUN765V47;
 				ENABLE_NS_ASSERTIONS = NO;
