@@ -1,10 +1,15 @@
-# Only what must not drift between deploys. Both functions below are called
-# by Postgres through pg_net, which sends no JWT, so the gateway must not ask
-# for one; each checks its own shared token instead.
+# Only what must not drift between deploys. `thumb` and `notify` are called by
+# Postgres through pg_net, which sends no JWT, so the gateway must not ask for
+# one; each checks its own shared token instead. `collection-page` is asked for
+# by a stranger with a link and has no token to check either — its credential
+# is the slug, and `collection_by_slug` (0011) is the only thing that opens.
 project_id = "pcjuxnhqxyfvgagnblzv"
 
 [functions.thumb]
 verify_jwt = false
 
 [functions.notify]
+verify_jwt = false
+
+[functions.collection-page]
 verify_jwt = false
