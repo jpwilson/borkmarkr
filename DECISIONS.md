@@ -358,6 +358,54 @@ field already focused — so naming a topic and filing the first thing into it i
 one gesture. The picker's own "+ Add a topic" row keeps the phone's copy and the
 phone's behaviour: select, expand, stay open.
 
+**A link you already have replaces the sheet, and never re-files itself.** The
+Add sheet used to accept a duplicate all the way to "Bork it" and then refuse
+it with one red line, *"Already in your library."* — a form filled in twice for
+nothing, and no answer to the only question worth asking, which is where the
+first one went. The moment the pasted link parses, `borks.get(stableID(url))`
+is checked and a live match swaps the preview, "Sorted for you", the tags, the
+quests, the title and the note for one card: the bork's own cover and title,
+its topic in the topic's own colour, and when it was saved. "Bork it" stands
+down; **Open it** hands over that bork's editor, which is where filing is
+changed, and **Save again anyway** goes down the ordinary save path. A
+tombstoned match is a new link again, the same rule `saveAdd` already used.
+
+Two deviations from the brief, both about what "runs the existing save path"
+should mean. (1) *The sheet is seeded from the bork you already have* —
+its topic, subtopic, tags, note, title and picture — and the offline filer and
+the model are both stood down for that link (`source: "user"`, which is true:
+a person chose that filing). Without it the save path would happily write back
+whatever the filer had just guessed for the URL, so "Save again anyway" could
+silently move a bork out of the topic you had put it in. `Core/Store.save`'s
+contract is that a second save *enriches a link in place* and never replaces
+it, and this is how the web keeps that promise. `body_text` — which no control
+on this sheet writes — is carried across for the same reason. (2) *No preview
+is fetched for a duplicate.* There is nothing on the card that a fetch would
+fill in, and letting one land would overwrite a title someone had written by
+hand with the platform's SEO version. `saved_at` does move to now, so you land
+on the bork at the top of the Library rather than on a wall where nothing
+appears to have happened. `bork_added` gains `duplicate: true`, and only when
+true, so existing events keep their exact shape.
+
+**The picker ranks a topic's own name above a topic that only matched through
+a subtopic.** Typing "runn" used to list Fitness — which merely has a *Running*
+in it — above the person's own topic called Running, because the sheet listed
+the shipped 50 first and put a "Your topics" heading in front of the rest. A
+group heading can only ever put all of one kind above all of the other, so with
+a query the two run together in one ranked list and every row keeps its "yours"
+badge to say which is which; with nothing typed the heading comes back, because
+there is nothing to rank by and fifty rows need the split to scan. The rule is
+`TopicPickerQuery.order` in **`docs/picker.js`**, a port of
+`Core/TopicPickerQuery.swift` with iOS 1.1.1's tiers — 2 a name match, 1 a
+subtopic-only match, 0 no match — then exact, prefix and anywhere-else inside a
+tier, then A–Z. *What* matches is unchanged: subtopics are still token-prefix
+only, so "run" still never drags Gaming in through Speedruns. Its own file for
+the reason `browse.js` and `revisit.js` are theirs — `Scripts/test_picker.mjs`
+runs the ranking in node, and `fold` moved there so the page and the tests fold
+identically. The auto-expanded row is now simply the first one, which is the
+row you were about to tap, and "Add topic “runn”" moves below the matches when
+there are any: a list a search returns should start with what the search found.
+
 ## Accessibility
 
 **Small-text contrast.** The spec's tertiary ink `#A39A8D` on `#F6F3EE` paper is

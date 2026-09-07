@@ -7,6 +7,9 @@ on:
       - "Core/Taxonomy.swift"
       - "App/Screens/TopicPickerSheet.swift"
       - "Scripts/test_topic_picker.swift"
+      - "docs/picker.js"
+      - "docs/taxonomy.js"
+      - "Scripts/test_picker.mjs"
       - ".github/workflows/topic-picker-tests.yml"
   push:
     branches: [main]
@@ -15,6 +18,9 @@ on:
       - "Core/Taxonomy.swift"
       - "App/Screens/TopicPickerSheet.swift"
       - "Scripts/test_topic_picker.swift"
+      - "docs/picker.js"
+      - "docs/taxonomy.js"
+      - "Scripts/test_picker.mjs"
       - ".github/workflows/topic-picker-tests.yml"
 
 jobs:
@@ -27,3 +33,15 @@ jobs:
           swiftc -parse-as-library -o /tmp/topic-picker-tests \
             Core/Taxonomy.swift Core/TopicPickerQuery.swift Scripts/test_topic_picker.swift
           /tmp/topic-picker-tests
+
+  # The web half. Which topic tops a search has to be the same answer on both
+  # platforms, so the port is tested next to the original.
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run the picker ranking checks
+        run: node Scripts/test_picker.mjs
