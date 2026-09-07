@@ -77,6 +77,15 @@ A new tab, where Search used to be, that answers one question: what should I loo
 
 And the section that is the reason it exists: SAVED, NEVER OPENED. Everything you borked more than a week ago and have never once been back to. Most bookmarking ends there and no app ever mentions it. This one says the number out loud.
 
+SORT BROWSE THE WAY YOU ARE LOOKING
+Topics, Sources and Side quests each get the same three: Most borks, Most recent, A–Z. Most borks is the order you already had. Most recent puts whatever you last saved into at the top. A–Z is for when you know the name and just want to find it. Each list remembers its own choice.
+
+TOPICS OPEN WITH THEIR OWN ART
+Tap a topic and it opens on a banner of that topic's clay scene, with the name and the count under it — the tile you tapped, opened out, instead of a flat coloured header. Topics you made yourself carry the scene drawn for them.
+
+SHARING A TOPIC IS WORTH SENDING NOW
+It used to paste fifty links and every caption that came with them, which nobody read. Now it is the ten most recent, titles only, with short tappable links and one line at the end saying where to get the app. Or share the topic as a picture: the art, the name and the first six titles as a card built for a story or a group chat.
+
 Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
 ```
 *(Every line is in the build. Revisit computes from what is already on the

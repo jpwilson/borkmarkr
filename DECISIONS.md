@@ -393,6 +393,34 @@ draw. When the web gains custom topics it can call the same function.
 
 ---
 
+## Sharing a topic
+
+**A share is an invitation, not an archive.** The first version pasted up to
+fifty `title` + `url` pairs using whatever the share extension had captured as
+the title — which for Instagram is the entire caption. In Messages that lands
+as a wall of text nobody reads. `Core/TopicShare.swift` sends ten instead,
+newest first, **titles only** (a bork's `text` — an X thread's body, an IG
+caption — cannot reach the message at all), a count line saying how many there
+really are, "+ N more" for the rest, and one line pointing at
+`bookmarker.lol/get`. Someone who wants all four hundred can install the app;
+that is what sharing one is for.
+
+**Shortened only where shortening keeps the link alive.** Links read as
+`instagram.com/reel/abc` — scheme and `www.` dropped, which data detectors
+still linkify. A URL whose identity is in its query (`youtube.com/watch?v=…`),
+or one too long to fit, prints whole instead. Plain text has no display
+strings, so a truncated URL is not a shorter link, it is a dead one, and the
+entire value of a share is that the other person can tap it. The image card,
+where nothing is tappable, uses the ellipsised form.
+
+**And a picture, because half of sharing isn't links.** `TopicShareCard`
+renders the band, the name and the first six titles as a 1080×1350 4:5 card
+through `ImageRenderer` — the version that goes in a story or a group chat,
+where a list of URLs is the wrong object entirely. Two items on the one button:
+links for someone who will tap them, a picture for someone who will look.
+
+---
+
 ## Known gaps
 
 - **Fonts.** The spec calls for Bricolage Grotesque + Instrument Sans. Neither is

@@ -133,6 +133,11 @@ struct TopicClayArt: View {
     let categoryID: String
     var remote: URL?
     var contentMode: ContentMode = .fill
+    /// What sits behind a scene that hasn't arrived. Browse's tiles keep the
+    /// paper default; the topic page's hero band passes the topic's own tint,
+    /// so a band with no art still reads as that topic rather than as a blank
+    /// strip across the top of the screen.
+    var fallbackTint: Color? = nil
 
     var body: some View {
         let asset = TopicMotif.asset(for: categoryID)
@@ -140,7 +145,12 @@ struct TopicClayArt: View {
             ClayArt(name: asset, contentMode: contentMode)
         } else {
             ZStack {
-                Tokens.paper
+                if let fallbackTint {
+                    LinearGradient(colors: [fallbackTint, fallbackTint.opacity(0.45)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                } else {
+                    Tokens.paper
+                }
                 if let remote {
                     AsyncImage(url: remote, transaction: Transaction(animation: .easeOut(duration: 0.22))) { phase in
                         if case .success(let image) = phase {

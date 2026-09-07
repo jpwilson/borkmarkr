@@ -17,7 +17,17 @@ struct BrowseView: View {
     @Environment(\.requestReview) private var requestReview
     @Environment(\.modelContext) private var context
     @AppStorage("browseAxis") private var axisRaw = Axis.topics.rawValue
+    // One per segment. Ordering topics by count while ordering sources A–Z is
+    // a perfectly reasonable thing to want, and a single shared setting would
+    // make picking one silently repick the others.
+    @AppStorage(BrowseSort.Key.topics) private var topicSortRaw = BrowseSort.fallback.rawValue
+    @AppStorage(BrowseSort.Key.sources) private var sourceSortRaw = BrowseSort.fallback.rawValue
+    @AppStorage(BrowseSort.Key.journeys) private var questSortRaw = BrowseSort.fallback.rawValue
     @State private var path = NavigationPath()
+    /// `-topic <id>` is consumed once, not on every reappearance.
+    @State private var openedLaunchTopic = false
+    /// Zooms the tapped tile into the topic page's hero band on iOS 18+.
+    @Namespace private var tileZoom
 
     // Search, hosted here since 1.1 — see `BrowseSearch.swift`.
     @State private var query = ScreenshotDefaults.searchQuery
@@ -43,6 +53,26 @@ struct BrowseView: View {
     private var axis: Axis {
         get { Axis(rawValue: axisRaw) ?? .topics }
         nonmutating set { axisRaw = newValue.rawValue }
+    }
+
+    /// The sort for whichever segment is showing. Reading and writing through
+    /// one property is what keeps the chip row from having to know which of
+    /// the three defaults keys it is editing.
+    private var sort: BrowseSort {
+        get {
+            switch axis {
+            case .topics: BrowseSort.named(topicSortRaw)
+            case .sources: BrowseSort.named(sourceSortRaw)
+            case .journeys: BrowseSort.named(questSortRaw)
+            }
+        }
+        nonmutating set {
+            switch axis {
+            case .topics: topicSortRaw = newValue.rawValue
+            case .sources: sourceSortRaw = newValue.rawValue
+            case .journeys: questSortRaw = newValue.rawValue
+            }
+        }
     }
 
     @Query(
@@ -113,14 +143,17 @@ struct BrowseView: View {
                 } else {
                     segmented
                         .padding(.top, 16)
-                        .padding(.bottom, 14)
+
+                    sortRow
+                        .padding(.top, 10)
+                        .padding(.bottom, 12)
 
                     ScrollView {
                         Group {
                             switch axis {
                             case .topics: topicsGrid
                             case .sources: sourcesList
-                            case .journeys: MissionsView(account: account)
+                            case .journeys: MissionsView(account: account, sort: sort)
                             }
                         }
                         .padding(.bottom, 120)
@@ -135,6 +168,7 @@ struct BrowseView: View {
                 case .topic(let categoryID):
                     if let category = merged.topic(id: categoryID) {
                         TopicPage(category: category)
+                            .zoomedFrom(id: categoryID, in: tileZoom)
                     }
                 case .source(let platform):
                     SourcePage(platform: platform)
@@ -157,7 +191,10 @@ struct BrowseView: View {
         // revealing it, so a request made in the same gesture as the tab
         // change arrives already-true and `onChange` never fires; a request
         // made while Browse is already on screen never appears again.
-        .onAppear(perform: consumeFocusRequest)
+        .onAppear {
+            consumeFocusRequest()
+            consumeLaunchTopic()
+        }
         .onChange(of: focusSearch) { _, _ in consumeFocusRequest() }
         .task(id: query) {
             // Debounce: wait out the typist, then commit.
@@ -247,6 +284,16 @@ struct BrowseView: View {
         focusSearch = false
     }
 
+    /// `-topic <id>` lands straight on a topic page. Screenshots only: there
+    /// is no other way to capture the topic page reproducibly, since getting
+    /// there otherwise means a person tapping a tile.
+    private func consumeLaunchTopic() {
+        guard !openedLaunchTopic, let id = ScreenshotDefaults.openTopic else { return }
+        openedLaunchTopic = true
+        axis = .topics
+        path.append(Route.topic(id))
+    }
+
     private func open(_ bookmark: Bookmark) {
         detail = bookmark
         ReviewPrompter.reached(.searchResultOpened, requestReview)
@@ -296,25 +343,69 @@ struct BrowseView: View {
         .zIndex(1)
     }
 
+    /// Most borks · Most recent · A–Z, under the segmented control and above
+    /// whatever it is ordering.
+    ///
+    /// The same three on every segment, in the same chip the search scopes
+    /// use, because "how is this list ordered" is one question and answering
+    /// it three different ways would make Browse look like three screens.
+    /// Horizontally scrollable so the largest Dynamic Type sizes push the row
+    /// sideways instead of truncating an option out of existence.
+    private var sortRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                ForEach(BrowseSort.allCases, id: \.rawValue) { option in
+                    SearchChip(label: option.title, active: sort == option) {
+                        sort = option
+                    }
+                }
+            }
+            .padding(.horizontal, 18)
+        }
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        .accessibilityLabel("Sort \(axis.title.lowercased())")
+    }
+
     // MARK: Topics
 
     private var topicCounts: [String: Int] {
         Dictionary(grouping: bookmarks.compactMap(\.categoryID)) { $0 }.mapValues(\.count)
     }
 
-    /// User's onboarding interests (that have saves) first, then count desc.
-    /// Custom topics you created show even when empty, so they don't vanish
-    /// the moment you add them.
+    /// Newest bork per topic. `bookmarks` is already savedAt descending, so
+    /// the first sighting of a topic is its most recent one.
+    private var topicRecency: [String: Date] {
+        var newest: [String: Date] = [:]
+        for item in bookmarks {
+            guard let id = item.categoryID, newest[id] == nil else { continue }
+            newest[id] = item.savedAt
+        }
+        return newest
+    }
+
+    /// The grid, in the order the sort chips ask for. Custom topics you
+    /// created show even when empty, so they don't vanish the moment you add
+    /// them — under "Most recent" they sit at the bottom until they have a
+    /// bork to be recent about.
     private var usedCategories: [Topic] {
         let counts = topicCounts
+        let recency = topicRecency
         let interestSet = Set(interests)
-        return merged.allTopics
+        let candidates = merged.allTopics
             .filter { (counts[$0.id] ?? 0) > 0 || merged.isCustomTopic($0.id) }
-            .sorted { a, b in
-                let ai = interestSet.contains(a.id), bi = interestSet.contains(b.id)
-                if ai != bi { return ai }
-                return (counts[a.id] ?? 0) > (counts[b.id] ?? 0)
-            }
+
+        let entries = candidates.enumerated().map { index, topic in
+            BrowseSortEntry(
+                id: topic.id,
+                name: topic.name,
+                count: counts[topic.id] ?? 0,
+                recent: recency[topic.id],
+                pinned: interestSet.contains(topic.id),
+                rank: index
+            )
+        }
+        let byID = Dictionary(uniqueKeysWithValues: candidates.map { ($0.id, $0) })
+        return sort.orderedIDs(entries).compactMap { byID[$0] }
     }
 
     private var uncategorisedCount: Int {
@@ -356,6 +447,7 @@ struct BrowseView: View {
                                   artURL: topicArt[category.id])
                     }
                     .buttonStyle(.plain)
+                    .zoomSource(id: category.id, in: tileZoom)
                 }
 
                 Button {
@@ -409,11 +501,32 @@ struct BrowseView: View {
         Dictionary(grouping: bookmarks.map(\.platform)) { $0 }.mapValues(\.count)
     }
 
+    /// Every platform, still — a source you have never used is a suggestion,
+    /// not a gap — but ordered by the chips. Under "Most borks" the empty ones
+    /// sink to the bottom instead of sitting in the middle of the list.
+    private var sortedSources: [Platform] {
+        let counts = sourceCounts
+        var newest: [Platform: Date] = [:]
+        for item in bookmarks where newest[item.platform] == nil {
+            newest[item.platform] = item.savedAt
+        }
+        let entries = Platform.ordered.enumerated().map { index, platform in
+            BrowseSortEntry(
+                id: platform.rawValue,
+                name: platform.name,
+                count: counts[platform] ?? 0,
+                recent: newest[platform],
+                rank: index
+            )
+        }
+        return sort.orderedIDs(entries).compactMap(Platform.init(rawValue:))
+    }
+
     @ViewBuilder
     private var sourcesList: some View {
         let counts = sourceCounts
         VStack(spacing: 10) {
-            ForEach(Platform.ordered, id: \.self) { platform in
+            ForEach(sortedSources, id: \.self) { platform in
                 let count = counts[platform] ?? 0
                 Button {
                     path.append(Route.source(platform))
@@ -543,5 +656,33 @@ private struct SourceRow: View {
         .padding(13)
         .cardSurface(radius: 18)
         .opacity(empty ? 0.92 : 1)
+    }
+}
+
+// MARK: - Tile → topic page transition
+
+/// The topic page opens out of the tile you tapped rather than sliding in from
+/// the right — the hero band *is* that tile, enlarged, so the system zoom is
+/// the honest animation for it.
+///
+/// iOS 18 and up. On 17 both of these are no-ops and the push is the standard
+/// one, which is exactly what shipped before.
+private extension View {
+    @ViewBuilder
+    func zoomSource(id: String, in namespace: Namespace.ID) -> some View {
+        if #available(iOS 18.0, *) {
+            matchedTransitionSource(id: id, in: namespace)
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func zoomedFrom(id: String, in namespace: Namespace.ID) -> some View {
+        if #available(iOS 18.0, *) {
+            navigationTransition(.zoom(sourceID: id, in: namespace))
+        } else {
+            self
+        }
     }
 }

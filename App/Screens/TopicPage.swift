@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Topic page: tinted header, subcategory chips, cross-axis source chips, and
+/// Topic page: hero band, subcategory chips, cross-axis source chips, and
 /// "Refine" tag chips that act as the third taxonomy level.
 struct TopicPage: View {
     let category: Topic
@@ -25,10 +25,21 @@ struct TopicPage: View {
     @State private var source: Platform?
     @State private var tag: String?
     @State private var detail: Bookmark?
+    /// The rendered share card. Built off the main flow when the slice
+    /// changes, so the share menu never waits on `ImageRenderer`.
+    @State private var cardImage: Image?
 
     private var inCategory: [Bookmark] {
         all.filter { $0.categoryID == category.id }
     }
+
+    /// The row behind a topic you made yourself, if this is one.
+    private var customEntry: CustomTopic? {
+        customTopics.first { $0.id == category.id }
+    }
+
+    /// A custom topic can have been renamed since `category` was built.
+    private var currentName: String { customEntry?.name ?? category.name }
 
     private var visible: [Bookmark] {
         inCategory.filter { item in
@@ -73,7 +84,7 @@ struct TopicPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                header
+                hero
                 if !presentSubs.isEmpty { subRow }
                 if presentSources.count > 1 { sourceRow }
                 if !refineTags.isEmpty { refineRow }
@@ -87,6 +98,7 @@ struct TopicPage: View {
             ToolbarItem(placement: .principal) { EmptyView() }
         }
         .sheet(item: $detail) { DetailSheet(bookmark: $0).environment(\.accent, accent) }
+        .task(id: cardKey) { await buildShareCard() }
         .alert("Rename topic", isPresented: $renaming) {
             TextField("Name", text: $renameDraft)
             Button("Save") {
@@ -98,57 +110,167 @@ struct TopicPage: View {
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(customTopics.first(where: { $0.id == category.id })?.name ?? category.name)
-                            .font(Typo.display(28, .heavy))
-                            .tracking(-0.6)
-                            .foregroundStyle(category.palette.deep)
-                        if let entry = customTopics.first(where: { $0.id == category.id }) {
-                            Button {
-                                renameDraft = entry.name
-                                renaming = true
-                            } label: {
-                                Image(systemName: "pencil")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(category.palette.deep.opacity(0.7))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    Text(Copy.countedBorks(inCategory.count))
-                        .font(Typo.ui(12.5, .medium))
-                        .foregroundStyle(category.palette.deep.opacity(0.75))
-                }
-                Spacer()
-                ShareLink(item: shareText) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))
-                        Text("Share").font(Typo.ui(12.5, .semibold))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 13)
-                    .padding(.vertical, 8)
-                    .background(Tokens.ink, in: Capsule())
-                }
+    // MARK: Hero band
+
+    /// The tile you tapped, opened out.
+    ///
+    /// The old header was a flat tint gradient with the name on it, which
+    /// meant every topic page looked like every other topic page and none of
+    /// them looked like the tile that got you there. This is the tile's own
+    /// composition at full width — clay scene on top, name and count on the
+    /// topic's tint underneath — so arriving feels like a continuation rather
+    /// than a jump. Deliberately compact: two chip rows' worth, which keeps
+    /// the first bork above the fold on the smallest phone we support.
+    ///
+    /// The text block is below the art, not over it, so Dynamic Type grows the
+    /// band instead of overflowing a fixed-height image, and nothing ever sits
+    /// on top of a busy scene at a contrast we can't predict.
+    private var hero: some View {
+        VStack(spacing: 0) {
+            TopicClayArt(
+                categoryID: category.id,
+                remote: customEntry?.imageURL,
+                fallbackTint: category.palette.tint
+            )
+            .frame(maxWidth: .infinity)
+            .frame(height: 96)
+            .clipped()
+            .overlay(alignment: .topTrailing) {
+                shareControl
+                    .padding(.horizontal, 14)
+                    .padding(.top, 12)
             }
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(currentName)
+                        .font(Typo.display(26, .heavy))
+                        .tracking(-0.6)
+                        .foregroundStyle(category.palette.deep)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.75)
+                    if let entry = customEntry {
+                        Button {
+                            renameDraft = entry.name
+                            renaming = true
+                        } label: {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(category.palette.deep.opacity(0.7))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Rename this topic")
+                    }
+                    Spacer(minLength: 0)
+                }
+                Text(Copy.countedBorks(inCategory.count))
+                    .font(Typo.ui(12.5, .medium))
+                    .foregroundStyle(category.palette.deep.opacity(0.75))
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(category.palette.tint)
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: [category.palette.tint, category.palette.tint.opacity(0.45)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-        )
     }
 
-    /// Shares the current slice, named for where you are: "Fitness › Mobility".
-    private var shareText: String {
-        let title = sub.map { "\(category.name) › \($0)" } ?? category.name
-        let lines = visible.prefix(50).map { "• \($0.title)\n  \($0.urlString)" }
-        return "\(title) — from bookmarker\n\n" + lines.joined(separator: "\n\n")
+    // MARK: Share
+
+    /// Two ways to hand this topic to somebody, on the button that was always
+    /// here. Links for a person who will tap them; a picture for a story or a
+    /// group chat, where nothing is tappable and the job is to be worth asking
+    /// about. The card is only offered once it has rendered — a share sheet
+    /// that stalls on an image is worse than one that offers a link.
+    private var shareControl: some View {
+        Menu {
+            ShareLink(item: shareMessage, subject: Text(shareHeading)) {
+                Label("Share links", systemImage: "link")
+            }
+            if let cardImage {
+                ShareLink(
+                    item: cardImage,
+                    subject: Text(shareHeading),
+                    preview: SharePreview(shareHeading, image: cardImage)
+                ) {
+                    Label("Share as image", systemImage: "photo")
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))
+                Text("Share").font(Typo.ui(12.5, .semibold))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 13)
+            .padding(.vertical, 8)
+            .background(Tokens.ink, in: Capsule())
+        }
+        .accessibilityLabel("Share this topic")
+    }
+
+    /// Named for where you are: "Fitness › Mobility".
+    private var shareHeading: String {
+        TopicShare.heading(topic: currentName, subtopic: sub)
+    }
+
+    /// The current slice as share items. Titles and URLs only — a bork's
+    /// `text` (an X thread's body, an Instagram caption) never leaves here.
+    private var shareItems: [TopicShare.Item] {
+        visible.map {
+            TopicShare.Item(title: $0.displayTitle, url: $0.urlString, savedAt: $0.savedAt)
+        }
+    }
+
+    private var shareMessage: String {
+        TopicShare.message(topic: currentName, subtopic: sub, items: shareItems)
+    }
+
+    /// Re-render when the slice, the name or the size of the topic changes —
+    /// not on every redraw.
+    private var cardKey: String {
+        "\(currentName)|\(sub ?? "")|\(source?.rawValue ?? "")|\(tag ?? "")|\(visible.count)"
+    }
+
+    @MainActor
+    private func buildShareCard() async {
+        let titles = TopicShare.newestFirst(shareItems)
+            .prefix(TopicShare.cardLimit)
+            .map { TopicShare.shortTitle($0.title, limit: 52) }
+
+        var art = UIImage(named: TopicMotif.asset(for: category.id))
+        if art == nil, let url = customEntry?.imageURL {
+            // Almost always a URLCache hit: the hero band above has already
+            // asked for the same image. A miss just means a card with the
+            // topic's tint instead of its scene.
+            art = await Self.loadArt(url)
+        }
+
+        let renderer = ImageRenderer(content: TopicShareCard(
+            topic: category,
+            name: currentName,
+            subtopic: sub,
+            count: visible.count,
+            titles: titles,
+            art: art
+        ))
+        renderer.scale = TopicShareCard.scale
+        renderer.proposedSize = ProposedViewSize(TopicShareCard.size)
+
+        guard let rendered = renderer.uiImage else { return }
+        cardImage = Image(uiImage: rendered)
+
+        #if DEBUG
+        // `-dumpShareCard <path>`: the only way to capture the card, since it
+        // is a rendered image rather than a screen. See ScreenshotDefaults.
+        if let path = ScreenshotDefaults.shareCardDumpPath, let data = rendered.pngData() {
+            try? data.write(to: URL(fileURLWithPath: path))
+        }
+        #endif
+    }
+
+    private static func loadArt(_ url: URL) async -> UIImage? {
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
+        return UIImage(data: data)
     }
 
     private var subRow: some View {

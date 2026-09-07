@@ -7,6 +7,9 @@ import SwiftData
 /// (become / decide / explore), not a topic. Topics file what a thing *is*.
 struct MissionsView: View {
     var account: Account? = nil
+    /// Set by Browse's sort chips. Defaulted so nothing else that embeds this
+    /// view has to know the option exists.
+    var sort: BrowseSort = .fallback
 
     @Environment(\.accent) private var accent
     @Environment(\.modelContext) private var context
@@ -25,12 +28,34 @@ struct MissionsView: View {
     @State private var open: Mission?
     @State private var seeds: [Mission.Seed] = []
 
+    /// The quests in the order Browse's sort chips ask for.
+    ///
+    /// "Most borks" counts only the borks that still exist — a quest whose
+    /// links you deleted should not keep its place in the list. "Most recent"
+    /// is the later of created and updated, so working on an old quest brings
+    /// it back to the top. `rank` carries the query's own newest-first order,
+    /// which is what ties fall back to.
+    private var sortedMissions: [Mission] {
+        let live = Set(bookmarks.map(\.id))
+        let entries = missions.enumerated().map { index, mission in
+            BrowseSortEntry(
+                id: mission.id,
+                name: mission.title,
+                count: mission.bookmarkIDs.filter(live.contains).count,
+                recent: max(mission.createdAt, mission.updatedAt),
+                rank: index
+            )
+        }
+        let byID = Dictionary(uniqueKeysWithValues: missions.map { ($0.id, $0) })
+        return sort.orderedIDs(entries).compactMap { byID[$0] }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if missions.isEmpty {
                 empty
             } else {
-                ForEach(missions) { mission in
+                ForEach(sortedMissions) { mission in
                     MissionCard(mission: mission) {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             mission.toggle()

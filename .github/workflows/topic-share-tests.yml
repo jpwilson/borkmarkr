@@ -1,0 +1,31 @@
+name: Topic share tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/TopicShare.swift"
+      - "Core/Copy.swift"
+      - "App/Screens/TopicPage.swift"
+      - "App/Components/TopicShareCard.swift"
+      - "Scripts/test_topic_share.swift"
+      - ".github/workflows/topic-share-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/TopicShare.swift"
+      - "Core/Copy.swift"
+      - "App/Screens/TopicPage.swift"
+      - "App/Components/TopicShareCard.swift"
+      - "Scripts/test_topic_share.swift"
+      - ".github/workflows/topic-share-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run topic share checks
+        run: |
+          swiftc -parse-as-library -o /tmp/topic-share-tests \
+            Core/Copy.swift Core/TopicShare.swift Scripts/test_topic_share.swift
+          /tmp/topic-share-tests
