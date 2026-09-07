@@ -265,6 +265,42 @@ the URL. The suggestion is marked `source: "ai"` and is dropped the moment the
 user touches the picker; a slow answer for an earlier URL is discarded by
 sequence number. Signed out, nothing is sent and the bork is simply "not filed".
 
+**Custom topics on the web are derived from ids, not synced.** There is no
+`custom_topics` table on the server: on iOS a `CustomTopic` is a SwiftData row
+with a name, a hue and its art, and all that ever reaches the server is a
+`bookmarks.category_id` of the shape `custom.<slug>`. So the web reads the topic
+back out of the id — `makeTopicID` is a verbatim port of `CustomTopic.makeID`
+(so a topic invented on either platform lands on one id and merges), and
+`customTopicName` runs it backwards. Three things are lost and each is
+deliberate rather than accidental: punctuation in the name ("Hair & grooming"
+comes back "Hair grooming"), the hue (hashed onto the same grid of 7° steps
+`CustomTopic.nextHue` walks, minus the ones a built-in sits on — the phone's
+answer depends on creation order, which the server doesn't keep), and any topic
+with nothing filed under it (which the Browse hint says out loud: "Topics appear
+here once something is filed under them"). **A real `custom_topics` sync table —
+name, hue, order, tombstones, LWW like `bookmarks` — is the fix, and it is the
+right next step for both platforms**: it would give the phone rename/delete
+across devices and give the web the name as typed.
+
+**Custom topics are installed into `TOPIC_BY_ID`, not held beside it.** The
+phone does exactly this — `MergedTaxonomy.init` calls
+`Taxonomy.installCustomTopics` — and it is why one lookup change fixes every
+call site at once: cards, chips, the search blob, search scopes, the Library
+pills, `docs/revisit.js` (which reads the global at call time) and the quest
+form all resolve a custom id without knowing custom topics exist. `TAXONOMY`
+itself stays the shipped 50, so the picker and the quest form still list the
+built-ins as a group, and the model's answer from `categorize` is still checked
+against `BUILTIN_IDS` rather than "every topic we happen to know".
+
+**"+ New topic" opens the Add sheet, not a bare naming dialog.** On the phone,
+creating a topic from Browse inserts a row that persists on its own. On the web
+a topic is only a `category_id`, so a name with nothing filed under it survives
+exactly as long as the tab does. Rather than pretend otherwise, the Browse tile
+opens the sheet that makes it real — Add, with the picker on top and the name
+field already focused — so naming a topic and filing the first thing into it is
+one gesture. The picker's own "+ Add a topic" row keeps the phone's copy and the
+phone's behaviour: select, expand, stay open.
+
 ## Accessibility
 
 **Small-text contrast.** The spec's tertiary ink `#A39A8D` on `#F6F3EE` paper is
@@ -387,9 +423,17 @@ as paper, which is exactly what it looks like today. Browse asks for a few missi
 scenes per appearance, oldest first, rather than firing fifteen generations the
 first time someone with a lot of topics opens the tab.
 
-**iOS only, deliberately.** The web app has no custom topics at all — its Browse
-filters through `TOPIC_BY_ID`, the fixed taxonomy — so there is nothing there to
-draw. When the web gains custom topics it can call the same function.
+**Both platforms now.** This was iOS-only while the web app's Browse filtered
+everything through `TOPIC_BY_ID`, the fixed taxonomy. The web has custom topics
+as of `web/custom-topics` and calls the same function on the same contract —
+`{id, name}` in, `{url, reason}` out, three per Browse render, stamped whether
+or not it worked. Two differences, both because a tab is not an app: it retries
+after an hour rather than a day (a browser is reloaded far more often than an
+app is launched, and `topic_art_begin` refuses to spend twice regardless), and
+it reads `public.topic_art` over REST on every pull, so a scene drawn on the
+phone appears on the web without generating anything. That read needed no new
+grant: 0010's `own topic art is readable` policy and the default `select` on
+public tables already allow it.
 
 ---
 

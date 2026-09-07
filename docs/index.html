@@ -237,6 +237,14 @@
 
   /* ── Browse ── */
   .section-title { font-size: 21px; margin: 10px 0 12px; }
+  /* The app's Topics · Sources · Side quests control (BrowseView.segmented):
+     a capsule track with the chosen segment lifted onto white. */
+  .seg { display: flex; gap: 3px; padding: 3px; margin: 0 0 16px; border-radius: 999px; background: var(--control); }
+  .seg button { flex: 1; min-width: 0; height: 34px; border: 0; border-radius: 999px; background: none;
+    color: var(--ink-2); font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+  .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(25,21,16,.06); }
+  @media (min-width: 761px) { .seg { max-width: 430px; } }
+  @media (max-width: 760px) { .seg button { height: 40px; font-size: 13px; } }
   .topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
   .topic-tile { border: 1px solid var(--hairline); border-radius: 18px; padding: 0; text-align: left;
     overflow: hidden; box-shadow: var(--shadow-card); }
@@ -245,13 +253,24 @@
   .tt-art { position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center;
     font: 800 34px var(--font-head); opacity: .9; }
   .tt-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
-    mix-blend-mode: multiply; }
+    mix-blend-mode: multiply; z-index: 1; }
+  /* A topic you made yourself carries no bundled scene until the server draws
+     one, so the lettered block is what it wears meanwhile. The same top-left
+     sheen the card covers use makes it read as clay rather than as a gap. */
+  .tt-art::before { content: ""; position: absolute; inset: 0;
+    background: radial-gradient(130% 95% at 18% 0%, rgba(255,255,255,.42), transparent 58%); }
   /* The initial is the fallback: it only shows once a broken image has removed itself. */
-  .ini { font-style: normal; }
+  .ini { font-style: normal; position: relative; }
   .tt-art:has(> img) .ini, .pill-art:has(> img) .ini { visibility: hidden; }
   .tt-text { display: flex; flex-direction: column; gap: 1px; padding: 10px 13px 12px; background: var(--surface); }
   .topic-tile b { font-size: 14.5px; font-family: var(--font-head); color: var(--ink); }
   .tt-text span { font-size: 12px; color: var(--meta); font-weight: 600; }
+  /* "+ New topic" — the app's tile at the end of the grid. */
+  .tile-new { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 15px;
+    background: var(--tint); border-color: transparent; color: var(--accent-text);
+    font-family: var(--font-head); font-size: 15px; font-weight: 800; min-height: 162px; }
+  .tile-new i { font-style: normal; font-size: 26px; line-height: 1; }
+  #topics-hint { display: block; margin: 14px 0 0; }
   .source-row { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--surface);
     border: 1px solid var(--hairline); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
   .source-badge { width: 38px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--paper);
@@ -395,6 +414,16 @@
   .tp-row[aria-expanded="true"] svg { transform: rotate(90deg); }
   .tp-row.tp-on .tp-name::after { content: " ✓"; color: var(--accent-text); }
   .tp-none .tp-name { color: var(--ink-2); font-weight: 500; }
+  /* Add a topic, and the topics you added — the app's addTopicRow and its
+     "yours" badge, in the same list rather than a screen of their own. */
+  .tp-add .tp-name { color: var(--accent-text); font-weight: 700; }
+  .tp-plus { width: 22px; height: 22px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%;
+    background: var(--tint); color: var(--accent-text); font: 800 15px/1 var(--font-body); }
+  .tp-group { padding: 18px 4px 7px; color: var(--meta); font-size: 10.5px; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase; }
+  .tp-mine { flex: 0 0 auto; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; }
+  .tp-add-open { padding: 10px 4px 14px; border-bottom: 1px solid var(--hairline); }
+  .tp-new-hint { margin: 9px 2px 0; }
   .tp-subs { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 4px 14px 26px; border-bottom: 1px solid var(--hairline); }
   .tp-subs .chip { cursor: pointer; height: auto; min-height: 34px; max-width: 100%; padding: 5px 13px; white-space: normal; text-align: left; }
   .tp-subs .chip.hit { border-color: var(--ink); }
@@ -708,11 +737,20 @@
 
     <section id="view-browse" hidden>
       <input type="search" class="field" id="search-mobile" placeholder="Search everything you've borked" autocomplete="off" aria-label="Search everything you've borked">
+      <!-- Two browse axes that cross, plus what you're working on — the app's
+           BrowseView segmented control. The search field stays above it. -->
       <div id="browse-home">
-        <h2 class="section-title">Topics</h2>
-        <div class="topics-grid" id="topics-grid"></div>
-        <h2 class="section-title" style="margin-top:26px">Sources</h2>
-        <div id="sources-list"></div>
+        <nav class="seg" id="browse-seg" aria-label="Browse by">
+          <button data-seg="topics" aria-pressed="true">Topics</button>
+          <button data-seg="sources" aria-pressed="false">Sources</button>
+          <button data-seg="quests" aria-pressed="false">Side quests</button>
+        </nav>
+        <div id="seg-topics">
+          <div class="topics-grid" id="topics-grid"></div>
+          <p class="hint" id="topics-hint" hidden>Topics appear here once something is filed under them.</p>
+        </div>
+        <div id="seg-sources" hidden><div id="sources-list"></div></div>
+        <div id="seg-quests" hidden><div id="quests-list"></div></div>
       </div>
       <div id="browse-topic" hidden>
         <button class="backlink" data-act="browse-back">← All topics</button>
@@ -1063,6 +1101,96 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const TOPIC_BY_ID = Object.fromEntries(TAXONOMY.map(t => [t.id, t]));
+const BUILTIN_IDS = new Set(TAXONOMY.map(t => t.id));
+
+/* ── Topics you made yourself ──────────────────────────────────────────────
+   Core/CustomSubtopic.swift's `CustomTopic`, as much of it as a browser can
+   see. The phone keeps these as SwiftData rows carrying a name, a hue and a
+   URL for their art. There is no `custom_topics` table on the server, so all
+   this tab ever receives is a `bookmarks.category_id` of the shape
+   `custom.<slug>` — and everything else is derived back out of that id, which
+   works because `makeID` is a slug of the name and nothing else.
+
+   Derived rather than synced costs exactly what you'd expect: an ampersand or
+   an accent doesn't survive the round trip ("Hair & grooming" comes back
+   "Hair grooming"), the hue is hashed rather than the one the phone chose, and
+   a topic with nothing filed under it doesn't exist here at all. A real
+   `custom_topics` table — names, hues, order, tombstones — is the fix, and it
+   is the right next step for both platforms. */
+const CUSTOM_PREFIX = "custom.";
+const isCustom = (id) => typeof id === "string" && id.startsWith(CUSTOM_PREFIX);
+/* The only shape that can be drawn: mirrors TopicArt.isCustomID and the
+   TOPIC_ID regex in supabase/functions/topic-art/index.ts. A slug with an
+   accent in it is a perfectly good topic; it just never gets a picture. */
+const ART_ID = /^custom\.[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/* Port of CustomTopic.makeID, so a topic invented here and the same topic
+   invented on the phone land on one id and merge instead of doubling up.
+   Swift maps every Character that is not a letter or a number to "-"; \p{L}
+   and \p{N} are those two Unicode categories. Collapsing runs of dashes makes
+   the code-point/grapheme difference between the two languages moot. */
+function makeTopicID(name) {
+  const slug = String(name ?? "").toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "-").replace(/-{2,}/g, "-").replace(/^-+|-+$/g, "");
+  return CUSTOM_PREFIX + (slug || "topic");
+}
+/* And back out: custom.hair-grooming → "Hair grooming", in the built-in style
+   (TaxonomyName.formatted). A name typed in this tab beats the derived one. */
+function customTopicName(id) {
+  const words = id.slice(CUSTOM_PREFIX.length).replace(/-+/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+/* CustomTopic.nextHue walks 7° steps and takes the first one no built-in sits
+   within 3° of — an answer that depends on the order topics were created,
+   which is the one thing the server never sees. So the web hashes the id onto
+   that same grid of free steps: the same palette, the same clearance from
+   every built-in, and the same colour on every device, because it comes from
+   the id rather than from history. */
+const CUSTOM_HUES = (() => {
+  const taken = TAXONOMY.map(t => t.hue);
+  const free = [];
+  for (let step = 0; step < 52; step++) {
+    const hue = (step * 7) % 360;
+    if (taken.every(h => Math.abs(h - hue) >= 3)) free.push(hue);
+  }
+  return free.length ? free : [24];
+})();
+function customHue(id) {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return CUSTOM_HUES[(h >>> 0) % CUSTOM_HUES.length];
+}
+
+/* Topics named in this tab that nothing is filed under yet: id → name. They
+   are pickable and they show on Browse, and they are gone on reload unless a
+   bork lands on one — which is what the Browse hint says out loud. */
+const addedTopics = new Map();
+
+/* The one door every topic lookup goes through. A custom id is installed into
+   TOPIC_BY_ID the first time it is met, exactly as the phone installs them
+   into the taxonomy (MergedTaxonomy.init → Taxonomy.installCustomTopics), so
+   everything downstream — cards, chips, search, docs/revisit.js — resolves a
+   custom id without knowing custom topics exist. TAXONOMY itself stays the
+   shipped 50, which is what the picker and the quest form list from. */
+function topicFor(id) {
+  if (!id) return null;
+  const known = TOPIC_BY_ID[id];
+  const named = addedTopics.get(id);
+  if (known && (!named || known.name === named)) return known;
+  if (!isCustom(id)) return null;
+  const t = { id, name: named || customTopicName(id), hue: customHue(id), subs: [], custom: true };
+  TOPIC_BY_ID[id] = t;
+  return t;
+}
+/* Your topics, A–Z: everything with a bork filed under it, plus anything you
+   named in this tab. The phone's MergedTaxonomy.allTopics, second half. */
+function myTopics() {
+  const ids = new Set(addedTopics.keys());
+  for (const r of live()) if (isCustom(r.category_id)) ids.add(r.category_id);
+  return [...ids].map(topicFor)
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+}
+
 /* One folding for every text match in the app — search, the search blob and the
    topic picker. Case- and accent-blind, so "index" finds "índex". */
 const fold = (s) => String(s ?? "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
@@ -1259,6 +1387,7 @@ let tab = "library";
 let lastTab = null;
 let platformFilter = null;   // Library
 let topicFilter = null;      // Browse drill-in
+let browseAxis = "topics";   // Browse's segmented control: topics · sources · quests
 let query = "";              // Browse: a live query shows results instead of topics
 let searchPlatform = null;   // …narrowed to one source
 const searchScopes = new Set(); // …and to Topics / Subtopics / Tags
@@ -1273,7 +1402,7 @@ const memo = new Map();      // element id → key of what it currently shows
 
 const blob = (r) => fold([
   r.title, r.author, r.body_text, r.note_text, (r.tags || []).join(" "),
-  TOPIC_BY_ID[r.category_id]?.name, r.subcategory, PLATFORM[r.platform]?.name, r.url,
+  topicFor(r.category_id)?.name, r.subcategory, PLATFORM[r.platform]?.name, r.url,
 ].filter(Boolean).join(" "));
 
 /* ── Search scope ──────────────────────────────────────────────────────────
@@ -1284,7 +1413,7 @@ const blob = (r) => fold([
    The chips themselves are in the markup (#scope-chips); this is what each one
    searches, and how the result line names it. */
 const SCOPES = [
-  { key: "topics", one: "in the topic", many: "topics", of: (r) => [TOPIC_BY_ID[r.category_id]?.name] },
+  { key: "topics", one: "in the topic", many: "topics", of: (r) => [topicFor(r.category_id)?.name] },
   { key: "subtopics", one: "in the subtopic", many: "subtopics", of: (r) => [r.subcategory] },
   { key: "tags", one: "with the tag", many: "tags", of: (r) => r.tags || [] },
 ];
@@ -1390,11 +1519,11 @@ function resetLocalState() {
   borks = new Map(); missions = new Map(); questDraft = null;
   profile = { handle: null, display_name: null };
   platformFilter = null; topicFilter = null; query = ""; searchPlatform = null; lastSearchCount = 0;
-  searchScopes.clear(); revisitExpanded = false;
+  searchScopes.clear(); revisitExpanded = false; browseAxis = "topics";
   tab = "library"; lastTab = null; loading = false; pulledOnce = false;
-  justAdded.clear(); memo.clear(); addedSubs.clear();
+  justAdded.clear(); memo.clear(); addedSubs.clear(); addedTopics.clear();
   $("search-desktop").value = ""; $("search-mobile").value = "";
-  for (const id of ["home-sections", "platform-chips", "grid-library", "grid-topic", "grid-search", "topics-grid", "sources-list", "search-chips", "revisit-sections"])
+  for (const id of ["home-sections", "platform-chips", "grid-library", "grid-topic", "grid-search", "topics-grid", "sources-list", "quests-list", "search-chips", "revisit-sections"])
     $(id).innerHTML = "";
 }
 function rebootFromStorage() {
@@ -1442,6 +1571,7 @@ async function pull() {
       if (rows.length < 1000) break;
     }
     try { await pullMissions(); } catch { /* quests are additive */ }
+    try { await pullTopicArt(); } catch { /* art is a decoration */ }
   } finally {
     loading = false; pulledOnce = true;
     persist(); render();
@@ -1565,6 +1695,77 @@ function commitMission(next) {
   });
 }
 
+/* ── Clay art for the topics you made yourself (Core/TopicArt.swift) ────────
+   Each of the 50 built-ins ships a bundled scene in /img/topics. A topic you
+   invented cannot — nobody bundles a picture for "Looksmaxxing" before anyone
+   types it — so the server draws one: POST /functions/v1/topic-art {id, name}
+   answers {url, reason}, and 0010's `topic_art` ledger is what makes that safe
+   to call on every visit: it is a claim taken before the model runs, so a
+   retry loop, two devices and a double tap collapse onto one generation, and
+   a topic already drawn comes straight back as `reason: "cached"`.
+
+   Nothing on screen waits for any of this. A topic with no art is a lettered
+   clay tile — exactly what a built-in looks like when its cover fails to load
+   — and every failure (signed out, offline, quota spent, key missing) leaves
+   the tile as it is. */
+const ART_RETRY = 60 * 60 * 1000;   // an hour. The phone waits a day; a tab is reloaded far more often than an app is launched, and the server refuses to spend twice anyway.
+const ART_BATCH = 3;                // per Browse render — TopicArt.backfillBatch
+const topicArt = new Map();         // topic id → https url
+const artAsking = new Set();        // in flight, so two renders in a row don't ask twice
+const artStamps = (() => { try { return JSON.parse(lsGet("bm.art") || "{}"); } catch { return {}; } })();
+for (const [id, v] of Object.entries(artStamps)) if (v && v.url) topicArt.set(id, v.url);
+
+/* A built-in resolves to its bundled file; yours to whatever the server drew,
+   or to nothing, which is the lettered tile. */
+const topicArtSrc = (t) => t.custom ? (topicArt.get(t.id) || null) : `/img/topics/${t.id}.jpg`;
+function stampArt(id, url) {
+  artStamps[id] = { url: url || artStamps[id]?.url || null, at: Date.now() };
+  if (url) topicArt.set(id, url);
+  lsSet("bm.art", JSON.stringify(artStamps));
+}
+/* TopicArt.wants: a drawable topic, no art yet, not asked about recently. */
+const wantsArt = (id) => ART_ID.test(id) && !topicArt.has(id) && !artAsking.has(id)
+  && Date.now() - (artStamps[id]?.at || 0) >= ART_RETRY;
+const repaintArt = () => { memo.delete("topics-grid"); memo.delete("home-sections"); render(); };
+
+/** Ask for a few, one at a time. Fire and forget: nothing here is awaited by
+    anything that draws. */
+async function askTopicArt(ids) {
+  if (demoMode || !store.session) return;
+  for (const id of ids.slice(0, ART_BATCH)) {
+    if (!wantsArt(id)) continue;
+    const name = (topicFor(id)?.name || "").trim();
+    if (name.length < 2) continue;
+    artAsking.add(id);
+    // Stamped whether or not it works — that is what stops a topic the server
+    // has given up on being asked again on every visit.
+    stampArt(id, null);
+    try {
+      const d = await api("/functions/v1/topic-art", { method: "POST", body: { id, name } });
+      if (d?.url && /^https:\/\//.test(d.url)) { stampArt(id, d.url); repaintArt(); }
+    } catch { /* art is a decoration; a topic never waits on it */ }
+    finally { artAsking.delete(id); }
+  }
+}
+/* Art drawn on the phone, or here before this browser forgot it. One read of
+   your own rows — 0010's "own topic art is readable" policy, plus the default
+   select grant on public tables — so nothing is generated and nothing spent. */
+async function pullTopicArt() {
+  const s = await validSession();
+  if (!s) return;
+  const rows = await api(`/rest/v1/topic_art?select=topic_id,public_url&owner_id=eq.${s.user_id}&status=eq.done&limit=500`);
+  let changed = false;
+  for (const r of rows || []) if (r.public_url && topicArt.get(r.topic_id) !== r.public_url) { stampArt(r.topic_id, r.public_url); changed = true; }
+  if (changed) repaintArt();
+}
+/* Whose art this browser cached is nobody else's business — same rule as the
+   open ledger. The URLs carry an owner id in their path. */
+function forgetTopicArt() {
+  topicArt.clear(); artAsking.clear();
+  for (const k of Object.keys(artStamps)) delete artStamps[k];
+  lsDel("bm.art");
+}
+
 /* ── Profile (public.profiles: handle, display_name) ── */
 async function loadProfile() {
   const s = await validSession();
@@ -1671,7 +1872,7 @@ const avatarOf = (r) => { const u = picOf(r); return u && isAvatar(u) ? u : null
 function cardHTML(r, o = {}) {
   const p = PLATFORM[r.platform] || PLATFORM.web;
   const d = displayFields(r);
-  const topic = TOPIC_BY_ID[r.category_id];
+  const topic = topicFor(r.category_id);
   const hue = topic ? topic.hue : 24;
   const aspect = coverAspect(r);
   const src = aspect ? picOf(r) : null;
@@ -1766,7 +1967,7 @@ const bySaved = (a, b) => (b.saved_at || "").localeCompare(a.saved_at || "");
 /* `meta` is one line saying why this card is in this strip — Revisit uses it
    for "opened 4×" and the date. Recent leaves it off. */
 function recentCardHTML(r, meta) {
-  const topic = TOPIC_BY_ID[r.category_id];
+  const topic = topicFor(r.category_id);
   const hue = topic ? topic.hue : 24;
   const src = picOf(r);
   const img = src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : "";
@@ -1788,15 +1989,15 @@ function questCardHTML(m) {
 }
 function topicCounts(all) {
   const counts = new Map();
-  for (const r of all) if (r.category_id && TOPIC_BY_ID[r.category_id])
+  for (const r of all) if (r.category_id && topicFor(r.category_id))
     counts.set(r.category_id, (counts.get(r.category_id) || 0) + 1);
   return [...counts.entries()].sort((a, b) => b[1] - a[1]);
 }
 function topicPillsHTML(all, limit) {
   return topicCounts(all).slice(0, limit).map(([id, n]) => {
-    const t = TOPIC_BY_ID[id];
-    return `<button class="topic-pill" style="${chipStyle(t.hue)}" data-topic-go="${id}">
-      <span class="pill-art"><i class="ini">${esc(t.name.charAt(0))}</i><img src="/img/topics/${id}.jpg" alt="" loading="lazy" data-fb="remove"></span>${esc(t.name)}<span class="n">${n}</span></button>`;
+    const t = topicFor(id), src = topicArtSrc(t);
+    return `<button class="topic-pill" style="${chipStyle(t.hue)}" data-topic-go="${esc(id)}">
+      <span class="pill-art"><i class="ini">${esc(t.name.charAt(0))}</i>${src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : ""}</span>${esc(t.name)}<span class="n">${n}</span></button>`;
   }).join("");
 }
 /* ── Suggested side quests — the app's Mission.suggested, ported ──
@@ -1806,14 +2007,14 @@ function suggestedQuests(all, quests, limit = 3) {
   const takenTopics = new Set(quests.map(m => m.category_id).filter(Boolean));
   const takenIDs = new Set(quests.flatMap(m => m.bookmark_ids || []));
   const byTopic = new Map();
-  for (const r of all) if (r.category_id && TOPIC_BY_ID[r.category_id])
+  for (const r of all) if (r.category_id && topicFor(r.category_id))
     byTopic.set(r.category_id, [...(byTopic.get(r.category_id) || []), r]);
   const seeds = [];
   for (const [topicID, items] of byTopic) {
     if (items.length < 3 || takenTopics.has(topicID)) continue;
     const unused = items.filter(r => !takenIDs.has(r.id));
     if (unused.length < 3) continue;
-    const topicName = TOPIC_BY_ID[topicID].name;
+    const topicName = topicFor(topicID).name;
     const subCounts = new Map();
     for (const r of unused) if (r.subcategory) subCounts.set(r.subcategory, (subCounts.get(r.subcategory) || 0) + 1);
     const dominant = [...subCounts.entries()].sort((a, b) => b[1] - a[1])[0];
@@ -1878,7 +2079,7 @@ async function refineSeedTitles(seeds) {
   if (!todo.length || namingSeeds || demoMode) return;
   namingSeeds = true;   // one ask per page load, whatever it returns
   try {
-    const clusters = todo.map(s => ({ id: s.id, topic: TOPIC_BY_ID[s.category_id].name, subtopic: s.subcategory || undefined, titles: s.samples }));
+    const clusters = todo.map(s => ({ id: s.id, topic: topicFor(s.category_id).name, subtopic: s.subcategory || undefined, titles: s.samples }));
     const d = await api("/functions/v1/name-quest", { method: "POST", body: { clusters } });
     let changed = false;
     for (const n of (d?.names || [])) if (todo.some(s => s.id === n.id) && n.title) { questNames[n.id] = n.title; changed = true; }
@@ -2055,32 +2256,73 @@ function renderBrowse(all) {
   if (memo.get("browse-panel") !== panel) { memo.set("browse-panel", panel); replay($(`browse-${panel === "drill" ? "topic" : panel}`), "view-enter"); }
   if (panel === "search") { renderSearch(all); return; }
   if (panel === "drill") {
-    const t = TOPIC_BY_ID[topicFilter];
+    const t = topicFor(topicFilter);
     const rows = all.filter(r => r.category_id === topicFilter);
     $("browse-topic-title").textContent = t ? `${t.name} · ${plural(rows.length, "bork")}` : "Topic";
     renderGrid($("grid-topic"), rows, `browse|${topicFilter}|${demoMode}`);
     return;
   }
-  const counts = topicCounts(all);
-  const tkey = `tiles|${demoMode}|${counts.map(([id, n]) => id + n).join(",")}`;
-  if (memo.get("topics-grid") !== tkey) {
-    memo.set("topics-grid", tkey);
-    $("topics-grid").innerHTML = counts.map(([id, n]) => {
-      const t = TOPIC_BY_ID[id];
-      return `<button class="topic-tile" data-topic="${id}">
-        <span class="tt-art" style="${tileStyle(t.hue)}"><i class="ini">${esc(t.name.charAt(0))}</i><img src="/img/topics/${id}.jpg" alt="" loading="lazy" data-fb="remove"></span>
-        <span class="tt-text"><b>${esc(t.name)}</b><span>${plural(n, "bork")}</span></span></button>`;
-    }).join("") || `<p class="hint">Topics appear as your borks get filed.</p>`;
+  // Topics · Sources · Side quests, and only the one on screen is built.
+  for (const axis of BROWSE_AXES) {
+    $(`seg-${axis}`).hidden = axis !== browseAxis;
+    const b = $("browse-seg").querySelector(`[data-seg="${axis}"]`);
+    b.classList.toggle("on", axis === browseAxis);
+    b.setAttribute("aria-pressed", String(axis === browseAxis));
   }
+  if (browseAxis === "topics") renderTopicTiles(all);
+  if (browseAxis === "sources") renderSources(all);
+  if (browseAxis === "quests") renderBrowseQuests();
+}
+
+/* Built-ins you actually use first, biggest first, exactly as before; then the
+   topics you made, A–Z (the phone's MergedTaxonomy.allTopics order); then the
+   tile that makes another one. A topic of yours with nothing filed under it
+   still shows, so naming one doesn't look like it did nothing. */
+function browseTiles(all) {
+  const counts = new Map(topicCounts(all));
+  const built = [...counts].filter(([id]) => !topicFor(id).custom);
+  const ids = new Set([...counts.keys()].filter(isCustom));
+  for (const id of addedTopics.keys()) ids.add(id);
+  const mine = [...ids].map(id => [id, counts.get(id) || 0])
+    .sort((a, b) => topicFor(a[0]).name.localeCompare(topicFor(b[0]).name, undefined, { numeric: true, sensitivity: "base" }));
+  return built.concat(mine);
+}
+function topicTileHTML(t, n) {
+  const src = topicArtSrc(t);
+  return `<button class="topic-tile" data-topic="${esc(t.id)}">
+      <span class="tt-art" style="${tileStyle(t.hue)}"><i class="ini">${esc(t.name.charAt(0))}</i>${src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : ""}</span>
+      <span class="tt-text"><b>${esc(t.name)}</b><span>${plural(n, "bork")}</span></span></button>`;
+}
+function renderTopicTiles(all) {
+  const tiles = browseTiles(all);
+  const key = `tiles|${demoMode}|${tiles.map(([id, n]) => `${id}:${n}:${topicArt.get(id) || ""}`).join(",")}`;
+  if (memo.get("topics-grid") !== key) {
+    memo.set("topics-grid", key);
+    $("topics-grid").innerHTML = tiles.map(([id, n]) => topicTileHTML(topicFor(id), n)).join("")
+      + `<button class="topic-tile tile-new" data-act="new-topic"><i aria-hidden="true">+</i>New topic</button>`;
+  }
+  $("topics-hint").hidden = tiles.length > 0;
+  // The scenes that were never drawn, a few at a time — TopicArt.backfillOrder.
+  askTopicArt(tiles.map(([id]) => id).filter(wantsArt));
+}
+function renderSources(all) {
   const items = platformItems(all).slice(1);
-  const skey = `sources|${demoMode}|${items.map(i => i.key + i.n).join(",")}`;
-  if (memo.get("sources-list") !== skey) {
-    memo.set("sources-list", skey);
-    $("sources-list").innerHTML = items.map(i =>
-      `<button class="source-row" data-platform-row="${i.key}">
-        <span class="source-badge">${glyph(i.key)}</span><b>${esc(i.label)}</b>
-        <span>${i.n}</span></button>`).join("") || `<p class="hint">Sources appear as you bork.</p>`;
-  }
+  const key = `sources|${demoMode}|${items.map(i => i.key + i.n).join(",")}`;
+  if (memo.get("sources-list") === key) return;
+  memo.set("sources-list", key);
+  $("sources-list").innerHTML = items.map(i =>
+    `<button class="source-row" data-platform-row="${i.key}">
+      <span class="source-badge">${glyph(i.key)}</span><b>${esc(i.label)}</b>
+      <span>${i.n}</span></button>`).join("") || `<p class="hint">Sources appear as you bork.</p>`;
+}
+function renderBrowseQuests() {
+  const quests = liveMissions();
+  const key = `quests|${demoMode}|${quests.map(m => m.id + ":" + m.updated_at).join(",")}`;
+  if (memo.get("quests-list") === key) return;
+  memo.set("quests-list", key);
+  $("quests-list").innerHTML = quests.length
+    ? `<div class="quests">${quests.map(m => questCardHTML(m)).join("")}<button class="quest-new" data-quest="">+ Start a side quest</button></div>`
+    : questStarterHTML();
 }
 
 /* "12 borks for “running”", or, scoped, what field it looked in. */
@@ -2243,16 +2485,23 @@ function setTab(next, { keepTopic = false, push = true } = {}) {
   if (changed) track("tab_switched", { tab: next });
 }
 function goTopic(id) {
-  if (!TOPIC_BY_ID[id]) return;
+  if (!topicFor(id)) return;
   tab = "browse"; topicFilter = id; clearQuery();
   render(); pushRoute(); window.scrollTo({ top: 0 });
-  track("topic_opened", { topic: id });
+  track("topic_opened", { topic: id.startsWith(CUSTOM_PREFIX) ? "custom" : id });
 }
-// `search` stays as an alias so old links and back-stack entries still land somewhere sensible.
-const ROUTE_RE = /^#(library|browse|search|revisit|you|help)(?:\/([a-z0-9]+))?$/;
+/* `search` stays as an alias so old links and back-stack entries still land
+   somewhere sensible. The segment after #browse/ is either an axis or a topic
+   id — and a topic id now carries dots and dashes (custom.hair-grooming), and
+   can carry an accent (custom.café-culture, which the phone will happily make),
+   which the old `[a-z0-9]+` quietly refused to match. Anything at all is taken
+   here and validated below instead. */
+const BROWSE_AXES = ["topics", "sources", "quests"];
+const ROUTE_RE = /^#(library|browse|search|revisit|you|help)(?:\/([^\s/#?]+))?$/;
 function routeFor() {
   if (tab === "library") return "";
-  if (tab === "browse" && topicFilter) return `#browse/${topicFilter}`;
+  if (tab === "browse" && topicFilter) return `#browse/${encodeURIComponent(topicFilter)}`;
+  if (tab === "browse" && browseAxis !== "topics") return `#browse/${browseAxis}`;
   return `#${tab}`;
 }
 function pushRoute() {
@@ -2269,9 +2518,14 @@ function applyRoute() {
   const m = ROUTE_RE.exec(location.hash || "");
   let next = m ? m[1] : "library";
   if (next === "search") { next = "browse"; history.replaceState(null, "", "#browse"); }
-  const topic = m && next === "browse" && m[2] && TOPIC_BY_ID[m[2]] ? m[2] : null;
+  let seg = (m && next === "browse" && m[2]) || null;
+  if (seg) { try { seg = decodeURIComponent(seg); } catch { /* leave it as it came */ } }
+  const axis = seg && BROWSE_AXES.includes(seg) ? seg : null;
+  const topic = seg && !axis && topicFor(seg) ? seg : null;
   if (demoMode && next === "you") next = "library";
   tab = next; topicFilter = topic; revisitExpanded = false;
+  // A drill-in keeps the axis you came from, so leaving it puts you back.
+  if (axis) browseAxis = axis; else if (!topic) browseAxis = "topics";
   clearQuery();   // a route is always a clean panel
   render();
   if (wantsImport) openImport("route");
@@ -2434,6 +2688,7 @@ function signOut(msg) {
   store.session = null; lsDel("bm.cursor"); store.cache = [];
   lsDel("bm.mcache");
   forgetOpens();   // whose library this browser opened is nobody else's business
+  forgetTopicArt();
   try { window.posthog?.reset?.(); } catch {}
   demoMode = false;
   resetLocalState();
@@ -2496,11 +2751,17 @@ function ownSubs(topicID) {
 // to someone scanning thirty pills for the one they want.
 const allSubs = (topicID) => [...(TOPIC_BY_ID[topicID]?.subs || []), ...ownSubs(topicID)]
   .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+/* The shipped 50 and the ones you made, each A–Z, kept apart so the sheet can
+   put a heading between them — the phone runs them together in one list, but
+   it also has a "yours" badge on every row and a menu to rename and delete;
+   here the group is what says which is which. */
 function tpShown(filter) {
   const needle = filter.trim();
-  const list = needle ? TAXONOMY.filter(t => tpRank(t, allSubs(t.id), needle) !== null) : TAXONOMY.slice();
-  return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+  const az = (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+  const keep = (list) => (needle ? list.filter(t => tpRank(t, allSubs(t.id), needle) !== null) : list.slice()).sort(az);
+  return { builtin: keep(TAXONOMY), mine: keep(myTopics()) };
 }
+const allTopicNames = () => TAXONOMY.map(t => t.name).concat(myTopics().map(t => t.name));
 function tpMatchingSubs(subs, needle) {
   needle = fold(needle.trim());
   return new Set(needle ? subs.filter(sub => tpTokens(sub).some(x => tpTokenMatches(x, needle))) : []);
@@ -2517,7 +2778,7 @@ const CHEV = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
    Everything downstream of the topic — the cover's fallback colour, which tags
    we suggest, whether the tags could place it — is redrawn from here. */
 function renderTrigger(which) {
-  const p = picks[which], t = p.topic && TOPIC_BY_ID[p.topic];
+  const p = picks[which], t = topicFor(p.topic);
   const el = $(`${which}-topic`);
   el.setAttribute("style", t ? chipStyle(t.hue) : "");
   el.innerHTML = (t
@@ -2531,50 +2792,74 @@ function renderTrigger(which) {
   }
   renderTags(which);
 }
-function openPicker(which) {
+function openPicker(which, { newTopic = false } = {}) {
   const p = picks[which];
-  tp = { which, snapshot: { ...p }, expanded: p.topic, filter: "", adding: null };
+  tp = { which, snapshot: { ...p }, expanded: p.topic, filter: "", adding: null, newTopic, focusNewTopic: newTopic };
   $("tp-q").value = "";
   renderPicker();
   openDlg($("topic-dialog"));
-  if (MOBILE()) $("tp-h").focus(); else $("tp-q").focus();   // on a phone the keyboard waits until asked for
+  // On a phone the keyboard waits until asked for; a name field that was
+  // asked for takes the caret over the search box either way.
+  if (!newTopic) { if (MOBILE()) $("tp-h").focus(); else $("tp-q").focus(); }
   const row = tp.expanded && $("tp-list").querySelector(`[data-tp-topic="${tp.expanded}"]`);
   if (row) row.scrollIntoView({ block: "start" });
+}
+/* The app's addTopicRow: first thing in the list, and it carries whatever is
+   in the search box so "juice" → "Add topic “juice”" is one tap. */
+function addTopicRowHTML(needle) {
+  if (!tp.newTopic) {
+    const named = tpCanAdd(needle, allTopicNames());
+    return `<button class="tp-row tp-add" data-tp-new><span class="tp-plus" aria-hidden="true">+</span><span class="tp-name">${named ? `Add topic “${esc(needle)}”` : "Add a topic"}</span></button>`;
+  }
+  return `<div class="tp-add-open">
+    <div class="tp-new"><input class="field" id="tp-new-topic" placeholder="New topic" maxlength="40" autocomplete="off" autocapitalize="sentences" aria-label="New topic name"><button class="chip on" data-tp-new-go>Add</button></div>
+    <p class="hint tp-new-hint">A topic is the top-level file — like Fitness or Cars. After you add it you can give it subtopics, or just use the topic. It shows up in Browse once a bork is filed under it.</p>
+  </div>`;
+}
+function tpTopicRowHTML(t, p, needle) {
+  const subs = allSubs(t.id), open = tp.expanded === t.id, on = p.topic === t.id;
+  let html = `<button class="tp-row${on ? " tp-on" : ""}" data-tp-topic="${esc(t.id)}" aria-expanded="${open}"><span class="tp-dot" style="background:hsl(${t.hue} 65% 55%)"></span><span class="tp-name">${esc(t.name)}</span>${t.custom ? `<span class="tp-mine" style="${chipStyle(t.hue)}">yours</span>` : ""}<span class="n">${subs.length}</span>${CHEV}</button>`;
+  if (!open) return html;
+  const hits = tpMatchingSubs(subs, needle), mine = new Set(ownSubs(t.id));
+  return html + `<div class="tp-subs">` +
+    subs.map(sub => { const sel = on && p.sub === sub;
+      return `<button class="chip${sel ? " on" : ""}${hits.has(sub) ? " hit" : ""}${mine.has(sub) ? " mine" : ""}" style="${sel ? "" : chipStyle(t.hue)}" data-tp-sub="${esc(sub)}" data-tp-of="${esc(t.id)}" aria-pressed="${sel}">${esc(sub)}</button>`; }).join("") +
+    `<button class="chip just${on && !p.sub ? " on" : ""}" data-tp-sub="" data-tp-of="${esc(t.id)}" aria-pressed="${on && !p.sub}">Just ${esc(t.name)}<span class="n">— no subtopic</span></button>` +
+    (tp.adding === t.id
+      ? `<div class="tp-new"><input class="field" id="tp-new-name" placeholder="New subtopic" maxlength="40" autocomplete="off" autocapitalize="sentences" data-tp-of="${esc(t.id)}" aria-label="New subtopic name"><button class="chip on" data-tp-add-go="${esc(t.id)}">Add</button></div>`
+      : `<button class="chip" data-tp-add="${esc(t.id)}">+ Add a subtopic</button>`) +
+    (needle && tp.adding !== t.id && tpCanAdd(needle, subs) ? `<button class="chip" data-tp-use="${esc(t.id)}">Use “${esc(needle)}” as a subtopic</button>` : "") +
+    `</div>`;
 }
 function renderPicker() {
   if (!tp) return;
   const p = picks[tp.which], needle = tp.filter.trim();
-  const shown = tpShown(tp.filter);
+  const { builtin, mine } = tpShown(tp.filter);
+  const shown = builtin.concat(mine);
   // Clearing the search must not collapse the open topic; a subtopic hit opens its topic when none is open.
   if (needle && !(tp.expanded && shown.some(t => t.id === tp.expanded))) {
     const hit = shown.find(t => tpRank(t, allSubs(t.id), needle) === 2);
     if (hit) tp.expanded = hit.id;
   }
   const draft = $("tp-new-name")?.value ?? needle;
+  const topicDraft = $("tp-new-topic")?.value ?? needle;
   let html = needle ? "" : `<button class="tp-row tp-none${p.topic ? "" : " tp-on"}" data-tp-none><span class="tp-dot" style="background:var(--hairline)"></span><span class="tp-name">Not filed — no topic</span></button>`;
-  for (const t of shown) {
-    const subs = allSubs(t.id), open = tp.expanded === t.id, on = p.topic === t.id;
-    html += `<button class="tp-row${on ? " tp-on" : ""}" data-tp-topic="${t.id}" aria-expanded="${open}"><span class="tp-dot" style="background:hsl(${t.hue} 65% 55%)"></span><span class="tp-name">${esc(t.name)}</span><span class="n">${subs.length}</span>${CHEV}</button>`;
-    if (!open) continue;
-    const hits = tpMatchingSubs(subs, needle), mine = new Set(ownSubs(t.id));
-    html += `<div class="tp-subs">` +
-      subs.map(sub => { const sel = on && p.sub === sub;
-        return `<button class="chip${sel ? " on" : ""}${hits.has(sub) ? " hit" : ""}${mine.has(sub) ? " mine" : ""}" style="${sel ? "" : chipStyle(t.hue)}" data-tp-sub="${esc(sub)}" data-tp-of="${t.id}" aria-pressed="${sel}">${esc(sub)}</button>`; }).join("") +
-      `<button class="chip just${on && !p.sub ? " on" : ""}" data-tp-sub="" data-tp-of="${t.id}" aria-pressed="${on && !p.sub}">Just ${esc(t.name)}<span class="n">— no subtopic</span></button>` +
-      (tp.adding === t.id
-        ? `<div class="tp-new"><input class="field" id="tp-new-name" placeholder="New subtopic" maxlength="40" autocomplete="off" autocapitalize="sentences" data-tp-of="${t.id}" aria-label="New subtopic name"><button class="chip on" data-tp-add-go="${t.id}">Add</button></div>`
-        : `<button class="chip" data-tp-add="${t.id}">+ Add a subtopic</button>`) +
-      (needle && tp.adding !== t.id && tpCanAdd(needle, subs) ? `<button class="chip" data-tp-use="${t.id}">Use “${esc(needle)}” as a subtopic</button>` : "") +
-      `</div>`;
+  html += addTopicRowHTML(needle);
+  for (const t of builtin) html += tpTopicRowHTML(t, p, needle);
+  if (mine.length) {
+    html += `<div class="tp-group">Your topics</div>`;
+    for (const t of mine) html += tpTopicRowHTML(t, p, needle);
   }
   if (!shown.length) {
-    const host = TOPIC_BY_ID[tp.expanded] || TOPIC_BY_ID[p.topic];   // the topic you were just in, most likely where this belongs
-    html = `<p class="hint tp-empty-msg">Nothing called “${esc(needle)}”.</p>` + (host && tpCanAdd(needle, allSubs(host.id))
-      ? `<div class="tp-subs" style="padding-left:4px;border:0"><button class="chip" data-tp-use="${host.id}">Use “${esc(needle)}” as a subtopic of ${esc(host.name)}</button></div>` : "");
+    const host = topicFor(tp.expanded) || topicFor(p.topic);   // the topic you were just in, most likely where this belongs
+    html = addTopicRowHTML(needle) + `<p class="hint tp-empty-msg">Nothing called “${esc(needle)}”.</p>` + (host && tpCanAdd(needle, allSubs(host.id))
+      ? `<div class="tp-subs" style="padding-left:4px;border:0"><button class="chip" data-tp-use="${esc(host.id)}">Use “${esc(needle)}” as a subtopic of ${esc(host.name)}</button></div>` : "");
   }
   $("tp-list").innerHTML = html;
   const nu = $("tp-new-name");
   if (nu) { nu.value = draft; if (tp.focusNew) { nu.focus(); tp.focusNew = false; } }
+  const nt = $("tp-new-topic");
+  if (nt) { nt.value = topicDraft; if (tp.focusNewTopic) { nt.focus(); nt.select(); tp.focusNewTopic = false; } }
 }
 /* A pick both sets the value and closes the sheet — same as the app. */
 function commitPick(topic, sub) {
@@ -2594,6 +2879,35 @@ function addSubtopicTo(topicID, raw, dismissAfter) {
   tp.expanded = topicID; tp.adding = null;
   renderTrigger(tp.which);
   if (dismissAfter) closePicker(true); else renderPicker();
+}
+/* The app's TopicPickerSheet.addTopic. A name you already have always wins —
+   a built-in first, then one of yours, then the id `makeID` would give it — so
+   "Fitness" never becomes a second Fitness and typing a topic twice re-selects
+   the one you have. Selected and expanded but not dismissed, exactly like the
+   phone: the next thing you'd want is a subtopic under it. */
+function addTopicNamed(raw) {
+  const name = subName(raw);
+  if (name.length < 2) { $("tp-new-topic")?.focus(); return; }
+  const lower = name.toLowerCase(), id = makeTopicID(name);
+  const match = TAXONOMY.find(t => t.name.toLowerCase() === lower)
+    || myTopics().find(t => t.name.toLowerCase() === lower || t.id === id);
+  if (!match) { addedTopics.set(id, name); track("topic_created", { where: tp.which }); }
+  const topic = match || topicFor(id);
+  const p = picks[tp.which];
+  p.topic = topic.id; p.sub = null; p.source = "user";
+  tp.expanded = topic.id; tp.newTopic = false; tp.filter = "";
+  $("tp-q").value = "";
+  renderTrigger(tp.which);
+  renderPicker();
+  $("tp-list").querySelector(`[data-tp-topic="${topic.id}"]`)?.scrollIntoView({ block: "start" });
+}
+/* "+ New topic", from the end of the Browse grid. A topic here is only ever a
+   `bookmarks.category_id`, so naming one lands you in the sheet that files
+   something under it — the picker over the Add sheet, name field already open. */
+function openNewTopic() {
+  if (demoMode) { toast("Sign up free and your own topics are yours.", "Sign up", exitDemoToSignup); return; }
+  openAdd();
+  openPicker("add", { newTopic: true });
 }
 function closePicker(done) {
   if (!tp) return;
@@ -2687,8 +3001,12 @@ function parsedURL(raw) {
   return u.hostname.includes(".") ? u.href : null;
 }
 function fillTopicSelect(sel, chosen) {
-  sel.innerHTML = `<option value="">— none —</option>` +
-    TAXONOMY.map(t => `<option value="${t.id}"${t.id === chosen ? " selected" : ""}>${esc(t.name)}</option>`).join("");
+  const opt = (t) => `<option value="${esc(t.id)}"${t.id === chosen ? " selected" : ""}>${esc(t.name)}</option>`;
+  const mine = myTopics();
+  sel.innerHTML = `<option value="">— none —</option>` + TAXONOMY.map(opt).join("")
+    // Without these a quest already filed under a topic of yours would lose it
+    // the moment the form was saved.
+    + (mine.length ? `<optgroup label="Your topics">${mine.map(opt).join("")}</optgroup>` : "");
 }
 function openAdd() {
   if (demoMode) { toast("Sign up free and this + is yours.", "Sign up", exitDemoToSignup); return; }
@@ -2715,7 +3033,7 @@ function openAdd() {
 function paintAddCard() {
   const url = parsedURL($("add-url").value);
   if (!url) return;
-  const platform = detectPlatform(url), topic = TOPIC_BY_ID[picks.add.topic];
+  const platform = detectPlatform(url), topic = topicFor(picks.add.topic);
   $("add-cover").setAttribute("style", `height:150px;${gradient(topic ? topic.hue : 24)}`);
   $("add-glyph").innerHTML = glyph(platform);
   const badge = $("add-badge");
@@ -2748,7 +3066,7 @@ function renderPlacement() {
   const url = parsedURL($("add-url").value);
   if (picks.add.topic || !sheetTags.add.length || !url) { button.hidden = true; return; }
   const s = Filer.suggest(url, sheetTags.add.join(" "), null);
-  const topic = s.topic && TOPIC_BY_ID[s.topic];
+  const topic = topicFor(s.topic);
   if (!topic) { button.hidden = true; return; }
   button.dataset.topic = s.topic;
   button.dataset.sub = s.subtopic || "";
@@ -2838,7 +3156,9 @@ async function suggestTopicFor(url, seq) {
     // You may have picked a topic, or a later link may have landed, while this
     // was in flight. Either way this answer is stale.
     if (seq !== addSeq || picks.add.topic || picks.add.source === "user") return;
-    if (!d?.topic || !TOPIC_BY_ID[d.topic]) return;
+    // Checked against the shipped 50 specifically, not against every topic we
+    // happen to know: the model is asked for one of those and nothing else.
+    if (!d?.topic || !BUILTIN_IDS.has(d.topic)) return;
     const subs = TOPIC_BY_ID[d.topic].subs;
     picks.add = { topic: d.topic, sub: subs.includes(d.subtopic) ? d.subtopic : null, source: "ai" };
     mergeTags(Array.isArray(d.tags) ? d.tags.slice(0, 4) : []);
@@ -2879,6 +3199,9 @@ function saveAdd() {
   track("bork_added", { platform, is_first: isFirst, had_preview: !!addPreview, filed: picks.add.source || "none",
     tags: row.tags.length, note: !!note, quest: quests.length > 0 });
   commit(row, existing || null);
+  // A topic of yours becomes real the moment something is filed under it, so
+  // that is also the moment to ask for its picture.
+  askTopicArt([row.category_id].filter(Boolean));
   for (const m of quests) {
     if ((m.bookmark_ids || []).includes(id)) continue;
     commitMission({ ...m, bookmark_ids: [...(m.bookmark_ids || []), id] });
@@ -2894,7 +3217,7 @@ function openEdit(id) {
   $("edit-title").textContent = displayFields(r).title;
   const open = $("edit-open");
   if (/^https?:/i.test(r.url)) open.href = r.url; else open.removeAttribute("href");
-  picks.edit = { topic: TOPIC_BY_ID[r.category_id] ? r.category_id : null, sub: r.subcategory || null, source: null };
+  picks.edit = { topic: topicFor(r.category_id) ? r.category_id : null, sub: r.subcategory || null, source: null };
   sheetTags.edit = (r.tags || []).map(cleanTag).filter(Boolean);
   $("edit-tag").value = ""; syncTagGo("edit");
   $("edit-title-input").value = r.title || "";
@@ -2927,6 +3250,7 @@ function saveEdit() {
   if (!changed) return;
   track("bork_edited", { note: !!next.note_text, tags: next.tags.length });
   commit(next, r);
+  askTopicArt([next.category_id].filter(Boolean));   // moved into a topic of yours: same moment
 }
 async function deleteBork() {
   const r = borks.get(editing);
@@ -3055,8 +3379,8 @@ function renderImportReview() {
   };
   const platforms = tally("platform");
   const topics = tally("category_id");
-  const named = topics.filter(([id]) => TOPIC_BY_ID[id]);
-  const unfiled = topics.find(([id]) => !TOPIC_BY_ID[id])?.[1] || 0;
+  const named = topics.filter(([id]) => topicFor(id));
+  const unfiled = topics.find(([id]) => !topicFor(id))?.[1] || 0;
   st.platformCounts = Object.fromEntries(platforms);
   st.topicCount = named.length;
 
@@ -3070,7 +3394,7 @@ function renderImportReview() {
 
   const chip = (inner, n) => `<span class="chip">${inner}<span class="n">${n}</span></span>`;
   const platHTML = platforms.map(([p, n]) => chip(`${glyph(p)}${esc(PLATFORM[p]?.name || p)}`, n)).join("");
-  const topicHTML = named.slice(0, 10).map(([id, n]) => chip(esc(TOPIC_BY_ID[id].name), n)).join("")
+  const topicHTML = named.slice(0, 10).map(([id, n]) => chip(esc(topicFor(id).name), n)).join("")
     + (named.length > 10 ? `<span class="chip">+${named.length - 10} more</span>` : "")
     + (unfiled ? chip("Not filed yet", unfiled) : "");
   $("import-breakdown").innerHTML =
@@ -3217,6 +3541,7 @@ document.addEventListener("click", (e) => {
   const act = e.target.closest("[data-act]")?.dataset.act;
   if (act === "peek-demo" || act === "peek-demo-signedout") { enterDemo(); return; }
   if (act === "empty-add") { openAdd(); return; }
+  if (act === "new-topic") { openNewTopic(); return; }
   if (act === "import") { openImport(store.session ? tab : "signed-out"); return; }
   if (act === "import-choose") { $("import-file").click(); return; }
   if (act === "import-close") {
@@ -3294,6 +3619,12 @@ document.addEventListener("click", (e) => {
     const k = scopeChip.dataset.scope;
     if (searchScopes.has(k)) searchScopes.delete(k); else searchScopes.add(k);
     render(); armSearchTrack(); return;
+  }
+  const segBtn = e.target.closest("[data-seg]");
+  if (segBtn) {
+    browseAxis = segBtn.dataset.seg; topicFilter = null;
+    render(); pushRoute(); track("browse_axis", { axis: browseAxis });
+    return;
   }
   const chip = e.target.closest(".chip");
   if (chip && chip.dataset.platform !== undefined) { platformFilter = chip.dataset.platform || null; render(); track("filter_platform", { platform: platformFilter || "all" }); return; }
@@ -3434,10 +3765,14 @@ $("tp-q").addEventListener("keydown", (e) => {
 });
 $("tp-list").addEventListener("keydown", (e) => {
   const nu = e.target.closest("#tp-new-name");
-  if (nu && e.key === "Enter") { e.preventDefault(); addSubtopicTo(nu.dataset.tpOf, nu.value, false); }
+  if (nu && e.key === "Enter") { e.preventDefault(); addSubtopicTo(nu.dataset.tpOf, nu.value, false); return; }
+  const nt = e.target.closest("#tp-new-topic");
+  if (nt && e.key === "Enter") { e.preventDefault(); addTopicNamed(nt.value); }
 });
 $("tp-list").addEventListener("click", (e) => {
   if (!tp) return;
+  if (e.target.closest("[data-tp-new-go]")) { addTopicNamed($("tp-new-topic")?.value || ""); return; }
+  if (e.target.closest("[data-tp-new]")) { tp.newTopic = true; tp.focusNewTopic = true; renderPicker(); return; }
   const row = e.target.closest("[data-tp-topic]");
   if (row) {
     const id = row.dataset.tpTopic;
