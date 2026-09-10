@@ -76,6 +76,15 @@ targets:
           - twitter
           - tiktok
           - youtube
+        # A shared collection opened into the app: bookmarker://c/<slug>
+        # (Core/CollectionShare.swift parses it; RootView presents it). A
+        # custom scheme rather than a universal link for now — universal
+        # links need an associated-domains entitlement, which changes the
+        # provisioning profile of a build currently held in review.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.jpwilson.borkmarkr.collection
+            CFBundleURLSchemes:
+              - bookmarker
 
   ShareExtension:
     type: app-extension

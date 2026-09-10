@@ -143,6 +143,28 @@ final class Account: ObservableObject {
         }
     }
 
+    /// Runs a sync and waits for it — including one already in flight.
+    ///
+    /// `sync` is fire-and-forget for foreground and sign-in, which is right
+    /// for them: nothing there needs to know when the upload lands. Sharing
+    /// does. A collection is a set of server rows, so every bork in it has to
+    /// be on the server *before* the link is made, and a sync that foreground
+    /// started a moment ago cannot be joined — only waited out, after which
+    /// this runs its own. Returns the sync's error, if it had one, so the
+    /// caller can say why the link was not made rather than making an empty
+    /// one.
+    func syncAndWait(context: ModelContext) async -> String? {
+        let deadline = Date.now.addingTimeInterval(45)
+        while isSyncing {
+            guard Date.now < deadline else {
+                return "Your backup is still running. Try again in a moment."
+            }
+            try? await Task.sleep(for: .milliseconds(150))
+        }
+        await sync(context: context)
+        return lastError
+    }
+
     private func push(context: ModelContext, session: Supabase.Session) async throws {
         // Unchanged, and safe in a way the old pull wasn't: both sides of this
         // comparison were stamped by *this* device's clock, so it can only

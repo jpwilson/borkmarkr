@@ -7,6 +7,9 @@ struct TopicPage: View {
     let category: Topic
 
     @Environment(\.accent) private var accent
+    /// Injected by RootView; this page is pushed by Browse and has no
+    /// `account` of its own. Only "Share as a web page" needs it.
+    @Environment(\.account) private var account
     // Waiting borks are saved and visible in the Library, but held out of
     // every count, tile and result until admitted. See `SaveLimit`.
     @Query(
@@ -22,6 +25,7 @@ struct TopicPage: View {
     @Environment(\.modelContext) private var context
     @State private var renameDraft = ""
     @State private var renaming = false
+    @State private var collecting = false
 
     @State private var sub: String?
     @State private var source: Platform?
@@ -100,6 +104,15 @@ struct TopicPage: View {
             ToolbarItem(placement: .principal) { EmptyView() }
         }
         .sheet(item: $detail) { DetailSheet(bookmark: $0).environment(\.accent, accent) }
+        .sheet(isPresented: $collecting) {
+            CollectSheet(
+                bookmarks: visible,
+                presetName: shareHeading,
+                categoryID: category.id,
+                account: account
+            )
+            .environment(\.accent, accent)
+        }
         .task(id: cardKey) { await buildShareCard() }
         .alert("Rename topic", isPresented: $renaming) {
             TextField("Name", text: $renameDraft)
@@ -178,11 +191,13 @@ struct TopicPage: View {
 
     // MARK: Share
 
-    /// Two ways to hand this topic to somebody, on the button that was always
-    /// here. Links for a person who will tap them; a picture for a story or a
-    /// group chat, where nothing is tappable and the job is to be worth asking
-    /// about. The card is only offered once it has rendered — a share sheet
-    /// that stalls on an image is worse than one that offers a link.
+    /// Three ways to hand this topic to somebody, on the button that was
+    /// always here. Links for a person who will tap them; a picture for a
+    /// story or a group chat, where nothing is tappable and the job is to be
+    /// worth asking about; and one link to a page with the whole slice on it,
+    /// for when ten titles in a message is not the point and all of it is.
+    /// The card is only offered once it has rendered — a share sheet that
+    /// stalls on an image is worse than one that offers a link.
     private var shareControl: some View {
         Menu {
             ShareLink(item: shareMessage, subject: Text(shareHeading)) {
@@ -197,6 +212,14 @@ struct TopicPage: View {
                     Label("Share as image", systemImage: "photo")
                 }
             }
+            Divider()
+            // "Share as a web page", not "Share as a link": "Share links" is
+            // two items up, and two entries with "link" in them say nothing
+            // about the difference. This one makes bookmarker.lol/c/… — a page.
+            Button { collecting = true } label: {
+                Label("Share as a web page…", systemImage: "link.badge.plus")
+            }
+            .disabled(visible.isEmpty)
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))

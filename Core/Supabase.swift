@@ -205,6 +205,60 @@ enum Supabase {
         return try await send(request)
     }
 
+    // MARK: - PostgREST
+
+    /// Calls a database function: `POST /rest/v1/rpc/<name>` with named
+    /// parameters as JSON.
+    ///
+    /// `session` may be `nil`, which calls it as `anon`. Exactly one function
+    /// grants that — `collection_by_slug`, the door a shared link opens
+    /// through before the reader has an account — and the grant, not this
+    /// client, is what decides. A function that refuses `anon` answers with
+    /// the same `Failure.http` any other refusal does.
+    static func rpc(_ function: String, bodyJSON: Data, session: Session?) async throws -> Data {
+        var request = try restRequest("rpc/\(function)", session: session)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = bodyJSON
+        return try await send(request)
+    }
+
+    /// One `GET` against a table. `path` carries its own query string
+    /// (`collections?select=…&order=…`), which is why it resolves the way
+    /// `post` does rather than through `appendingPathComponent`, which would
+    /// percent-encode the `?`.
+    static func get(path: String, session: Session) async throws -> Data {
+        try await send(restRequest(path, session: session))
+    }
+
+    /// `PATCH` the rows a `path` selects (`collections?id=eq.<id>`).
+    ///
+    /// Returns the rows it changed, because PostgREST answers a patch that
+    /// row-level security quietly filtered to nothing with a 200 and an empty
+    /// list — the caller counts them (`CollectionShare.rowsChanged`) rather
+    /// than taking the status code's word for it.
+    static func patch(path: String, bodyJSON: Data, session: Session) async throws -> Data {
+        var request = try restRequest(path, session: session)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("return=representation", forHTTPHeaderField: "Prefer")
+        request.httpBody = bodyJSON
+        return try await send(request)
+    }
+
+    private static func restRequest(_ path: String, session: Session?) throws -> URLRequest {
+        guard let config = Config.current,
+              let url = URL(string: "/rest/v1/" + path, relativeTo: config.url)?.absoluteURL
+        else { throw Failure.notConfigured }
+        var request = URLRequest(url: url)
+        request.setValue(config.anonKey, forHTTPHeaderField: "apikey")
+        // Signed out, the bearer is the anon key itself — the same pair of
+        // headers `supabase-js` and the collection-page function send.
+        request.setValue("Bearer \(session?.accessToken ?? config.anonKey)",
+                         forHTTPHeaderField: "Authorization")
+        return request
+    }
+
     // MARK: - Edge Functions
 
     /// Calls an Edge Function as the signed-in user.
