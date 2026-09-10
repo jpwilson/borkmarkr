@@ -27,6 +27,10 @@ enum LinkPreview {
     struct Result: Sendable {
         var title: String?
         var author: String?
+        /// `og:description`. On Instagram and TikTok this is the full caption
+        /// with its hashtags — the part of a post that says what it is about,
+        /// where the title says who posted it. Read for filing, never stored.
+        var description: String?
         var imageURL: URL?
         var durationSeconds: Int?
         var publishedAt: Date?
@@ -45,6 +49,7 @@ enum LinkPreview {
         var result = oembed ?? og ?? Result()
         if result.title == nil { result.title = og?.title }
         if result.author == nil { result.author = og?.author }
+        if result.description == nil { result.description = og?.description }
         if result.imageURL == nil { result.imageURL = og?.imageURL }
         if result.durationSeconds == nil { result.durationSeconds = og?.durationSeconds }
         if result.publishedAt == nil { result.publishedAt = og?.publishedAt }
@@ -87,11 +92,19 @@ enum LinkPreview {
               let html = String(data: data, encoding: .utf8)
                 ?? String(data: data, encoding: .isoLatin1)
         else { return nil }
+        return parse(html: html, base: url)
+    }
 
+    /// The Open Graph half, separated from the network so it can be exercised
+    /// on macOS against a saved page. `nil` when the page said nothing usable.
+    static func parse(html: String, base url: URL) -> Result? {
         var result = Result()
         result.title = meta(in: html, property: "og:title")
             ?? meta(in: html, property: "twitter:title")
             ?? titleTag(in: html)
+        result.description = meta(in: html, property: "og:description")
+            ?? meta(in: html, property: "twitter:description")
+            ?? meta(in: html, property: "description")
         let site = meta(in: html, property: "og:site_name")
         let pageAuthor = meta(in: html, property: "author")
         if let pageAuthor, !Platform.isSiteName(pageAuthor) {

@@ -636,16 +636,25 @@ const Importer = (() => {
  * come for free and stay correct when categories change. On top sits a small
  * curated layer for the cases where the label isn't what people actually write.
  *
+ * What it reads, and what it refuses to (see the Swift for the two real saves
+ * that taught it): the title is unwrapped so only the *caption* scores at full
+ * weight and the author's name and bio are a half-weight hint; hashtags are
+ * the author's own filing and score double; the opening hook clause is
+ * dropped; a plain-word subcategory name ("Communication", "Space") only
+ * counts once the topic has a specific hit; and nothing that never touched the
+ * caption or the hashtags is ever confident.
+ *
  * This exists on the web for one reason: 1,400 imported links must file
  * themselves without 1,400 calls to the categorize function, which is quota'd
- * at 200 a day per person.
+ * at 200 a day per person. Scripts/fixtures/categorizer_cases.json is what the
+ * Swift answers; Scripts/test_importers.mjs holds this port to it.
  */
 const Filer = (() => {
 
   /* Extra phrases that should hit a category but don't appear in any of its
      subcategory names. Keep this small — the derived index does the bulk. */
   const CATEGORY_HINTS = {
-    fitness: ["workout", "gym", "reps", "sets", "squat", "deadlift", "bench", "pull up", "push up", "marathon", "5k", "10k", "hypertrophy", "warm up"],
+    fitness: ["workout", "gym", "reps", "sets", "squat", "deadlift", "bench", "pull up", "push up", "marathon", "5k", "10k", "hypertrophy", "warm up", "exercise"],
     nutrition: ["protein", "calorie", "macro", "creatine", "electrolyte", "carb", "keto", "diet"],
     health: ["doctor", "clinic", "diagnos", "prescription", "blood pressure", "cholesterol", "thyroid", "inflammation", "chronic"],
     mentalhealth: ["burnout", "panic attack", "overthink", "nervous system", "cbt", "dopamine", "mental load"],
@@ -696,6 +705,52 @@ const Filer = (() => {
     beliefs: ["god", "bible", "quran", "faith", "prayer", "philosoph", "meaning of life", "conspiracy"],
     truecrime: ["murder", "detective", "suspect", "trial", "verdict", "unsolved", "victim", "forensic"],
   };
+
+  /* Subcategory names that are ordinary English words rather than subjects.
+     They name the subtopic once the topic is established by something
+     specific; on their own they carry no evidence. Same list as the Swift. */
+  const GENERIC_SUBS = new Set([
+    "Accessories", "Activities", "Adoption", "Analysis", "Analytics", "Architecture",
+    "Artists", "Audio", "Authors", "Banking", "Bathroom", "Bathrooms", "Behaviour",
+    "Betting", "Bills", "Birth", "Builds", "Business", "Career", "Case studies",
+    "Cases", "Classics", "Collecting", "Colour", "Communication", "Community",
+    "Composition", "Conditions", "Conflict", "Content", "Cost saving", "Courses",
+    "Credit", "Deals", "Development", "Directors", "Discipline", "Discoveries",
+    "Documentaries", "Economy", "Editing", "Email", "Environment", "Equipment",
+    "Estimating", "Ethics", "Explainers", "Family", "Feeding", "Fibre", "Finance",
+    "Focus", "Formal", "Gear", "Grooming", "Guides", "Habits", "Hidden gems",
+    "Highlights", "Hiring", "Hotels", "Hydration", "Impressions", "Ingredients",
+    "Inspiration", "Insurance", "Investigations", "Kitchen", "Kitchens", "Leadership",
+    "Legal", "Lighting", "Live", "Local", "Maintenance", "Management", "Maps",
+    "Markets", "Maths", "Meals", "Meaning", "Media", "Medicine", "Memory",
+    "Milestones", "Mining", "Mixing", "Mobile", "Modern", "Moving", "Names",
+    "Navigation", "Networking", "News", "Nursery", "Nutrition", "Ocean", "Operations",
+    "Options", "Packing", "Pests", "Phones", "Platform news", "Policy", "Portfolio",
+    "Portfolios", "Portraits", "Positioning", "Presets", "Pricing", "Privacy",
+    "Production", "Productivity", "Products", "Programming", "Quick fixes",
+    "Recommendations", "Recovery", "Regulation", "Rentals", "Repairs", "Research",
+    "Restoration", "Reviews", "Risk", "Routines", "Safety", "Saving", "Scams",
+    "Scenes", "School", "Scripting", "Seasonal", "Seasonal jobs", "Seeds", "Series",
+    "Setups", "Skills", "Small spaces", "Solar", "Space", "Storage", "Storytime",
+    "Strategy", "Streaming", "Stress", "Studios", "Styling", "Sugar", "Summaries",
+    "Suppliers", "Sustainable", "Symptoms", "Teens", "Testing", "Theory", "Tips",
+    "Tools", "Trading", "Training", "Trains", "Treatments", "Tutorials", "Twins",
+    "Weather", "Wholesome", "Workplace", "World", "Writing",
+  ]);
+
+  /* Opening clauses that sell the post rather than describe it. */
+  const HOOK_PHRASES = [
+    "expert", "secret", "nobody tells you", "no one tells you", "nobody talks about",
+    "no one talks about", "you won't believe", "the truth about", "changed my life",
+    "unpopular opinion", "hot take", "stop doing", "wait for it", "this is your sign",
+  ];
+
+  /* Hashtags that file nothing: platform furniture and reach-bait. */
+  const HASHTAG_NOISE = new Set([
+    "fyp", "fypage", "foryou", "foryoupage", "viral", "trending", "explore", "explorepage",
+    "reels", "reel", "reelsinstagram", "shorts", "tiktok", "instagram", "youtube", "video",
+    "follow", "like", "likes", "share", "save", "new", "love", "ad", "sponsored",
+  ]);
 
   /** Words too generic to carry a signal on their own. */
   const STOP_WORDS = new Set([
@@ -757,15 +812,23 @@ const Filer = (() => {
     if (MATCHERS) return MATCHERS;
     const all = [];
     for (const category of TAXONOMY) {
+      // The topic's own name and id — "#travel", "#diy", "fitness" — between a
+      // hint and a subcategory in weight.
+      for (const name of new Set([category.name, category.id])) {
+        const phrase = normalise(name);
+        const trimmed = phrase.trim();
+        if (trimmed.length < 3 || STOP_WORDS.has(trimmed)) continue;
+        all.push({ phrase, label: name.toLowerCase(), categoryID: category.id, subcategory: null, weight: trimmed.length + 4, generic: false });
+      }
       for (const sub of category.subs) {
         const phrase = normalise(sub);
         const trimmed = phrase.trim();
         if (trimmed.length < 3 || STOP_WORDS.has(trimmed)) continue;
         // A subcategory name is a precise signal — above a bare category hint.
-        all.push({ phrase, label: sub.toLowerCase(), categoryID: category.id, subcategory: sub, weight: trimmed.length + 6 });
+        all.push({ phrase, label: sub.toLowerCase(), categoryID: category.id, subcategory: sub, weight: trimmed.length + 6, generic: GENERIC_SUBS.has(sub) });
       }
       for (const hint of CATEGORY_HINTS[category.id] || []) {
-        all.push({ phrase: normalise(hint), label: hint, categoryID: category.id, subcategory: null, weight: hint.length + 2 });
+        all.push({ phrase: normalise(hint), label: hint, categoryID: category.id, subcategory: null, weight: hint.length + 2, generic: false });
       }
     }
     // Dedupe per (category, phrase), keeping the strongest. Curated hints often
@@ -781,8 +844,8 @@ const Filer = (() => {
       strongest.set(key, m);
     }
     // Longest first so "index fund" wins over "fund" and "mental health" over
-    // "health". Ties break on the phrase, so the web is deterministic where the
-    // Swift (Dictionary order + an unstable sort) is not.
+    // "health". Ties break on the phrase, then the category — the Swift sorts
+    // the same way, so both walk the index in one order.
     MATCHERS = [...strongest.values()].sort((a, b) =>
       b.phrase.length - a.phrase.length
       || (a.phrase < b.phrase ? -1 : a.phrase > b.phrase ? 1 : 0)
@@ -799,38 +862,155 @@ const Filer = (() => {
     return Object.values(PLATFORM).some(p => v === p.name.toLowerCase());
   }
 
+  /* ── SocialTitle — port of Core/Categorizer.swift's SocialTitle ──
+     Instagram: `Author | Bio on Instagram: "caption"`. X: `Name (@h) on X:
+     "text" / X`. TikTok: `Name on TikTok`. Who wrote it, what they call
+     themselves, and what they said — filing reads the last and treats the
+     first two as hints. */
+  const SOCIAL_PLATFORMS = ["Instagram", "X", "Twitter", "TikTok", "Threads", "Facebook", "LinkedIn", "Pinterest"];
+  const QUOTES = /^["“” \n]+|["“” \n]+$/g;
+  function unwrapTitle(title) {
+    let raw = String(title ?? "").trim();
+    for (const suffix of [" / X", " / Twitter"]) {
+      if (raw.endsWith(suffix)) raw = raw.slice(0, -suffix.length).trim();
+    }
+    let seam = null;
+    for (const platform of SOCIAL_PLATFORMS) {
+      const at = raw.indexOf(` on ${platform}`);
+      if (at < 0) continue;
+      const after = raw.slice(at + 4 + platform.length);
+      // The seam must end the head: `… on X: "…"` or `… on TikTok`.
+      if (after !== "" && !after.startsWith(":")) continue;
+      if (at === 0) continue;
+      seam = { head: raw.slice(0, at), rest: after === "" ? null : after };
+      break;
+    }
+    if (!seam) return { author: null, bio: null, caption: null, isSocial: false };
+
+    let author = seam.head, bio = null;
+    const pipe = author.indexOf(" | ");
+    if (pipe >= 0) { bio = author.slice(pipe + 3).trim(); author = author.slice(0, pipe); }
+    const paren = author.indexOf(" (@");
+    if (paren >= 0) author = author.slice(0, paren);
+    author = author.trim();
+
+    let caption = null;
+    if (seam.rest !== null) {
+      let quoted = seam.rest.trim();
+      if (quoted.startsWith(":")) quoted = quoted.slice(1);
+      quoted = quoted.replace(QUOTES, "");
+      if (quoted) caption = quoted;
+    }
+    return { author: author || null, bio, caption, isSocial: true };
+  }
+
+  /* Instagram's og:description is `1,204 likes, 31 comments - handle on
+     August 28, 2026: "caption"`. The counts and the date are furniture. */
+  const IG_DESCRIPTION = /^[\d.,]+[KkMm]? (?:likes?|reactions?), [\d.,]+[KkMm]? comments? - .+? on .+?: ?["“]?/;
+  function captionFromDescription(description) {
+    const trimmed = String(description ?? "").trim();
+    const m = trimmed.match(IG_DESCRIPTION);
+    if (!m) return trimmed;
+    return trimmed.slice(m[0].length).replace(QUOTES, "");
+  }
+
+  /** `#\w+` from any of the strings, lowercased, in order, deduped, minus
+      platform furniture ("#fyp") and site names. */
+  function hashtagsIn(sources) {
+    const seen = new Set(), out = [];
+    for (const source of sources) {
+      const s = String(source ?? "");
+      if (!s.includes("#")) continue;
+      for (const m of s.matchAll(/#([\p{L}\p{N}_]+)/gu)) {
+        const tag = m[1].toLowerCase();
+        if (tag.length < 3 || HASHTAG_NOISE.has(tag) || isSiteName(tag) || seen.has(tag)) continue;
+        seen.add(tag); out.push(tag);
+      }
+    }
+    return out;
+  }
+
+  /* The caption minus its opening hook, when the opening clause is one. Only
+     the first clause is ever dropped, and only when it contains a hook phrase;
+     a one-clause caption is kept whole. */
+  const BOUNDARIES = [". ", "! ", "? ", ", ", "; ", ": ", " but ", " — ", " – ", " - ", "\n", "…"];
+  const LEADING_PUNCT = /^[.!?,;:—–\- \n\t…]+/;
+  function withoutHook(caption) {
+    const trimmed = String(caption ?? "").trim();
+    if (!trimmed) return trimmed;
+    const lowered = trimmed.toLowerCase();
+    let cut = lowered.length;
+    for (const boundary of BOUNDARIES) {
+      const at = lowered.indexOf(boundary);
+      if (at >= 0 && at < cut) cut = at;
+    }
+    if (cut >= lowered.length) return trimmed;
+    const clause = lowered.slice(0, cut);
+    if (!HOOK_PHRASES.some(p => clause.includes(p))) return trimmed;
+    return trimmed.slice(Math.min(cut, trimmed.length)).replace(LEADING_PUNCT, "");
+  }
+
   /**
-   * Suggests `{topic, subtopic, tags, score}` for a link, or nulls.
+   * Suggests `{topic, subtopic, tags, score, confident, evidence}` for a link.
+   *
+   * `text` is the post body (X, Threads). `extra` may carry `description`
+   * (og:description — the full caption on Instagram and TikTok), `hashtags`
+   * (else they are read out of the text) and `author` (a half-weight hint;
+   * else the author and bio unwrapped from the title).
    *
    * It is a *suggestion* by contract: returning nothing is a valid, honest
    * answer — better than confidently filing a link under the wrong thing.
    */
-  function suggest(rawURL, title, text) {
+  function suggest(rawURL, title, text, extra = {}) {
+    const none = { topic: null, subtopic: null, tags: [], score: 0, confident: false, evidence: "none" };
     let url;
-    try { url = new URL(rawURL); } catch { return { topic: null, subtopic: null, tags: [], score: 0 }; }
+    try { url = new URL(rawURL); } catch { return none; }
 
-    // Authored text (title, post body) is a far better signal than a URL slug,
-    // so it scores at full weight and the URL at half. Without this split a
-    // stray word in a path can outvote the actual headline.
-    const authored = normalise([title || "", text || ""].join(" "));
+    const unwrapped = unwrapTitle(title);
+    const caption = unwrapped.isSocial ? (unwrapped.caption ?? "") : String(title ?? "");
+    const body = captionFromDescription(extra.description ?? "");
+    const hashtags = extra.hashtags ?? hashtagsIn([title, text, extra.description]);
+
+    // What the author wrote scores at full weight, with the hook clause taken
+    // off the front. The URL and the author line are hints at half weight.
+    // Hashtags are the author's own filing and score double.
+    const authored = normalise([withoutHook(caption), text || "", withoutHook(body)].join(" "));
     const fromURL = normaliseURL(url);
+    const fromAuthor = normalise(extra.author ?? [unwrapped.author ?? "", unwrapped.bio ?? ""].join(" "));
+    const fromTags = normalise(hashtags.join(" "));
+
+    const hits = new Map();
+    for (const m of matchers()) {
+      const inTags = fromTags.includes(m.phrase);
+      const inAuthored = authored.includes(m.phrase);
+      const inHint = fromURL.includes(m.phrase) || fromAuthor.includes(m.phrase);
+      if (!inTags && !inAuthored && !inHint) continue;
+      const weight = inTags ? m.weight * 2 : inAuthored ? m.weight : Math.max(1, Math.floor(m.weight / 2));
+      if (!hits.has(m.categoryID)) hits.set(m.categoryID, []);
+      hits.get(m.categoryID).push({ matcher: m, weight, fromHashtag: inTags, authored: inTags || inAuthored });
+    }
 
     const categoryScores = new Map();
     const subScores = new Map();
-    const matchedLabels = [];
-
-    for (const m of matchers()) {
-      const inAuthored = authored.includes(m.phrase);
-      const inURL = fromURL.includes(m.phrase);
-      if (!inAuthored && !inURL) continue;
-
-      const weight = inAuthored ? m.weight : Math.max(1, Math.floor(m.weight / 2));
-      categoryScores.set(m.categoryID, (categoryScores.get(m.categoryID) || 0) + weight);
-      matchedLabels.push(m.label);
-
-      if (m.subcategory && weight > (subScores.get(m.categoryID)?.score ?? 0)) {
-        subScores.set(m.categoryID, { sub: m.subcategory, score: weight });
+    for (const [categoryID, found] of hits) {
+      const specific = found.filter(h => !h.matcher.generic);
+      // A generic name on its own is not evidence of anything.
+      if (!specific.length) continue;
+      let score = 0;
+      for (const hit of found) {
+        const weight = hit.matcher.generic ? Math.max(1, Math.floor(hit.weight / 2)) : hit.weight;
+        score += weight;
+        if (hit.matcher.subcategory && weight > (subScores.get(categoryID)?.score ?? 0)) {
+          subScores.set(categoryID, { sub: hit.matcher.subcategory, score: weight });
+        }
       }
+      // Two independent signals from the author's own words are worth more
+      // than their sum; evidence that never touched the caption or the
+      // hashtags can be a guess, never a confident one.
+      const independent = specific.filter(h => h.authored).length;
+      score += 6 * Math.max(0, independent - 1);
+      if (independent === 0) score = Math.min(score, CONFIDENT_SCORE - 1);
+      categoryScores.set(categoryID, score);
     }
 
     // Ties go to taxonomy order rather than to whatever the hash table felt like.
@@ -841,13 +1021,30 @@ const Filer = (() => {
     }
     // Below this it's a coincidental substring, not a signal. Uncategorised is a
     // real state and Browse surfaces it, so nothing is lost.
-    if (!best || bestScore < 6) return { topic: null, subtopic: null, tags: [], score: 0 };
+    if (!best || bestScore < 6) return none;
 
-    const unique = [...new Set(matchedLabels.filter(l => l.length > 3))];
-    const ranked = unique.sort((a, b) => b.length - a.length || (a < b ? -1 : a > b ? 1 : 0));
-    const tags = ranked.slice(0, 3).sort().filter(t => !isSiteName(t));
+    return {
+      topic: best,
+      subtopic: subScores.get(best)?.sub ?? null,
+      tags: tagList(hits.get(best) || [], hashtags),
+      score: bestScore,
+      confident: bestScore >= CONFIDENT_SCORE,
+      evidence: bestScore >= CONFIDENT_SCORE ? "strong" : "thin",
+    };
+  }
 
-    return { topic: best, subtopic: subScores.get(best)?.sub ?? null, tags, score: bestScore, confident: bestScore >= CONFIDENT_SCORE };
+  /* Tags for the winning topic only: hashtag hits lead, then the longest
+     labels, then up to two of the author's own hashtags that matched nothing. */
+  const byLengthThenAlpha = (a, b) => b.length - a.length || (a < b ? -1 : a > b ? 1 : 0);
+  function tagList(hits, hashtags) {
+    const ranked = (labels) => [...new Set(labels)].sort(byLengthThenAlpha);
+    const fromTags = ranked(hits.filter(h => h.fromHashtag && h.matcher.label.length > 3).map(h => h.matcher.label));
+    const others = ranked(hits.filter(h => !h.fromHashtag && h.matcher.label.length > 3).map(h => h.matcher.label))
+      .filter(l => !fromTags.includes(l));
+    const out = [...fromTags, ...others].slice(0, 3).filter(t => !isSiteName(t));
+    const loose = hashtags.filter(tag => !out.includes(tag) && !hits.some(h => h.matcher.label === tag) && /^\p{L}+$/u.test(tag));
+    for (const tag of loose.slice(0, 2)) { if (out.length < 4) out.push(tag); }
+    return out;
   }
 
   const capitalise = (s) => s.split(" ")
@@ -887,7 +1084,7 @@ const Filer = (() => {
     try { return new URL(rawURL).hostname.replace("www.", "") || null; } catch { return null; }
   }
 
-  return { suggest, fallbackTitle, fallbackAuthor, isSiteName, CONFIDENT_SCORE, _normalise: normalise, _stem: stem };
+  return { suggest, fallbackTitle, fallbackAuthor, isSiteName, unwrapTitle, hashtagsIn, withoutHook, CONFIDENT_SCORE, _normalise: normalise, _stem: stem };
 })();
 
 /* ══ TagRecency — port of Core/TagRecency.swift ════════════════════════════

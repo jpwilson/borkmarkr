@@ -15,28 +15,56 @@ import Foundation
 /// mode, a server outage, an unset API key — every one of those falls back to
 /// the offline answer rather than blocking or failing the save.
 ///
+/// **The model says how sure it is, and the app believes it.** The function
+/// returns `confidence: high | medium | low`. Low is dropped server-side —
+/// "not filed" beats wrong — and never reaches here. High outranks any keyword
+/// match; medium arrives as a thin guess and is shown as one ("Our best guess
+/// — tap to change"), never as "Sorted for you".
+///
 /// **The key is not in this app.** The request goes to a Supabase Edge Function
-/// which holds the Anthropic key server-side. Shipping a key in an iOS binary
-/// means shipping it to everyone who downloads the app.
+/// which holds the API key server-side. Shipping a key in an iOS binary means
+/// shipping it to everyone who downloads the app.
 ///
 /// Like `Categorizer`, the result is a **suggestion**. The caller shows it and
 /// the user can change it before saving.
 enum SmartCategorizer {
 
-    /// What we send. Small on purpose — no note text, no history, nothing about
-    /// the rest of your library. The function only ever sees the one link.
+    /// Everything the page told us about the one link, and nothing else — no
+    /// note text, no history, nothing about the rest of your library.
+    struct Context: Sendable {
+        var url: URL
+        var title: String
+        var author: String?
+        /// Post body, for X and Threads.
+        var text: String?
+        /// `og:description` — the full caption on Instagram and TikTok.
+        var description: String?
+        /// Tags the user typed. The offline pass seeds tags from its own
+        /// keyword matches, and feeding those back in would just have the
+        /// model agree with a guess we already know was weak.
+        var userTags: [String] = []
+
+        var hashtags: [String] {
+            Categorizer.hashtags(in: [title, text ?? "", description ?? ""])
+        }
+    }
+
     private struct Request: Encodable {
         var url: String
         var title: String
         var author: String?
         var text: String?
+        var description: String?
+        var hashtags: [String]
         var tags: [String]
+        var platform: String
     }
 
     private struct Response: Decodable {
         var topic: String?
         var subtopic: String?
         var tags: [String]
+        var confidence: String?
     }
 
     /// Returns a validated suggestion, or `nil` for "no better answer than the
@@ -44,26 +72,18 @@ enum SmartCategorizer {
     ///
     /// - Parameter session: a valid Supabase session. Pass `nil` when signed
     ///   out and this returns immediately without touching the network.
-    static func suggest(
-        url: URL,
-        title: String,
-        author: String? = nil,
-        text: String? = nil,
-        tags: [String] = [],
-        session: Supabase.Session?
-    ) async -> Categorizer.Suggestion? {
+    static func suggest(_ context: Context, session: Supabase.Session?) async -> Categorizer.Suggestion? {
         guard let session, Supabase.isConfigured else { return nil }
 
         let payload = Request(
-            url: url.absoluteString,
-            title: title,
-            author: author,
-            text: text,
-            // Only tags the user typed are worth sending. The offline pass
-            // seeds tags from its own keyword matches, and feeding those back
-            // in would just have the model agree with a guess we already know
-            // was weak.
-            tags: tags
+            url: context.url.absoluteString,
+            title: context.title,
+            author: context.author,
+            text: context.text,
+            description: context.description,
+            hashtags: context.hashtags,
+            tags: context.userTags,
+            platform: Platform.detect(from: context.url).rawValue
         )
 
         guard
@@ -74,7 +94,7 @@ enum SmartCategorizer {
             let decoded = try? JSONDecoder().decode(Response.self, from: data)
         else { return nil }
 
-        return validated(decoded, url: url)
+        return validated(decoded)
     }
 
     // MARK: - Validation
@@ -87,8 +107,9 @@ enum SmartCategorizer {
     /// topic id would otherwise become a bookmark filed under a category that
     /// doesn't exist, invisible in Browse. So unknown ids are dropped, and the
     /// link keeps its honest "not filed" state.
-    private static func validated(_ response: Response, url: URL) -> Categorizer.Suggestion? {
+    private static func validated(_ response: Response) -> Categorizer.Suggestion? {
         guard let id = response.topic, let topic = Taxonomy.category(id: id) else { return nil }
+        guard let score = score(forConfidence: response.confidence) else { return nil }
 
         // Match the subtopic case-insensitively against the real list rather
         // than trusting the string. Returning "mobility" where the taxonomy
@@ -105,10 +126,20 @@ enum SmartCategorizer {
             categoryID: topic.id,
             subcategory: subcategory,
             tags: Array(NSOrderedSet(array: tags).array as? [String] ?? tags),
-            // A model that read the title and picked from the full list is
-            // better evidence than any keyword match, so this outranks the
-            // offline confidence threshold.
-            score: Categorizer.Suggestion.confidentScore * 2
+            score: score
         )
+    }
+
+    /// The model's confidence on the offline scale, so one `evidence` drives
+    /// the UI whichever pass answered. High is worth more than any keyword
+    /// match; medium sits one below the line on purpose — it is shown as a
+    /// best guess and never treated as settled; low (or a missing field, from
+    /// an older deploy) is no answer at all.
+    static func score(forConfidence confidence: String?) -> Int? {
+        switch confidence?.lowercased() {
+        case "high": Categorizer.Suggestion.confidentScore * 2
+        case "medium": Categorizer.Suggestion.confidentScore - 1
+        default: nil
+        }
     }
 }

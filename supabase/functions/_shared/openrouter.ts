@@ -7,6 +7,7 @@ export async function completeJSON(
   system: string,
   user: string,
   maxTokens = 700,
+  temperature = 0.4,
 ): Promise<unknown | null> {
   const apiKey = Deno.env.get("OPENROUTER_API_KEY");
   if (!apiKey) {
@@ -24,7 +25,7 @@ export async function completeJSON(
     },
     body: JSON.stringify({
       model: MODEL,
-      temperature: 0.4,
+      temperature,
       max_tokens: maxTokens,
       response_format: { type: "json_object" },
       messages: [
