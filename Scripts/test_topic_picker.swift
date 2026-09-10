@@ -112,6 +112,15 @@ enum TopicPickerTests {
             Set(fitnessSubs) == Set(fitness.subs),
             "sorting subtopics neither drops nor invents one"
         )
+        // JP's report (Seb round): Health read Conditions, Medications,
+        // Symptoms, Sleep, Heart & BP, Diabetes… — the authored order.
+        let health = topic("health")
+        let healthAZ = TopicPickerQuery.alphabetical(health.subs)
+        expect(
+            healthAZ == health.subs.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+                && healthAZ != health.subs,
+            "Health's subtopics are drawn A–Z, not in authored order\n     got      \(healthAZ.prefix(4))"
+        )
         let mixed = TopicPickerQuery.alphabetical(["Zone 10", "bouldering", "Zone 2", "Mobility"])
         expect(
             mixed == ["bouldering", "Mobility", "Zone 2", "Zone 10"],

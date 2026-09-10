@@ -3292,7 +3292,9 @@ function makeYourOwnHTML(needle) {
     `</span></button>`;
 }
 function tpTopicRowHTML(t, p, needle) {
-  const subs = allSubs(t.id), open = tp.expanded === t.id, on = p.topic === t.id;
+  // A–Z where the chips are drawn (TopicPickerQuery.alphabetical, the rule
+  // iOS uses), whatever order the list arrived in.
+  const subs = TopicPickerQuery.alphabetical(allSubs(t.id)), open = tp.expanded === t.id, on = p.topic === t.id;
   let html = `<button class="tp-row${on ? " tp-on" : ""}" data-tp-topic="${esc(t.id)}" aria-expanded="${open}"><span class="tp-dot" style="background:hsl(${t.hue} 65% 55%)"></span><span class="tp-name">${esc(t.name)}</span>${t.custom ? `<span class="tp-mine" style="${chipStyle(t.hue)}">yours</span>` : ""}<span class="n">${subs.length}</span>${CHEV}</button>`;
   if (!open) return html;
   const hits = tpMatchingSubs(subs, needle), mine = new Set(ownSubs(t.id));

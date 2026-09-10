@@ -401,7 +401,12 @@ struct TopicPickerSheet: View {
     private func topicRow(_ topic: Topic) -> some View {
         let custom = merged.isCustomTopic(topic.id)
         let isOpen = expanded == topic.id
-        let highlighted = TopicPickerQuery.matchingSubs(merged.subs(for: topic), needle: trimmedFilter)
+        // A–Z at the point of drawing, built-in and yours in one run — the
+        // 1.0.1 picker listed Health as Conditions, Medications, Symptoms,
+        // Sleep… (authored order), which nobody can scan. `Taxonomy` itself
+        // keeps its order; the categoriser and fixtures depend on it.
+        let subs = TopicPickerQuery.alphabetical(merged.subs(for: topic))
+        let highlighted = TopicPickerQuery.matchingSubs(subs, needle: trimmedFilter)
         return VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 10) {
                 Button {
@@ -423,7 +428,7 @@ struct TopicPickerSheet: View {
                                 .background(topic.palette.tint, in: Capsule())
                         }
                         Spacer()
-                        Text("\(merged.subs(for: topic).count)")
+                        Text("\(subs.count)")
                             .font(Typo.ui(11.5, .medium))
                             .foregroundStyle(Tokens.inkMeta)
                         Image(systemName: isOpen ? "chevron.up" : "chevron.right")
@@ -452,8 +457,8 @@ struct TopicPickerSheet: View {
 
             if isOpen {
                 FlowChips(
-                    items: merged.subs(for: topic),
-                    custom: Set(merged.subs(for: topic).filter { merged.isCustom($0, in: topic) }),
+                    items: subs,
+                    custom: Set(subs.filter { merged.isCustom($0, in: topic) }),
                     highlighted: highlighted,
                     onPick: { sub in
                         categoryID = topic.id
