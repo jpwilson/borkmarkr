@@ -281,3 +281,180 @@ curl -sI 'https://pcjuxnhqxyfvgagnblzv.supabase.co/functions/v1/collection-page?
 **Expect:** the collection's name in the title, `noindex`, and a `404` on the
 second with a `text/html` body. Then `node Scripts/test_collection_page.mjs`
 for the renderer itself, and `cloudflare/README.md` for the domain.
+
+---
+
+# Probes to run after `0012_collection_expiry.sql`
+
+Same rules as above: run in the SQL editor, every block wrapped in
+`begin … rollback`, and every one of these has already been run on a scratch
+PostgreSQL 15 built from `0001` + drift + `0004` + `0011` + `0012` (applied
+three times in a row, clean) before it was written down here. `:'A'`, `:'B'`,
+`:'S'` and `:'P'` are the same four values as before.
+
+## 11. An expired link is a missing link
+
+Expired, private, deleted and wrong are one answer — otherwise the page would
+be an oracle for "this was a link once".
+
+```sql
+begin;
+  update public.collections set expires_at = now() - interval '1 minute' where slug = :'S';
+  set local role anon;
+  select public.collection_by_slug(:'S') is null as expired_read_is_null;
+  reset role; set local role authenticated; set local request.jwt.claim.sub = :'B';
+  select public.collection_save(:'S') is null as expired_save_is_null;
+rollback;
+```
+
+**Expect:** `t`, `t`.
+
+```sql
+begin;
+  update public.collections set expires_at = now() + interval '10 days' where slug = :'S';
+  set local role anon;
+  select public.collection_by_slug(:'S') is not null as open_read_ok,
+         (public.collection_by_slug(:'S')->>'expires_at')::timestamptz > now() as expires_in_future;
+rollback;
+begin; set local role anon;
+  select public.collection_by_slug(:'S') ? 'expires_at' as key_present,
+         public.collection_by_slug(:'S')->'expires_at' = 'null'::jsonb as is_json_null;
+rollback;
+```
+
+**Expect:** `t, t` — a link with time left is open and the object says until
+when — then `t, t`: with no expiry the key is there and is JSON `null`, so a
+client can tell "never" from "old row" without a second call.
+
+## 12. `collection_create`
+
+```sql
+begin;
+  set local role authenticated; set local request.jwt.claim.sub = :'A';
+  select public.collection_create('Leg day', '  the ones that helped  ', 'fitness', 10,
+           array['<A bork 2>', '<a bork of B''s>', '<a soft-deleted bork of A''s>', 'nope/404', '<A bork 1>', '<A bork 2>']) as created \gset
+  select :'created'::jsonb->>'added' as added,
+         (:'created'::jsonb->>'slug') ~ '^[a-z0-9]{12}$' as slug_shape,
+         :'created'::jsonb->>'url' = 'https://bookmarker.lol/c/' || (:'created'::jsonb->>'slug') as url_shape,
+         (:'created'::jsonb->>'expires_at')::timestamptz
+            between now() + interval '9 days 23 hours' and now() + interval '10 days 1 hour' as ten_days;
+  select bookmark_id, position from public.collection_items
+   where collection_id = (:'created'::jsonb->>'id')::uuid order by position;
+  select name, note, category_id, visibility from public.collections where id = (:'created'::jsonb->>'id')::uuid;
+  reset role; set local role anon;
+  select jsonb_array_length(public.collection_by_slug(:'created'::jsonb->>'slug')->'items') as items_on_page,
+         public.collection_by_slug(:'created'::jsonb->>'slug')::text like '%<a note only A can see>%' as leaks_note,
+         public.collection_by_slug(:'created'::jsonb->>'slug')::text like '%<B''s bork title>%' as leaks_stranger;
+rollback;
+```
+
+**Expect:** `added = 2`, `t`, `t`, `t`. Two items, **A bork 2 at position 0
+and A bork 1 at position 1** — the array's order, renumbered densely once the
+stranger's bork, the deleted one, the unknown id and the duplicate have been
+skipped. The row is `public`, the note is trimmed. The anonymous read shows
+exactly those two, no note, nothing of B's.
+
+```sql
+begin; set local role authenticated; set local request.jwt.claim.sub = :'A';
+  select (public.collection_create('Never', null, null, null, array['<A bork 1>'])->>'expires_at') is null as never_is_null,
+         (public.collection_create('One day', null, null, 1, array['<A bork 1>'])->>'expires_at')::timestamptz
+            between now() + interval '23 hours' and now() + interval '25 hours' as one_day;
+  savepoint s; select public.collection_create('Three', null, null, 3, array['<A bork 1>']);            rollback to s;
+  savepoint s; select public.collection_create('Zero', null, null, 0, array['<A bork 1>']);             rollback to s;
+  savepoint s; select public.collection_create('', null, null, null, array['<A bork 1>']);              rollback to s;
+  savepoint s; select public.collection_create(repeat('x', 81), null, null, null, array['<A bork 1>']); rollback to s;
+  savepoint s; select public.collection_create('Long note', repeat('n', 501), null, null, array['<A bork 1>']); rollback to s;
+rollback;
+```
+
+**Expect:** `t, t`, then five errors in order: `a link stays open for 1 day,
+10 days, or until you turn it off` (twice), `a collection needs a name of 1 to
+80 characters` (twice), `collections_note_len`.
+
+```sql
+begin; set local role anon; select public.collection_create('x', null, null, null, '{}'); rollback;
+```
+
+**Expect:** `ERROR: permission denied for function collection_create`.
+
+```sql
+begin; set local role authenticated; set local request.jwt.claim.sub = :'B';
+  select public.collection_create('Steal', null, null, null, array['<A bork 1>', '<A bork 2>', '<B bork 1>']) as r \gset
+  select :'r'::jsonb->>'added' as added_for_b;
+  select bookmark_owner, bookmark_id from public.collection_items where collection_id = (:'r'::jsonb->>'id')::uuid;
+rollback;
+```
+
+**Expect:** `added_for_b = 1` and one row — B's own. A's ids are not refused,
+they are simply not there to be joined: the function is `security invoker`
+and B's RLS never sees A's rows.
+
+```sql
+begin; set local role authenticated; set local request.jwt.claim.sub = :'A';
+  insert into public.bookmarks (id, owner_id, url, platform, kind)
+    select 'captest/' || g, :'A', 'https://example.com/' || g, 'web', 'article' from generate_series(1, 210) g;
+  select public.collection_create('Too many', null, null, null, (select array_agg('captest/' || g) from generate_series(1, 210) g));
+rollback;
+begin; set local role authenticated; set local request.jwt.claim.sub = :'A';
+  select count(*) from (select public.collection_create('cap ' || g, null, null, null, '{}') from generate_series(1, 120) g) x;
+rollback;
+```
+
+**Expect:** `ERROR: a collection holds at most 200 borks` and `ERROR: a
+collection limit of 100 per account has been reached` — 0011's triggers,
+firing through the RPC exactly as they would on a direct insert, and rolling
+the slug back with everything else.
+
+An empty array makes an empty collection (`added = 0`). The clients refuse
+that before calling; the RPC does not, because an empty page is harmless and a
+bork that has not synced yet is not a reason to fail the ones that have.
+
+## 13. The owner manages it through PostgREST, and only the owner
+
+What the web app and the iPhone actually send: a `select` with an embedded
+count, and three `PATCH`es. Under the 0001 owner policies, no RPC needed.
+
+```sql
+begin; set local role authenticated; set local request.jwt.claim.sub = :'A';
+  select name, slug, visibility, expires_at is null as never,
+         (select count(*) from public.collection_items ci where ci.collection_id = c.id) as items
+    from public.collections c where deleted_at is null order by updated_at desc;
+  update public.collections set visibility = 'private' where slug = :'S';
+  update public.collections set expires_at = now() + interval '1 day' where slug = :'S';
+  update public.collections set deleted_at = now() where slug = :'P';
+  reset role; set local role authenticated; set local request.jwt.claim.sub = :'B';
+  update public.collections set visibility = 'public' where slug = :'S';
+  select count(*) as b_sees_of_a from public.collections where owner_id = :'A';
+rollback;
+```
+
+**Expect:** A's list, three `UPDATE 1`, then for B `UPDATE 0` and `0`.
+
+```sql
+begin;
+  update public.collections set expires_at = now() - interval '1 day' where slug = :'S';
+  set local role anon;
+  select public.collection_by_slug(:'S') is null as closed;
+  reset role; set local role authenticated; set local request.jwt.claim.sub = :'A';
+  update public.collections set expires_at = now() + interval '10 days' where slug = :'S';
+  reset role; set local role anon;
+  select public.collection_by_slug(:'S') is not null as reopened_same_slug;
+rollback;
+```
+
+**Expect:** `t`, `t`. Expiry is a time, not a tombstone: the owner picks a
+new one and the same link answers again — the same trade as turning a link
+off and on, made deliberately, and documented in DECISIONS.md.
+
+## Then the page, again
+
+After `supabase functions deploy collection-page`:
+
+```sh
+curl -s 'https://pcjuxnhqxyfvgagnblzv.supabase.co/functions/v1/collection-page?slug=<slug>' \
+  | grep -E 'apple-itunes-app|Get bookmarker|Link open until'
+```
+
+**Expect:** `app-argument=bookmarker://c/<slug>`, one `Get bookmarker` button
+above the grid, and a `Link open until` line only when the collection has an
+expiry. `node Scripts/test_collection_page.mjs` for the rest.

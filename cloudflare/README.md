@@ -189,6 +189,15 @@ along, and `/c/<slug>` falls back to `docs/404.html`, which still fetches the
 function client-side. Nothing is lost but the unfurls. Deleting the Worker or
 the route is the smaller rollback if the problem is only the `/c/*` path.
 
+## Part two changed nothing here
+
+Since `0012_collection_expiry.sql` the page can carry a `Link open until …`
+line and hands Safari's smart banner `bookmarker://c/<slug>` as its
+`app-argument` (the scheme the iPhone app registers), and its primary button
+goes straight to the App Store. All of that is inside the HTML the function
+returns; the Worker still proxies bytes and sets one header. Nothing to
+redeploy on this side — only `collection-page` itself, after the migration.
+
 ## Why the Worker sets the content type itself
 
 Supabase's `*.supabase.co` functions domain serves HTML bodies as `text/plain`

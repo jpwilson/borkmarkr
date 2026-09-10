@@ -859,6 +859,89 @@ claim a feature it does not have.
 
 ---
 
+## Shared collections, part two
+
+The curator's half: picking borks, making the link, and the page asking for
+the app. `supabase/migrations/0012_collection_expiry.sql`, the collect sheet
+and `#collections` in `docs/index.html`, and the CTA in
+`_shared/collection_html.ts`. The iPhone half is a separate PR built against
+the same contract (`collection_create`, `expires_at`, `bookmarker://c/<slug>`).
+
+**An expired link is a missing link.** `expires_at` is a timestamp, null for
+never, and past it both RPCs return the same `null` a wrong slug gets — no
+"this link has expired" page, because that page would confirm a collection
+existed, which is the one thing the 0011 model refuses to tell a stranger. The
+row is not tombstoned: the owner still sees it, marked closed, and picking a
+new time reopens the same URL. That is the same trade 0011 made for turning a
+link off and on, and it is the right one for the same reason — the copy of the
+link somebody already sent should not be the thing that decides.
+
+**Only three choices, and the server enforces them.** Never, 1 day, 10 days —
+the two the brief asked for and the one that was already true. Any other
+`p_expiry_days` raises rather than rounding or defaulting: a client bug that
+quietly became "never" is exactly the wrong kind of quiet for a link that was
+meant to close.
+
+**`collection_create` is SECURITY INVOKER.** The one place a definer function
+was tempting — one call, two tables, a slug to hand back — and it is not one,
+because nothing here needs to see past the caller's own rows. Every insert runs
+under the caller's RLS: 0011's `bookmark_owner = auth.uid()` fix is what keeps
+a stranger's id out, the caps fire as the same `after` triggers a direct insert
+would fire, and there is nothing the function can do that three PostgREST
+calls could not. Ids that are not the caller's live borks are skipped, not
+refused; the client already showed the person what they picked, and a bork
+that has not synced yet is not a reason to fail the ones that have. Positions
+are renumbered densely after the skip. List, turn off, delete and expiry need
+no RPC at all — they are the 0001 owner policies over PostgREST, which is what
+both clients send.
+
+**The page's first button is the app.** "Get bookmarker" is the big coral one,
+straight to the App Store listing rather than through `/get`, with "Save these
+to my library" as the plain secondary. The page is the distribution strategy;
+a stranger who tapped a friend's link is the person to ask. The smart banner's
+`app-argument` is now `bookmarker://c/<slug>` — the scheme the app registers —
+instead of the https URL, which Safari would simply have reopened as a tab.
+Universal links (an `apple-app-site-association` on the domain) would be the
+better answer and wait on the Cloudflare cutover, which is the same wait.
+
+**Select mode is classes on cards that already exist.** Entering it rebuilds
+nothing: a `selecting` class on the grid draws an empty ring in the cover
+badge's own recipe (dark glass, a corner), a `sel` class fills it coral, and a
+capture-phase listener turns a tap into a pick before the handler that would
+open the bork's sheet ever sees it. One set of ids survives the source chips
+and Library ↔ topic, so "3 Instagram + 4 YouTube + 1 X" is built the way you
+would say it, and the bar counts as you go. "Share as a link" on a topic
+pre-picks the whole topic and opens the sheet at once; Not now leaves the ring
+on, so "not these two" is two taps and Share again rather than a restart. The
+filtered Library view gained a title row for the source, because Select had to
+live somewhere on it.
+
+**The name is asked for once, in the sheet, not on a settings page.** Every
+profile in production has a null `display_name`, so every page would read "by
+Someone". The sheet asks the first time and PATCHes the profile before the
+collection is made; the You page already lets it be changed.
+
+**`#save=<slug>` did not exist yet.** 0011's page pointed at it; this PR is the
+other end. Signed in, `collection_save` runs at once and the library re-pulls.
+Signed out, the slug waits in the browser (an hour at most) and is honoured
+the moment a session lands — including after Google's redirect, which drops
+the hash, and which is why it is localStorage and not the URL.
+
+**Two wrappers instead of two edits.** `render` and `adoptSession` are
+reassigned at the end of the script — the new tab, the selection paint and the
+pending save hang off them — rather than editing the render loop itself,
+because five PRs were editing this file at once and the loop was not this
+one's to touch. Function declarations are mutable bindings and every caller
+resolves the name at call time, so it is a seam, not a trick; folding both
+into `render()` and `renderShell()` is a five-line follow-up once the round
+has merged.
+
+**Deliberately not done.** No per-item removal or reordering on an existing
+collection (delete it and share again — the slug was never the point). No
+renaming after the fact. No `people` visibility. No indexing switch. No
+universal links yet. The `Core/SaveLimit.swift` sentence ("never visible to
+anyone else") is changed by the PR that owns that file this round, not here.
+
 ## Known gaps
 
 - **Fonts.** The spec calls for Bricolage Grotesque + Instrument Sans. Neither is
