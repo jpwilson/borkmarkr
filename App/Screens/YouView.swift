@@ -13,8 +13,6 @@ struct YouView: View {
 
     @Query(filter: #Predicate<Bookmark> { $0.deletedAt == nil })
     private var bookmarks: [Bookmark]
-    @Query(filter: #Predicate<BookmarkCollection> { $0.deletedAt == nil })
-    private var collections: [BookmarkCollection]
 
     @State private var showingHowTo = false
     @State private var showingImport = false
@@ -48,7 +46,7 @@ struct YouView: View {
                 hero
                 insights
                 intake
-                if !collections.isEmpty { collectionsBlock }
+                collectionsBlock
                 appearance
                 spreadTheWord
                 help
@@ -345,38 +343,12 @@ struct YouView: View {
 
     // MARK: Collections
 
+    /// The links you've shared. A collection is a server row, so the list
+    /// behind this row reads the server; nothing about it lives on the phone.
     private var collectionsBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
-            YouSectionLabel("Collections")
-            VStack(spacing: 0) {
-                ForEach(Array(collections.enumerated()), id: \.element.id) { index, collection in
-                    if index > 0 { insetDivider }
-                    HStack(spacing: 12) {
-                        Image(systemName: "bookmark.fill")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(collection.category?.palette.deep ?? Tokens.inkSecondary)
-                            .frame(width: 32, height: 32)
-                            .background(
-                                collection.category?.palette.tint ?? Tokens.mutedControl,
-                                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            )
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(collection.name)
-                                .font(Typo.ui(14, .semibold))
-                                .foregroundStyle(Tokens.ink)
-                            Text(Copy.countedBorks(collection.count))
-                                .font(Typo.ui(11.5, .medium))
-                                .foregroundStyle(Tokens.inkMeta)
-                        }
-                        Spacer()
-                        Pill(text: collection.visibility.label, symbol: collection.visibility.symbol)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .frame(minHeight: 52)
-                }
-            }
-            .cardSurface(radius: Tokens.cardRadius)
+            YouSectionLabel("Sharing")
+            CollectionsEntry(account: account)
         }
     }
 

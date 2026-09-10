@@ -944,12 +944,11 @@ that arrives during the first-run tour waits for the tour; one that arrives
 over the wall, the Add sheet or the auth sheet closes them — someone tapped a
 link, and the link is what they want to see.
 
-**Where the list lives.** `CollectionsList` is reached from the sheet's done
-step ("See all the links you've shared") and, in DEBUG, by `-collections`.
-The row for the You tab, `CollectionsEntry`, is built but not placed: the You
-tab is another PR's file this round, and the dead "Collections" block already
-on it (which lists the unused local model) is what it should replace. One
-line, after the round.
+**Where the list lives.** A "Links you've shared" row on the You tab
+(`CollectionsEntry`), in place of the dead "Collections" block that listed the
+unused local model — and from the sheet's done step ("See all the links
+you've shared"), so the person who just made a link is one tap from the rest
+of them. `-collections` opens it in DEBUG.
 
 **Deliberately not done.** No "Add to a collection" on a bork's detail sheet
 — a collection is made in one go from a selection, and editing its contents

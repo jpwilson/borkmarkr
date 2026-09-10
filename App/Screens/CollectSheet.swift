@@ -177,7 +177,9 @@ struct CollectSheet: View {
                     .padding(.top, -8)
             }
 
-            Text("Anyone with the link can see these \(Copy.countedBorks(shareable.count)) — titles, links and covers. Never your notes. You can turn the link off any time.")
+            // What `collection_by_slug` serves: the bork's public face and the
+            // post's own text — never `note_text`, which is yours.
+            Text("Anyone with the link can see these \(Copy.countedBorks(shareable.count)) — titles, links, covers and the posts' own text. Never your notes. You can turn the link off any time.")
                 .font(Typo.ui(12.5))
                 .foregroundStyle(Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
