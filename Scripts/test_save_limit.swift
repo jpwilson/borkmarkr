@@ -35,18 +35,20 @@ enum SaveLimitTests {
         }
 
         // ── The number is a contract ──────────────────────────────────────
-        expect(SaveLimit.limit == 20, "the free limit is 20")
-        expect(SaveLimit.counterFloor == 15, "the countdown starts at 15")
+        expect(SaveLimit.limit == 50, "the free limit is 50")
+        expect(SaveLimit.counterFloor == 40, "the countdown starts at 40")
+        expect(SaveLimit.limit - SaveLimit.counterFloor == 10,
+               "ten saves of warning — about a day at the pace that broke twenty")
         expect(SaveLimit.counterFloor < SaveLimit.limit,
                "the countdown starts before the limit, or it is not a warning")
 
         // ── remaining ─────────────────────────────────────────────────────
-        expect(SaveLimit.remaining(liveCount: 0, signedIn: false) == 20, "an empty library has all 20")
-        expect(SaveLimit.remaining(liveCount: 15, signedIn: false) == 5, "15 borks leaves 5")
-        expect(SaveLimit.remaining(liveCount: 19, signedIn: false) == 1, "19 borks leaves 1")
-        expect(SaveLimit.remaining(liveCount: 20, signedIn: false) == 0, "20 borks leaves none")
+        expect(SaveLimit.remaining(liveCount: 0, signedIn: false) == 50, "an empty library has all 50")
+        expect(SaveLimit.remaining(liveCount: 40, signedIn: false) == 10, "40 borks leaves 10")
+        expect(SaveLimit.remaining(liveCount: 49, signedIn: false) == 1, "49 borks leaves 1")
+        expect(SaveLimit.remaining(liveCount: 50, signedIn: false) == 0, "50 borks leaves none")
         expect(
-            SaveLimit.remaining(liveCount: 34, signedIn: false) == 0,
+            SaveLimit.remaining(liveCount: 64, signedIn: false) == 0,
             "a library over the limit has zero left, never a negative number"
         )
         expect(
@@ -59,18 +61,18 @@ enum SaveLimitTests {
         )
 
         // ── The wall, and the drain, agreeing ─────────────────────────────
-        for count in 0...25 {
+        for count in 0...55 {
             expect(
                 SaveLimit.shouldWall(liveCount: count, signedIn: false)
                     == SaveLimit.mustWait(liveCount: count, signedIn: false),
                 "at \(count) borks the Add sheet and the inbox drain agree"
             )
         }
-        expect(!SaveLimit.shouldWall(liveCount: 19, signedIn: false), "the 20th save goes through")
-        expect(SaveLimit.shouldWall(liveCount: 20, signedIn: false), "the 21st raises the wall")
-        expect(SaveLimit.shouldWall(liveCount: 41, signedIn: false),
+        expect(!SaveLimit.shouldWall(liveCount: 49, signedIn: false), "the 50th save goes through")
+        expect(SaveLimit.shouldWall(liveCount: 50, signedIn: false), "the 51st raises the wall")
+        expect(SaveLimit.shouldWall(liveCount: 71, signedIn: false),
                "a library that signed out over the limit still cannot add")
-        for count in [0, 19, 20, 21, 400] {
+        for count in [0, 49, 50, 51, 400] {
             expect(!SaveLimit.shouldWall(liveCount: count, signedIn: true),
                    "signed in, \(count) borks never walls")
             expect(!SaveLimit.mustWait(liveCount: count, signedIn: true),
@@ -78,49 +80,49 @@ enum SaveLimitTests {
         }
 
         // ── The Library card ──────────────────────────────────────────────
-        expect(!SaveLimit.showsCounter(liveCount: 14, signedIn: false),
-               "at 14 the card still just says where the library lives")
-        expect(SaveLimit.showsCounter(liveCount: 15, signedIn: false), "at 15 it starts counting")
-        expect(!SaveLimit.showsCounter(liveCount: 15, signedIn: true),
+        expect(!SaveLimit.showsCounter(liveCount: 39, signedIn: false),
+               "at 39 the card still just says where the library lives")
+        expect(SaveLimit.showsCounter(liveCount: 40, signedIn: false), "at 40 it starts counting")
+        expect(!SaveLimit.showsCounter(liveCount: 40, signedIn: true),
                "signed in it never counts, at any size")
 
-        expect(SaveLimit.bannerHeadline(liveCount: 14, signedIn: false) == nil,
+        expect(SaveLimit.bannerHeadline(liveCount: 39, signedIn: false) == nil,
                "below the floor the 1.0.2 headline is left alone")
         expect(
-            SaveLimit.bannerHeadline(liveCount: 15, signedIn: false)
-                == "5 saves left before you'll need a free account.",
-            "at 15 the card reads 5 saves left"
+            SaveLimit.bannerHeadline(liveCount: 40, signedIn: false)
+                == "10 saves left before you'll need a free account.",
+            "at 40 the card reads 10 saves left"
         )
         expect(
-            SaveLimit.bannerHeadline(liveCount: 19, signedIn: false)
+            SaveLimit.bannerHeadline(liveCount: 49, signedIn: false)
                 == "1 save left before you'll need a free account.",
             "one left is a save, not 1 saves"
         )
         expect(
-            SaveLimit.bannerHeadline(liveCount: 20, signedIn: false)
-                == "20 borks on this phone — sign up to keep saving.",
+            SaveLimit.bannerHeadline(liveCount: 50, signedIn: false)
+                == "50 borks on this phone — sign up to keep saving.",
             "at the limit the card asks"
         )
         expect(
-            SaveLimit.bannerHeadline(liveCount: 34, signedIn: false)
-                == "34 borks on this phone — sign up to keep saving.",
-            "over the limit it counts the real library rather than insisting on 20"
+            SaveLimit.bannerHeadline(liveCount: 64, signedIn: false)
+                == "64 borks on this phone — sign up to keep saving.",
+            "over the limit it counts the real library rather than insisting on 50"
         )
-        expect(SaveLimit.bannerHeadline(liveCount: 40, signedIn: true) == nil,
+        expect(SaveLimit.bannerHeadline(liveCount: 60, signedIn: true) == nil,
                "signed in there is no headline to swap in")
 
         // The ✕ is an answer to a remark, never to a warning.
-        expect(SaveLimit.bannerIsDismissable(liveCount: 14, signedIn: false),
+        expect(SaveLimit.bannerIsDismissable(liveCount: 39, signedIn: false),
                "below the floor the ✕ still buys fourteen days")
-        expect(!SaveLimit.bannerIsDismissable(liveCount: 15, signedIn: false),
+        expect(!SaveLimit.bannerIsDismissable(liveCount: 40, signedIn: false),
                "once it is counting down there is no ✕")
-        expect(!SaveLimit.bannerIsDismissable(liveCount: 20, signedIn: false),
+        expect(!SaveLimit.bannerIsDismissable(liveCount: 50, signedIn: false),
                "and certainly not at the limit")
         expect(SaveLimit.bannerIsDismissable(liveCount: 999, signedIn: true),
                "signed in the card is a remark again")
 
         // ── The wall's own copy ───────────────────────────────────────────
-        expect(SaveLimit.wallHeadline(liveCount: 20) == "20 borks on this phone.",
+        expect(SaveLimit.wallHeadline(liveCount: 50) == "50 borks on this phone.",
                "the wall's headline is the brief's headline")
         expect(SaveLimit.wallHeadline(liveCount: 1) == "1 bork on this phone.",
                "and it pluralises, however unlikely one bork is here")
@@ -132,9 +134,15 @@ enum SaveLimitTests {
                "the privacy promise leads with the promise")
         expect(
             SaveLimit.privacyBody.contains("Never sold")
-                && SaveLimit.privacyBody.contains("never shared")
                 && SaveLimit.privacyBody.contains("never visible to anyone else"),
-            "all three halves of the promise survive"
+            "both halves of the promise survive"
+        )
+        // Collections can be shared, so "never shared" would now be a lie. The
+        // one exception is the user's own choice, and the sentence says so.
+        expect(
+            !SaveLimit.privacyBody.contains("never shared")
+                && SaveLimit.privacyBody.contains("unless you choose to share a collection"),
+            "the promise names its one exception, and it is the user's own choice"
         )
 
         // ── Waiting ───────────────────────────────────────────────────────
@@ -148,15 +156,15 @@ enum SaveLimitTests {
         let queue = [at(300), at(100), at(200)]   // deliberately unsorted
 
         expect(
-            SaveLimit.admit(liveCount: 20, waiting: queue, signedIn: false).isEmpty,
+            SaveLimit.admit(liveCount: 50, waiting: queue, signedIn: false).isEmpty,
             "at the limit nothing is admitted"
         )
         expect(
-            SaveLimit.admit(liveCount: 19, waiting: queue, signedIn: false) == [at(100)],
+            SaveLimit.admit(liveCount: 49, waiting: queue, signedIn: false) == [at(100)],
             "one delete admits exactly one, and it is the oldest"
         )
         expect(
-            SaveLimit.admit(liveCount: 18, waiting: queue, signedIn: false) == [at(100), at(200)],
+            SaveLimit.admit(liveCount: 48, waiting: queue, signedIn: false) == [at(100), at(200)],
             "two deletes admit two, still oldest first"
         )
         expect(
@@ -164,7 +172,7 @@ enum SaveLimitTests {
             "room for everything admits everything"
         )
         expect(
-            SaveLimit.admit(liveCount: 20, waiting: queue, signedIn: true) == [at(100), at(200), at(300)],
+            SaveLimit.admit(liveCount: 50, waiting: queue, signedIn: true) == [at(100), at(200), at(300)],
             "signing in admits the whole queue regardless of the count"
         )
         expect(
@@ -172,7 +180,7 @@ enum SaveLimitTests {
             "and regardless of how far over the old limit the library is"
         )
         expect(
-            SaveLimit.admit(liveCount: 25, waiting: queue, signedIn: false).isEmpty,
+            SaveLimit.admit(liveCount: 55, waiting: queue, signedIn: false).isEmpty,
             "a library over the limit admits nothing until it is back under"
         )
         expect(
@@ -183,7 +191,7 @@ enum SaveLimitTests {
 
         // Admission never invents or loses a bork: whatever comes back is a
         // subset of what went in, and never more than there is room for.
-        for live in 0...22 {
+        for live in 0...52 {
             let admitted = SaveLimit.admit(liveCount: live, waiting: queue, signedIn: false)
             expect(
                 admitted.count <= max(0, SaveLimit.limit - live) && admitted.count <= queue.count,
@@ -205,16 +213,16 @@ enum SaveLimitTests {
         // Two duplicate timestamps must not collapse into one admission.
         let tied = [at(100), at(100), at(400)]
         expect(
-            SaveLimit.admit(liveCount: 18, waiting: tied, signedIn: false) == [at(100), at(100)],
+            SaveLimit.admit(liveCount: 48, waiting: tied, signedIn: false) == [at(100), at(100)],
             "two borks that arrived in the same instant are two borks"
         )
 
         // ── The You tab ───────────────────────────────────────────────────
-        expect(SaveLimit.youCount(liveCount: 17, signedIn: false) == "17 of 20", "You says 17 of 20")
-        expect(SaveLimit.youCount(liveCount: 0, signedIn: false) == "0 of 20", "and 0 of 20 on day one")
+        expect(SaveLimit.youCount(liveCount: 17, signedIn: false) == "17 of 50", "You says 17 of 50")
+        expect(SaveLimit.youCount(liveCount: 0, signedIn: false) == "0 of 50", "and 0 of 50 on day one")
         expect(SaveLimit.youCount(liveCount: 17, signedIn: true) == nil,
                "signed in there is nothing to be out of")
-        expect(SaveLimit.youLine.contains("Free limit: 20 borks"), "the You line names the limit")
+        expect(SaveLimit.youLine.contains("Free limit: 50 borks"), "the You line names the limit")
         expect(SaveLimit.youLine.contains("unlimited"), "and what an account removes")
 
         // ── Saving a link you already have ────────────────────────────────

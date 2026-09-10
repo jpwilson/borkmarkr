@@ -202,7 +202,7 @@ struct YouView: View {
     /// The limit, said plainly, where someone goes when they want to know
     /// what their account status actually means.
     ///
-    /// The count is the point. "Free limit: 20 borks" is a rule; "17 of 20" is
+    /// The count is the point. "Free limit: 50 borks" is a rule; "17 of 50" is
     /// a fact about your library, and it is the number that decides whether
     /// this line is worth reading today.
     @ViewBuilder
