@@ -1,0 +1,33 @@
+name: Quest brief tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/QuestBrief.swift"
+      - "Core/Supabase.swift"
+      - "Core/Mission.swift"
+      - "App/Screens/MissionsView.swift"
+      - "supabase/functions/quest-brief/index.ts"
+      - "Scripts/test_quest_brief.swift"
+      - ".github/workflows/quest-brief-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/QuestBrief.swift"
+      - "Core/Supabase.swift"
+      - "Core/Mission.swift"
+      - "App/Screens/MissionsView.swift"
+      - "supabase/functions/quest-brief/index.ts"
+      - "Scripts/test_quest_brief.swift"
+      - ".github/workflows/quest-brief-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run quest brief checks
+        run: |
+          swiftc -parse-as-library -o /tmp/quest-brief-tests \
+            Core/Supabase.swift Core/QuestBrief.swift Scripts/test_quest_brief.swift
+          /tmp/quest-brief-tests

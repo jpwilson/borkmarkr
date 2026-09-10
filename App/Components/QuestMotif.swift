@@ -88,6 +88,69 @@ enum QuestMotif: String, CaseIterable, Sendable {
         default: return .compass
         }
     }
+
+    /// The built-in topic whose clay scene fits a body-or-mind quest the kit
+    /// has no scene for. "Breathing", "Sleep properly", "Get on top of the
+    /// anxiety" all used to fall through to the compass; none of the ten
+    /// scenes is about any of them, but the Wellness, Health and Mental
+    /// health topics each ship one that is.
+    static func bodyMindTopic(in fragments: [String?]) -> String? {
+        let blob = fragments.compactMap { $0 }.joined(separator: " ").lowercased()
+        func mentions(_ words: String...) -> Bool {
+            words.contains { blob.contains($0) }
+        }
+        if mentions("anxiet", "stress", "burnout", "therap", "depress", "adhd", "grief", "panic", "overthink") {
+            return "mentalhealth"
+        }
+        if mentions("breath", "meditat", "mindful", "journal", "gratitude", "morning person", "routine", "habit", "cold plunge", "sauna", "detox", "wellness", "calm", "focus") {
+            return "wellness"
+        }
+        if mentions("sleep", "health", "doctor", "symptom", "pain", "injur", "gut", "hormone", "longevity", "bloodwork", "immun", "allerg", "dental") {
+            return "health"
+        }
+        return nil
+    }
+}
+
+/// What a quest card wears.
+///
+/// Ten fixed scenes cannot cover every sentence someone types. Seb's
+/// breathing quest — Health, a title the kit has no scene for — fell through
+/// `QuestMotif.resolve` to the compass and read as a map on a quest about
+/// breathing. So a cover is resolved in three passes: a title, subtopic or
+/// topic the kit draws (rabbit hole, marketing, running, cooking…) wins;
+/// then the linked topic's own bundled clay scene, so a Health quest wears
+/// the Health art; then, for a quest with no topic, the body-or-mind scene
+/// its words point at. The compass is what is left — a quest about nothing
+/// the app has a picture of, or a custom topic whose scene lives on the
+/// server and is not bundled (paper would be worse than a map).
+///
+/// `docs/index.html`'s `questArt` walks the same passes minus the title one.
+enum QuestCover: Equatable {
+    case motif(QuestMotif)
+    case topic(String)
+
+    static func resolve(title: String, categoryID: String? = nil, subcategory: String? = nil) -> QuestCover {
+        let motif = QuestMotif.resolve(title: title, categoryID: categoryID, subcategory: subcategory)
+        if motif != .compass { return .motif(motif) }
+        if let categoryID, TopicMotif.isBundled(categoryID) { return .topic(categoryID) }
+        if let family = QuestMotif.bodyMindTopic(in: [title, subcategory]), TopicMotif.isBundled(family) {
+            return .topic(family)
+        }
+        return .motif(.compass)
+    }
+}
+
+struct QuestCoverArt: View {
+    let cover: QuestCover
+    var contentMode: ContentMode = .fill
+
+    var body: some View {
+        switch cover {
+        case .motif(let motif): QuestArt(motif: motif, contentMode: contentMode)
+        case .topic(let id): TopicClayArt(categoryID: id, contentMode: contentMode)
+        }
+    }
 }
 
 /// Bundled clay scene, or paper if the imageset is missing.
@@ -120,6 +183,12 @@ enum TopicMotif {
     static func asset(for categoryID: String) -> String {
         guard !categoryID.isEmpty else { return "topicFallback" }
         return "topic" + categoryID.prefix(1).uppercased() + categoryID.dropFirst()
+    }
+
+    /// Whether the scene ships in the binary. True for the 50 built-ins;
+    /// false for a custom topic, whose scene is drawn on the server.
+    static func isBundled(_ categoryID: String) -> Bool {
+        !categoryID.isEmpty && UIImage(named: asset(for: categoryID)) != nil
     }
 }
 

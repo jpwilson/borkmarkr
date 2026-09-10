@@ -12,6 +12,10 @@ struct QuestCard: View {
     let count: Int
     let palette: CategoryPalette
     var motif: QuestMotif = .compass
+    /// Preferred over `motif` when set — `QuestCover.resolve` can land on a
+    /// topic's clay scene, which no motif names. `motif` stays for callers
+    /// that only have one.
+    var cover: QuestCover? = nil
     var layout: Layout = .rail
     var suggested: Bool = false
     var dashed: Bool = false
@@ -19,7 +23,11 @@ struct QuestCard: View {
     var habit: Bool = false
     var topicName: String? = nil
     var blurb: String? = nil
-    var sample: String? = nil
+    /// Footer text for a card that is neither a quest nor a seed — the
+    /// guide's samples say what tapping does instead of counting borks.
+    var caption: String? = nil
+
+    private var art: QuestCover { cover ?? .motif(motif) }
 
     var body: some View {
         switch layout {
@@ -47,7 +55,7 @@ struct QuestCard: View {
                 if dashed {
                     palette.tint
                 } else {
-                    QuestArt(motif: motif)
+                    QuestCoverArt(cover: art)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipped()
                 }
@@ -108,7 +116,7 @@ struct QuestCard: View {
             Spacer(minLength: 4)
 
             if !dashed {
-                QuestArt(motif: motif)
+                QuestCoverArt(cover: art)
                     .frame(width: 104, height: 104)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
@@ -132,6 +140,7 @@ struct QuestCard: View {
 
     private var footerLine: String {
         if let blurb, suggested { return blurb }
+        if let caption { return caption }
         if dashed { return "Name what you’re after" }
         return Copy.countedBorks(count)
     }
@@ -166,8 +175,8 @@ struct QuestSeedRow: View {
     let seed: Mission.Seed
     @Environment(\.accent) private var accent
 
-    private var motif: QuestMotif {
-        QuestMotif.resolve(title: seed.title, categoryID: seed.categoryID, subcategory: seed.subcategory)
+    private var cover: QuestCover {
+        QuestCover.resolve(title: seed.title, categoryID: seed.categoryID, subcategory: seed.subcategory)
     }
 
     private var palette: CategoryPalette {
@@ -176,7 +185,7 @@ struct QuestSeedRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            QuestArt(motif: motif)
+            QuestCoverArt(cover: cover)
                 .frame(width: 72, height: 72)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
