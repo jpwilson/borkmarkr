@@ -265,11 +265,15 @@
   .tt-text { display: flex; flex-direction: column; gap: 1px; padding: 10px 13px 12px; background: var(--surface); }
   .topic-tile b { font-size: 14.5px; font-family: var(--font-head); color: var(--ink); }
   .tt-text span { font-size: 12px; color: var(--meta); font-weight: 600; }
-  /* "+ New topic" — the app's tile at the end of the grid. */
-  .tile-new { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 15px;
-    background: var(--tint); border-color: transparent; color: var(--accent-text);
-    font-family: var(--font-head); font-size: 15px; font-weight: 800; min-height: 162px; }
-  .tile-new i { font-style: normal; font-size: 26px; line-height: 1; }
+  /* "+ New topic" — first in the grid, not last (the app's BrowseView tile).
+     A topic tile's shape with the plus standing where the clay art goes, on
+     the accent tint with the dashed edge the suggested-quest card wears. */
+  .tile-new { display: flex; flex-direction: column; background: var(--tint); border: 1.5px dashed var(--dashed);
+    box-shadow: none; min-height: 162px; }
+  .tile-new .tn-plus { flex: 1 1 auto; display: grid; place-items: center; }
+  .tile-new .tn-plus i { font-style: normal; display: grid; place-items: center; width: 44px; height: 44px;
+    border-radius: 50%; background: var(--coral); color: #fff; font: 800 26px/1 var(--font-head); }
+  .tile-new .tt-text { background: transparent; }
   #topics-hint { display: block; margin: 14px 0 0; }
   .source-row { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--surface);
     border: 1px solid var(--hairline); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
@@ -459,6 +463,21 @@
   .tp-add .tp-name { color: var(--accent-text); font-weight: 700; }
   .tp-plus { width: 22px; height: 22px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%;
     background: var(--tint); color: var(--accent-text); font: 800 15px/1 var(--font-body); }
+  /* "Make your own topic" — the invitation at the top, and the empty-search
+     state, which is the add itself with the name typed. The Browse tile's
+     tint and plus, the suggested-quest card's dashed edge (TopicPickerSheet's
+     makeYourOwnCard / nothingCalledCard). */
+  .tp-make { display: flex; align-items: center; gap: 12px; width: 100%; margin: 8px 0 4px; padding: 12px 14px;
+    border: 1.5px dashed var(--dashed); border-radius: var(--radius); background: var(--tint);
+    text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+  .tp-make .tp-plus { width: 30px; height: 30px; background: var(--coral); color: #fff; font-size: 18px; }
+  .tp-make b { display: block; font-family: var(--font-head); font-size: 15px; line-height: 1.25; }
+  .tp-make small { display: block; font-size: 12.5px; color: var(--accent-text); line-height: 1.35; margin-top: 2px; }
+  /* The same add, pinned under the list (newTopicFooter): the sheet opens
+     scrolled to the topic already picked, which is exactly where the top
+     row is not. */
+  .tp-foot { position: sticky; bottom: 0; z-index: 1; margin-top: -1px; background: var(--surface);
+    border-bottom: 0; border-top: 1px solid var(--hairline); }
   .tp-group { padding: 18px 4px 7px; color: var(--meta); font-size: 10.5px; font-weight: 800;
     letter-spacing: .06em; text-transform: uppercase; }
   .tp-mine { flex: 0 0 auto; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; }
@@ -2475,8 +2494,8 @@ function renderTopicTiles(all) {
   const key = `tiles|${demoMode}|${sortFor("topics")}|${tiles.map(([id, n]) => `${id}:${n}:${topicArt.get(id) || ""}`).join(",")}`;
   if (memo.get("topics-grid") !== key) {
     memo.set("topics-grid", key);
-    $("topics-grid").innerHTML = tiles.map(([id, n]) => topicTileHTML(topicFor(id), n)).join("")
-      + `<button class="topic-tile tile-new" data-act="new-topic"><i aria-hidden="true">+</i>New topic</button>`;
+    $("topics-grid").innerHTML = `<button class="topic-tile tile-new" data-act="new-topic"><span class="tn-plus"><i aria-hidden="true">+</i></span><span class="tt-text"><b>New topic</b><span>Anything you like</span></span></button>`
+      + tiles.map(([id, n]) => topicTileHTML(topicFor(id), n)).join("");
   }
   $("topics-hint").hidden = tiles.length > 0;
   // The scenes that were never drawn, a few at a time — TopicArt.backfillOrder.
@@ -3246,17 +3265,31 @@ function openPicker(which, { newTopic = false } = {}) {
   const row = tp.expanded && $("tp-list").querySelector(`[data-tp-topic="${tp.expanded}"]`);
   if (row) row.scrollIntoView({ block: "start" });
 }
-/* The app's addTopicRow: first thing in the list, and it carries whatever is
-   in the search box so "juice" → "Add topic “juice”" is one tap. */
+/* The app's newTopicFooter, or the open name field. Pinned under the list by
+   `.tp-foot`, and it carries whatever is in the search box, so "juice" →
+   "Add topic “juice”" opens the field with juice already in it. */
 function addTopicRowHTML(needle) {
   if (!tp.newTopic) {
     const named = tpCanAdd(needle, allTopicNames());
-    return `<button class="tp-row tp-add" data-tp-new><span class="tp-plus" aria-hidden="true">+</span><span class="tp-name">${named ? `Add topic “${esc(needle)}”` : "Add a topic"}</span></button>`;
+    return `<button class="tp-row tp-add tp-foot" data-tp-new><span class="tp-plus" aria-hidden="true">+</span><span class="tp-name">${named ? `Add topic “${esc(needle)}”` : "New topic"}</span></button>`;
   }
   return `<div class="tp-add-open">
     <div class="tp-new"><input class="field" id="tp-new-topic" placeholder="New topic" maxlength="40" autocomplete="off" autocapitalize="sentences" aria-label="New topic name"><button class="chip on" data-tp-new-go>Add</button></div>
     <p class="hint tp-new-hint">A topic is the top-level file — like Fitness or Cars. After you add it you can give it subtopics, or just use the topic. It shows up in Browse once a bork is filed under it.</p>
   </div>`;
+}
+/* The app's makeYourOwnCard and nothingCalledCard. Nothing typed: the
+   invitation, first, with the line the old row never had — what a topic can
+   be, which is anything. Typed and nothing answered: not "no results" but the
+   add itself, named. The first outside tester never found "Add a topic" as a
+   plain row; this is the reply. */
+function makeYourOwnHTML(needle) {
+  const named = needle && tpCanAdd(needle, allTopicNames());
+  return `<button class="tp-make" data-tp-new><span class="tp-plus" aria-hidden="true">+</span><span>` +
+    (named
+      ? `<b>Add topic “${esc(needle)}”</b><small>Nothing called that yet. Make it a topic of your own.</small>`
+      : `<b>Make your own topic</b><small>Anything you like: Foot mobility, Van life, Sourdough</small>`) +
+    `</span></button>`;
 }
 function tpTopicRowHTML(t, p, needle) {
   const subs = allSubs(t.id), open = tp.expanded === t.id, on = p.topic === t.id;
@@ -3284,13 +3317,15 @@ function renderPicker() {
   if (needle && shown.length && !(tp.expanded && shown.some(t => t.id === tp.expanded))) tp.expanded = shown[0].id;
   const draft = $("tp-new-name")?.value ?? needle;
   const topicDraft = $("tp-new-topic")?.value ?? needle;
-  // "Add topic “runn”" is the answer when nothing matched and an afterthought
-  // when something did, so with matches on screen it goes below them — the
-  // list a search returns should start with what the search found.
-  const addRow = addTopicRowHTML(needle);
-  const addLast = !!needle && !tp.newTopic && shown.length > 0;
+  // Nothing typed: the invitation (or the open name field) first. Typed:
+  // what the search found, then the pinned footer — never an offer to make
+  // a second Fitness above the Fitness it just found. The name field, once
+  // open, is the only add on screen.
+  const addRow = addTopicRowHTML(needle);   // the pinned footer, or the open name field
+  const formOpen = tp.newTopic;
   let html = needle ? "" : `<button class="tp-row tp-none${p.topic ? "" : " tp-on"}" data-tp-none><span class="tp-dot" style="background:var(--hairline)"></span><span class="tp-name">Not filed — no topic</span></button>`;
-  if (!addLast) html += addRow;
+  if (formOpen) html += addRow;
+  else if (!needle) html += makeYourOwnHTML("");
   if (ranked) {
     for (const t of ranked) html += tpTopicRowHTML(t, p, needle);
   } else {
@@ -3300,10 +3335,10 @@ function renderPicker() {
       for (const t of mine) html += tpTopicRowHTML(t, p, needle);
     }
   }
-  if (addLast) html += addRow;
+  if (!formOpen && shown.length) html += addRow;
   if (!shown.length) {
     const host = topicFor(tp.expanded) || topicFor(p.topic);   // the topic you were just in, most likely where this belongs
-    html = addTopicRowHTML(needle) + `<p class="hint tp-empty-msg">Nothing called “${esc(needle)}”.</p>` + (host && tpCanAdd(needle, allSubs(host.id))
+    html = (formOpen ? addRow : makeYourOwnHTML(needle)) + (host && tpCanAdd(needle, allSubs(host.id))
       ? `<div class="tp-subs" style="padding-left:4px;border:0"><button class="chip" data-tp-use="${esc(host.id)}">Use “${esc(needle)}” as a subtopic of ${esc(host.name)}</button></div>` : "");
   }
   $("tp-list").innerHTML = html;

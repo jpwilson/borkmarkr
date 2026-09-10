@@ -200,12 +200,21 @@ struct LibraryView: View {
                         .foregroundStyle(Tokens.ink)
                 }
                 Spacer()
+                // Your own initial, or nobody's. This was a hardcoded "J" —
+                // the founder's — on every phone, signed in or not.
                 Circle()
                     .fill(accent.tint)
                     .frame(width: 32, height: 32)
-                    .overlay(
-                        Text("J").font(Typo.ui(14, .bold)).foregroundStyle(accent.deep)
-                    )
+                    .overlay {
+                        if let letter = Initials.letter(displayName: nil, email: account?.email) {
+                            Text(letter).font(Typo.ui(14, .bold)).foregroundStyle(accent.deep)
+                        } else {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(accent.deep)
+                        }
+                    }
+                    .accessibilityHidden(true)
             }
 
             Text("Your library")

@@ -267,13 +267,10 @@ struct YouView: View {
         }
     }
 
-    /// First letter of the signed-in email. Never a hardcoded "J".
+    /// The signed-in email's first letter, by the one rule both avatars share
+    /// (`Initials`). Never a hardcoded "J".
     private var avatarLetter: String? {
-        guard let email = account.email,
-              let local = email.split(separator: "@").first,
-              let first = local.first
-        else { return nil }
-        return String(first).uppercased()
+        Initials.letter(displayName: nil, email: account.email)
     }
 
     private var statsStrip: some View {

@@ -13,6 +13,13 @@ import SwiftData
 /// a wrapping block of forty pills in authored order can only be read by
 /// scanning all forty. Expanding a topic never replaces "Add a subtopic" with
 /// "create whatever is in the search box".
+///
+/// Making your own topic is offered three ways, because the first outside
+/// tester never found the one way it was offered. A card at the top says what
+/// a topic can be (anything); a footer pinned under the list says "New topic"
+/// wherever you have scrolled to — the sheet opens scrolled to the topic
+/// already picked, which is exactly where the top row is not; and a search
+/// that matches nothing is not "no results", it is "Add topic “Van life”".
 struct TopicPickerSheet: View {
     @Binding var categoryID: String?
     @Binding var subcategory: String?
@@ -63,6 +70,17 @@ struct TopicPickerSheet: View {
         TopicPickerQuery.canAddName(trimmedFilter, to: merged.allTopics.map(\.name))
     }
 
+    /// Typed, and nothing answered it.
+    private var searchFoundNothing: Bool {
+        !trimmedFilter.isEmpty && shown.isEmpty
+    }
+
+    /// Where a subtopic typed into an empty search would go: the topic that
+    /// is open, else the one already picked. The web offers the same.
+    private var subtopicHost: Topic? {
+        merged.topic(id: expanded ?? categoryID)
+    }
+
     private func canAdd(_ name: String, to topic: Topic) -> Bool {
         TopicPickerQuery.canAddName(name, to: merged.subs(for: topic))
     }
@@ -78,30 +96,34 @@ struct TopicPickerSheet: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         // Hoisted: `shown` filters and ranks, and the body
-                        // asks for it three times.
+                        // asks for it more than once.
                         let rows = shown
-                        let searching = !trimmedFilter.isEmpty && !rows.isEmpty
                         LazyVStack(spacing: 8) {
-                            // "Add topic “runn”" sat above the results, so a
-                            // search that found the topic still offered to
-                            // make a second one with the same name first.
-                            // While searching it goes under the matches; with
-                            // nothing typed it reads "Add a topic" and stays
-                            // at the top, where burying it under fifty rows
-                            // would only hide it.
-                            if !searching { addTopicRow }
+                            // Nothing typed: the invitation, first. It scrolls
+                            // away the moment a topic is open — the footer is
+                            // what stays. Typed: what the search found, and
+                            // never an offer to make a second Fitness above
+                            // the Fitness it just found.
+                            if trimmedFilter.isEmpty { makeYourOwnCard }
 
                             ForEach(rows) { topic in
                                 topicRow(topic)
                                     .id(topic.id)
                             }
 
-                            if searching { addTopicRow }
+                            if rows.isEmpty, !trimmedFilter.isEmpty { nothingCalledCard }
                         }
                         .padding(.horizontal, 18)
                         .padding(.bottom, 24)
                     }
                     .scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        // Pinned, so it is there wherever the list has been
+                        // scrolled to — and above the keyboard while typing.
+                        // The empty state carries the same add, so it steps
+                        // aside there.
+                        if !searchFoundNothing { newTopicFooter }
+                    }
                     .onAppear {
                         #if DEBUG
                         if let seeded = ScreenshotDefaults.pickerQuery, filter.isEmpty {
@@ -257,25 +279,123 @@ struct TopicPickerSheet: View {
         )
     }
 
-    private var addTopicRow: some View {
+    // MARK: Making your own
+
+    /// The invitation, with nothing typed. The Browse "New topic" tile's tint
+    /// and plus, the suggested-quest card's dashed edge, and the one line the
+    /// old row never had: what a topic can be, which is anything.
+    private var makeYourOwnCard: some View {
         Button {
-            newTopicName = trimmedFilter
+            newTopicName = ""
             showingNewTopic = true
+        } label: {
+            makeCard(title: "Make your own topic",
+                     line: "Anything you like: Foot mobility, Van life, Sourdough")
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    /// A search that found nothing is not "no results" — it is the add
+    /// itself, named, one tap. The topic you were in (or had picked) is the
+    /// likeliest home for a subtopic, so that is offered under it, as the
+    /// web does. A name too short to be a topic gets the plain line.
+    @ViewBuilder
+    private var nothingCalledCard: some View {
+        if canAddTopicFromFilter {
+            Button {
+                addTopic(trimmedFilter)
+            } label: {
+                makeCard(title: "Add topic \u{201C}\(trimmedFilter)\u{201D}",
+                         line: "Nothing called that yet. Make it a topic of your own.")
+            }
+            .buttonStyle(PressableStyle())
+
+            if let host = subtopicHost, canAdd(trimmedFilter, to: host) {
+                addChip(label: "Use \u{201C}\(trimmedFilter)\u{201D} as a subtopic of \(host.name)",
+                        palette: host.palette) {
+                    addSubtopic(trimmedFilter, to: host, dismissAfter: true)
+                }
+                .padding(.leading, 2)
+            }
+        } else {
+            Text("Nothing called \u{201C}\(trimmedFilter)\u{201D}.")
+                .font(Typo.ui(13, .medium))
+                .foregroundStyle(Tokens.inkMeta)
+                .padding(.top, 6)
+        }
+    }
+
+    private func makeCard(title: String, line: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "plus")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(accent.base, in: Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(Typo.display(15, .bold))
+                    .foregroundStyle(Tokens.ink)
+                    .lineLimit(2)
+                Text(line)
+                    .font(Typo.ui(12.5, .medium))
+                    .foregroundStyle(accent.deep)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .multilineTextAlignment(.leading)
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(accent.tint, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+        )
+    }
+
+    /// Stays put while the list scrolls. The picker opens scrolled to the
+    /// topic already picked, which put the old "Add a topic" row off-screen
+    /// before anyone saw it. Reads "New topic" until a name is typed, then
+    /// "Add topic “x”" — and then it does that, on the spot. The dashed
+    /// "Add a note" / "New side quest" affordance, in accent ink.
+    private var newTopicFooter: some View {
+        Button {
+            if canAddTopicFromFilter {
+                addTopic(trimmedFilter)
+            } else {
+                newTopicName = ""
+                showingNewTopic = true
+            }
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 16, weight: .semibold))
                 Text(canAddTopicFromFilter
                      ? "Add topic \u{201C}\(trimmedFilter)\u{201D}"
-                     : "Add a topic")
+                     : "New topic")
                     .font(Typo.ui(14, .semibold))
-                Spacer()
+                    .lineLimit(1)
             }
             .foregroundStyle(accent.deep)
-            .padding(13)
-            .cardSurface(radius: 16)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+            .padding(.horizontal, 14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableStyle())
+        .padding(.horizontal, 18)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity)
+        .background(Tokens.paper)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Tokens.hairline).frame(height: 1)
+        }
     }
 
     private func topicRow(_ topic: Topic) -> some View {
@@ -351,6 +471,23 @@ struct TopicPickerSheet: View {
                     tint: { topic.palette }
                 )
 
+                // The two ways to add under this topic, as chips among the
+                // chips — the web's "+ Add a subtopic" pill — not a line of
+                // small text under them.
+                FlowLayout(spacing: 6) {
+                    addChip(label: "Add a subtopic", palette: topic.palette) {
+                        newSubtopicTopic = topic
+                        newSubtopicName = trimmedFilter
+                    }
+                    if canAdd(trimmedFilter, to: topic), !trimmedFilter.isEmpty {
+                        addChip(label: "Use \u{201C}\(trimmedFilter)\u{201D} as a subtopic",
+                                palette: topic.palette) {
+                            addSubtopic(trimmedFilter, to: topic, dismissAfter: true)
+                        }
+                    }
+                }
+                .padding(.top, 2)
+
                 Button {
                     categoryID = topic.id
                     subcategory = nil
@@ -361,36 +498,31 @@ struct TopicPickerSheet: View {
                         .foregroundStyle(Tokens.inkSecondary)
                 }
                 .buttonStyle(.plain)
-
-                addButton(label: "Add a subtopic", topic: topic) {
-                    newSubtopicTopic = topic
-                    newSubtopicName = trimmedFilter
-                }
-
-                if canAdd(trimmedFilter, to: topic), !trimmedFilter.isEmpty {
-                    addButton(label: "Use \u{201C}\(trimmedFilter)\u{201D} as a subtopic", topic: topic) {
-                        addSubtopic(trimmedFilter, to: topic, dismissAfter: true)
-                    }
-                }
             }
         }
         .padding(13)
         .cardSurface(radius: 16)
     }
 
-    private func addButton(label: String, topic: Topic, action: @escaping () -> Void) -> some View {
+    /// The Add sheet's dashed "+ New side quest" chip, in the topic's palette.
+    private func addChip(label: String, palette: CategoryPalette, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: "plus.circle.fill").font(.system(size: 12, weight: .semibold))
+            HStack(spacing: 4) {
+                Image(systemName: "plus").font(.system(size: 10, weight: .bold))
                 Text(label)
-                    .font(Typo.ui(12.5, .semibold))
+                    .font(Typo.ui(12, .semibold))
                     .lineLimit(1)
-                Spacer()
             }
-            .foregroundStyle(topic.palette.deep)
-            .padding(.top, 4)
+            .foregroundStyle(palette.deep)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 7)
+            .overlay(
+                Capsule().strokeBorder(palette.deep.opacity(0.45),
+                                       style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+            )
+            .tappableChip()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChipStyle())
     }
 
     private func customSub(named name: String, in topicID: String) -> CustomSubtopic? {
