@@ -262,7 +262,10 @@ there was nobody in the sheet to complete the request. The value has been bare
 since the first commit, so nothing in `ShareViewController.swift` has ever run
 on a share. `@objc(ShareViewController)` on the class fixes it, and it is done
 in the class rather than the plist because `project.yml` rewrites Info.plist on
-every `xcodegen generate` — a fix in a generated file is not one. Beyond that,
+every `xcodegen generate` — a fix in a generated file is not one. Why JP's own
+phone did not show this is not explained by it; a runtime that resolved the
+name more loosely is the likely difference, and the fix is right under either.
+Beyond that,
 read with a slow host in mind, the controller could still hang in four ways
 and show nothing while it did.
 
@@ -289,9 +292,13 @@ in `attributedContentText`, with the link in it. A share from either now never
 waits on a provider at all. When the text has several links — a post whose
 body links an article, then the post's own URL — the post's link wins, since
 every app that shares a post as text puts the post's link last and the post is
-what the person tapped Share on. Only links written out in full count: the
-data detector also matches bare domains, and a caption that mentions
-"sophie.co" is not a share of sophie.co.
+what the person tapped Share on. Only the post's own link — one on a platform
+bookmarker knows — is trusted this early: a caption that links someone's
+website is not a share of that website, and the host's `public.url` says what
+was actually shared, so a caption whose only links are plain web links waits
+its turn behind the providers. Only links written out in full count: the data
+detector also matches bare domains, and a caption that mentions "sophie.co"
+is not a share of sophie.co.
 
 **Every shape of `public.url` is accepted, and `file:` is not.** Hosts hand
 the link over as `URL`, `NSURL`, `String` or UTF-8 bytes in `Data`; the old

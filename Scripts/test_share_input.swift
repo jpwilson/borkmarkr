@@ -60,6 +60,14 @@ enum ShareInputTests {
         expect(ShareInput.firstURL(in: "") == nil, "empty text has no link")
         expect(ShareInput.firstURL(in: nil) == nil, "no text has no link")
 
+        // Before the host is asked anything, only the post's own link is
+        // trusted. A caption that links a website is not a share of it.
+        expect(ShareInput.postURL(in: "Great read https://t.co/abc123 https://x.com/jp/status/123")?.host == "x.com", "an X post's text carries the post's link, and that is taken at once")
+        expect(ShareInput.postURL(in: "Title\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ")?.host == "www.youtube.com", "YouTube's text share carries the video's link")
+        expect(ShareInput.postURL(in: "Full routine on my site https://mysite.com/routine") == nil, "a caption linking a website is not the share — the host's public.url is")
+        expect(ShareInput.postURL(in: "no links here") == nil, "text without a link has no post link")
+        expect(ShareInput.postURL(in: nil) == nil, "no text has no post link")
+
         // ── Text payloads ─────────────────────────────────────────────────
         expect(ShareInput.text(from: "hello") == "hello", "a String payload is text")
         expect(ShareInput.text(from: NSAttributedString(string: "rich")) == "rich", "an attributed string is its text")

@@ -72,6 +72,17 @@ enum ShareInput {
         return links.last { Platform.detect(from: $0) != .web } ?? links.first
     }
 
+    /// The post's own link in the text a host handed over with the share —
+    /// an X or Threads post, YouTube's "title, newline, link" — when there is
+    /// one. Only a link on a platform bookmarker knows counts here: a caption
+    /// that links someone's website is not a share of that website, and the
+    /// host's `public.url` says what was actually shared. This is read before
+    /// the host is asked for anything; `firstURL(in:)` is the fallback after.
+    static func postURL(in text: String?) -> URL? {
+        guard let url = firstURL(in: text), Platform.detect(from: url) != .web else { return nil }
+        return url
+    }
+
     private static func url(fromString text: String) -> URL? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         // Meant to be a bare link, but hosts have been seen sending the whole

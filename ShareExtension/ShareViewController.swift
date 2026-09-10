@@ -26,10 +26,11 @@ import UniformTypeIdentifiers
 /// names the principal class `ShareViewController`, but a Swift class is
 /// registered with the Objective-C runtime as `ShareExtension.ShareViewController`,
 /// so iOS could not find it — the simulator log says exactly that — and
-/// presented an empty sheet with nobody in it to complete the request. That
-/// is the sheet Seb photographed. Giving the class its bare Objective-C name
-/// makes the plist true; it is done here rather than by prefixing the plist
-/// value because the plist is regenerated from project.yml on every
+/// presented an empty sheet with nobody in it to complete the request. A
+/// blank sheet that never finishes is what Seb described, and 1.0.1 ships the
+/// same plist value. Giving the class its bare Objective-C name makes the
+/// plist true; it is done here rather than by prefixing the plist value
+/// because the plist is regenerated from project.yml on every
 /// `xcodegen generate`, and a fix that lives in a generated file is not one.
 @objc(ShareViewController)
 final class ShareViewController: UIViewController {
@@ -87,11 +88,13 @@ final class ShareViewController: UIViewController {
         guard !items.isEmpty else { return finish(.noLink) }
 
         // The post text, when the host gives it. X and Threads always do, and
-        // the link is right there in it — no round trip to the host needed,
-        // so a host that is slow to answer can't slow this down.
+        // the post's own link is right there in it — no round trip to the
+        // host needed, so a host that is slow to answer can't slow this down.
+        // Only the post's link is trusted this early: a caption that links
+        // someone's website is not a share of that website.
         for item in items {
             let caption = item.attributedContentText?.string
-            if let url = ShareInput.firstURL(in: caption) {
+            if let url = ShareInput.postURL(in: caption) {
                 return save(url: url, caption: caption)
             }
         }
@@ -114,6 +117,14 @@ final class ShareViewController: UIViewController {
                    let url = ShareInput.firstURL(in: text) {
                     return save(url: url, caption: text)
                 }
+            }
+        }
+
+        // Nothing better from the host: a plain web link in its text will do.
+        for item in items {
+            let caption = item.attributedContentText?.string
+            if let url = ShareInput.firstURL(in: caption) {
+                return save(url: url, caption: caption)
             }
         }
 
