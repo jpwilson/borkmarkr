@@ -1,108 +1,112 @@
 # Launch posts — X thread + Reddit
 
+**The rule for everything here** (JP, 2 Sep 2026): lead with the daily
+loop — capture what you scroll past on any platform, it's filed for you,
+you revisit it or send it to someone later. Import is one line near the
+end ("old saves come along too"), never the hook or the feedback ask. The
+texts below are written to be true on any day after launch (2 Sep 2026);
+the review-week story is a paragraph, not the frame.
+
 All bookmarker.lol links carry UTM params:
 `https://bookmarker.lol/?utm_source=<platform>&utm_medium=<post|reply>&utm_campaign=<slug>`.
-Launch-day campaign slug: `launch-day`.
+Campaign slug for these: `launch-thread`.
 
 ---
 
-## X launch thread (8–10 posts, build-in-public voice)
+## X thread (8 posts, build-in-public voice)
 
-Post as a numbered thread the morning of 2 Sep 2026, first reply within the
-hour is the pinned reply with screenshots (not scripted here — grab three
-from `Marketing/screenshots/`).
+Post as a numbered thread; the first reply within the hour is the pinned
+reply with screenshots (grab three from `Marketing/screenshots/`). When iOS
+1.1 is live, swap post 5 for the bracketed version.
 
-**1/10**
-bookmarker is live on the App Store today. Free, iOS 17+, 8MB.
+**1/8**
+You save things all day. A recipe on Instagram, a thread on X, a workout
+on TikTok, a talk on YouTube. Then you never see any of it again.
 
-It's the library that sits above every app you save things in — Instagram,
-X, TikTok, YouTube — because none of those saved lists talk to each other or
-let you search them.
-
+I built bookmarker to fix that. Free, iPhone + web.
 https://apps.apple.com/app/id6799805479
 
-**2/10**
-The idea: you save constantly and can never find any of it again. Every
-platform's "saved" list is a write-only pile — no titles, no search, no
-order. bookmarker files what you save into topics automatically and makes
-it searchable.
+**2/8**
+The problem is structural: every app's "Saved" is a private pile only that
+app can see. No titles, no search, no order. Keeping you scrolling is the
+business; helping you find what you kept isn't.
 
-**3/10**
-What's real today: save from the share sheet, it's filed into one of 50
-topics automatically, search across titles/tags/notes, "side quests" to
-group saves into a to-do, and bulk import from your Instagram, TikTok, X or
-YouTube export, or your browser bookmarks.
+**3/8**
+bookmarker is the library that sits above all of them. Share to it from
+any app — two taps — and it files the save into a topic on its own: 50
+topics, ~600 subtopics, keyword matching on-device first, a private model
+only for the links that need it.
 
-**4/10**
-It also syncs between iPhone and the web app now
-(https://bookmarker.lol/?utm_source=x&utm_medium=post&utm_campaign=launch-day),
-and the app itself asks for zero permissions — no location, no contacts, no
-camera, no ads, no tracking.
+**4/8**
+Then it gives things back. Search across titles, tags, notes and the
+account something came from. Side quests turn a pile of saves into a small
+to-do: five recipes to cook, three places to visit.
 
-**5/10**
-Quick recap, because the last week was rougher than the App Store listing
-lets on. Submitted 27 Aug. 28 Aug, Apple came back under Guideline 2.1 —
-"Information Needed": a demo login, a screen recording, some written
-answers. Not a rejection, just paperwork.
+**5/8**
+It syncs to a web app at
+https://bookmarker.lol/?utm_source=x&utm_medium=post&utm_campaign=launch-thread
+(works without installing anything; there's a demo library to click
+around, and a Revisit tab that shows you what you saved and never opened).
+Zero permissions on the phone. No ads, no tracking, no third-party SDKs.
 
-**6/10**
-Fixed everything they asked for the same day — in-app account deletion (an
-Apple requirement anyway), a real demo account, and a session-refresh bug
-that was silently killing sync an hour after sign-in. That last one mattered
-more than the App Store stuff, honestly.
+[1.1 version: "1.1 is out: a Revisit tab that says 'you saved eleven things
+last month and opened none of them', and shared collections — pick a few
+saves, get a bookmarker.lol link, send it. Web app at <link>, zero
+permissions, no ads, no tracking."]
 
-**7/10**
-29 Aug: split "sign in" into proper sign up / sign in flows, and found the
-actual bug — a bulk-upsert quirk — that was blocking first backups
-entirely. My own library, 87 saves, backed up to the server for the first
-time that day. Builds 2 through 6, same week.
+**6/8**
+Got years of old saves? It reads the data export Instagram, TikTok, X or
+YouTube already let you download (or a browser bookmarks file) and files
+those too. That's the on-ramp, not the point.
 
-**8/10**
-30 Aug: screen recording done, resubmitted, status "Waiting for Review."
-Same day, I built and shipped a whole working web app — sign-in, library,
-search, topics — in one day. It's now the easiest way to try bookmarker
-without installing anything.
+**7/8**
+Shipping it wasn't smooth. Submitted 27 Aug. Apple asked for a demo login
+and a screen recording on the 28th. Found and fixed a real sync bug the
+same week, built the web app in a day while waiting on re-review, approved
+2 Sep. Builds 2 through 6 in one week.
 
-**9/10**
-2 Sep: approved, and I hit release. Live now:
-https://apps.apple.com/app/id6799805479 (iPhone) and
-https://bookmarker.lol/?utm_source=x&utm_medium=post&utm_campaign=launch-day
-(web — works without an account, there's a demo library).
-
-**10/10**
-I'm a solo developer, building this with AI coding agents, in the open. If
-you're the person with 2,000 saved reels and no idea where the good ones
-are — that's who I built this for. Try it, tell me what's broken:
-hello@bookmarker.lol
+**8/8**
+Solo dev, building this with AI coding agents, in the open. If you're the
+person with 2,000 saved reels and no idea where the good ones are — that's
+who I built this for. Try it, tell me what's broken: hello@bookmarker.lol
 
 ---
 
 ## r/SideProject post
 
-**Title:** I shipped a bookmark manager after Apple bounced it once — live today (iOS + web)
+**Title:** I built one library for everything I save across Instagram, TikTok, X and YouTube (iOS + web) — and Apple bounced it once first
 
 **Body:**
-Backstory first because it's more interesting than the pitch: submitted to
-the App Store on 27 Aug, got an "Information Needed" reply from Apple the
-next day (Guideline 2.1 — wanted a demo login, a screen recording, and some
-written answers, not a rejection, just paperwork). Fixed everything, found
-and fixed a real sync bug along the way (a bulk-upsert quirk that was
-silently blocking first backups), resubmitted 30 Aug, and — on a whim, same
-day — built and shipped a full web version in about 24 hours. Approved and
-live today, 2 Sep.
+The problem: I save things all day — a recipe on Instagram, a thread on X,
+a workout on TikTok — and every one of those "saved" lists is a private,
+unsearchable pile with no titles and no order. Nothing I saved in one app
+is visible from another, and I never look at any of it again.
 
-**What it is:** bookmarker files everything you save from Instagram, TikTok,
-X, YouTube (or wherever) into one searchable library, automatically sorted
-into topics. The wedge is bulk import — drop in your Instagram/TikTok/X/
-YouTube data export or your browser bookmarks and years of saves become a
-sorted, searchable library in one step. Syncs between iPhone and the web
-app. No ads, no tracking, no third-party SDKs in the app.
+**What bookmarker does:** share to it from any app (two taps) and the save
+is filed into a topic on its own — 50 topics, ~600 subtopics, keyword
+matching on-device first, a private model only for the links that need it.
+Then it gives things back: search across titles, tags, notes and the
+account something came from, "side quests" that turn a pile of saves into
+a small to-do, and (on the web app) a Revisit tab for what you saved and
+never opened. Syncs between iPhone and web. No ads, no tracking, no
+third-party SDKs in the app. Old saves come along too — it reads the data
+export each platform already lets you download, or a browser bookmarks
+file.
+
+Backstory, because it's more interesting than the pitch: submitted to the
+App Store on 27 Aug, got an "Information Needed" reply from Apple the next
+day (Guideline 2.1 — a demo login, a screen recording, some written answers;
+paperwork, not a rejection). Fixed everything, found and fixed a real sync
+bug along the way (a bulk-upsert quirk that was silently blocking first
+backups), resubmitted 30 Aug, and — on a whim, same day — built and shipped
+a full web version in about 24 hours. Approved and live 2 Sep.
 
 Solo dev, built with AI coding agents. iPhone: https://apps.apple.com/app/id6799805479
-Web (no install, has a demo library): https://bookmarker.lol/?utm_source=reddit&utm_medium=post&utm_campaign=launch-day
+Web (no install, has a demo library): https://bookmarker.lol/?utm_source=reddit&utm_medium=post&utm_campaign=launch-thread
 
-Would genuinely like feedback on the import flow especially — that's the
-part I think is the actual differentiator and I want to know if it lands.
+The feedback I'd genuinely like: does the share-sheet save land in the
+topic you'd expect, and does the library make you go back to things? Those
+two are the whole product.
 
 ---
 
@@ -111,27 +115,30 @@ part I think is the actual differentiator and I want to know if it lands.
 Note: r/iosapps allows self-promotion once per 30 days; disclose you're the
 developer up front; don't link-spam (one link, in the body, not the title).
 
-**Title:** bookmarker — I'm the developer, launched today, would love feedback
+**Title:** bookmarker — I'm the developer; one library for everything you save across apps, would love feedback
 
 **Body:**
-Hey — I'm the solo developer of bookmarker, launching today. Posting once,
-disclosing that up front per the sub's rules.
+Hey — I'm the solo developer of bookmarker. Posting once, disclosing that
+up front per the sub's rules.
 
-What it does: saves anything you share to it from any app, files it into a
-topic automatically (50 topics, ~600 subtopics), and makes it searchable —
-titles, tags, notes, the people you saved from. The part I'd actually like
-feedback on is bulk import: it reads your Instagram/TikTok/X/YouTube data
-export or your browser bookmarks file and turns years of saves into a
-sorted library in one step.
+What it does: share anything to it from any app and it's filed into a topic
+automatically (50 topics, ~600 subtopics), then searchable — titles, tags,
+notes, the account you saved from. "Side quests" turn a pile of saves into
+a small to-do. The point is that every platform's saved list is a dead end
+you never revisit; this is one library above all of them that you actually
+go back to. It also imports an existing backlog (your Instagram/TikTok/X/
+YouTube data export, or a browser bookmarks file), but that's the on-ramp,
+not the product.
 
 Free, iOS 17+, 8MB, no ads, no tracking, no third-party SDKs in the app —
 sign-in is optional and only adds backup/sync to the web app.
 
 Link: https://apps.apple.com/app/id6799805479
 
-Happy to answer anything about the build, the App Store review process (it
-wasn't smooth — got an "Information Needed" round first), or the import
-logic specifically.
+The feedback I'm after: does the share-sheet save get filed where you'd
+expect, and is search good enough that you'd use this instead of
+scrolling Saved? Happy to answer anything about the build or the App Store
+review (it wasn't smooth — an "Information Needed" round first).
 
 ---
 
@@ -143,18 +150,18 @@ in the first comment, not the title.
 **Title:** bookmarker.lol — a searchable library for everything you save
 across Instagram, TikTok, X and YouTube (works without an account)
 
-**Link:** https://bookmarker.lol/?utm_source=reddit&utm_medium=post&utm_campaign=launch-day
+**Link:** https://bookmarker.lol/?utm_source=reddit&utm_medium=post&utm_campaign=launch-thread
 
 **First comment (post immediately after submitting):**
 Made this — it's the iPhone app's sibling, but works fully in the browser
 with no install and no account. There's a demo library if you just want to
 click around before deciding whether to sign in. The point of it: every
 platform's "saved" list is a dead end with no search and no order, so this
-is the one library that sits above all of them, filed by topic
-automatically. Bulk import (your platform's data export, or browser
-bookmarks) is on iPhone today; a web importer is coming this week. No ads,
-no tracking on the core app experience. I'm the solo dev, happy to answer
-anything.
+is the one library that sits above all of them — filed by topic
+automatically, searchable, with a Revisit tab that shows what you saved and
+never opened. Old saves can be imported from your platform's data export or
+a browser bookmarks file, on iPhone or here. No ads, no tracking. I'm the
+solo dev, happy to answer anything.
 
 ---
 
@@ -164,6 +171,8 @@ Rules for all five: disclose in the first sentence, answer the real
 question with real, useful information before mentioning bookmarker at all,
 and mention the app once, at the end, low-key. Never post to r/ADHD — it
 bans app posts outright; if a thread like this shows up there, don't reply.
+Templates 1, 2, 3 and 5 answer export questions, so import is the honest
+mention there; template 4 is the general one and leads with the loop.
 
 ### Template 1 — "How do I search my saved reels on Instagram?"
 
@@ -223,14 +232,13 @@ The actual problem is structural: every platform's save button writes to a
 private, unsearchable list that only that platform can see, so nothing you
 save on Instagram shows up when you're looking on TikTok or X, and none of
 them let you search well even within themselves. There's no single-app fix
-inside any one platform — the only ways out are (a) manually re-organizing
-inside each app's own folders/collections, which most people don't keep up
-with, or (b) pulling your saves out via each platform's data export and
-consolidating them somewhere else.
+inside any one platform — the only way out is to stop saving *into* the
+platforms and save *above* them: one place that every share sheet can
+reach, that files things for you, and that you actually go back to.
 
-bookmarker is the "somewhere else" I built — it imports those exports (or
-just takes new saves via the share sheet going forward) and files
-everything into one searchable library, auto-sorted by topic.
+bookmarker is the "one place" I built — share to it from any app and it's
+filed into a topic and searchable; it can also pull in the old saves via
+each platform's data export so the backlog isn't lost.
 
 ### Template 5 — "Best way to organize YouTube Watch Later / saved playlists?"
 

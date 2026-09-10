@@ -3,6 +3,13 @@
 Submit via App Store Connect → Featuring Nominations → New Nomination →
 App Launch. Fields below are ready to paste; character counts checked.
 
+Rule (JP, 2 Sep 2026): lead with capture → filed → revisit/share; import is
+one sentence, never the hook. If this goes in alongside iOS 1.1, switch the
+type to **App Update** and add to the third paragraph: "The 1.1 update adds a
+Revisit tab that says 'you saved eleven things last month and opened none of
+them', and shared collections — a handful of saves as one bookmarker.lol
+link."
+
 ---
 
 ## Name (60 char max)
@@ -21,11 +28,11 @@ Everyone saves constantly — a reel on Instagram, a thread on X, a clip on TikT
 
 Save from any app's share sheet and it's filed automatically into a topic — fifty topics, over six hundred subtopics, on-device keyword matching first, with a private server-side model called only for the links that need it. Search reaches titles, tags, notes and the account something came from. "Side quests" turn a pile of saves into a small to-do: recipes to cook, places to visit.
 
-The part we think is genuinely new: bulk import. Drop in the data export your Instagram, TikTok, X or YouTube account already lets you download, or a plain browser bookmarks file, and years of old saves become a sorted, searchable library in one step — no scraping, no API keys, just the export every platform already owes its users.
+The point is what happens after the save. Things you kept come back when they are useful: searchable in a second, grouped into a quest you can actually finish, and easy to pass on. Old saves come along too — the app reads the data export every platform already lets you download, or a plain browser bookmarks file, and files years of history in one step.
 
-bookmarker is a solo effort — one developer, building every part of the product, from Swift to the backend to this submission, with AI coding agents rather than a team. It launched today after a real App Store review back-and-forth, a genuine sync bug found and fixed along the way, and a full web app built and shipped in a single day. It asks for nothing: no permissions, no ads, no tracking, and it's free.
+bookmarker is a solo effort — one developer, building every part of the product, from Swift to the backend to this submission, with AI coding agents rather than a team. It launched on 2 September 2026 after a real App Store review back-and-forth, a genuine sync bug found and fixed along the way, and a full web app built and shipped in a single day. It asks for nothing: no permissions, no ads, no tracking, and it's free.
 ```
-(1,503 characters)
+(1,538 characters)
 
 ---
 
