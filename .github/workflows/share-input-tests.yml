@@ -1,0 +1,34 @@
+name: Share input tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/ShareInput.swift"
+      - "Core/Platform.swift"
+      - "Core/Taxonomy.swift"
+      - "Core/Categorizer.swift"
+      - "ShareExtension/ShareViewController.swift"
+      - "Scripts/test_share_input.swift"
+      - ".github/workflows/share-input-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/ShareInput.swift"
+      - "Core/Platform.swift"
+      - "Core/Taxonomy.swift"
+      - "Core/Categorizer.swift"
+      - "ShareExtension/ShareViewController.swift"
+      - "Scripts/test_share_input.swift"
+      - ".github/workflows/share-input-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run share input checks
+        run: |
+          swiftc -parse-as-library -o /tmp/share-input-tests \
+            Core/Platform.swift Core/Taxonomy.swift Core/Categorizer.swift \
+            Core/ShareInput.swift Scripts/test_share_input.swift
+          /tmp/share-input-tests

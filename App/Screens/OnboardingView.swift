@@ -101,27 +101,11 @@ struct OnboardingView: View {
                     .padding(.horizontal, 34)
             }
 
-            HStack(spacing: 16) {
-                ForEach(0..<3) { index in
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .fill(index == 1 ? accent.base : Tokens.mutedControl)
-                        .frame(width: 54, height: 54)
-                        .overlay(
-                            Group {
-                                if index == 1 {
-                                    Image(systemName: "bookmark.fill")
-                                        .font(.system(size: 20, weight: .black))
-                                        .foregroundStyle(.white)
-                                }
-                            }
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15, style: .continuous)
-                                .stroke(accent.base, lineWidth: index == 1 ? 3 : 0)
-                                .padding(-5)
-                        )
-                }
-            }
+            // The share sheet as it looks once bookmarker is pinned first,
+            // and the way to get it there — the same guide as the You tab.
+            ShareSheetMock(accent: accent)
+                .padding(.horizontal, 30)
+            ShareGuideLink(accent: accent)
             Spacer()
         }
     }

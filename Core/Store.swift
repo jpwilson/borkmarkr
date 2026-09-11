@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import SwiftData
 
@@ -111,9 +112,15 @@ enum Store {
         guard let inboxURL else { throw StoreError.noAppGroup }
         try FileManager.default.createDirectory(at: inboxURL, withIntermediateDirectories: true)
 
-        // Name by stable ID hash so the same link shared twice before a drain
-        // overwrites rather than queuing twice.
-        let name = String(Bookmark.stableID(for: draft.url).hashValue.magnitude) + ".json"
+        // Name by a digest of the stable ID so the same link shared twice
+        // before a drain overwrites rather than queuing twice. A digest, not
+        // `hashValue`: Swift seeds its hasher per process and every share is a
+        // new process, so the old name was different every time and the
+        // overwrite it promised never happened — the app then counted one
+        // link as "2 new saves".
+        let stableID = Bookmark.stableID(for: draft.url)
+        let digest = SHA256.hash(data: Data(stableID.utf8)).prefix(8)
+        let name = digest.map { String(format: "%02x", $0) }.joined() + ".json"
         let data = try JSONEncoder().encode(draft)
         try data.write(to: inboxURL.appendingPathComponent(name), options: .atomic)
     }

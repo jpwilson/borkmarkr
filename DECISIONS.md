@@ -246,6 +246,110 @@ The banner's message is "this only lives on this phone", never "you must sign
 in": the honest fact, with the fix next to it.
 
 
+## The share extension (build 14)
+
+Seb — the first outside user — on 1.0.1: the share sheet "doesn't load". JP
+could not reproduce it, and a fix was already in review. But
+`git diff ios/1.0.1 main -- ShareExtension/` is empty: the review fix was
+`Store.drainInbox`, on the app side, and could not have touched what Seb saw.
+The extension he has is the one on main. Run in the simulator with his report
+in mind, it does exactly what he described — a blank sheet that never closes —
+and the log says why: *Unable to find NSExtensionPrincipalClass
+(ShareViewController) in extension bundle*. Info.plist names the class bare; a
+Swift class is registered with the Objective-C runtime as
+`ShareExtension.ShareViewController`, so iOS never created the controller and
+there was nobody in the sheet to complete the request. The value has been bare
+since the first commit, so nothing in `ShareViewController.swift` has ever run
+on a share. `@objc(ShareViewController)` on the class fixes it, and it is done
+in the class rather than the plist because `project.yml` rewrites Info.plist on
+every `xcodegen generate` — a fix in a generated file is not one. Why JP's own
+phone did not show this is not explained by it; a runtime that resolved the
+name more loosely is the likely difference, and the fix is right under either.
+Beyond that,
+read with a slow host in mind, the controller could still hang in four ways
+and show nothing while it did.
+
+**Something is on screen from the first frame, and there is a Cancel.** The
+old controller set its background to clear and drew nothing until the host
+had handed over the link. A host that took two seconds looked like a sheet
+that had frozen, and there was no way out of it but the home button. Now a
+card is up before anything is asked of the host — spinner, "Saving to
+bookmarker…", Cancel — in the app's paper-and-ink palette, and it turns into
+the app's dark toast when the answer comes. The extension target can't compile
+`App/`, so the card carries `Tokens` by value and uses the system font; the
+app's fonts are bundled with the app.
+
+**Every request to the host has a deadline, and so does the whole run.**
+`loadItem` was wrapped in a continuation with no timeout, so a host that never
+called back (Instagram has been seen doing it) held the extension open until
+iOS killed it. Each request now gets 2.5 seconds, and a five-second watchdog
+completes the request whatever else is going on. `finish` is the one exit and
+runs exactly once; the save, the Cancel, the watchdog and "no link" all go
+through it and the first one wins.
+
+**The post text is read before the host is asked.** X and Threads put the post
+in `attributedContentText`, with the link in it. A share from either now never
+waits on a provider at all. When the text has several links — a post whose
+body links an article, then the post's own URL — the post's link wins, since
+every app that shares a post as text puts the post's link last and the post is
+what the person tapped Share on. Only the post's own link — one on a platform
+bookmarker knows — is trusted this early: a caption that links someone's
+website is not a share of that website, and the host's `public.url` says what
+was actually shared, so a caption whose only links are plain web links waits
+its turn behind the providers. Only links written out in full count: the data
+detector also matches bare domains, and a caption that mentions "sophie.co"
+is not a share of sophie.co.
+
+**Every shape of `public.url` is accepted, and `file:` is not.** Hosts hand
+the link over as `URL`, `NSURL`, `String` or UTF-8 bytes in `Data`; the old
+`item as? URL` took the first only, and the rest fell through to "No link
+found". A `file:` URL — a movie attachment that also conforms to `public.url`
+— was accepted and saved as a web bookmark. `ShareInput.webURL` keeps http(s)
+with a host and refuses the rest. The pure half of the extension lives in
+`Core/ShareInput.swift` and `Scripts/test_share_input.swift` runs it on a Mac.
+Instagram's `igsh=` stays on the URL: the extension is not where identity is
+decided, `Bookmark.stableID` is.
+
+**Every input item is looked at.** The old code inspected `inputItems.first`
+and, if its attachments were empty, completed silently with no toast.
+
+**A draft is named by a digest, not `hashValue`.** `Store.enqueue` promised
+that the same link shared twice before a drain overwrites rather than queuing
+twice. It didn't: Swift seeds its hasher per process and every share is a new
+process, so the name was different every time and the app then said "2 new
+saves" for one link. The name is now the first 64 bits of a SHA-256 over the
+stable id. The brief asked for `TopicArt`'s FNV-1a to be reused; it is private
+to a file this change does not own and is a 32-bit topic-id helper, and
+CryptoKit is a system framework the app already links, so no second FNV was
+written and nothing outside the change's files was touched.
+
+**A breadcrumb, not analytics.** The extension writes what it did — saved,
+timeout, no link, couldn't save, cancelled — and when, to the App Group's
+`UserDefaults`, one entry, overwritten every run. The share guide shows one
+line when the last run failed. It is there so "it didn't work" can be
+diagnosed from across the world without a screenshot of a sheet that has
+already closed. Nothing leaves the phone.
+
+**The guide says how to pin it, because that is the only answer.** Seb's first
+request was to be in the first row of X's and Instagram's share sheets. X has
+two: its own row (Copy link, Share via…, Messages, WhatsApp), which no
+third-party app can join, and the system sheet behind *Share via…*, where
+bookmarker is. Instagram's is the system sheet. The first row of app icons
+there is Siri's suggestions plus the person's own Favorites; an app cannot put
+itself in it. The old sheet's "tap More, then switch bookmarker on" is where
+iOS 13 left things. The guide now says the four taps in plain words — Share
+(*Share via…* on X), More, Edit and add bookmarker, drag it to the front — with the mock sheet showing the end state, bookmarker first. The same
+sentences are in the web Help and on the landing page's first step, and
+onboarding's share step shows the same mock and links to the same guide.
+
+**Deliberately not done.** The activation rule is unchanged: it decides which
+hosts show the extension and changing it without a device to check on is how
+bookmarker disappears from someone's sheet. The You tab's row still says
+"Save from other apps"; retitling it to "Add bookmarker to your share sheet"
+is a two-line change outside this change's lines, left for the merge. No
+JavaScript preprocessing, no per-host special cases, no retry — every failure
+tells the person the one thing that always works: copy the link, paste it in.
+
 ## Web app
 
 **The topic picker is the iOS sheet, not a `<select>`.** Two native selects gave
