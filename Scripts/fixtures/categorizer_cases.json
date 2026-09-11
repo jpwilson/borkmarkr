@@ -784,10 +784,11 @@
       "evidence" : "thin",
       "expect" : [
         {
-          "score" : 7,
+          "score" : 13,
           "subtopic" : "Mobility",
           "tags" : [
-            "mobility"
+            "mobility",
+            "hips"
           ],
           "topic" : "fitness"
         }

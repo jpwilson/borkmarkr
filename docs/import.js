@@ -654,7 +654,7 @@ const Filer = (() => {
   /* Extra phrases that should hit a category but don't appear in any of its
      subcategory names. Keep this small — the derived index does the bulk. */
   const CATEGORY_HINTS = {
-    fitness: ["workout", "gym", "reps", "sets", "squat", "deadlift", "bench", "pull up", "push up", "marathon", "5k", "10k", "hypertrophy", "warm up", "exercise"],
+    fitness: ["workout", "gym", "reps", "sets", "squat", "deadlift", "bench", "pull up", "push up", "marathon", "5k", "10k", "hypertrophy", "warm up", "exercise", "hips"],
     nutrition: ["protein", "calorie", "macro", "creatine", "electrolyte", "carb", "keto", "diet"],
     health: ["doctor", "clinic", "diagnos", "prescription", "blood pressure", "cholesterol", "thyroid", "inflammation", "chronic"],
     mentalhealth: ["burnout", "panic attack", "overthink", "nervous system", "cbt", "dopamine", "mental load"],
@@ -976,7 +976,7 @@ const Filer = (() => {
     // Hashtags are the author's own filing and score double.
     const authored = normalise([withoutHook(caption), text || "", withoutHook(body)].join(" "));
     const fromURL = normaliseURL(url);
-    const fromAuthor = normalise(extra.author ?? [unwrapped.author ?? "", unwrapped.bio ?? ""].join(" "));
+    const fromAuthor = normalise([extra.author ?? "", unwrapped.author ?? "", unwrapped.bio ?? ""].join(" "));
     const fromTags = normalise(hashtags.join(" "));
 
     const hits = new Map();
