@@ -505,7 +505,64 @@ struct WaitingPill: View {
     }
 }
 
+/// Select mode's mark on a card: a hollow ring until tapped, a filled tick
+/// after. Top-right, where every platform puts it, and on top of everything
+/// else on the card — in select mode the only question is "this one?".
+struct SelectionMark: View {
+    let selected: Bool
+    @Environment(\.accent) private var accent
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(selected ? accent.base : Tokens.surface.opacity(0.92))
+            Circle()
+                .stroke(selected ? accent.base : Tokens.inkFaint, lineWidth: 1.5)
+            if selected {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(.white)
+            }
+        }
+        .frame(width: 24, height: 24)
+        .shadow(color: .black.opacity(selected ? 0.18 : 0.10), radius: 4, y: 2)
+        .animation(Motion.snap, value: selected)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct Selectable: ViewModifier {
+    let active: Bool
+    let selected: Bool
+    let radius: CGFloat
+    @Environment(\.accent) private var accent
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                if active && selected {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .stroke(accent.base, lineWidth: 2)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if active {
+                    SelectionMark(selected: selected).padding(8)
+                }
+            }
+            .accessibilityAddTraits(active && selected ? .isSelected : [])
+            .accessibilityHint(active ? (selected ? "Tap to leave it out" : "Tap to include it in the link") : "")
+    }
+}
+
 extension View {
+    /// Select mode for a card or row: a ring in the corner, a tick and an
+    /// outline once picked. Off (`active == false`) it draws nothing, so the
+    /// feed is the same view in both modes and never re-lays out to switch.
+    func selectable(_ active: Bool, selected: Bool, radius: CGFloat = Tokens.cardRadius) -> some View {
+        modifier(Selectable(active: active, selected: selected, radius: radius))
+    }
+
     /// Greys a bork that is waiting on an account.
     ///
     /// Colour is what the Library uses to mean "filed under something", so a

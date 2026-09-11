@@ -1,0 +1,33 @@
+name: Collection share tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/CollectionShare.swift"
+      - "Core/Copy.swift"
+      - "Core/Supabase.swift"
+      - "App/Screens/CollectSheet.swift"
+      - "App/Screens/CollectionsList.swift"
+      - "Scripts/test_collection_share.swift"
+      - ".github/workflows/collection-share-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/CollectionShare.swift"
+      - "Core/Copy.swift"
+      - "Core/Supabase.swift"
+      - "App/Screens/CollectSheet.swift"
+      - "App/Screens/CollectionsList.swift"
+      - "Scripts/test_collection_share.swift"
+      - ".github/workflows/collection-share-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run collection share checks
+        run: |
+          swiftc -parse-as-library -o /tmp/collection-share-tests \
+            Core/Copy.swift Core/Supabase.swift Core/CollectionShare.swift Scripts/test_collection_share.swift
+          /tmp/collection-share-tests

@@ -37,6 +37,20 @@ enum AppTab: String, CaseIterable, Hashable {
     }
 }
 
+/// What the collections sheet on the root is showing: a link somebody sent,
+/// or (for screenshots — the You tab has its own entry) your own list.
+enum CollectionRoute: Identifiable, Hashable {
+    case incoming(slug: String)
+    case list
+
+    var id: String {
+        switch self {
+        case .incoming(let slug): "incoming:\(slug)"
+        case .list: "list"
+        }
+    }
+}
+
 struct RootView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
@@ -76,6 +90,14 @@ struct RootView: View {
 
     /// Deep-link target when a category chip is tapped from a detail sheet.
     @State private var pendingTopic: String?
+    /// A collection link opened into the app (`bookmarker://c/<slug>`).
+    @State private var collectionRoute: CollectionRoute?
+    /// A link that arrived before the first-run tour was done, or while
+    /// another sheet was up. Presented the moment the screen is clear.
+    @State private var pendingCollection: String?
+    /// Borks a shared link added to the library, announced once its sheet
+    /// is gone — a toast under a sheet is a toast nobody sees.
+    @State private var collectionSaved = 0
 
     private var accent: AccentRamp { AccentRamp.named(accentKey) }
     private var interests: [String] {
@@ -114,6 +136,7 @@ struct RootView: View {
                 }
             }
             .environment(\.accent, accent)
+            .environment(\.account, account)
 
             TabDock(
                 tab: $tab,
@@ -180,6 +203,27 @@ struct RootView: View {
             AuthSheet(account: account, mode: wallAuthMode)
                 .environment(\.accent, accent)
         }
+        .sheet(item: $collectionRoute, onDismiss: announceCollectionSaves) { route in
+            Group {
+                switch route {
+                case .incoming(let slug):
+                    SharedCollectionSheet(slug: slug, account: account) { added in
+                        collectionSaved = added
+                    }
+                case .list:
+                    CollectionsList(account: account)
+                }
+            }
+            .environment(\.accent, accent)
+        }
+        .onOpenURL { url in
+            guard let slug = CollectionShare.slug(from: url) else { return }
+            pendingCollection = slug
+            presentPendingCollection()
+        }
+        .onChange(of: hasOnboarded) { _, done in
+            if done { presentPendingCollection() }
+        }
         .fullScreenCover(isPresented: .constant(!hasOnboarded)) {
             OnboardingView(
                 accentKey: $accentKey,
@@ -217,6 +261,15 @@ struct RootView: View {
                 pendingSave = ScreenshotDefaults.addURL
                 hasOnboarded = true
                 showingAdd = true
+            }
+            if CollectionsDebug.openList {
+                hasOnboarded = true
+                collectionRoute = .list
+            }
+            if let slug = CollectionsDebug.incomingSlug {
+                hasOnboarded = true
+                pendingCollection = slug
+                presentPendingCollection()
             }
             #endif
             drain()
@@ -288,6 +341,35 @@ struct RootView: View {
         } else {
             showingAdd = true
         }
+    }
+
+    /// Present the link that was opened, once nothing is in the way. The
+    /// wall, the Add sheet and the auth sheet all yield — someone tapped a
+    /// link, and the link is what they want to see. The first-run tour does
+    /// not: it finishes first, and the link is presented after it.
+    private func presentPendingCollection() {
+        guard hasOnboarded, pendingCollection != nil else { return }
+        showingAdd = false
+        wall = nil
+        showingWallAuth = false
+        collectionRoute = nil
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            guard let slug = pendingCollection else { return }
+            pendingCollection = nil
+            collectionRoute = .incoming(slug: slug)
+        }
+    }
+
+    /// After a shared link's sheet closes: the copies are in the library
+    /// (`collection_save` then a sync), so show the library and say so.
+    private func announceCollectionSaves() {
+        let added = collectionSaved
+        collectionSaved = 0
+        refreshBorkCount()
+        guard added > 0 else { return }
+        tab = .library
+        showToast(added == 1 ? "1 new save" : "\(added) new saves")
     }
 
     private func presentWallAuth(_ mode: AuthSheet.Mode) {

@@ -1176,3 +1176,92 @@ claim a feature it does not have.
   wired, but have not been screenshotted.
 - **Friend feed.** Schema only (`supabase/migrations/0001_init.sql`), nothing
   wired to the client. Deliberate — post-launch fast-follow.
+
+---
+
+## Shared collections on the phone (build 14)
+
+The sender's half: pick borks, get one link, open one somebody sent you.
+`App/Screens/CollectSheet.swift`, `App/Screens/CollectionsList.swift`,
+`Core/CollectionShare.swift`, the `rpc`/`get`/`patch` helpers in
+`Core/Supabase.swift`, select mode in the Library, "Share as a web page" on a
+topic page, and `bookmarker://c/<slug>` in `RootView`. Built against the 0012
+contract (`collection_create`, `expires_at`, the list query) while the web PR
+was building the migration; nothing here works until 0012 is applied.
+
+**A collection is a server row, and the phone never keeps one.** `Bookmark.swift`
+still carries a `BookmarkCollection` `@Model` from the scaffolding, and it is
+not used. A collection exists to be served — the page, the expiry, the
+"turn it off" are all decided on the server — so a local copy would be a
+second source of truth that could only ever disagree. The list re-reads the
+server every time it is shown; the web app edits the same rows, and a list
+that was right an hour ago is the kind of wrong that makes someone re-send a
+dead link.
+
+**Every bork goes up before the link is made.** The page is built from the
+backed-up copies, so the sheet runs a full sync first (`Account.syncAndWait`
+— the fire-and-forget `sync` gained a way to be waited on, including one
+already in flight) and refuses to make the link if that sync fails, with the
+sync's own error in the sentence. The alternative — make the link, let the
+next sync fill it in — produces the one outcome this feature cannot afford:
+a link that opens empty. Signed out, the sheet asks for an account in plain
+words (Sign up / Sign in, not one button that does whichever) and carries on
+from the same tap once the auth sheet is gone. A *waiting* bork is left out
+and counted out loud; signing in admits it, so this only ever bites on the
+signed-out form.
+
+**The name on the page is asked on the form, not in a second sheet.** Every
+production profile has `display_name = null`, so the public page said "by
+Someone" for everyone. The sheet reads the profile once per sign-in and, if
+the name is blank, adds one field to the form with the sentence the page
+will print. It is asked once; it is set with the same `PATCH` the web app
+uses. If the profile *read* fails, the link is still made — "by Someone" is a
+cosmetic fallback the page already has, and the link is the point.
+
+**Expiry is three words everywhere.** Never / 1 day / 10 days, on the sheet,
+in the list's menu and on the web, and `CollectionShare.Expiry` is the only
+place they are defined. Giving an expired link more time also turns it back
+on: an expired link being extended is a link being re-enabled, and offering
+both as separate steps produced a state ("on, but expired") nobody wanted.
+
+**A `PATCH` is counted, not trusted.** PostgREST answers a patch that
+row-level security filtered to nothing with a 200 and `[]`. Every patch here
+asks for `return=representation` and treats zero rows as the failure it is,
+so "Turn the link off" can never say it did when it did not.
+
+**"Share as a web page…", not "Share as a link…".** The brief's wording sat
+two items under "Share links" in the same menu, and two entries with "link"
+in them say nothing about the difference. What this one makes is a page.
+
+**`bookmarker://`, not a universal link, this round.** Universal links need
+the associated-domains entitlement, which changes the provisioning profile of
+a build currently attached to an App Store review. The scheme is registered
+in `project.yml` only; the parser already accepts
+`https://bookmarker.lol/c/<slug>`, so the universal-link round is a plist
+change and an entitlement, not code.
+
+**An incoming link is read anonymously, signed in or not.** `collection_by_slug`
+is the door the web page uses; a session adds nothing to what it returns. The
+server's `null` — wrong slug, link off, deleted, expired — is one sentence on
+the phone as on the web, and no attempt is made to tell them apart. A link
+that arrives during the first-run tour waits for the tour; one that arrives
+over the wall, the Add sheet or the auth sheet closes them — someone tapped a
+link, and the link is what they want to see.
+
+**Where the list lives.** A "Links you've shared" row on the You tab
+(`CollectionsEntry`), in place of the dead "Collections" block that listed the
+unused local model — and from the sheet's done step ("See all the links
+you've shared"), so the person who just made a link is one tap from the rest
+of them. `-collections` opens it in DEBUG.
+
+**Deliberately not done.** No "Add to a collection" on a bork's detail sheet
+— a collection is made in one go from a selection, and editing its contents
+afterwards is the web app's job until someone asks for it on the phone. No
+"select all". No editing a collection's name or note from the list. The
+screenshot launch arguments (`-select`, `-collect`, `-collections`) live in
+`CollectionsList.swift` rather than `ScreenshotDefaults.swift`, which is
+another PR's file; fold them in next time it is open. And the privacy sentence
+in `Core/SaveLimit.swift` ("never shared, never visible to anyone else"),
+which the previous section said must soften in the PR that ships the sharing
+UI, is not softened here: that file belongs to the cap-50 PR this round, and
+the sentence is still true of a bork you have not put in a link.

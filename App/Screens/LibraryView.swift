@@ -41,6 +41,10 @@ struct LibraryView: View {
     @State private var nudge: SignInMilestone?
     @State private var showingAuth = false
     @State private var authMode: AuthSheet.Mode = .signUp
+    /// Select mode: pick borks from any source and share them as one link.
+    @State private var selecting = false
+    @State private var selected: Set<String> = []
+    @State private var collecting = false
     @StateObject private var previews = PreviewFetcher()
 
     /// Everything that counts. A waiting bork is saved and on screen, but it
@@ -118,8 +122,21 @@ struct LibraryView: View {
             .padding(.bottom, 120)
         }
         .background(Tokens.paper)
+        // Above the dock, not under it: the dock is drawn over this view by
+        // RootView, so the bar sits in the space the feed already leaves.
+        .safeAreaInset(edge: .bottom) {
+            if selecting {
+                SelectionBar(count: selected.count, onShare: { collecting = true }, onCancel: endSelecting)
+                    .padding(.bottom, 92)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
         .sheet(item: $detail) { bookmark in
             DetailSheet(bookmark: bookmark)
+                .environment(\.accent, accent)
+        }
+        .sheet(isPresented: $collecting) {
+            CollectSheet(bookmarks: selectedBookmarks, account: account, onCreated: endSelecting)
                 .environment(\.accent, accent)
         }
         .sheet(item: $openJourney) { journey in
@@ -286,8 +303,11 @@ struct LibraryView: View {
                 .padding(.horizontal, 18)
             }
 
-            densityToggle
-                .padding(.trailing, 18)
+            HStack(spacing: 8) {
+                selectToggle
+                densityToggle
+            }
+            .padding(.trailing, 18)
         }
     }
 
@@ -317,6 +337,31 @@ struct LibraryView: View {
         .background(Tokens.segmentTrack, in: Capsule())
     }
 
+    /// Select mode's switch. Beside the density toggle because both change
+    /// how the feed behaves — and this one changes what a tap on a card
+    /// does, so it stays visible, and filled, for as long as it is on.
+    private var selectToggle: some View {
+        Button {
+            Haptics.tap()
+            if selecting {
+                endSelecting()
+            } else {
+                withAnimation(Motion.gentle) { selecting = true }
+            }
+        } label: {
+            Image(systemName: selecting ? "checkmark.circle.fill" : "checkmark.circle")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(selecting ? .white : Tokens.inkMeta)
+                .frame(width: 34, height: 34)
+                .background(selecting ? accent.base : Tokens.segmentTrack, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(selecting ? "Stop picking borks" : "Pick borks to share as one link")
+        #if DEBUG
+        .onAppear(perform: applyDebugSelection)
+        #endif
+    }
+
     private func densityButton(_ symbol: String, value: String) -> some View {
         Button {
             withAnimation(.easeOut(duration: 0.18)) { density = value }
@@ -339,8 +384,9 @@ struct LibraryView: View {
         } else if density == "compact" {
             LazyVStack(spacing: 8) {
                 ForEach(visible) { bookmark in
-                    Button { detail = bookmark } label: {
+                    Button { open(bookmark) } label: {
                         BookmarkRow(bookmark: bookmark)
+                            .selectable(selecting, selected: selected.contains(bookmark.id), radius: 18)
                     }
                     .buttonStyle(PressableStyle())
                     .frame(maxWidth: .infinity)
@@ -359,8 +405,9 @@ struct LibraryView: View {
                 spacing: 12,
                 estimatedHeight: { BookmarkCard.estimatedHeight(for: $0, columnWidth: Self.columnWidth) }
             ) { bookmark in
-                Button { detail = bookmark } label: {
+                Button { open(bookmark) } label: {
                     BookmarkCard(bookmark: bookmark)
+                        .selectable(selecting, selected: selected.contains(bookmark.id))
                 }
                 .buttonStyle(PressableStyle())
                 .frame(maxWidth: .infinity, alignment: .top)
@@ -430,6 +477,43 @@ struct LibraryView: View {
             showingAuth = true
         }
     }
+
+    // MARK: Select mode
+
+    private var selectedBookmarks: [Bookmark] {
+        bookmarks.filter { selected.contains($0.id) }
+    }
+
+    /// A tap on a card opens it — or, in select mode, picks it.
+    private func open(_ bookmark: Bookmark) {
+        guard selecting else {
+            detail = bookmark
+            return
+        }
+        Haptics.tap()
+        if selected.contains(bookmark.id) {
+            selected.remove(bookmark.id)
+        } else {
+            selected.insert(bookmark.id)
+        }
+    }
+
+    private func endSelecting() {
+        withAnimation(Motion.gentle) {
+            selecting = false
+            selected = []
+        }
+    }
+
+    #if DEBUG
+    /// `-select N` and `-collect` — see `CollectionsDebug`.
+    private func applyDebugSelection() {
+        guard let n = CollectionsDebug.preselect, !selecting, selected.isEmpty else { return }
+        selected = Set(visible.prefix(n).map(\.id))
+        selecting = true
+        if CollectionsDebug.openCollect { collecting = true }
+    }
+    #endif
 
     private func markRead() {
         let unread = bookmarks.filter(\.isUnread)
