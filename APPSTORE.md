@@ -67,45 +67,40 @@ names the web app — which 1.0's promo text never mentioned.)*
 ## What's New in 1.1 (4,000 char max — release notes, per version)
 
 ```
-Search moved to where you were already looking, there's a new tab for the thing this app is for, and you can make topics of your own.
+Saving from other apps works again, you can share a handful of borks as one link, filing reads the whole post before it decides, and side quests explain themselves. Plus search where you were already looking, a Revisit tab, and topics of your own.
+
+SAVING FROM OTHER APPS WORKS AGAIN
+The share sheet used to open blank and never close. Now it saves in under a second, tells you it did, and gets out of the way. The You tab has a guide to putting bookmarker first in your share sheet (More → Edit → add to Favorites → drag it to the front); on X, tap Share, then Share via….
+
+SHARE A HANDFUL OF BORKS AS ONE LINK
+Pick any mix in your Library — three from Instagram, four from YouTube, one from X — or a whole topic, give it a name, and send the link. Whoever opens it sees just those, on a page that lets them save the lot in one tap, no account needed. Links can close themselves after a day or ten, and you can copy, turn off or delete any of them from Links you've shared. Tap a link a friend sends and save all of it.
+
+FILING THAT READS THE POST, NOT THE HOOK
+bookmarker now looks at the caption, the hashtags and who posted it before deciding where a save goes — and tells you how sure it is. "Sorted for you" only when it really is; "Our best guess — tap to change" when it isn't. Links shared from Instagram get filed once the page has been read, not left as "Not filed yet".
+
+SIDE QUESTS THAT EXPLAIN THEMSELVES
+A quest wears its topic's art — a Health quest gets the Health scene, not a map — and THE THREAD is written for you: what you're after, what the pile says, and three next steps you can add with a tap. "From this topic" pulls from nearby topics too, and a short guide walks you through naming a goal, pulling in borks and ticking things off.
+
+YOUR OWN TOPICS, IMPOSSIBLE TO MISS
+Fifty topics and six hundred subtopics still won't have the one you need. The picker opens with "Make your own topic", keeps a New topic button in reach however far you scroll, and turns a search that finds nothing into "Add topic" in one tap. Browse puts New topic first. Signed in, your topic gets a clay scene drawn for it. Subtopics are A–Z, your own sorted in among the built-in ones.
 
 SEARCH IS AT THE TOP OF BROWSE
-Search used to be its own tab that opened onto an empty box. Now the field sits at the top of Browse — type and the results replace the grid, clear it and your topics come back. Under it are three chips: Topics, Subtopics, Tags. Leave them off and search works across everything. Turn one on and "running" finds only the borks tagged running, or only the ones filed under it.
+Type and the results replace the grid; clear it and your topics come back. Chips for Topics, Subtopics and Tags narrow it.
 
 REVISIT
-A new tab, where Search used to be, that answers one question: what should I look at again? What you saved this week and where it came from. The ones you keep opening. Things from a month ago. Side quests you have steps left on. What you are saving more and less of.
-
-And the section that is the reason it exists: SAVED, NEVER OPENED. Everything you borked more than a week ago and have never once been back to. Most bookmarking ends there and no app mentions it. This one says the number out loud.
-
-TOPICS OF YOUR OWN
-Fifty topics and six hundred subtopics still won't have the one you need. Add your own, from the Add sheet or the topic picker, and it sits in the grid alongside the built-in ones. Signed in, it gets a clay scene drawn for it, so it doesn't sit there as blank paper.
-
-YOUR OWN TOPIC COMES FIRST
-In the topic picker, a topic whose name matches what you typed now comes first, and opens. Topics that match only through one of their subtopics follow. Typing "runn" used to put Fitness above your own topic called Running.
-
-SUBTOPICS ARE NOW A–Z
-The subtopics under a topic are alphabetical, with the ones you added yourself sorted in among the built-in ones rather than pushed to the end. Finding "Yoga" in a topic with forty subtopics no longer means reading all forty.
+A new tab that answers one question: what should I look at again? What you saved this week, the ones you keep opening, things from a month ago, side quests with steps left — and SAVED, NEVER OPENED: everything you borked more than a week ago and have never once been back to. This one says the number out loud.
 
 SORT BROWSE THE WAY YOU'RE LOOKING
-Topics, Sources and Side quests each get the same three: Most borks, Most recent, A–Z. Each list remembers its own choice.
+Topics, Sources and Side quests each get Most borks, Most recent and A–Z, and each remembers its choice. A topic opens on a banner of its own clay scene.
 
-TOPICS OPEN WITH THEIR OWN ART
-Tap a topic and it opens on a banner of its own clay scene, name and count under it — the tile you tapped, opened out.
-
-PASTE, WHEN THERE'S SOMETHING TO PASTE
-The paste card in the Add sheet only turns up when there is actually a link on your clipboard, and it takes links copied as links, not only as text — so "Copy link" in Instagram and X now works like copying an address bar. Copy nothing and the card is gone rather than greyed out.
-
-ALREADY IN YOUR LIBRARY
-Paste a link you have already saved and the sheet says so — where it is filed, and when. Open it to go to that bork and change its topic, or Save again anyway. It used to merge quietly into the one you had, and re-file it.
+PASTE, AND ALREADY IN YOUR LIBRARY
+The paste card only turns up when there is actually a link on your clipboard, and it takes links copied as links — "Copy link" in Instagram and X now works. Paste something you already saved and the sheet says so, with where it is filed and when.
 
 SHARING A TOPIC IS WORTH SENDING NOW
-It used to paste fifty links and every caption with them, which nobody read. Now it is the ten most recent, titles only, with short tappable links and a line saying where to get the app. Or share it as a picture: the art, the name and the first six titles, built for a story or a group chat.
-
-ONLY ON THIS PHONE
-bookmarker works signed out and always will — saving is never gated behind an account. But nothing in it said that a library saved that way lives on this phone and nowhere else. Once you have a few borks the Library says so, with a Sign up button next to it, and the You tab leads with "Not signed in" and your count.
+The ten most recent, titles only, with short tappable links — or a picture built for a story or a group chat.
 
 50 SAVES WITHOUT AN ACCOUNT
-Fifty borks work with no account — enough to make it a habit before anyone asks for an email. Past fifty, saving asks you to sign up: it's free, an email and a six-digit code, and the library is unlimited, backed up, and on the web. Share in from another app at the limit and it's still saved — it sits in your Library marked "Waiting" and joins when you sign up or make room. Your borks are always private: never sold, never visible to anyone else unless you choose to share a collection.
+Fifty borks work with no account — enough to make it a habit before anyone asks for an email. Past fifty, saving asks you to sign up: it's free, an email and a six-digit code, and the library is unlimited, backed up, and on the web. Share in at the limit and it's still saved, marked "Waiting" until you sign up or make room. Your borks are always private: never sold, never visible to anyone else unless you choose to share a collection. And the letter on your library is yours — or a plain silhouette until you sign in — not ours.
 
 Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
 ```
