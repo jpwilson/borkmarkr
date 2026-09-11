@@ -284,13 +284,15 @@ group("Categorizer parity", () => {
       `title in: ${c.url}`);
     eq(Filer.fallbackAuthor(c.url), c.fallbackAuthor, `fallbackAuthor: ${c.url}`);
 
-    const got = Filer.suggest(c.url, title, c.text || null);
+    const got = Filer.suggest(c.url, title, c.text || null, { description: c.description || null, author: c.author || null });
     const mine = { score: got.score, subtopic: got.subtopic, tags: got.tags, topic: got.topic };
     const hit = c.expect.some(e => JSON.stringify(e) === JSON.stringify({
       score: mine.score, subtopic: mine.subtopic, tags: mine.tags, topic: mine.topic,
     }));
     if (c.expect.length > 1) ambiguous++;
     ok(hit, `Swift parity: ${c.url}\n       Swift ${JSON.stringify(c.expect)}\n       JS    ${JSON.stringify(mine)}`);
+    // The header copy hangs off this, so both platforms must agree on it too.
+    eq(got.evidence, c.evidence, `evidence parity: ${c.url}`);
   }
   console.log(`     (${doc.cases.length} cases, ${ambiguous} where the Swift itself is not deterministic)`);
 });

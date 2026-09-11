@@ -199,7 +199,7 @@ struct LibraryView: View {
         // Fill in real titles and thumbnails for anything still missing them.
         // Keyed on count so a fresh batch of brks triggers another pass.
         .task(id: bookmarks.count) {
-            await previews.fetchMissing(for: bookmarks, in: context)
+            await previews.fetchMissing(for: bookmarks, in: context, account: account)
         }
     }
 

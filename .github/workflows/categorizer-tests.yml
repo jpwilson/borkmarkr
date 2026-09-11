@@ -1,0 +1,56 @@
+name: Categorizer tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/Categorizer.swift"
+      - "Core/LinkPreview.swift"
+      - "Core/SmartCategorizer.swift"
+      - "Core/Taxonomy.swift"
+      - "Core/Platform.swift"
+      - "App/PreviewFetcher.swift"
+      - "App/Screens/AddSheet.swift"
+      - "Scripts/test_categorizer.swift"
+      - "Scripts/fixtures/categorizer_cases.json"
+      - "docs/import.js"
+      - "Scripts/test_importers.mjs"
+      - ".github/workflows/categorizer-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/Categorizer.swift"
+      - "Core/LinkPreview.swift"
+      - "Core/SmartCategorizer.swift"
+      - "Core/Taxonomy.swift"
+      - "Core/Platform.swift"
+      - "App/PreviewFetcher.swift"
+      - "App/Screens/AddSheet.swift"
+      - "Scripts/test_categorizer.swift"
+      - "Scripts/fixtures/categorizer_cases.json"
+      - "docs/import.js"
+      - "Scripts/test_importers.mjs"
+      - ".github/workflows/categorizer-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run categorizer checks
+        run: |
+          swiftc -parse-as-library -o /tmp/categorizer-tests \
+            Core/Platform.swift Core/Taxonomy.swift Core/Categorizer.swift \
+            Core/LinkPreview.swift Scripts/test_categorizer.swift
+          /tmp/categorizer-tests
+
+  # The web half. The JS Filer must file every fixture case exactly as the
+  # Swift does, so the port is tested next to the original.
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run the importer + Filer parity checks
+        run: node Scripts/test_importers.mjs

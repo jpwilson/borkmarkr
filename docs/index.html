@@ -1066,7 +1066,7 @@
     </article>
 
     <section class="sorted">
-      <div class="sorted-h"><span aria-hidden="true">✨</span>Sorted for you</div>
+      <div class="sorted-h"><span id="add-sorted-icon" aria-hidden="true">✨</span><span id="add-sorted-h">Sorted for you</span></div>
       <button type="button" class="topic-trigger" id="add-topic" data-act="pick-topic" data-for="add" aria-haspopup="dialog"></button>
       <p class="hint" id="add-suggest" hidden style="margin:7px 0 0">Filed for you — tap it to change.</p>
       <div class="tag-row" id="add-tag-chips"></div>
@@ -3777,28 +3777,54 @@ function clearDupe() {
 }
 
 /* Filing, in the phone's order.
-
    1. The link parses → file it offline with `Filer` (Core/Categorizer.swift).
       That is instant, so there is nothing to wait for and nothing to spin.
-   2. The real page title arrives → file again. A headline is a far better
-      signal than a URL slug, and the score can only go up, so this never
-      un-files something.
-   3. Only if the offline filer came back with nothing, and you're signed in,
-      ask the categorize function. It is quota'd at 200 a day; a keyword match
-      that already worked is not worth a request.
+   2. The real page title and description arrive → file again, now on the
+      caption and its hashtags. A headline is a far better signal than a URL
+      slug, and this never un-files something.
+   3. Unless the offline filer is *confident*, and you're signed in, ask the
+      categorize function. It is quota'd at 200 a day; a keyword match that
+      settled it is not worth a request, but a thin guess is exactly what the
+      model is for.
 
    A topic you picked yourself outranks all three, always. */
+let addModel = null;   // the model's confidence for the link on screen, if it answered
 function fileOffline(url) {
-  const s = Filer.suggest(url, addTitle, null);
-  addOffline = s;
+  const s = Filer.suggest(url, addTitle, null, { description: addPreview?.description || null, author: addPreview?.author || null });
+  addOffline = s; addModel = null;
   if (picks.add.source !== "user") {
     picks.add = s.topic
       ? { topic: s.topic, sub: s.subtopic || null, source: "offline" }
       : { topic: null, sub: null, source: null };
   }
   mergeTags(s.tags);
+  renderFilingState();
   return s;
 }
+/* The header above the topic chip says exactly as much as the evidence
+   supports — "Sorted for you" over a wrong topic is what a first user saw.
+   Strong: sorted. Thin, or the model's "medium": a guess, and it says so.
+   Nothing: a question. A topic you picked: yours. Re-run whenever the chip
+   re-renders, so a pick made in the picker updates it without a hook there. */
+const FILING_COPY = {
+  strong: ["✨", "Sorted for you", "Filed for you — tap it to change."],
+  thin: ["🤔", "Our best guess — tap to change", "We're not sure about this one. Tap the topic if it's wrong."],
+  none: ["📂", "Where does this go?", ""],
+  yours: ["✅", "Filed by you", ""],
+};
+function renderFilingState() {
+  const p = picks.add;
+  const state = p.source === "user" ? "yours"
+    : !p.topic ? "none"
+    : p.source === "ai" ? (addModel === "high" ? "strong" : "thin")
+    : (addOffline?.evidence || "none");
+  const [icon, head, hint] = FILING_COPY[state] || FILING_COPY.none;
+  $("add-sorted-icon").textContent = icon;
+  $("add-sorted-h").textContent = head;
+  $("add-suggest").textContent = hint;
+  $("add-suggest").hidden = !hint || p.source === "user";
+}
+new MutationObserver(renderFilingState).observe($("add-topic"), { childList: true });
 /* Automatic tags join what you typed; they never replace it, and a tag you
    took off stays off. */
 function mergeTags(tags) {
@@ -3826,26 +3852,34 @@ async function fetchPreviewInto(url, seq) {
   suggestTopicFor(url, seq);
 }
 
-/* Second-pass filing for the links keyword matching can't place. Silent on
+/* Second-pass filing for the links keyword matching can't settle. Silent on
    every failure — signed out, offline, quota spent, server down all just leave
-   the offline answer where it is. */
+   the offline answer where it is. The function drops low-confidence answers
+   itself, so anything that comes back with a topic is at least a fair guess. */
 async function suggestTopicFor(url, seq) {
-  if (demoMode || !store.session || picks.add.source === "user" || addOffline?.topic) return;
+  if (demoMode || !store.session || picks.add.source === "user" || addOffline?.confident) return;
+  const offline = addOffline;
   try {
     const d = await api("/functions/v1/categorize", { method: "POST", body: {
       url, title: addTitle || null, author: addPreview?.author || null, text: null,
-      tags: sheetTags.add.filter(t => !(addOffline?.tags || []).includes(t)),
+      description: addPreview?.description || null,
+      hashtags: Filer.hashtagsIn([addTitle, addPreview?.description]),
+      tags: sheetTags.add.filter(t => !(offline?.tags || []).includes(t)),
+      platform: detectPlatform(url),
     } });
     // You may have picked a topic, or a later link may have landed, while this
-    // was in flight. Either way this answer is stale.
-    if (seq !== addSeq || picks.add.topic || picks.add.source === "user") return;
+    // was in flight. Either way this answer is stale. So is it if the offline
+    // filing changed underneath it.
+    if (seq !== addSeq || picks.add.source === "user" || addOffline !== offline) return;
     // Checked against the shipped 50 specifically, not against every topic we
     // happen to know: the model is asked for one of those and nothing else.
     if (!d?.topic || !BUILTIN_IDS.has(d.topic)) return;
     const subs = TOPIC_BY_ID[d.topic].subs;
+    addModel = d.confidence === "high" ? "high" : "medium";
     picks.add = { topic: d.topic, sub: subs.includes(d.subtopic) ? d.subtopic : null, source: "ai" };
     mergeTags(Array.isArray(d.tags) ? d.tags.slice(0, 4) : []);
     renderAdd();
+    renderFilingState();
   } catch { /* filing is a bonus; the person can always pick */ }
 }
 

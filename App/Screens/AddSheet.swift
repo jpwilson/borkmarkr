@@ -58,6 +58,15 @@ struct AddSheet: View {
     /// Whether the title came from the page or was generated. Drives whether we
     /// present it as a fact or as something to fill in.
     @State private var titleWasFetched = false
+    /// `og:description` — the full caption on Instagram and TikTok. Read for
+    /// filing, shown nowhere, saved nowhere.
+    @State private var pageDescription: String?
+    /// How sure the filing is, and what it was, so the header above the topic
+    /// chip can say "Sorted for you" only when that is true — and can tell a
+    /// topic the user picked from one we suggested.
+    @State private var evidence: Categorizer.Suggestion.Evidence = .none
+    @State private var suggestedCategoryID: String?
+    @State private var suggestedSubcategory: String?
     @State private var editingTitle = false
     @State private var selectedJourneyIDs: Set<String> = []
     @State private var showingNewJourney = false
@@ -498,15 +507,44 @@ struct AddSheet: View {
         }
     }
 
+    /// What the header above the topic chip should claim.
+    ///
+    /// Seb's two saves were shown as "✨ Sorted for you" over a wrong topic.
+    /// The block now says exactly as much as the evidence supports: a real
+    /// match is sorted, a thin one is a guess and says so, nothing is a
+    /// question, and a topic you picked yourself is yours.
+    private enum FilingState { case sorted, guess, unknown, yours }
+
+    private var filingState: FilingState {
+        if let categoryID, categoryID != suggestedCategoryID || subcategory != suggestedSubcategory {
+            return .yours
+        }
+        switch evidence {
+        case .strong: return .sorted
+        case .thin: return .guess
+        case .none: return .unknown
+        }
+    }
+
+    private var filingHeader: (icon: String, copy: String) {
+        switch filingState {
+        case .sorted: ("sparkles", "Sorted for you")
+        case .guess: ("sparkle", "Our best guess — tap to change")
+        case .unknown: ("questionmark.circle", "Where does this go?")
+        case .yours: ("checkmark.circle", "Filed by you")
+        }
+    }
+
     private var sortedForYou: some View {
         VStack(alignment: .leading, spacing: 11) {
             HStack(spacing: 6) {
-                Image(systemName: "sparkles").font(.system(size: 12, weight: .bold))
-                Text("Sorted for you")
+                Image(systemName: filingHeader.icon).font(.system(size: 12, weight: .bold))
+                Text(filingHeader.copy)
                     .font(Typo.ui(13, .bold))
                 Spacer()
             }
             .foregroundStyle(accent.deep)
+            .animation(.easeOut(duration: 0.2), value: filingHeader.copy)
 
             Button { showingPicker = true } label: {
                 HStack(spacing: 6) {
@@ -606,7 +644,10 @@ struct AddSheet: View {
         }
         .padding(15)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.tint.opacity(0.55), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        // Same tinted card in every state; only a settled answer gets the
+        // full tint. A guess and a question sit a shade quieter.
+        .background(accent.tint.opacity(filingState == .sorted || filingState == .yours ? 0.55 : 0.4),
+                    in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(accent.base.opacity(0.25), lineWidth: 1)
@@ -747,6 +788,7 @@ struct AddSheet: View {
             duration = preview.durationSeconds
             postedAt = preview.publishedAt
             author = preview.author ?? Categorizer.fallbackAuthor(for: url)
+            pageDescription = preview.description
 
             // A real page title, or nothing — never a routing word dressed up
             // as a description.
@@ -755,11 +797,17 @@ struct AddSheet: View {
             titleWasFetched = fetchedTitle != nil
 
             // Categorise against the real title when we have one; a genuine
-            // headline is a far better signal than a URL slug.
-            let suggestion = Categorizer.suggest(url: url, title: title)
+            // headline is a far better signal than a URL slug. The description
+            // carries the caption and its hashtags — the author's own filing.
+            let suggestion = Categorizer.suggest(
+                url: url, title: title, description: preview.description, author: preview.author
+            )
             categoryID = suggestion.categoryID
             subcategory = suggestion.subcategory
             tags = suggestion.tags
+            evidence = suggestion.evidence
+            suggestedCategoryID = suggestion.categoryID
+            suggestedSubcategory = suggestion.subcategory
 
             withAnimation(.easeOut(duration: 0.22)) { step = .details }
 
@@ -780,13 +828,14 @@ struct AddSheet: View {
         guard !offline.isConfident else { return }
         guard let account, let session = await account.currentSession() else { return }
 
-        guard let better = await SmartCategorizer.suggest(
+        let context = SmartCategorizer.Context(
             url: url,
             title: title,
             author: author,
-            tags: tags.filter { !offline.tags.contains($0) },
-            session: session
-        ) else { return }
+            description: pageDescription,
+            userTags: tags.filter { !offline.tags.contains($0) }
+        )
+        guard let better = await SmartCategorizer.suggest(context, session: session) else { return }
 
         // The user may have picked a topic themselves while this was in
         // flight. Their choice wins — always.
@@ -795,6 +844,9 @@ struct AddSheet: View {
         withAnimation(.easeOut(duration: 0.2)) {
             categoryID = better.categoryID
             subcategory = better.subcategory
+            evidence = better.evidence
+            suggestedCategoryID = better.categoryID
+            suggestedSubcategory = better.subcategory
             // Merge rather than replace: tags the user typed in the meantime stay.
             for tag in better.tags where !tags.contains(tag) && !Platform.isSiteName(tag) {
                 tags.append(tag)

@@ -54,7 +54,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }).then((r) => r.ok ? r.json() : false).catch(() => false);
   if (quota !== true) return json({ error: "Sign in to fetch link previews." }, 401);
 
-  const empty = { title: null, author: null, image_url: null, duration_seconds: null };
+  const empty = { title: null, author: null, description: null, image_url: null, duration_seconds: null };
 
   // oEmbed first for YouTube — documented, reliable, has author.
   if (isYouTube(url)) {
@@ -68,6 +68,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         return json({
           title: typeof data.title === "string" ? data.title : null,
           author: typeof data.author_name === "string" ? data.author_name : null,
+          description: null,
           image_url: typeof data.thumbnail_url === "string" ? data.thumbnail_url : null,
           duration_seconds: null,
         });
@@ -92,6 +93,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   return json({
     title: meta(html, "og:title") ?? meta(html, "twitter:title") ?? titleTag(html),
     author: meta(html, "author") ?? meta(html, "og:site_name"),
+    // On Instagram and TikTok this is the full caption with its hashtags —
+    // what the post is about, where the title only says who posted it. The
+    // filer reads it; nothing stores it.
+    description: meta(html, "og:description") ?? meta(html, "twitter:description") ?? meta(html, "description"),
     image_url: imageURL,
     duration_seconds: duration,
   });

@@ -583,6 +583,89 @@ doesn't exist and is invisible in Browse.
 
 ---
 
+## Filing that reads the caption, not the hook
+
+Seb's first two saves came back filed under *Relationships › Communication*
+(a hip-mobility reel) and *Science › Space* (a foot-training reel), each under
+a "✨ Sorted for you" header. Neither was the model's mistake: the offline
+matcher had scored itself "confident" and the model was never asked. Three
+things it was doing wrong, and one thing the UI was.
+
+**It matched the author's bio and the opening hook as if they were the
+subject.** Instagram's `og:title` is `"Sophie Rinkenbach | The Mobility
+Framework on Instagram: "I'm not a relationship expert but…""`, one string, so
+"Communication" (a subcategory name that happened to be in the caption) scored
+like a headline and "Mobility" from the bio was outvoted. `SocialTitle.unwrap`
+now takes that title apart — author, bio, caption — and only the caption is
+matched at full weight; the author line and the URL are half-weight hints; a
+caption's first clause is dropped when it carries a hook phrase ("expert",
+"nobody tells you", "the truth about"). Mirrored in the web Filer.
+
+**It never read the hashtags.** `LinkPreview` and the `preview` function
+stopped at `og:title`; `og:description` — on Instagram and TikTok the whole
+caption with `#flatfeet #mobility #footarch` — was thrown away. Both now return
+`description`. Hashtags are the author's own filing, so they score double and
+lead the tags, and up to two of the author's own unmatched hashtags ride along
+("#flatfeet" beats anything we could derive). The description is read for
+filing and stored nowhere: no schema change this round, and a caption is not
+what a card should show.
+
+**"Communication", "Space", "Training", "Reviews" are not subjects.** ~170
+subcategory names are plain English words that sit under exactly one topic, so
+the derived index treated them as precise as "Sourdough". They are now
+*generic*: they still name the subtopic once the topic has a specific hit, but
+alone they file nothing, and they count at half weight. The topic's own name
+and id joined the index at the same time — "#travel" said nothing before.
+Confidence is now one number with a meaning: `score ≥ 14` requires a real
+caption match, two independent specific hits, or a hashtag that names a
+subtopic; evidence that never touched the caption or the hashtags is capped at
+13 and can only ever be a guess. The JS port only has to agree on the score,
+and the parity fixture checks it does — 52 cases, none ambiguous, Seb's two
+among them.
+
+**The model is asked whenever the offline pass is not confident**, not only when
+it was empty; it sees the caption, the description, the hashtags, the author
+and the platform; it is told that hashtags outweigh the first clause and that
+the bio is a hint; it answers with `confidence: high | medium | low` and a
+one-line reason; and the function drops low answers before the app sees them —
+not filed beats wrong. Temperature dropped from 0.4 to 0.2 (filing is not a
+place for variety). Field caps rose to 300 / 1,200 so a real caption fits.
+`Scripts/eval_categorize.mjs` scores the deployed function against
+`Scripts/fixtures/categorize_eval.json` (Seb's two with their real captions,
+hook traps, hashtag-only captions, bare URLs, an X thread, a recipe, a travel
+vlog); the candidate ran as a separate `categorize-canary` deploy so production
+was never overwritten mid-iteration.
+
+**Shared saves get filed too.** A reel shared from Instagram arrives as a bare
+URL, the extension files nothing, and nothing ever came back to it — so
+"nothing matched" was the honest outcome and "wrong topic" was the
+Add-sheet outcome. `PreviewFetcher` now re-runs the offline pass on the real
+caption once metadata lands, applies it if confident, and otherwise asks the
+model once — at most eight per pass (the 200/day quota is shared with every AI
+feature), only when signed in, and only for brks whose filing is still the
+machine's: re-running the extension's own pass on the pre-metadata inputs is
+the provenance test, and a `updatedAt` snapshot taken before the request drops
+the answer if the user touched the brk meanwhile. The save itself is unchanged
+and instant. `LibraryView` hands the fetcher its `Account` in one line, the same
+way `AddSheet` already gets it.
+
+**The header says only what the evidence supports.** "✨ Sorted for you" is now
+reserved for a strong answer. A thin offline match or the model's *medium* is
+"Our best guess — tap to change"; nothing is "Where does this go?" over the
+same Pick-a-topic control; a topic you chose yourself is "Filed by you" (an
+added fourth state — the brief listed three, but "our best guess" over a
+topic the user just picked would be a lie). Same tinted card, same chips, same
+accent; only the icon, the copy and the tint weight move. Both platforms.
+
+**Deliberately not done.** Storing `description` on the bookmark (schema
+freeze; and the caption belongs to the platform, not the card). Retrying model
+calls that failed (the next preview pass in a week is soon enough). Sending the
+note text or any other save to the model (the function still sees one link).
+Adding a "relationship" hint — it would file "my relationship with food"
+under Relationships, and the hook rule already handles the case that hurt.
+
+---
+
 ## Topic art
 
 The 50 built-in topics each ship a bundled `topic{Id}` imageset, so Browse is a

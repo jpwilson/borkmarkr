@@ -1,0 +1,194 @@
+{
+ "_note": "Quality set for the categorize Edge Function (Scripts/eval_categorize.mjs). Each case is what the app would send. `expect.topics` lists every acceptable topic id ([] means the right answer is null); `expect.subtopics` the acceptable subtopics once the topic is right (omit to skip); `expect.nullOk` means declining to file is also acceptable. `seb` marks the two saves a first user saw filed wrong.",
+ "cases": [
+  {
+   "name": "Seb 1: hip mobility reel with a relationship hook",
+   "seb": true,
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxHipReel/",
+   "title": "Sophie Rinkenbach | The Mobility Framework on Instagram: \"I'm not a relationship expert but I do know a thing or two about hips, whi…\"",
+   "author": "Sophie Rinkenbach | The Mobility Framework",
+   "expect": { "topics": ["fitness"], "subtopics": ["Mobility", "Stretching"], "nullOk": true, "never": ["relationships"] }
+  },
+  {
+   "name": "Seb 2: foot training reel with hashtags",
+   "seb": true,
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxFootReel/",
+   "title": "Gabby Q on Instagram: \"Years ago, when I first started training my feet, I couldn't move my toes at all…\"",
+   "author": "zachtrained",
+   "description": "Your feet weren't designed to be passengers. 🦶 These exercises build toe strength, foot control and the muscles that support your arch from the ground up. Looks simple. Your feet might disagree. #flatfeet #mobility #footarch #feet Save it. Try it.",
+   "expect": { "topics": ["fitness"], "subtopics": ["Mobility", "Strength", "Injury prep"], "never": ["science", "pets"] }
+  },
+  {
+   "name": "Seb 2 as the share sheet sees it: title only",
+   "seb": true,
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxFootReel/",
+   "title": "Gabby Q on Instagram: \"Years ago, when I first started training my feet, I couldn't move my toes at all…\"",
+   "expect": { "topics": ["fitness", "health"], "nullOk": true, "never": ["science", "pets"] }
+  },
+  {
+   "name": "hook trap: money hook on a sourdough reel",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxBread2/",
+   "title": "Marco Bakes on Instagram: \"Nobody tells you this about money. Sourdough needs 24 hours, not 4. Here's my full schedule. #sourdough #baking #bread\"",
+   "author": "Marco Bakes",
+   "expect": { "topics": ["recipes", "fooddrink"], "subtopics": ["Baking", "Bread"], "never": ["money"] }
+  },
+  {
+   "name": "hook trap: therapist hook on a running post",
+   "platform": "x",
+   "url": "https://x.com/runwithsam/status/1888",
+   "text": "Unpopular opinion: your therapist is right. Anyway, here's my 10k training plan for the winter — 4 runs a week, one long, one tempo. #running",
+   "expect": { "topics": ["fitness"], "subtopics": ["Running"], "never": ["mentalhealth", "relationships"] }
+  },
+  {
+   "name": "hashtag-only caption",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxPilates2/",
+   "title": "fit.lena on Instagram: \"🔥🔥🔥\"",
+   "description": "1,204 likes, 31 comments - fit.lena on August 28, 2026: \"🔥🔥🔥 #pilates #coreworkout #homeworkout #fyp\"",
+   "expect": { "topics": ["fitness"], "subtopics": ["Pilates", "Home workouts", "Calisthenics"] }
+  },
+  {
+   "name": "bare URL, no title",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/C9xyz123/",
+   "title": "",
+   "expect": { "topics": [] }
+  },
+  {
+   "name": "login-wall title",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/p/C9abc456/",
+   "title": "Instagram",
+   "expect": { "topics": [] }
+  },
+  {
+   "name": "empty hook, no subject",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxSign/",
+   "title": "Jay on Instagram: \"This is your sign.\"",
+   "author": "Jay",
+   "expect": { "topics": [] }
+  },
+  {
+   "name": "X thread on doing great work",
+   "platform": "x",
+   "url": "https://x.com/paulg/status/1700",
+   "title": "Paul Graham (@paulg) on X: \"How to do great work — a thread. 1/ The first step is to decide what to work on. It has to be something you have a natural aptitude for and a deep interest in.\" / X",
+   "author": "Paul Graham",
+   "expect": { "topics": ["career", "business", "learning", "wellness"] }
+  },
+  {
+   "name": "recipe video",
+   "platform": "youtube",
+   "url": "https://www.youtube.com/watch?v=garlicpasta",
+   "title": "Creamy garlic butter pasta in 15 minutes | one pan, no cream",
+   "author": "Chef Nina",
+   "expect": { "topics": ["recipes"], "subtopics": ["Pasta", "Quick meals", "One-pan"] }
+  },
+  {
+   "name": "travel vlog",
+   "platform": "tiktok",
+   "url": "https://www.tiktok.com/@wanderfrugal/video/7231000000000000003",
+   "title": "wanderfrugal on TikTok",
+   "description": "3 days in Lisbon on a budget 🇵🇹 hostels, pastel de nata, sunset spots #lisbon #travel #budgettravel",
+   "expect": { "topics": ["travel"], "subtopics": ["Budget travel", "Destinations", "Itineraries"], "never": ["money"] }
+  },
+  {
+   "name": "science-word trap: grounding experiment about sleep",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxGround/",
+   "title": "Nate | Sleep Better on Instagram: \"We ran an experiment: 30 days of grounding barefoot on grass every morning. Here's what changed in my sleep. #sleep #grounding #morningroutine\"",
+   "author": "Nate | Sleep Better",
+   "expect": { "topics": ["wellness", "health"], "never": ["science"] }
+  },
+  {
+   "name": "subtopic-word trap: 'communication' in a puppy post",
+   "platform": "tiktok",
+   "url": "https://www.tiktok.com/@dogtrainer/video/7231000000000000009",
+   "title": "dogtrainer on TikTok",
+   "description": "Communication is the biggest thing my puppy taught me. Crate training, night 3. #puppy #dogtraining #cratetraining",
+   "expect": { "topics": ["pets"], "subtopics": ["Training", "Puppies & kittens", "Behaviour"], "never": ["relationships"] }
+  },
+  {
+   "name": "author-bio hint only",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxLongevity2/",
+   "title": "Dr Rhonda | Longevity Lab on Instagram: \"This one changed how I think about my 40s\"",
+   "author": "Dr Rhonda | Longevity Lab",
+   "expect": { "topics": ["health"], "nullOk": true }
+  },
+  {
+   "name": "debt payoff post",
+   "platform": "x",
+   "url": "https://x.com/frugalfi/status/2001",
+   "text": "I paid off £30k of debt in 18 months on a £32k salary. Here's the exact budget I used, line by line.",
+   "expect": { "topics": ["money"], "subtopics": ["Debt", "Budgeting"] }
+  },
+  {
+   "name": "coding video",
+   "platform": "youtube",
+   "url": "https://www.youtube.com/watch?v=pyrefactor",
+   "title": "Refactoring a Python API with typed dataclasses",
+   "author": "Arjan Codes",
+   "expect": { "topics": ["coding"] }
+  },
+  {
+   "name": "actual space post",
+   "platform": "youtube",
+   "url": "https://www.youtube.com/watch?v=carina",
+   "title": "NASA's new telescope image of the Carina Nebula, explained",
+   "author": "Dr Becky",
+   "expect": { "topics": ["science"], "subtopics": ["Space"] }
+  },
+  {
+   "name": "dog comedy clip",
+   "platform": "tiktok",
+   "url": "https://www.tiktok.com/@goldenboi/video/7231000000000000011",
+   "title": "goldenboi on TikTok",
+   "description": "POV: your dog realises it's bath day 😂 #dogsoftiktok #funny #goldenretriever",
+   "expect": { "topics": ["comedy", "pets"] }
+  },
+  {
+   "name": "home renovation pin",
+   "platform": "pinterest",
+   "url": "https://www.pinterest.com/pin/12345/",
+   "title": "Small living room renovation ideas: 12 before-and-afters",
+   "expect": { "topics": ["home"], "subtopics": ["Renovation", "Small spaces", "Interiors"] }
+  },
+  {
+   "name": "beauty hook: the truth about retinol",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxRetinol/",
+   "title": "glowwithmaya on Instagram: \"The truth about retinol nobody tells you (dermatologist approved) #skincare #retinol #beautytips\"",
+   "author": "glowwithmaya",
+   "expect": { "topics": ["beauty"], "subtopics": ["Skincare", "Anti-ageing", "Ingredients"] }
+  },
+  {
+   "name": "flat feet exercises, plain title",
+   "platform": "youtube",
+   "url": "https://www.youtube.com/watch?v=flatfeet",
+   "title": "The 5 exercises I do every day for flat feet (physio approved)",
+   "author": "Move Well Physio",
+   "expect": { "topics": ["fitness", "health"], "never": ["science"] }
+  },
+  {
+   "name": "real relationships post",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/reel/DBxMarriage/",
+   "title": "Dr Ana | Couples Therapist on Instagram: \"The 3 communication habits that saved my clients' marriages — and the one that ends them. #marriage #couplestherapy #relationships\"",
+   "author": "Dr Ana | Couples Therapist",
+   "expect": { "topics": ["relationships"], "subtopics": ["Communication", "Marriage"] }
+  },
+  {
+   "name": "crypto news post",
+   "platform": "x",
+   "url": "https://x.com/cryptowatch/status/11",
+   "text": "Bitcoin ETFs: what actually changed this week, and why the spot flows matter more than the price. Thread.",
+   "expect": { "topics": ["crypto", "investing"] }
+  }
+ ]
+}
