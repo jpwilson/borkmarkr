@@ -829,6 +829,88 @@ tier: yours and the built-ins are ranked by the same rule.
 
 ---
 
+## Side quests that explain themselves (Seb round)
+
+Seb made a quest called Breathing, under Health, with nothing on it. It wore
+a map, its summary said "Nothing on this quest yet", and he did not know what
+a side quest was for. Three fixes and a guide, one PR.
+
+**The cover falls back to the topic's own scene, not the compass.**
+`QuestMotif.resolve` picks one of ten quest scenes from the title, the subtopic
+and a short list of topics; anything else was the compass — and "anything
+else" was Health, Wellness, Mental health, Sleep, Parenting, Travel, most of
+the fifty. `QuestCover.resolve` now runs three passes: a scene the kit draws
+wins; then the linked topic's bundled clay scene, so a Health quest wears the
+Health art; then, for a quest with no topic, the body-or-mind topic its words
+point at ("breathing" → Wellness, "sleep" → Health, "anxiety" → Mental
+health); the compass only when none of that exists. Callers now send the
+subtopic too — the dominant one among the attached borks — which `resolve`
+always accepted and nobody passed.
+
+*Deviation:* the brief asked for keyword branches from breath / sleep / mental
+onto the best *existing motif*. There isn't one — a running figure on a sleep
+quest is a second wrong picture — and the topic scenes already exist and
+already match the card's tint, so the keywords resolve to those. No new art.
+Custom topics keep the compass: their scene is drawn on the server and
+`TopicClayArt` shows paper until it arrives, and paper is worse than a map.
+
+The web's `questArt` walks the same passes minus the title one. Its map is
+now the iOS category switch verbatim — it had `career → business`,
+`music → create`, `beliefs → scroll` and a `rabbit` default the phone never
+had, so the same quest wore different art on the two platforms.
+`RevisitView` still passes `motif:` and gets the old resolution: one line to
+switch to `cover:`, in a file this round does not own.
+
+**The summary is written by the model and cached on the quest.**
+`Mission.summary(from:)` is a template — it counts borks and names the topic,
+and with nothing attached it says there is nothing — and no model summary
+existed anywhere: `name-quest` names seeds, `insights` reads a window. The new
+`quest-brief` function (same shape as `name-quest`, Sonnet via OpenRouter,
+200 a day through `consumeQuota`) reads the quest's name, topic, the titles on
+it and the steps so far, and returns two sentences in the product voice plus
+three next actions. `QuestBrief` shapes the request (twelve titles, eight
+steps, 140 characters a field, never notes or URLs) and validates the reply
+(no summary means no brief; steps deduplicated, at most three, an overlong one
+dropped rather than cut). The brief lives on `Mission.briefText` / `briefAt` /
+`briefBorkCount` — three optional columns, the same lightweight migration as
+`CustomTopic.imageURLString` — and is asked for again when the attached count
+changes or a week passes. A tap on + re-runs that; it waits two seconds so
+five taps are one call. **Empty is not an error:** a quest with nothing on it
+still gets a brief, which is exactly the case Seb hit. Signed out, offline,
+quota spent, a bad reply: the template stays and nothing is shown as failed.
+The three next actions sit under the thread with the same + as the "from this
+topic" rows and go onto the to-do list; one you have taken is not offered
+again.
+
+**"From this topic" became "from this topic and nearby".** The suggestions
+required `categoryID` equality, so a Health quest never saw a reel filed
+Wellness › Breathwork — Seb's quest had nothing to attach. `Mission.topicFamilies`
+follows the hue families in `Taxonomy` (neighbours on the wheel are neighbours
+in life) plus the few that sit apart on the wheel but not in a library —
+Money beside Business, Sports beside Fitness — and overlap is deliberate:
+Nutrition is both body and food. Own topic first, then the family; a quest
+with no topic, or whose family holds nothing, is offered the ten most recent
+borks. A new quest always has something to pull in. The families live on
+`Mission` rather than `Taxonomy` because "what may a quest pull from" is a
+quest rule, and because this round does not own `Taxonomy.swift`.
+
+**The guide says one sentence four times.** "Topics file what a bork is. A
+side quest is why you kept it." — on the empty state, which is now the
+walkthrough (three numbered moves in `HowToSheet`'s style and four sample
+quests as the poster cards a real quest gets, each opening the create form
+filled in rather than making a quest behind your back); on a "How side quests
+work" row under the seeds; on the Library rail's coach card, beside the
+running scene every line of copy uses; and in a one-time explainer sheet in
+`OnboardingView`'s style. *Deviation:* the explainer shows the first time
+Side quests opens **with no quest in it**, not the first time it opens at all
+— someone who already made one does not need telling, and a sheet nobody
+asked for is a cost. Two DEBUG-only launch arguments (`-openQuest`,
+`-questBrief`) photograph the detail sheet and the brief without a session;
+they sit in `MissionsView` under `#if DEBUG` and belong in `ScreenshotDefaults`
+when that file is next edited.
+
+---
+
 ## Custom topic ids fold to ASCII (build 13)
 
 `CustomTopic.makeID` kept any character Unicode calls a letter, so "Café

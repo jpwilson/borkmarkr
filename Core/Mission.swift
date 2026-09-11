@@ -42,6 +42,15 @@ final class Mission {
     /// JSON-encoded `[QuestTodo]`. Optional so existing stores migrate.
     var todosJSON: String?
 
+    /// The model's brief for THE THREAD — a `QuestBrief.Brief` as JSON — with
+    /// when it was written and for how many attached borks. All three are
+    /// optional, so an existing store gains three null columns and nothing
+    /// else moves (the same lightweight migration as `CustomTopic.imageURLString`).
+    /// Nil shows the template summary, which is what every quest showed before.
+    var briefText: String?
+    var briefAt: Date?
+    var briefBorkCount: Int?
+
     init(title: String, detail: String? = nil, categoryID: String? = nil, habitName: String? = nil) {
         self.id = UUID().uuidString
         self.title = title
@@ -73,6 +82,74 @@ final class Mission {
             }
             updatedAt = .now
         }
+    }
+
+    // MARK: - Brief
+
+    var brief: QuestBrief.Brief? { QuestBrief.decode(briefText) }
+
+    func storeBrief(_ brief: QuestBrief.Brief, count: Int, at date: Date = .now) {
+        briefText = QuestBrief.encode(brief)
+        briefAt = date
+        briefBorkCount = count
+    }
+
+    /// What the `quest-brief` function is told: the name, the topic, the
+    /// titles attached (in the order you put them) and the steps so far.
+    func briefRequest(from attached: [Bookmark]) -> QuestBrief.Request? {
+        QuestBrief.request(
+            id: id,
+            title: title,
+            topic: topic?.name,
+            subtopic: Self.dominantSubcategory(among: attached),
+            titles: attached.map(\.displayTitle),
+            todos: todos.map { QuestBrief.Request.Todo(title: $0.title, done: $0.done) }
+        )
+    }
+
+    /// The subtopic most of a pile is filed under, if any — what a cover
+    /// resolver and a brief both mean by "what this quest is about".
+    static func dominantSubcategory(among items: [Bookmark]) -> String? {
+        Dictionary(grouping: items.compactMap(\.subcategory)) { $0 }
+            .max { $0.value.count < $1.value.count }?
+            .key
+    }
+
+    // MARK: - Related topics
+
+    /// Topics a quest may pull borks from besides its own.
+    ///
+    /// A quest is a reason, and reasons cut across filing: Seb's breathing
+    /// quest sat under Health while the reel that started it was filed
+    /// Wellness › Breathwork, so "from this topic" had nothing to offer. The
+    /// families follow the hue families in `Taxonomy` — neighbours on the
+    /// wheel are neighbours in life — plus the few that sit apart on the
+    /// wheel but not in a library (Money next to Business, Sports next to
+    /// Fitness). Overlap is deliberate: Nutrition is both body and food.
+    static let topicFamilies: [[String]] = [
+        ["health", "wellness", "mentalhealth", "fitness", "nutrition"],
+        ["fitness", "sports", "outdoors"],
+        ["recipes", "fooddrink", "nutrition"],
+        ["money", "investing", "crypto", "business"],
+        ["business", "career", "marketing", "creator"],
+        ["creator", "photovideo", "art", "music"],
+        ["crafts", "diy", "home", "art", "cleaning"],
+        ["garden", "homestead", "outdoors", "nature"],
+        ["parenting", "babyprep", "relationships"],
+        ["fashion", "grooming", "beauty"],
+        ["learning", "coding", "ai", "tech", "science"],
+        ["books", "filmtv", "anime", "history"],
+        ["beliefs", "truecrime", "history"],
+        ["travel", "outdoors", "cars"],
+    ]
+
+    static func relatedTopicIDs(to categoryID: String) -> Set<String> {
+        var related = Set<String>()
+        for family in topicFamilies where family.contains(categoryID) {
+            related.formUnion(family)
+        }
+        related.remove(categoryID)
+        return related
     }
 
     func summary(from bookmarks: [Bookmark]) -> String {
@@ -193,7 +270,18 @@ final class Mission {
         var bookmarkIDs: [String]
         var sampleTitles: [String]
         var blurb: String
+        /// A daily habit to pre-fill, for the sample quests in the guide.
+        /// Nil for a seed drawn from the library, which has no habit yet.
+        var habit: String? = nil
     }
+
+    /// The four samples the guide offers when there are no quests yet — one
+    /// each of body, health, money and food, all from `templates` so they
+    /// are the same quests the create sheet suggests.
+    static let starters: [(title: String, habit: String, categoryID: String)] = {
+        let picks = ["Become a faster runner", "Sleep properly", "Get my money in order", "Learn to cook properly"]
+        return picks.compactMap { pick in templates.first { $0.title == pick } }
+    }()
 
     /// Cluster the library into a few side quests. Existing quests occupy a
     /// topic so we do not suggest a second pile for the same filing.

@@ -51,7 +51,13 @@ struct JourneyRail: View {
                                     title: quest.title,
                                     count: quest.bookmarkIDs.count,
                                     palette: quest.topic?.palette ?? NeutralPalette.value,
-                                    motif: QuestMotif.resolve(title: quest.title, categoryID: quest.categoryID),
+                                    cover: QuestCover.resolve(
+                                        title: quest.title,
+                                        categoryID: quest.categoryID,
+                                        subcategory: Mission.dominantSubcategory(
+                                            among: bookmarks.filter { quest.bookmarkIDs.contains($0.id) }
+                                        )
+                                    ),
                                     layout: .rail,
                                     quiet: quest.isQuiet(among: bookmarks),
                                     habit: quest.hasHabit,
@@ -66,7 +72,7 @@ struct JourneyRail: View {
                                     title: seed.title,
                                     count: seed.bookmarkIDs.count,
                                     palette: Taxonomy.category(id: seed.categoryID)?.palette ?? NeutralPalette.value,
-                                    motif: QuestMotif.resolve(title: seed.title, categoryID: seed.categoryID, subcategory: seed.subcategory),
+                                    cover: QuestCover.resolve(title: seed.title, categoryID: seed.categoryID, subcategory: seed.subcategory),
                                     layout: .rail,
                                     suggested: true,
                                     topicName: Taxonomy.category(id: seed.categoryID)?.name,
@@ -106,20 +112,34 @@ struct JourneyRail: View {
         return "You saved \(Copy.countedBorks(n)) for \(quest.title) and have not looked lately."
     }
 
+    /// The coach card: what a quest is, how it differs from a topic, and the
+    /// three moves — beside the running scene, the example every line of
+    /// copy uses. Same shape as `InsightsEntry`'s card: text on the left, a
+    /// clay scene on the right, accent tint behind.
     private var emptyCard: some View {
         Button(action: onStart) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(Copy.whatWorkingOn)
-                    .font(Typo.display(17, .bold))
-                    .foregroundStyle(Tokens.ink)
-                Text("A side quest is why you kept something — get better at running, pick a van, learn pottery. Not another topic.")
-                    .font(Typo.ui(13))
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(Copy.startSideQuest)
-                    .font(Typo.ui(13.5, .bold))
-                    .foregroundStyle(accent.deep)
-                    .padding(.top, 4)
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(Copy.whatWorkingOn)
+                        .font(Typo.display(17, .bold))
+                        .foregroundStyle(Tokens.ink)
+                    Text(Copy.sideQuestOneLiner)
+                        .font(Typo.ui(13, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(Copy.sideQuestCoachLine)
+                        .font(Typo.ui(13))
+                        .foregroundStyle(Tokens.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(Copy.startSideQuest)
+                        .font(Typo.ui(13.5, .bold))
+                        .foregroundStyle(accent.deep)
+                        .padding(.top, 4)
+                }
+                Spacer(minLength: 4)
+                QuestArt(motif: .run)
+                    .frame(width: 78, height: 78)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)

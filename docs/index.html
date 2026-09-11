@@ -1784,14 +1784,19 @@ function commit(next, prev) {
 }
 
 /* ── Side quests (public.missions) ── */
+/* The cover, in the same order as QuestCover.resolve on iOS minus the title
+   pass: a topic the quest kit draws → the topic's own clay scene (every
+   built-in ships one in /img/topics) → the compass. The map is the iOS
+   category switch verbatim, so both sides pick the same scene for a topic;
+   a custom topic has no bundled scene and gets the compass, as on the phone. */
 const QUEST_ART_MAP = {
-  fitness: "run", recipes: "cook", fooddrink: "cook", nutrition: "cook",
-  business: "business", career: "business", money: "money", investing: "money", crypto: "money",
-  marketing: "market", creator: "market", learning: "learn", coding: "learn", science: "learn",
-  books: "learn", art: "create", crafts: "create", photovideo: "create", music: "create",
-  travel: "compass", outdoors: "compass", nature: "compass", history: "scroll", beliefs: "scroll",
+  beliefs: "rabbit", truecrime: "rabbit", business: "business", fitness: "run", sports: "run",
+  marketing: "market", creator: "market", recipes: "cook", fooddrink: "cook", nutrition: "cook",
+  books: "learn", learning: "learn", photovideo: "create", art: "create", crafts: "create",
+  money: "money", investing: "money", crypto: "money",
 };
-const questArt = (categoryID) => `/img/quests/${QUEST_ART_MAP[categoryID] || "rabbit"}.jpg`;
+const questArt = (categoryID) => QUEST_ART_MAP[categoryID] ? `/img/quests/${QUEST_ART_MAP[categoryID]}.jpg`
+  : TOPIC_BY_ID[categoryID] ? `/img/topics/${categoryID}.jpg` : "/img/quests/compass.jpg";
 
 function absorbMissions(rows) {
   for (const m of rows) {
