@@ -40,17 +40,20 @@ import SwiftUI
 ///
 /// ## 1.1: the same card, now counting
 ///
-/// `SaveLimit` puts a ceiling on a signed-out library, so from fifteen borks
+/// `SaveLimit` puts a ceiling on a signed-out library, so from forty borks
 /// this card stops describing where the library lives and starts saying how
 /// many saves are left. It is the *same* card in the same place — a second
 /// banner would be two things nagging where one was enough — and the only rule
 /// that changes is the ✕: once the countdown is running the card is the only
-/// warning before a save stops working, so it stays put. Below fifteen the ✕
+/// warning before a save stops working, so it stays put. Below forty the ✕
 /// buys fourteen days exactly as it always did.
 ///
-/// The milestone sheet narrows to match. Twenty-five and a hundred borks are
-/// now unreachable signed out, so they can only fire for someone who *has* an
-/// account and has never once synced — see `dueMilestone`.
+/// The milestone sheet narrows to match: signed out there is one, at five.
+/// Twenty-five is reachable again now that the limit is fifty, and it stays
+/// off the signed-out list on purpose — between five and the wall the reminder
+/// is this card, which says a number rather than raising a modal. Twenty-five
+/// and a hundred fire only for someone who *has* an account and has never
+/// once synced — see `dueMilestone`.
 @MainActor
 enum SignInNudge {
 
@@ -104,12 +107,20 @@ enum SignInNudge {
     /// - **5, signed out.** Unchanged. The one moment where "this only lives
     ///   on this phone" is news and the library is worth something.
     /// - **25 and 100, signed in only, and only if the account has never
-    ///   synced.** Twenty-five borks can no longer be reached without an
-    ///   account, so as a *sign-up* prompt they are dead code. They survive as
-    ///   the one thing still worth saying to someone who signed up and whose
-    ///   backup has never actually run — a signed-in library that is not backed
-    ///   up is the failure the account was meant to prevent. When the backup is
-    ///   working, which is the normal case, both are skipped entirely.
+    ///   synced.** With the limit at fifty, twenty-five *is* reachable signed
+    ///   out again — and it is still not a sign-up sheet, on purpose. Between
+    ///   the sheet at five and the wall at fifty the signed-out reminder is
+    ///   the Library card: dismissable and back after fourteen days, then
+    ///   counting down from forty with no ✕. A second modal in that stretch
+    ///   would be a new nag, and it would not even reach the person it was
+    ///   aimed at — anyone saving fast enough to hit twenty-five within a
+    ///   fortnight of the five-sheet is inside the quiet period, this returns
+    ///   nil, and `recordSeen` moves the watermark past it for good. So 25 and
+    ///   100 survive as the one thing still worth saying to someone who signed
+    ///   up and whose backup has never actually run — a signed-in library that
+    ///   is not backed up is the failure the account was meant to prevent.
+    ///   When the backup is working, which is the normal case, both are
+    ///   skipped entirely.
     static func dueMilestone(borks: Int, signedIn: Bool, hasSynced: Bool) -> Int? {
         // No watermark yet means this policy has never looked at this library.
         // Whatever it has already passed is history, not an achievement.
@@ -119,9 +130,11 @@ enum SignInNudge {
         return eligible.last { $0 <= borks && $0 > watermark && !shown.contains($0) }
     }
 
-    /// The one signed-out moment.
+    /// The one signed-out moment. Twenty-five is deliberately not here — see
+    /// `dueMilestone`.
     static let signUpMilestones = [5]
-    /// Reachable only with an account, so only ever a backup reminder.
+    /// Backup reminders for a signed-in account that has never synced. Not a
+    /// sign-up prompt at any count.
     static let backupMilestones = [25, 100]
 
     // MARK: - Recording

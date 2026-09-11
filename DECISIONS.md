@@ -713,6 +713,68 @@ what may be on screen.
 
 ---
 
+## Fifty borks before an account (build 14)
+
+**The signed-out limit is fifty live borks, and the countdown starts at
+forty** (`Core/SaveLimit.swift`). The shape of the limit — the Share Extension
+never refuses, an over-limit draft waits as a real bork, the Add sheet is the
+only door that closes, signed in is unlimited — is exactly as *The signed-out
+save limit* above describes it. Only the two numbers moved, and every string
+that quoted them (the You tab's "N of 50", the website, APPSTORE.md).
+
+**Why fifty.** Twenty was chosen as "past trying it". The first outside user
+showed it was not: he saved eleven or twelve a day and hit the wall on his
+second day — before he had gone back and found anything, before the habit had
+formed, while the app was still being judged. His own account of when saving
+became a habit was somewhere between thirty and fifty. Fifty puts the ask after
+that point, where losing the library would actually hurt and an account is a
+reason rather than a toll, and it is still a number a phone can lose. Two
+hundred would arrive after the damage the limit exists to prevent.
+
+**Why forty.** Ten saves of warning is about a day at the pace that broke
+twenty, and a week or more for most people. The old five (fifteen to twenty)
+was a few hours for the same user. The card's rules are unchanged: below forty
+the ✕ buys fourteen days; from forty it stays put.
+
+**Twenty-five is reachable signed out again, and is deliberately not a
+signed-out sheet.** `SignInNudge.signUpMilestones` stays `[5]`. Between the
+sheet at five and the wall at fifty the signed-out reminder is the Library
+card — dismissable, back after fourteen days, counting down from forty with no
+✕ — plus the You tab's count. A modal at twenty-five would be a new nag in the
+stretch where the app is supposed to be earning the account, and it would not
+even reach the person it was aimed at: anyone saving fast enough to hit
+twenty-five within a fortnight of the five-sheet is inside the quiet period,
+`dueMilestone` returns nil, and `recordSeen` moves the watermark past it for
+good. It would fire only for slow savers, for whom the countdown at forty is
+already weeks of warning. Twenty-five and a hundred stay what 1.1 made them:
+backup reminders for a signed-in account that has never synced.
+
+**The privacy line now names its one exception.** The wall said *"Never sold,
+never shared, never visible to anyone else."* Shared collections ship in this
+build, so "never shared" stops being true of the product; *Shared collections*
+above anticipated exactly this and left the sentence to the PR that changes
+the App Store copy with it. It now reads **"Never sold, never visible to
+anyone else — unless you choose to share a collection."** Same lead, same
+promise about what bookmarker does with a bork; the only way one reaches
+another person is its owner putting it in a collection and turning the link
+on. `Scripts/test_save_limit.swift` asserts the new wording and that "never
+shared" is gone, so neither can drift back. The What's New paragraph and the
+description in APPSTORE.md repeat the new sentence.
+
+**Deliberately not done.**
+
+- No second banner, no new sheet, no toast. The limit is the same three
+  surfaces with different numbers.
+- The wall, the Library card and the You tab keep their layout and type. The
+  longer privacy sentence was checked on the wall: it fits the card at two
+  lines.
+- `Marketing/` was not touched; nothing in it quotes the limit.
+- The waiting queue, admission order and the over-limit case (someone who
+  signed out of an account holding more than fifty) behave exactly as before,
+  with fifty in place of twenty.
+
+---
+
 ## The Add sheet (build 13)
 
 **The paste card is a system `PasteButton` over a `Transferable` that accepts

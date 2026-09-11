@@ -12,10 +12,14 @@ import Foundation
 /// all four hundred when the phone goes in a river, and still can't open
 /// bookmarker.lol and find a thing.
 ///
-/// Twenty is the number because it is past trying it — you have borked from
-/// three apps, seen it file things, found one again — and short of the point
-/// where losing the library is a real loss. A limit that bites at 200 arrives
-/// after the damage it exists to prevent.
+/// Fifty is the number because twenty turned out to be *trying it*, not past
+/// it. The first outside user saved eleven or twelve a day and hit twenty on
+/// his second day — before the habit had formed, before he had gone back and
+/// found anything, while the app was still on trial. The habit forms somewhere
+/// between thirty and fifty borks, and that is also the point at which losing
+/// the library would actually hurt: an account is a reasonable ask there and a
+/// toll before it. A limit that bites at 200 still arrives after the damage it
+/// exists to prevent. (1.1 build 13 shipped with twenty; fifty is build 14.)
 ///
 /// ## Why this does not break the core product rule
 ///
@@ -33,7 +37,7 @@ import Foundation
 /// - The only place anything is actually refused is the **Add sheet**, where a
 ///   person is already in the app, has a keyboard up, and can read a sheet.
 ///
-/// So the limit gates *the twenty-first slot*, never the act of saving.
+/// So the limit gates *the fifty-first slot*, never the act of saving.
 ///
 /// ## Signed in
 ///
@@ -46,19 +50,20 @@ import Foundation
 enum SaveLimit {
 
     /// Live borks a signed-out library may hold.
-    static let limit = 20
+    static let limit = 50
 
     /// Where the Library card stops saying where your library lives and starts
-    /// counting down. Five saves is roughly a week of use — enough warning to
-    /// act on, late enough that most people never see it.
-    static let counterFloor = 15
+    /// counting down. Ten saves is about a day for someone saving the way the
+    /// first outside user did (eleven a day) and a week or more for most —
+    /// enough warning to act on, late enough that many people never see it.
+    static let counterFloor = 40
 
     // MARK: - The numbers
 
     /// Saves left before an account is needed, or `nil` when there is no limit.
     ///
     /// Never negative. A library that is over the limit — someone who signed
-    /// out with more than twenty — has zero left, not minus fourteen.
+    /// out with more than fifty — has zero left, not minus fourteen.
     static func remaining(liveCount: Int, signedIn: Bool) -> Int? {
         guard !signedIn else { return nil }
         return max(0, limit - liveCount)
@@ -94,9 +99,9 @@ enum SaveLimit {
 
     /// The card's headline, or `nil` to leave the 1.0.2 wording alone.
     ///
-    /// At the limit this counts the *real* library rather than printing "20".
-    /// Someone who signed out of an account holding thirty-four borks sees
-    /// thirty-four; telling them they have twenty would be the app arguing
+    /// At the limit this counts the *real* library rather than printing "50".
+    /// Someone who signed out of an account holding sixty-four borks sees
+    /// sixty-four; telling them they have fifty would be the app arguing
     /// with the screen behind it.
     static func bannerHeadline(liveCount: Int, signedIn: Bool) -> String? {
         guard let left = remaining(liveCount: liveCount, signedIn: signedIn),
@@ -120,10 +125,12 @@ enum SaveLimit {
 
     /// Lead and body of the privacy promise, split so the view can weight the
     /// first half. One sentence, no hedging, and true of the code: bookmarks
-    /// are row-level-secured to their owner and there is no sharing feature to
-    /// leak them through.
+    /// are row-level-secured to their owner, and the only way one reaches
+    /// another person is its owner putting it in a collection and turning that
+    /// collection's link on. "Never shared" left the sentence when collections
+    /// arrived — see *Shared collections* in DECISIONS.md.
     static let privacyLead = "Your borks are always private."
-    static let privacyBody = "Never sold, never shared, never visible to anyone else."
+    static let privacyBody = "Never sold, never visible to anyone else — unless you choose to share a collection."
 
     // MARK: - Waiting
 
@@ -151,11 +158,11 @@ enum SaveLimit {
 
     // MARK: - The You tab
 
-    /// "17 of 20". `nil` signed in, where there is nothing to be out of.
+    /// "17 of 50". `nil` signed in, where there is nothing to be out of.
     static func youCount(liveCount: Int, signedIn: Bool) -> String? {
         guard !signedIn else { return nil }
         return "\(liveCount) of \(limit)"
     }
 
-    static let youLine = "Free limit: 20 borks. Sign up for unlimited, backed up, and on the web."
+    static let youLine = "Free limit: 50 borks. Sign up for unlimited, backed up, and on the web."
 }
