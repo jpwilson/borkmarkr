@@ -442,6 +442,47 @@ struct BrowseView: View {
         } else {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
                       spacing: 12) {
+                // First, not last. At the end of the grid it was one scroll
+                // away, and the first outside tester never scrolled. A topic
+                // tile's own shape — the plus standing where the clay art
+                // goes, the accent tint, the suggested-quest card's dashed
+                // edge — so the grid reads as your topics plus a slot for
+                // the next one.
+                Button {
+                    pickerCategory = nil
+                    pickerSub = nil
+                    showingPicker = true
+                } label: {
+                    VStack(spacing: 0) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(accent.base, in: Circle())
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 92)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("New topic")
+                                .font(Typo.ui(14.5, .bold))
+                                .foregroundStyle(Tokens.ink)
+                            Text("Anything you like")
+                                .font(Typo.ui(11, .medium))
+                                .foregroundStyle(Tokens.inkMeta)
+                        }
+                        .padding(11)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
+                    .frame(height: 168, alignment: .top)
+                    .background(accent.tint)
+                    .clipShape(RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous)
+                            .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                    )
+                }
+                .buttonStyle(PressableStyle())
+
                 ForEach(usedCategories) { category in
                     Button {
                         path.append(Route.topic(category.id))
@@ -452,25 +493,6 @@ struct BrowseView: View {
                     .buttonStyle(.plain)
                     .zoomSource(id: category.id, in: tileZoom)
                 }
-
-                Button {
-                    pickerCategory = nil
-                    pickerSub = nil
-                    showingPicker = true
-                } label: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 22, weight: .semibold))
-                        Text("New topic")
-                            .font(Typo.ui(14.5, .bold))
-                    }
-                    .foregroundStyle(accent.deep)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(15)
-                    .frame(height: 168, alignment: .topLeading)
-                    .background(accent.tint, in: RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous))
-                }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, 18)
 

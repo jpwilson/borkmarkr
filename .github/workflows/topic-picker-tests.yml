@@ -5,6 +5,7 @@ on:
     paths:
       - "Core/TopicPickerQuery.swift"
       - "Core/Taxonomy.swift"
+      - "Core/Initials.swift"
       - "App/Screens/TopicPickerSheet.swift"
       - "Scripts/test_topic_picker.swift"
       - "docs/picker.js"
@@ -16,6 +17,7 @@ on:
     paths:
       - "Core/TopicPickerQuery.swift"
       - "Core/Taxonomy.swift"
+      - "Core/Initials.swift"
       - "App/Screens/TopicPickerSheet.swift"
       - "Scripts/test_topic_picker.swift"
       - "docs/picker.js"
@@ -31,7 +33,8 @@ jobs:
       - name: Compile and run topic picker checks
         run: |
           swiftc -parse-as-library -o /tmp/topic-picker-tests \
-            Core/Taxonomy.swift Core/TopicPickerQuery.swift Scripts/test_topic_picker.swift
+            Core/Taxonomy.swift Core/TopicPickerQuery.swift Core/Initials.swift \
+            Scripts/test_topic_picker.swift
           /tmp/topic-picker-tests
 
   # The web half. Which topic tops a search has to be the same answer on both

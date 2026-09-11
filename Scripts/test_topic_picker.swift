@@ -1,7 +1,7 @@
 import Foundation
 
 /// Compile:
-/// `swiftc -parse-as-library -o /tmp/topic-picker-tests Core/Taxonomy.swift Core/TopicPickerQuery.swift Scripts/test_topic_picker.swift`
+/// `swiftc -parse-as-library -o /tmp/topic-picker-tests Core/Taxonomy.swift Core/TopicPickerQuery.swift Core/Initials.swift Scripts/test_topic_picker.swift`
 
 @main
 enum TopicPickerTests {
@@ -112,6 +112,15 @@ enum TopicPickerTests {
             Set(fitnessSubs) == Set(fitness.subs),
             "sorting subtopics neither drops nor invents one"
         )
+        // JP's report (Seb round): Health read Conditions, Medications,
+        // Symptoms, Sleep, Heart & BP, Diabetes… — the authored order.
+        let health = topic("health")
+        let healthAZ = TopicPickerQuery.alphabetical(health.subs)
+        expect(
+            healthAZ == health.subs.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+                && healthAZ != health.subs,
+            "Health's subtopics are drawn A–Z, not in authored order\n     got      \(healthAZ.prefix(4))"
+        )
         let mixed = TopicPickerQuery.alphabetical(["Zone 10", "bouldering", "Zone 2", "Mobility"])
         expect(
             mixed == ["bouldering", "Mobility", "Zone 2", "Zone 10"],
@@ -121,6 +130,32 @@ enum TopicPickerTests {
         expect(TopicPickerQuery.canAddName("Run", to: fitness.subs), "Run is a new Fitness sub")
         expect(!TopicPickerQuery.canAddName("Running", to: fitness.subs), "Running already exists")
         expect(!TopicPickerQuery.canAddName("r", to: []), "single-letter names are rejected")
+
+        // ── Initials — whose letter the avatar wears ──────────────────────
+        // The Library header showed a hardcoded "J" (the founder's) to every
+        // person, signed in or not. One rule now, shared by both avatars.
+        func initial(_ name: String?, _ email: String?) -> String? {
+            Initials.letter(displayName: name, email: email)
+        }
+        expect(initial("Sebastian", nil) == "S", "a display name gives its first letter")
+        expect(initial("seb", nil) == "S", "…uppercased")
+        expect(initial(nil, "seb@example.com") == "S", "no name: the email's local part")
+        expect(initial("", "jp@example.com") == "J", "an empty name falls through to the email")
+        expect(initial("   ", "jp@example.com") == "J", "and so does a blank one")
+        expect(initial("Jean-Paul", "seb@example.com") == "J", "the name wins over the email")
+        expect(initial("élodie", nil) == "É", "accents survive: élodie is É")
+        expect(initial("ßtefan", nil) == "S", "one grapheme, even where uppercasing makes two (ß → SS)")
+        expect(initial("🦊 Sam", nil) == "S", "emoji and punctuation are skipped")
+        expect(initial("_sam", nil) == "S", "…and so is a leading underscore")
+        expect(initial(nil, "_underscore@example.com") == "U", "…in an email too")
+        expect(initial("日本語", nil) == "日", "a CJK name keeps its first character")
+        expect(initial(nil, "42crows@example.com") == "4", "a digit is a letter for this purpose")
+        expect(initial(nil, "sam") == "S", "an address with no @ is used whole")
+        expect(initial(nil, nil) == nil, "signed out: nothing — the circle wears a glyph, not a J")
+        expect(initial(nil, "") == nil, "an empty email is nobody")
+        expect(initial(nil, "@example.com") == nil, "and so is one with nothing before the @")
+        expect(initial("...", "!!!") == nil, "nothing letter-like anywhere is nobody")
+        expect(Initials.localPart(of: "a@b@c") == "a", "the local part stops at the first @")
 
         if failures > 0 { print("\n\(failures) failed"); exit(1) }
         print("\nall passed")

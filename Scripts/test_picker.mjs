@@ -148,6 +148,22 @@ group("`order` does not mutate or reshape what it was given", () => {
   ok(out[0] === input[1], "and the entries come back by reference, extras and all");
 });
 
+/* ══ Subtopics are drawn A–Z, never in taxonomy order ═══════════════════ */
+
+group("A topic's subtopics come out alphabetical, built-in and yours together", () => {
+  // JP's report: Health read Conditions, Medications, Symptoms, Sleep, Heart &
+  // BP, Diabetes… — the authored order — in the 1.0.1 picker.
+  const health = topic("health");
+  const az = health.subs.slice().sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  eq(Q.alphabetical(health.subs), az, "Health's subtopics are drawn A–Z");
+  ok(JSON.stringify(az) !== JSON.stringify(health.subs), "…which is not the order the taxonomy authored");
+  eq(Q.alphabetical(["Zone 10", "bouldering", "Zone 2", "Mobility"]), ["bouldering", "Mobility", "Zone 2", "Zone 10"],
+    "a person's own subtopics sort in with the built-ins, case-insensitively and numerically");
+  const input = ["b", "a"];
+  Q.alphabetical(input);
+  eq(input, ["b", "a"], "and the taxonomy data itself is never reordered");
+});
+
 /* ══ "Can I add that?" — the affordances under the matches ══════════════ */
 
 group("Adding a topic or a subtopic", () => {

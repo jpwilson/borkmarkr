@@ -542,6 +542,62 @@ public tables already allow it.
 
 ---
 
+## Your own topics, impossible to miss — and whose initial that is
+
+**Three offers, because one was never found.** The picker offered "Add a
+topic" exactly once, as the first row of the list, and the first outside
+tester filed everything under Fitness › Running because he never saw it. He
+could not have: the sheet opens scrolled to the topic that is already picked
+(`scrollToExpanded`, anchor `.top`), which is precisely where the first row is
+not. `TopicPickerSheet` now offers it three ways. With nothing typed, a card
+at the top — "Make your own topic — Anything you like: Foot mobility, Van
+life, Sourdough" — says what a topic can be, which the row never did. A
+footer pinned under the list (`safeAreaInset`, so it also rides above the
+keyboard) says "New topic" wherever you have scrolled to, and "Add topic
+“Van life”" once you have typed one. And a search that matches nothing is no
+longer a hint under an empty list: it is the add itself, named, one tap —
+with "Use “Van life” as a subtopic of Fitness" under it when a topic is open
+or picked, which is where the web already put it. Browse's "New topic" tile
+moves from the end of the grid to the front, with the same "Anything you
+like" line, because the end of the grid is also one scroll away.
+
+**Named adds create; unnamed adds ask.** "Add topic “Van life”" — from the
+empty state or the footer — makes the topic on the spot (`addTopic`, which
+already folds a name onto an existing built-in or custom topic instead of
+doubling it) and opens it, the way "Use “x” as a subtopic" always did. It
+used to open the name alert with the name filled in: a second tap to confirm
+what the button had just said. "New topic" and "Add a subtopic", with no name
+to go on, still ask through the existing `.alert` — kept because it is what
+was there, not because it is the app's look; a designed name sheet is a
+follow-up.
+
+**Every new surface copies one that exists.** The picker card and the Browse
+tile are the topic tile's tint and the suggested-quest card's dashed edge
+(`QuestCard(dashed:)`); the footer is the dashed "Add a note" / "New side
+quest" affordance in accent ink; "+ Add a subtopic" and "Use “x” as a
+subtopic" are the dashed capsule chips from the Add sheet's side-quest row,
+in the topic's own palette, under its pills instead of as a line of small
+text. The web mirrors all four with the same tokens; its footer is
+`position: sticky` inside the list, and its named add still opens the inline
+name field with the name filled in, because a one-tap create there needs a
+click handler in a region another PR of this round owns.
+
+**Whose initial.** `LibraryView`'s header avatar was `Text("J")` — the
+founder's initial, shipped to every phone, signed in or not. `Core/Initials`
+is now the one rule both avatars use: the display name's first letter or
+digit, else the email local part's, uppercased, one grapheme ("ß" is "S",
+"🦊 Sam" is "S", "élodie" is "É"); `nil` signed out, and `nil` draws a neutral
+`person.fill` in the same circle. iOS has no display name yet, so it passes
+`nil` and the email decides; the parameter is there so a profile name lands in
+one place when it arrives. The web's `initial()` already did this and is
+untouched.
+
+**Deliberately not done.** The ranking (`TopicPickerQuery`) is unchanged —
+the problem was visibility, not order. No custom name sheet to replace the
+two alerts. Nothing about what "Just Fitness — no subtopic" does.
+
+---
+
 ## Sharing a topic
 
 **A share is an invitation, not an archive.** The first version pasted up to

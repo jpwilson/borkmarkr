@@ -80,6 +80,13 @@ const TopicPickerQuery = (() => {
   const az = (a, b) =>
     String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, { numeric: true, sensitivity: "base" });
 
+  /** Subtopics A–Z — built-in and the person's own in one run — at the point
+      of drawing, never in the taxonomy data. Finder's comparison, like iOS's
+      `localizedStandardCompare`: case-blind and numeric, so "Zone 2" sorts
+      before "Zone 10". A copy comes back; the list handed in is left alone. */
+  const alphabetical = (list) => Array.from(list || [])
+    .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" }));
+
   /** Everything that answers `needle`, best first, and nothing that doesn't.
       `entries` are `{ name, subs, … }` and come back untouched, so a caller
       can hang whatever it likes off them.
@@ -116,7 +123,7 @@ const TopicPickerQuery = (() => {
   }
 
   return { NAME, SUB, NONE, fold, tokens, stem, tokenMatches, nameScore, subScore,
-           tier, order, matchingSubs, canAdd };
+           tier, order, alphabetical, matchingSubs, canAdd };
 })();
 
 /* Node (Scripts/test_picker.mjs) rather than a browser. */
