@@ -45,6 +45,7 @@ export interface Collection {
   note: string | null;
   owner_name: string;
   updated_at: string;
+  expires_at: string | null;
   items: CollectionItem[];
 }
 
@@ -62,6 +63,10 @@ export interface Topic {
 
 const SITE = "https://bookmarker.lol";
 const APP_ID = "6799805479";
+/** The page's one job is to get the app installed: the primary button goes
+ *  straight to the listing, not through /get, so an iPhone is one tap from
+ *  the store and nothing else is in the way. */
+const APP_STORE = "https://apps.apple.com/app/id" + APP_ID;
 const FALLBACK_IMAGE = "/img/share-v2.jpg";
 
 /** Our own Supabase project: the thumbs and topic-art buckets. */
@@ -327,7 +332,16 @@ function baseCSS() {
     ".note{color:var(--ink-2);font-size:17px;margin:0 0 12px;max-width:52ch;overflow-wrap:anywhere}",
     ".by{color:var(--meta);font-size:14px;margin:0 0 22px}",
     ".by b{color:var(--ink-2)}",
-    ".cta{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 34px}",
+    // "Link open until …" — the same meta grey as the by-line, date in ink.
+    ".until{color:var(--meta);font-size:14px;margin:-14px 0 22px}.until b{color:var(--ink-2)}",
+    // The pitch band: the web app's tinted note card (.import-note) with the
+    // page's radius, holding the primary button and the secondary one.
+    ".get{background:var(--tint);border-radius:var(--radius);padding:18px 20px 20px;margin:0 0 30px}",
+    ".get-h{font-family:var(--font-head);font-weight:800;font-size:20px;letter-spacing:-.02em;line-height:1.15;margin:0 0 5px;color:var(--ink)}",
+    ".get-p{color:var(--ink-2);font-size:15px;margin:0 0 14px;max-width:58ch}",
+    ".cta{display:flex;flex-wrap:wrap;gap:10px;margin:0}",
+    ".btn-big{height:52px;padding:0 26px;font-size:16px}",
+    "@media (max-width:480px){.cta .btn-big{flex:1 1 100%}}",
     ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;align-items:start}",
     ".card{display:block;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);",
     "overflow:hidden;box-shadow:var(--shadow-card);color:inherit}",
@@ -411,6 +425,7 @@ export function renderCollectionPage(data: Collection | null, opts: RenderOption
   const name = String(data.name || "Untitled collection");
   const owner = String(data.owner_name || "Someone");
   const note = data.note ? String(data.note) : "";
+  const until = formatDate(data.expires_at || null);
   const description = note !== ""
     ? note
     : plural(rows.length, "link", "links") + " from " + owner + " · bookmarker";
@@ -446,14 +461,23 @@ export function renderCollectionPage(data: Collection | null, opts: RenderOption
     note !== "" ? '<p class="note">' + esc(note) + "</p>" : "",
     '<p class="by">by <b>' + esc(owner) + "</b> · " + esc(plural(rows.length, "bork", "borks")) +
       (formatDate(data.updated_at) !== "" ? " · updated " + esc(formatDate(data.updated_at)) : "") + "</p>",
+    // A link that closes itself says so, in the same words the owner chose it
+    // by. Past the date the RPC answers null and this page is never built.
+    until !== "" ? '<p class="until">Link open until <b>' + esc(until) + "</b></p>" : "",
+    // The page's job is distribution. The app is the primary action, and the
+    // secondary one — the web app reads `#save=<slug>`, signs the visitor in
+    // if it has to, and calls `collection_save` — only when there is
+    // something to save.
+    '<section class="get">',
+    '<p class="get-h">Keep these — and everything else you scroll past.</p>',
+    '<p class="get-p">bookmarker saves any reel, thread or video from any app in two taps, files it by topic, and finds it again. Free on iPhone.</p>',
     '<div class="cta">',
+    '<a class="btn btn-big btn-coral" href="' + esc(APP_STORE) + '">Get bookmarker</a>',
     rows.length > 0
-      // PR 2 picks this up at the other end: the web app reads `#save=<slug>`,
-      // signs the visitor in if it has to, and calls `collection_save`.
-      ? '<a class="btn btn-coral" href="' + esc(origin + "/#save=" + slug) + '">Save these to my library</a>'
+      ? '<a class="btn btn-big btn-plain" href="' + esc(origin + "/#save=" + slug) + '">Save these to my library</a>'
       : "",
-    '<a class="btn btn-plain" href="' + esc(origin + "/get") + '">Get the app</a>',
     "</div>",
+    "</section>",
     rows.length === 0
       ? '<div class="empty"><h2>Nothing here yet</h2><p>' + esc(owner) +
         " hasn’t put any borks in this collection. The link keeps working — try it again later.</p></div>"
@@ -467,7 +491,10 @@ export function renderCollectionPage(data: Collection | null, opts: RenderOption
       description: description,
       image: image,
       canonical: url,
-      appArgument: url,
+      // The app registers `bookmarker://c/<slug>`; Safari's banner hands this
+      // to it, so someone who already has the app lands on the collection
+      // inside it rather than in a tab.
+      appArgument: "bookmarker://c/" + slug,
       nonce: nonce,
       style: style,
       imageFix: true,

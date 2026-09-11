@@ -714,6 +714,69 @@
     @keyframes shimmer { to { transform: translateX(100%); } }
     .skel::after { animation: shimmer 1.4s ease-in-out infinite; }
   }
+
+  /* ── Shared collections, part two ───────────────────────────────────────
+     Select mode borrows the cover badge (dark glass in a corner) as an empty
+     ring and fills it coral; the bar is the toast's pill with buttons in it;
+     the sheet is the Add sheet's bones; the list rows are You-page cards. */
+  .selecting .card { position: relative; }
+  .selecting .card::after { content: ""; position: absolute; top: 10px; right: 10px; z-index: 2; width: 26px; height: 26px;
+    border-radius: 50%; border: 2px solid #fff; background: rgba(25,21,16,.42); backdrop-filter: blur(6px);
+    box-shadow: 0 1px 3px rgba(25,21,16,.3); background-position: center; background-repeat: no-repeat; background-size: 15px; }
+  .selecting .card.sel::after { background-color: var(--coral);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E"); }
+  .selecting .card.sel { box-shadow: 0 0 0 3px var(--coral), var(--shadow-card); }
+  .selecting .card-text .card-body { padding-right: 46px; }
+  #select-bar { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center;
+    gap: 8px; max-width: calc(100vw - 32px); padding: 7px 7px 7px 18px; border-radius: 999px; background: var(--ink); color: var(--paper);
+    font-size: 14px; font-weight: 600; white-space: nowrap; box-shadow: 0 18px 40px -14px rgba(25,21,16,.55); }
+  #select-bar #select-count { margin-right: 6px; }
+  #select-bar .btn-sm { height: 38px; }
+  #select-bar .bar-x { border: 0; background: none; color: var(--faint); font-weight: 600; height: 38px; padding: 0 10px; border-radius: 999px; }
+  #select-bar .bar-x:hover { color: var(--paper); }
+  /* The sheet */
+  .coll-strip { display: flex; gap: 6px; overflow: hidden; }
+  .coll-strip .cs { position: relative; flex: 0 0 auto; width: 52px; height: 66px; border-radius: 11px; overflow: hidden;
+    display: grid; place-items: center; color: rgba(255,255,255,.72); }
+  .coll-strip .cs .pg { width: 18px; height: 18px; position: relative; }
+  .coll-strip .cs .pg-txt { position: relative; }
+  .coll-strip .cs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .coll-strip .cs-more { background: var(--control); color: var(--ink-2); font-weight: 700; font-size: 13px; }
+  .field-label .opt { color: var(--faint); font-weight: 500; }
+  textarea.coll-note { min-height: 62px; }
+  #collect-dialog .seg { margin: 0 0 6px; max-width: 100%; }
+  .coll-link { display: block; padding: 13px 15px; border-radius: 13px; background: var(--tint); color: var(--accent-text);
+    font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+  /* The list */
+  .coll-list { display: grid; gap: 12px; max-width: 760px; }
+  .coll { display: grid; gap: 8px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: var(--radius); box-shadow: var(--shadow-card); }
+  .coll-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .coll-name { font-family: var(--font-head); font-weight: 800; font-size: 18px; letter-spacing: -.015em; overflow-wrap: anywhere; }
+  .coll-n { color: var(--meta); font-size: 13px; font-weight: 600; }
+  .coll-note { margin: 0; color: var(--ink-2); font-size: 14px; overflow-wrap: anywhere; }
+  .coll-status { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .coll-status .dot { width: 8px; height: 8px; border-radius: 50%; background: #1F7A4D; flex: 0 0 auto; }
+  .coll.off .coll-status .dot { background: var(--faint); }
+  .coll.expired .coll-status .dot { background: var(--destructive); }
+  .coll-url { color: var(--meta); font-size: 12.5px; overflow-wrap: anywhere; }
+  .coll-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .coll-acts .chip { cursor: pointer; }
+  .coll-acts .chip.danger { color: var(--destructive); }
+  .coll-exp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .coll-exp .lbl { color: var(--meta); font-size: 12.5px; font-weight: 700; }
+  .coll .seg { margin: 0; flex: 1 1 200px; max-width: 300px; }
+  .has-select-bar #toast { bottom: calc(26px + 62px); }
+  @media (max-width: 760px) {
+    #select-bar { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px); }
+    .has-select-bar #toast { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px + 62px); }
+    .coll-acts .chip { min-height: 40px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes bar-in { from { opacity: 0; transform: translate(-50%, 10px); } }
+    #select-bar { animation: bar-in .22s var(--ease-out); }
+    .selecting .card::after { transition: background-color .14s ease; }
+  }
 </style>
 </head>
 <body>
@@ -863,6 +926,17 @@
       <div id="revisit-sections"></div>
     </section>
 
+    <!-- Your shared collections: every link you have handed out and the
+         switches on it. The rows are built by renderCollections, at the end
+         of the script; this is the frame. -->
+    <section id="view-collections" hidden>
+      <button class="backlink" data-tab-link="you">← You</button>
+      <div class="h-row"><h2 class="section-title" style="margin:0">Your shared collections</h2></div>
+      <p class="hint" style="margin:0 0 16px;max-width:760px">Each one is a link. Whoever has it sees the borks you picked — those, and nothing else in your library. Turn a link off and the page goes dark within a minute.</p>
+      <div class="coll-list" id="collections-list"></div>
+      <div class="state" id="collections-empty" hidden></div>
+    </section>
+
     <section id="view-you" hidden>
       <div class="you-grid">
         <div class="you-col">
@@ -901,7 +975,7 @@
             <p class="hint" style="margin-top:12px">Deleting your account removes everything backed up on our servers. Borks on your iPhone stay on your iPhone.</p>
           </div>
           <p class="hint">
-            <a href="#help" data-tab-link="help">Help &amp; feedback</a> · <a href="/app">Get the iPhone app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
+            <a href="#collections" data-tab-link="collections">Your shared collections</a> · <a href="#help" data-tab-link="help">Help &amp; feedback</a> · <a href="/app">Get the iPhone app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
           </p>
         </div>
       </div>
@@ -1049,6 +1123,57 @@
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-add">Not now</button>
     <button class="btn" id="add-save" data-act="save-add">Bork it</button>
+  </div>
+</dialog>
+
+<!-- Share as a link: the borks you picked become a page at bookmarker.lol/c/…
+     Same bones as the Add sheet — a strip of what it is about, the fields,
+     the app's segmented control for how long the link stays open, and the
+     sticky row. The second half is the link itself, once it exists. -->
+<dialog id="collect-dialog" aria-labelledby="collect-h">
+  <h2 id="collect-h">Share as a link</h2>
+  <div id="collect-form">
+    <div class="coll-strip" id="collect-strip" aria-hidden="true"></div>
+    <p class="hint" id="collect-summary" style="margin:8px 0 0"></p>
+
+    <label class="field-label" for="collect-name">Name</label>
+    <input class="field" id="collect-name" maxlength="80" placeholder="What are these?" autocomplete="off">
+
+    <label class="field-label" for="collect-note">Note <span class="opt">optional</span></label>
+    <textarea class="field coll-note" id="collect-note" maxlength="500" rows="2" placeholder="A line for whoever opens it"></textarea>
+
+    <div class="field-label" id="collect-expiry-label">Link stays open</div>
+    <div class="seg" role="group" aria-labelledby="collect-expiry-label">
+      <button type="button" class="on" aria-pressed="true" data-expiry="">Never</button>
+      <button type="button" aria-pressed="false" data-expiry="1">1 day</button>
+      <button type="button" aria-pressed="false" data-expiry="10">10 days</button>
+    </div>
+    <p class="hint" id="collect-expiry-hint" style="margin:0">Until you turn it off. You can change this later.</p>
+
+    <!-- Every profile starts with no display name, and a page "by Someone"
+         is nobody's link — so the name is asked for here, once. -->
+    <div id="collect-who" hidden>
+      <label class="field-label" for="collect-owner">Your name on the page</label>
+      <input class="field" id="collect-owner" maxlength="40" placeholder="How the page should credit you" autocomplete="name">
+      <p class="hint" style="margin:6px 0 0">Shows as “by …” at the top. Saved to your profile — change it any time on your page.</p>
+    </div>
+
+    <p class="err" id="collect-err" role="alert"></p>
+    <div class="dialog-row">
+      <button class="btn ghost" data-act="collect-close">Not now</button>
+      <button class="btn" id="collect-go" data-act="collect-create">Make the link</button>
+    </div>
+  </div>
+
+  <div id="collect-done" hidden>
+    <p class="hint" style="margin:0 0 10px">Anyone with this link can open it.</p>
+    <a class="coll-link" id="collect-url" target="_blank" rel="noopener"></a>
+    <p class="hint" id="collect-done-hint" style="margin:8px 0 0"></p>
+    <div class="dialog-row">
+      <button class="btn ghost" data-act="collect-copy">Copy link</button>
+      <button class="btn" id="collect-share-btn" data-act="collect-share">Share…</button>
+    </div>
+    <p class="hint" style="margin:14px 0 0;text-align:center">Turn it off or delete it any time under <a href="#collections" data-tab-link="collections">Your shared collections</a>.</p>
   </div>
 </dialog>
 
@@ -2336,7 +2461,7 @@ function renderLibrary(all, s) {
     const quests = liveMissions();
     const seeds = suggestedQuests(all, quests);
     seeds.forEach(s => { if (questNames[s.id]) s.title = questNames[s.id]; seedCache.set(s.id, s); });
-    const key = ["home", demoMode, all.length,
+    const key = ["home", demoMode, all.length, sel().on,
       recents.map(r => r.id + ":" + r.updated_at).join(","),
       topicCounts(all).slice(0, 10).map(([id, n]) => id + n).join(","),
       quests.map(m => m.id + ":" + m.updated_at).join(","),
@@ -2360,10 +2485,18 @@ function renderLibrary(all, s) {
         <div class="recents">${recentsHTML}</div>
         ${pills ? `<div class="h-row"><span class="h-title">Your topics</span><button class="h-more" data-tab-link="browse">All topics →</button></div>
         <div class="topic-pills">${pills}</div>` : ""}
-        <div class="h-row"><span class="h-title">Everything</span></div>`;
+        <div class="h-row"><span class="h-title">Everything</span>${selectButtonHTML()}</div>`;
     }
-  } else if (memo.get("home-sections") !== "") {
-    memo.set("home-sections", ""); home.innerHTML = "";
+  } else {
+    // One source: no home sections, just the row that names it — with the
+    // same Select as the full library, so a mixed pick is built source by
+    // source and the picks survive the chip changing.
+    const key = all.length && platformFilter ? `filtered|${platformFilter}|${sel().on}` : "";
+    if (memo.get("home-sections") !== key) {
+      memo.set("home-sections", key);
+      home.innerHTML = key
+        ? `<div class="h-row"><span class="h-title">${esc(PLATFORM[platformFilter]?.name || "Source")}</span>${selectButtonHTML()}</div>` : "";
+    }
   }
   const rows = platformFilter ? all.filter(r => r.platform === platformFilter) : all;
   const skeleton = loading && !all.length && !pulledOnce && !demoMode;
@@ -2562,6 +2695,7 @@ function renderTopicHero(t, rows) {
       src ? `<img src="${esc(src)}" alt="" crossorigin="anonymous" data-fb="remove">` : ""}</span>
     <button class="hero-share" data-act="share-topic" aria-haspopup="true" aria-expanded="${shareMenuOpen}" aria-label="Share this topic">${SHARE_ICON}Share</button>${
       shareMenuOpen ? `<div class="share-menu" id="share-menu" role="menu">
+        <button role="menuitem" data-act="share-collection">${collectIconHTML()}Share as a link</button>
         <button role="menuitem" data-act="share-links">${LINK_ICON}Share links</button>
         ${ready
           ? `<button role="menuitem" data-act="share-image">${IMAGE_ICON}Share as image</button>`
@@ -2979,7 +3113,7 @@ function goTopic(id) {
    which the old `[a-z0-9]+` quietly refused to match. Anything at all is taken
    here and validated below instead. */
 const BROWSE_AXES = ["topics", "sources", "quests"];
-const ROUTE_RE = /^#(library|browse|search|revisit|you|help)(?:\/([^\s/#?]+))?$/;
+const ROUTE_RE = /^#(library|browse|search|revisit|you|help|collections)(?:\/([^\s/#?]+))?$/;
 function routeFor() {
   if (tab === "library") return "";
   if (tab === "browse" && topicFilter) return `#browse/${encodeURIComponent(topicFilter)}`;
@@ -4470,6 +4604,474 @@ document.addEventListener("visibilitychange", () => {
     pull().catch((e) => toast(humanError(e), "Retry", () => pull().catch(() => {})));
   }
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Shared collections, part two — the curator's half (0012).
+   Pick borks in the Library or take a whole topic, turn them into a page at
+   bookmarker.lol/c/<slug> that can close itself, manage the links you have
+   handed out, and honour `#save=<slug>` from that page. Creation is the one
+   RPC (`collection_create`); list, turn off, delete and expiry are plain
+   PostgREST under the 0001 owner policies; the page itself is
+   supabase/functions/collection-page.
+
+   All of it lives here at the end of the file, so the render loop above is
+   untouched: `render` and `adoptSession` are wrapped at the very bottom, and
+   that is the whole seam. The first helpers are function declarations rather
+   than `let`s because renderLibrary and renderTopicHero call them on the
+   first paint, before this part of the file has run — a declaration exists
+   from the start, a `let` would still be in its dead zone.
+   ═══════════════════════════════════════════════════════════════════════ */
+const COLL_SITE = "https://bookmarker.lol";
+const COLL_SLUG = /^[a-z0-9]{8,16}$/;
+const COLL_MAX = 200;              // 0011's cap, so the sheet can say so before the server does
+const DAY = 86_400_000;
+const EXPIRY_HINT = {
+  "": "Until you turn it off. You can change this later.",
+  "1": "Closes itself a day from now.",
+  "10": "Closes itself ten days from now.",
+};
+
+/* ── Select mode ──────────────────────────────────────────────────────────
+   One set of ids, kept across the source chips and across Library ↔ a topic,
+   so "3 Instagram + 4 YouTube + 1 X" is built the way you would say it. */
+function sel() { return sel.state ??= { on: false, ids: new Set(), from: null }; }
+function selectButtonHTML() {
+  return sel().on ? "" : `<button class="h-more" data-act="select-start">Select</button>`;
+}
+function collectIconHTML() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h6"/></svg>`;
+}
+function selectStart(from) {
+  if (demoMode) { toast("Sign up free and share your own borks.", "Sign up", exitDemoToSignup); return; }
+  const s = sel();
+  s.on = true; s.from = from;
+  track("select_started", { from });
+  render();
+}
+function selectEnd() {
+  const s = sel();
+  if (!s.on) return;
+  s.on = false; s.ids.clear(); s.from = null;
+  render();
+}
+function selectToggle(id) {
+  const s = sel();
+  if (s.ids.has(id)) s.ids.delete(id); else s.ids.add(id);
+  renderSelection();
+}
+/* What is picked, newest first — the order the page will show them in. */
+const selectedRows = () => live().filter(r => sel().ids.has(r.id)).sort(bySaved);
+
+/* The overlay is two classes on cards that are already there, and the bar is
+   one element made on demand: nothing in a grid is rebuilt to enter or leave. */
+function renderSelection() {
+  const s = sel();
+  for (const grid of [$("grid-library"), $("grid-topic")]) {
+    grid.classList.toggle("selecting", s.on);
+    for (const c of grid.querySelectorAll(".card[data-id]")) {
+      const picked = s.on && s.ids.has(c.dataset.id);
+      c.classList.toggle("sel", picked);
+      if (s.on) c.setAttribute("aria-pressed", String(picked)); else c.removeAttribute("aria-pressed");
+    }
+  }
+  let bar = $("select-bar");
+  document.body.classList.toggle("has-select-bar", s.on);
+  if (!s.on) { if (bar) bar.remove(); return; }
+  if (!bar) {
+    document.body.insertAdjacentHTML("beforeend",
+      `<div id="select-bar" role="toolbar" aria-label="Picked borks">
+        <span id="select-count"></span>
+        <button class="btn-sm btn-coral" id="select-share" data-act="select-share">Share</button>
+        <button class="bar-x" data-act="select-cancel">Cancel</button>
+      </div>`);
+    bar = $("select-bar");
+  }
+  const n = s.ids.size;
+  $("select-count").textContent = n ? `${n} picked` : "Tap borks to pick them";
+  const b = $("select-share");
+  b.disabled = !n;
+  b.textContent = n ? `Share ${plural(n, "bork")}` : "Share";
+}
+
+/* ── The share sheet ────────────────────────────────────────────────────── */
+let collectExpiry = "";
+let lastCollection = null;    // what the server handed back, for Copy / Share…
+let collectionsStale = false; // the list should refetch next time it shows
+
+/* "8 borks · 3 Instagram · 4 YouTube · 1 X" — the mixed-sources story in one line. */
+function collectSummary(rows) {
+  const counts = new Map();
+  for (const r of rows) counts.set(r.platform, (counts.get(r.platform) || 0) + 1);
+  const parts = Object.keys(PLATFORM).filter(k => counts.get(k)).map(k => `${counts.get(k)} ${PLATFORM[k].name}`);
+  return [plural(rows.length, "bork"), ...parts].join(" · ");
+}
+/* A name you could send as-is: the topic when it is one topic, both when it
+   is two, an honest count otherwise. The field is focused and selected, so
+   changing it is typing. */
+function collectName(rows) {
+  if (sel().from === "topic" && topicFor(topicFilter)) return topicFor(topicFilter).name;
+  const topics = [...new Set(rows.map(r => r.category_id).filter(Boolean))].map(topicFor).filter(Boolean);
+  if (topics.length === 1 && rows.every(r => r.category_id)) return topics[0].name;
+  if (topics.length === 2) return `${topics[0].name} & ${topics[1].name}`;
+  return `${plural(rows.length, "bork")} for you`;
+}
+/* The first few covers, the way the Add sheet shows the one it is about. */
+function collectStripHTML(rows) {
+  const shown = rows.slice(0, 6);
+  const tiles = shown.map(r => {
+    const t = topicFor(r.category_id);
+    const src = coverAspect(r) ? picOf(r) : null;
+    return `<span class="cs" style="${gradient(t ? t.hue : 24)}">${glyph(r.platform)}${
+      src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : ""}</span>`;
+  });
+  if (rows.length > shown.length) tiles.push(`<span class="cs cs-more">+${rows.length - shown.length}</span>`);
+  return tiles.join("");
+}
+function setCollectExpiry(v) {
+  collectExpiry = v;
+  for (const b of $("collect-dialog").querySelectorAll("[data-expiry]")) {
+    const on = b.dataset.expiry === v;
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+  }
+  $("collect-expiry-hint").textContent = EXPIRY_HINT[v] || EXPIRY_HINT[""];
+}
+function openCollect() {
+  const rows = selectedRows();
+  if (!rows.length) return;
+  if (rows.length > COLL_MAX) { toast(`A link holds up to ${COLL_MAX} borks — untick ${rows.length - COLL_MAX}.`); return; }
+  $("collect-form").hidden = false; $("collect-done").hidden = true;
+  $("collect-err").textContent = "";
+  $("collect-strip").innerHTML = collectStripHTML(rows);
+  $("collect-summary").textContent = collectSummary(rows);
+  $("collect-name").value = collectName(rows);
+  $("collect-note").value = "";
+  setCollectExpiry("");
+  // The page says "by <name>", so a blank profile is asked for one first —
+  // otherwise it reads "by Someone", which is nobody's link.
+  const needName = !(profile.display_name || "").trim();
+  $("collect-who").hidden = !needName;
+  if (needName) $("collect-owner").value = "";
+  openDlg($("collect-dialog"));
+  $("collect-name").focus(); $("collect-name").select();
+  track("collect_opened", { count: rows.length, from: sel().from });
+}
+/* "Share as a link" on a topic page: the whole topic is picked and the sheet
+   opens straight away. Select mode stays on behind it, so "not these two" is
+   Not now, two taps and Share again — not a restart. */
+function shareTopicAsLink() {
+  const t = topicFor(topicFilter);
+  if (!t) return;
+  const rows = topicRows();
+  shareMenuOpen = false;
+  const s = sel();
+  s.on = true; s.from = "topic"; s.ids = new Set(rows.map(r => r.id));
+  track("select_started", { from: "topic", count: rows.length });
+  render();
+  openCollect();
+}
+async function createCollection() {
+  const rows = selectedRows();
+  const name = $("collect-name").value.trim();
+  const err = $("collect-err");
+  if (!rows.length) { err.textContent = "Nothing picked yet."; return; }
+  if (!name) { err.textContent = "Give it a name — it's the title of the page."; $("collect-name").focus(); return; }
+  const owner = $("collect-who").hidden ? null : $("collect-owner").value.trim();
+  if (owner === "") { err.textContent = "Add your name — the page says who it's from."; $("collect-owner").focus(); return; }
+  err.textContent = "";
+  const done = busy($("collect-go"), "Making the link…");
+  try {
+    const s = await validSession();
+    if (!s) throw Object.assign(new Error("Signed out."), { status: 401 });
+    if (owner) {
+      await api(`/rest/v1/profiles?id=eq.${s.user_id}`, {
+        method: "PATCH", body: { display_name: owner }, headers: { Prefer: "return=minimal" },
+      });
+      profile.display_name = owner;
+    }
+    const fromTopic = sel().from === "topic";
+    const topics = new Set(rows.map(r => r.category_id).filter(Boolean));
+    const expiry = collectExpiry ? Number(collectExpiry) : null;
+    const res = await api("/rest/v1/rpc/collection_create", {
+      method: "POST",
+      body: {
+        p_name: name,
+        p_note: $("collect-note").value.trim() || null,
+        p_category_id: fromTopic ? topicFilter : (topics.size === 1 ? [...topics][0] : null),
+        p_expiry_days: expiry,
+        p_bookmark_ids: rows.map(r => r.id),
+      },
+    });
+    if (!res || !res.slug) throw new Error("The link didn't come back — try again.");
+    lastCollection = { ...res, name };
+    track("collection_created", { count: res.added ?? rows.length, expiry: expiry ?? 0, from_topic: fromTopic });
+    showCollectDone(res, rows.length);
+    collectionsStale = true;
+    selectEnd();
+  } catch (e) {
+    err.textContent = humanError(e);
+  } finally { done(); }
+}
+function showCollectDone(res, picked) {
+  $("collect-form").hidden = true; $("collect-done").hidden = false;
+  const a = $("collect-url");
+  a.href = res.url; a.textContent = res.url.replace(/^https?:\/\//, "");
+  const missed = picked - (res.added ?? picked);
+  $("collect-done-hint").textContent =
+    (res.expires_at ? `Open until ${fmtUntil(res.expires_at)}.` : "Open until you turn it off.") +
+    (missed > 0 ? ` ${plural(missed, "bork")} hadn't reached the server yet and ${missed === 1 ? "isn't" : "aren't"} on the page.` : "");
+  $("collect-share-btn").hidden = !navigator.share;
+}
+async function copyCollectionLink(url, where) {
+  track("collection_link_copied", { where });
+  toast(await copyText(url) ? "Copied — paste it anywhere" : "Couldn't copy that — try again.");
+}
+async function shareCollectionLink() {
+  if (!lastCollection || !navigator.share) return;
+  track("collection_link_shared");
+  try { await navigator.share({ title: lastCollection.name, url: lastCollection.url }); }
+  catch (e) { if (e && e.name !== "AbortError") copyCollectionLink(lastCollection.url, "sheet-fallback"); }
+}
+/* "Thu 17 Sep, 09:30" — a link that closes deserves the hour, not just the day. */
+const fmtUntil = (iso) => {
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  return d.toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+};
+
+/* ── Your shared collections ──────────────────────────────────────────── */
+let collections = null;      // the server's rows, newest first; null = not fetched
+let collectionsUser = null;  // whose
+let collectionsBusy = false;
+let collectionsErr = "";
+
+async function loadCollections(force) {
+  const s = await validSession();
+  if (!s || collectionsBusy) return;
+  if (!force && collections && collectionsUser === s.user_id) return;
+  collectionsBusy = true; collectionsErr = "";
+  if (collectionsUser !== s.user_id) collections = null;
+  renderCollections();
+  try {
+    const rows = await api("/rest/v1/collections?select=id,name,note,slug,visibility,expires_at,updated_at,category_id,collection_items(count)&deleted_at=is.null&order=updated_at.desc");
+    collections = rows || []; collectionsUser = s.user_id;
+  } catch (e) {
+    collectionsErr = humanError(e);
+  } finally {
+    collectionsBusy = false;
+    renderCollections();
+  }
+}
+/* on · off · expired — the three things a link can be. */
+function collState(c) {
+  if (c.visibility !== "public") return "off";
+  if (c.expires_at && Date.parse(c.expires_at) <= Date.now()) return "expired";
+  return "on";
+}
+/* Which of the three choices a set time still is: a link with hours left is
+   the one-day one whatever it started as; the date on the row is the truth. */
+function collWindow(c) {
+  if (!c.expires_at) return "";
+  const left = Date.parse(c.expires_at) - Date.now();
+  if (left <= 0) return null;
+  return left <= DAY ? "1" : left <= 10 * DAY ? "10" : "";
+}
+function collRowHTML(c) {
+  const n = c.collection_items?.[0]?.count ?? 0;
+  const url = `${COLL_SITE}/c/${c.slug}`;
+  const state = collState(c);
+  const win = collWindow(c);
+  const status = state === "on"
+    ? (c.expires_at ? `Link on · open until ${fmtUntil(c.expires_at)}` : "Link on · open until you turn it off")
+    : state === "off" ? "Link off · the page is dark"
+    : `Link closed ${fmtUntil(c.expires_at)} · pick a time to reopen it`;
+  const seg = (v, label) =>
+    `<button type="button" class="${win === v ? "on" : ""}" aria-pressed="${win === v}" data-expiry="${v}">${label}</button>`;
+  return `<article class="coll ${state}" data-coll="${esc(c.id)}">
+    <div class="coll-head"><span class="coll-name">${esc(c.name)}</span><span class="coll-n">${plural(n, "bork")}</span></div>
+    ${c.note ? `<p class="coll-note">${esc(c.note)}</p>` : ""}
+    <div class="coll-status"><span class="dot" aria-hidden="true"></span>${esc(status)}</div>
+    <div class="coll-url">${esc(url.replace(/^https:\/\//, ""))}</div>
+    <div class="coll-acts">
+      <button class="chip" data-act="coll-copy">Copy link</button>
+      <a class="chip" href="${esc(url)}" target="_blank" rel="noopener">Open ↗</a>
+      ${state === "off"
+        ? `<button class="chip" data-act="coll-on">Turn the link on</button>`
+        : `<button class="chip" data-act="coll-off">Turn the link off</button>`}
+      <button class="chip danger" data-act="coll-delete">Delete</button>
+    </div>
+    <div class="coll-exp"><span class="lbl">Stays open</span>
+      <div class="seg" role="group" aria-label="How long the link stays open">${seg("", "Never")}${seg("1", "1 day")}${seg("10", "10 days")}</div>
+    </div>
+  </article>`;
+}
+function renderCollections() {
+  const list = $("collections-list"), empty = $("collections-empty");
+  if (collectionsErr) {
+    list.innerHTML = ""; memo.delete("collections-list");
+    empty.hidden = false;
+    empty.innerHTML = `<p style="margin:0 0 8px">${esc(collectionsErr)}</p><button class="linkish" data-act="coll-retry" style="margin:0 auto">Try again</button>`;
+    return;
+  }
+  if (!collections) {
+    list.innerHTML = ""; memo.delete("collections-list");
+    empty.hidden = false; empty.textContent = "Fetching your links…";
+    return;
+  }
+  const rows = collections;
+  const key = rows.map(c => `${c.id}:${c.updated_at}:${c.visibility}:${c.expires_at}:${c.collection_items?.[0]?.count}`).join(",");
+  if (memo.get("collections-list") !== key) { memo.set("collections-list", key); list.innerHTML = rows.map(collRowHTML).join(""); }
+  empty.hidden = rows.length > 0;
+  if (!rows.length) empty.innerHTML = `
+    <div style="max-width:480px;margin:0 auto">
+      <h2 style="font-family:var(--font-head);font-size:22px;letter-spacing:-.02em;margin:0 0 6px">No links yet</h2>
+      <p style="margin:0 0 18px">Pick a few borks in your Library with <b>Select</b>, or open a topic and choose <b>Share as a link</b>. Whoever gets the link sees those borks and nothing else.</p>
+      <button class="btn" style="max-width:260px;margin:0 auto" data-act="coll-pick">Pick some borks</button>
+    </div>`;
+}
+const collById = (el) => collections?.find(c => c.id === el.closest("[data-coll]")?.dataset.coll) || null;
+async function collPatch(c, body, event, props, msg) {
+  try {
+    await api(`/rest/v1/collections?id=eq.${c.id}`, { method: "PATCH", body, headers: { Prefer: "return=minimal" } });
+    Object.assign(c, body, { updated_at: new Date().toISOString() });
+    track(event, props);
+    renderCollections();
+    if (msg) toast(msg);
+  } catch (e) { toast(humanError(e)); }
+}
+async function collDelete(c) {
+  const ok = await confirmDlg({
+    title: "Delete this collection?",
+    body: "The link stops working for good. The borks stay in your library.",
+    ok: "Delete", danger: true,
+  });
+  if (!ok) return;
+  try {
+    await api(`/rest/v1/collections?id=eq.${c.id}`, {
+      method: "PATCH", body: { deleted_at: new Date().toISOString() }, headers: { Prefer: "return=minimal" },
+    });
+    collections = collections.filter(x => x.id !== c.id);
+    track("collection_deleted");
+    renderCollections();
+    toast("Deleted. The page goes dark within a minute.");
+  } catch (e) { toast(humanError(e)); }
+}
+
+/* ── #save=<slug> — the public page's "Save these to my library" ─────────
+   Signed in, it happens now. Signed out, the slug waits in this browser for
+   the sign-in — an hour at most — and is honoured the moment it lands,
+   including after the round trip through Google, which drops the hash. */
+function stashPendingSave() {
+  const m = /^#save=([a-z0-9]{8,16})$/.exec(location.hash || "");
+  if (!m) return false;
+  history.replaceState(null, "", location.pathname + location.search);
+  lsSet("bm.pendingSave", `${m[1]}:${Date.now()}`);
+  return true;
+}
+async function runPendingSave() {
+  const raw = lsGet("bm.pendingSave");
+  if (!raw) return;
+  const [slug, at] = raw.split(":");
+  if (!COLL_SLUG.test(slug) || Date.now() - Number(at) > 3_600_000) { lsDel("bm.pendingSave"); return; }
+  const s = await validSession();
+  if (!s) return;                                   // still signed out: it waits
+  lsDel("bm.pendingSave");
+  try {
+    const r = await api("/rest/v1/rpc/collection_save", { method: "POST", body: { p_slug: slug } });
+    track("collection_saved", { found: !!r, added: r?.added ?? 0, skipped: r?.skipped ?? 0 });
+    if (!r) { toast("That link isn't open any more — nothing was saved."); return; }
+    const n = r.added || 0, k = r.skipped || 0;
+    if (!n) { toast(k === 1 ? "You already had that one." : `You already had all ${k}.`); return; }
+    toast(`Saved ${plural(n, "bork")} to your library.${k ? ` You already had ${k}.` : ""}`);
+    platformFilter = null; setTab("library");
+    pull().catch(() => {});
+  } catch (e) {
+    toast(humanError(e), "Retry", () => { lsSet("bm.pendingSave", `${slug}:${Date.now()}`); runPendingSave(); });
+  }
+}
+
+/* ── Wiring ─────────────────────────────────────────────────────────────── */
+/* Picking: capture phase, so a tap on a card in select mode toggles it and
+   never reaches the handler above that would open the bork's sheet. */
+document.addEventListener("click", (e) => {
+  // A link to your collections inside the share sheet closes the sheet first.
+  if (e.target.closest("#collect-dialog [data-tab-link]")) closeDlg($("collect-dialog"));
+  if (!sel().on) return;
+  const card = e.target.closest("#grid-library .card[data-id], #grid-topic .card[data-id]");
+  if (!card) return;
+  e.preventDefault(); e.stopPropagation();
+  selectToggle(card.dataset.id);
+}, true);
+/* Everything else this part adds. The dispatcher above ignores acts it does
+   not know, so these are simply the ones it does not know. */
+document.addEventListener("click", (e) => {
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  if (act === "select-start") { selectStart(tab === "browse" ? "topic" : "library"); return; }
+  if (act === "select-cancel") { selectEnd(); return; }
+  if (act === "select-share") { openCollect(); return; }
+  if (act === "share-collection") { shareTopicAsLink(); return; }
+  if (act === "collect-close") { closeDlg($("collect-dialog")); return; }
+  if (act === "collect-create") { createCollection(); return; }
+  if (act === "collect-copy") { if (lastCollection) copyCollectionLink(lastCollection.url, "sheet"); return; }
+  if (act === "collect-share") { shareCollectionLink(); return; }
+  if (act === "coll-retry") { loadCollections(true); return; }
+  if (act === "coll-pick") { setTab("library"); selectStart("library"); return; }
+  const exp = e.target.closest("#collect-dialog [data-expiry]");
+  if (exp) { setCollectExpiry(exp.dataset.expiry); return; }
+  const c = collById(e.target);
+  if (!c) return;
+  if (act === "coll-copy") { copyCollectionLink(`${COLL_SITE}/c/${c.slug}`, "list"); return; }
+  if (act === "coll-off") { collPatch(c, { visibility: "private" }, "collection_turned_off", undefined, "Link off. The page goes dark within a minute."); return; }
+  if (act === "coll-on") { collPatch(c, { visibility: "public" }, "collection_turned_on", undefined, "Link on."); return; }
+  if (act === "coll-delete") { collDelete(c); return; }
+  const rowExp = e.target.closest("[data-expiry]");
+  if (rowExp) {
+    const days = rowExp.dataset.expiry ? Number(rowExp.dataset.expiry) : 0;
+    collPatch(c, { expires_at: days ? new Date(Date.now() + days * DAY).toISOString() : null },
+      "collection_expiry_changed", { expiry: days },
+      days ? `Closes itself ${days === 1 ? "a day" : "ten days"} from now.` : "Open until you turn it off.");
+  }
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && sel().on && !document.querySelector("dialog[open]")) selectEnd();
+});
+$("collect-name").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); createCollection(); } });
+
+/* ── The seams ────────────────────────────────────────────────────────────
+   `render` learns one more tab and paints the selection after every pass;
+   `adoptSession` honours a save that was waiting for the sign-in. Both are
+   reassignments of the declarations above — every caller resolves the name
+   at call time, so nothing else in the file had to change. */
+{
+  const renderBase = render;
+  render = function () {
+    if (demoMode && tab === "collections") {
+      tab = "library";
+      toast("Sign up free — your shared links will live here.", "Sign up", exitDemoToSignup);
+    }
+    renderBase();
+    const s = store.session;
+    const here = tab === "collections" && !!s && !demoMode;
+    const v = $("view-collections");
+    if (v.hidden === here) { v.hidden = !here; if (here) replay(v, "view-enter"); }
+    if (here) { renderCollections(); loadCollections(collectionsStale); collectionsStale = false; }
+    if ((!s && !demoMode) || (tab !== "library" && tab !== "browse")) {
+      const st = sel(); st.on = false; st.ids.clear(); st.from = null;
+    }
+    renderSelection();
+  };
+  const adoptBase = adoptSession;
+  adoptSession = function (d, emailHint, method) {
+    adoptBase(d, emailHint, method);
+    runPendingSave();
+  };
+}
+/* Boot: a `#save=` in the address is why this tab was opened. */
+if (stashPendingSave()) {
+  if (store.session) runPendingSave();
+  else toast("Sign in or sign up, and those borks are yours.");
+} else if (store.session) {
+  runPendingSave();   // one left waiting from last time
+}
 </script>
 </body>
 </html>

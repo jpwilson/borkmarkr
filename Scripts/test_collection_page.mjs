@@ -98,6 +98,7 @@ function collection(over) {
     note: "The twelve that actually helped.",
     owner_name: "Jean-Paul",
     updated_at: "2026-09-07T12:00:00Z",
+    expires_at: null,
     items: [item()],
   }, over || {});
 }
@@ -221,7 +222,8 @@ group("a collection with nothing in it", () => {
   const html = render(collection({ items: [] }));
   ok(html.includes("Nothing here yet"), "says so");
   ok(!html.includes("Save these to my library"), "does not offer to save nothing");
-  ok(html.includes("Get the app"), "still offers the app");
+  ok(html.includes(">Get bookmarker<"), "still asks you to get the app — that is the page's job");
+  ok(html.includes("Get the app"), "…and the nav link is still there");
   ok(html.includes("collection_viewed',{items:0}"), "reports zero items");
   ok(html.includes("0 borks"), "counts honestly");
 });
@@ -229,9 +231,35 @@ group("a collection with nothing in it", () => {
 /* ── The CTA ──────────────────────────────────────────────────────────── */
 group("the call to action", () => {
   const html = render(collection());
+  ok(html.includes('href="https://apps.apple.com/app/id6799805479"'), "the primary button goes straight to the App Store");
+  ok(html.includes('class="btn btn-big btn-coral" href="https://apps.apple.com/app/id6799805479">Get bookmarker<'),
+     "…it is the big coral one, and it says what it does");
   ok(html.includes('href="https://bookmarker.lol/#save=abcd1234efgh"'), "save points at the web app with the slug");
-  ok(html.includes(">Save these to my library<"), "…with the words the brief asked for");
-  ok(html.includes('href="https://bookmarker.lol/get"'), "and the app link goes to /get");
+  ok(html.includes('class="btn btn-big btn-plain" href="https://bookmarker.lol/#save=abcd1234efgh">Save these to my library<'),
+     "…as the secondary, plain button");
+  ok(html.indexOf(">Get bookmarker<") < html.indexOf(">Save these to my library<"), "get the app comes first");
+  ok(html.indexOf('class="get"') < html.indexOf('class="grid"'), "the pitch band sits above the grid");
+  ok(html.includes("Free on iPhone."), "and says the app is free");
+  ok(html.includes('href="https://bookmarker.lol/get"'), "the nav link still goes to /get");
+  eq((html.match(/>Get bookmarker</g) || []).length, 1, "one primary button, not one per section");
+});
+
+/* ── Expiry ───────────────────────────────────────────────────────────── */
+group("a link that closes itself", () => {
+  const open = render(collection({ expires_at: "2026-09-17T09:30:00+00:00" }));
+  ok(open.includes('<p class="until">Link open until <b>17 September 2026</b></p>'),
+     "says when, as a date, in the owner's own words");
+  ok(open.indexOf('class="until"') > open.indexOf('class="by"') && open.indexOf('class="until"') < open.indexOf('class="get"'),
+     "…between the by-line and the pitch");
+
+  const never = render(collection({ expires_at: null }));
+  ok(!never.includes("Link open until"), "a link that never closes says nothing about it");
+  const legacy = render(collection({ expires_at: undefined }));
+  ok(!legacy.includes("Link open until"), "…and so does a row from before the column existed");
+  const junk = render(collection({ expires_at: "soon" }));
+  ok(!junk.includes("Link open until"), "an unparseable date is absent rather than 'Invalid Date'");
+  ok(!junk.includes("Invalid Date"), "…never that");
+  ok(!render(null).includes("Link open until"), "the 404 page has no date to give away");
 });
 
 /* ── Head and CSP ─────────────────────────────────────────────────────── */
@@ -250,8 +278,9 @@ group("the head", () => {
 
   ok(html.includes('name="robots" content="noindex, nofollow"'), "an unlisted link is not published");
   ok(html.includes('name="referrer" content="no-referrer"'), "no referrer leaves this page");
-  ok(html.includes('name="apple-itunes-app" content="app-id=6799805479, app-argument=https://bookmarker.lol/c/abcd1234efgh"'),
-     "the smart banner carries the collection as its argument");
+  ok(html.includes('name="apple-itunes-app" content="app-id=6799805479, app-argument=bookmarker://c/abcd1234efgh"'),
+     "the smart banner hands the app its own deep link — the scheme it registers — not the web URL");
+  ok(!html.includes("app-argument=https://"), "…and never the https URL, which would just reopen Safari");
   ok(html.includes("<title>Marathon prep — bookmarker</title>"), "the title is the collection's");
   ok(html.includes('<link rel="canonical" href="https://bookmarker.lol/c/abcd1234efgh">'), "canonical is the pretty URL");
 
@@ -316,7 +345,7 @@ group("the document", () => {
   ok(!html.includes("undefined"), "no stray undefined anywhere");
   ok(!html.includes("[object Object]"), "nothing stringified by accident");
 
-  const missingFields = render({ id: "x", name: "Bare", note: null, owner_name: "", updated_at: null, items: null });
+  const missingFields = render({ id: "x", name: "Bare", note: null, owner_name: "", updated_at: null, expires_at: null, items: null });
   ok(missingFields.includes("Nothing here yet"), "a null items array is an empty collection, not a crash");
   ok(missingFields.includes("by <b>Someone</b>"), "a missing owner name falls back");
 });
