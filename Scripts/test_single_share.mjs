@@ -1,0 +1,12 @@
+import fs from "node:fs";
+import vm from "node:vm";
+import assert from "node:assert/strict";
+const c=vm.createContext({});
+vm.runInContext(fs.readFileSync("docs/saved-content.js","utf8")+fs.readFileSync("docs/single-share.js","utf8")+";globalThis.share=SingleShare",c);
+const row={title:"Useful link",url:"https://example.com/post",subcategory:"Breathing",tags:["calm","practice"],note_text:"PRIVATE NOTE"};
+const safe=c.share.text(row,"Health");
+assert.match(safe,/Check out this link:/); assert.match(safe,/Health › Breathing/); assert.match(safe,/#calm · #practice/);
+assert.ok(!safe.includes("PRIVATE NOTE"));
+assert.match(c.share.text(row,"Health",true),/My note:\nPRIVATE NOTE/);
+assert.ok(!c.share.text({...row,note_text:""},null,true).includes("My note:"));
+console.log("Single-share title, link, taxonomy, tags and explicit note opt-in passed.");

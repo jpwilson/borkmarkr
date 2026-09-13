@@ -1024,7 +1024,7 @@
             <h2 class="section-title" style="margin-top:0">How bookmarker works</h2>
             <ol class="help-steps">
               <li><b>Bork it.</b> Share from Instagram, X, TikTok or YouTube to bookmarker on your iPhone, or tap + here and paste a link. Saving is instant — nothing to fill in.</li>
-              <li><b>Put bookmarker first in your share sheet.</b> In the share sheet, scroll the row of app icons to <b>More</b>, tap <b>Edit</b>, add <b>bookmarker</b> to your Favorites and drag it to the top — from then on it's the first icon. On X, tap Share, then <b>Share via…</b>: X's own row can't show other apps.</li>
+              <li><b>Make bookmarker easy to reach.</b> In the iOS share sheet, scroll the app row to <b>More → Edit</b>, add <b>bookmarker</b> to Favorites and move it near the front. Each app controls its own sharing menu: in Instagram or X you may need <b>Share to…</b> or <b>Share via…</b> before the iOS sheet appears. We cannot place bookmarker in another app's custom first row.</li>
               <li><b>It files itself.</b> Every bork lands in a topic, and usually a subtopic, on its own. Open a bork to change where it lives, add tags or a note.</li>
               <li><b>Find it in seconds.</b> Browse by topic or by source, or search every word you've ever borked — titles, captions, notes, tags.</li>
               <li><b>Side quests.</b> Group borks around something you're actually doing — run a faster 10k, pick a van — and tick off the steps.</li>
@@ -1198,6 +1198,7 @@
 <dialog id="edit-dialog" aria-labelledby="edit-title">
   <h2 id="edit-title" style="overflow-wrap:anywhere"></h2>
   <p style="margin:0 0 4px"><a id="edit-open" target="_blank" rel="noopener">Open original ↗</a></p>
+  <button class="linkish" data-act="single-share">Share this bork →</button>
   <button class="linkish" data-act="refresh-preview">Refresh missing content &amp; preview</button>
   <p class="hint" id="edit-preview-status" role="status"></p>
   <section class="sorted">
@@ -1241,6 +1242,16 @@
     <button class="btn ghost" data-act="tp-cancel">Cancel</button>
     <button class="btn" data-act="tp-done">Done</button>
   </div>
+</dialog>
+
+<dialog id="single-share-dialog" aria-labelledby="single-share-h">
+  <h2 id="single-share-h">Share this bork</h2>
+  <p class="hint">This is what you'll send. The link opens the original post; recipients don't need bookmarker.</p>
+  <pre id="single-share-preview" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;background:var(--paper);padding:18px;border-radius:18px"></pre>
+  <label id="single-share-note-row"><input type="checkbox" id="single-share-note"> Include my note</label>
+  <p class="hint">Your note is private unless you include it. Nothing is published to a server.</p>
+  <p id="single-share-status" class="hint" role="status"></p>
+  <div class="dialog-row"><button class="btn ghost" data-act="close-single-share">Cancel</button><button class="btn" data-act="send-single-share">Share link &amp; details</button></div>
 </dialog>
 
 <!-- Side quest -->
@@ -1346,6 +1357,7 @@
 <script src="/quest-presentation.js"></script>
 <script src="/quest-brief-client.js"></script>
 <script src="/enrichment.js"></script>
+<script src="/single-share.js"></script>
 <script src="/taxonomy-sync.js"></script>
 <script src="/open-signals.js"></script>
 <!-- The Core ports: the export parsers, the offline filer and the tag-recency
@@ -4081,6 +4093,25 @@ function saveAdd({ again = false } = {}) {
 }
 
 /* ── Edit flow ── */
+let singleShareID = null;
+function renderSingleShare() {
+  const r = borks.get(singleShareID);
+  if (!r) return;
+  $("single-share-preview").textContent = SingleShare.text(r,topicFor(r.category_id)?.name,$("single-share-note").checked);
+}
+function openSingleShare(id) {
+  const r = borks.get(id); if (!r) return;
+  singleShareID=id; $("single-share-note").checked=false;
+  $("single-share-note-row").hidden=!r.note_text?.trim(); $("single-share-status").textContent="";
+  renderSingleShare(); openDlg($("single-share-dialog"));
+}
+async function sendSingleShare() {
+  const text = $("single-share-preview").textContent;
+  try {
+    if (navigator.share) await navigator.share({text});
+    else { await navigator.clipboard.writeText(text); $("single-share-status").textContent="Copied. Paste it into your message."; }
+  } catch (e) { if (e.name !== "AbortError") $("single-share-status").textContent="Sharing wasn't available. Select and copy the preview above."; }
+}
 let editing = null;
 function openEdit(id) {
   const r = borks.get(id);
@@ -4459,6 +4490,9 @@ document.addEventListener("click", (e) => {
   const fbK = e.target.closest("[data-fb-kind]");
   if (fbK) { fbKind = fbK.dataset.fbKind; syncFbKinds(); return; }
   const act = e.target.closest("[data-act]")?.dataset.act;
+  if (act === "single-share") { openSingleShare(editing); return; }
+  if (act === "send-single-share") { sendSingleShare(); return; }
+  if (act === "close-single-share") { closeDlg($("single-share-dialog")); return; }
   if (act === "refresh-preview") {
     $("edit-preview-status").textContent = "Refreshing… Some sources do not provide text or images.";
     enrichmentQueue.run({id:editing,force:true}).then(status => { $("edit-preview-status").textContent = status.busy ? "Another preview batch is running. Try again shortly."
@@ -4799,6 +4833,7 @@ if (window.visualViewport) {
   visualViewport.addEventListener("scroll", () => fitSheets(false));
 }
 $("quest-topic").addEventListener("change", renderQuestLists);
+$("single-share-note").addEventListener("change", renderSingleShare);
 $("quest-title").addEventListener("input", () => { $("quest-editor-art").src = questArt($("quest-topic").value, $("quest-title").value); });
 $("quest-search").addEventListener("input", renderQuestLists);
 $("quest-all-topics").addEventListener("change", renderQuestLists);

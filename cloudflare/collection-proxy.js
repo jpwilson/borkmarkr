@@ -29,6 +29,11 @@ const CACHE = "public, max-age=0, s-maxage=60";
 /** Response headers that are the transport's, not the page's. */
 const HOP_BY_HOP = ["connection", "keep-alive", "transfer-encoding", "upgrade", "content-encoding", "content-length"];
 
+function unavailable(method) {
+  return new Response(method === "HEAD" ? null : '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Try again shortly · bookmarker</title><body><main><h1>This collection is temporarily unavailable</h1><p>The link may still be active. Please try again shortly.</p><a href="https://bookmarker.lol">bookmarker</a></main></body></html>',
+    {status:503,headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-store","Retry-After":"30","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer"}});
+}
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
@@ -48,25 +53,23 @@ export default {
         headers: {
           // Pass nothing of the reader's along. The function does not want it,
           // and a shared page should not carry a viewer's fingerprint upstream.
-          Accept: request.headers.get("Accept") || "text/html",
-          "Accept-Language": request.headers.get("Accept-Language") || "en",
-          "User-Agent": request.headers.get("User-Agent") || "bookmarker-proxy",
+          Accept: "text/html",
+          "User-Agent": "bookmarker-proxy",
         },
-        cf: { cacheTtl: 60, cacheEverything: true },
+        cf: { cacheTtlByStatus: {"200-299":60,"404":0,"500-599":0}, cacheEverything:true },
       });
     } catch (e) {
-      // Upstream is unreachable. Fall through to the origin, which serves
-      // docs/404.html — and that page fetches the function itself, so the
-      // reader still has a chance of seeing the collection.
+      // An outage is not a dead link. Do not cache it or turn it into a 404.
       console.log("collection-page upstream failed", e && e.message);
-      return fetch(request);
+      return unavailable(request.method);
     }
+    if (upstream.status >= 500) return unavailable(request.method);
 
     const headers = new Headers();
     for (const [name, value] of upstream.headers) {
       if (HOP_BY_HOP.indexOf(name.toLowerCase()) < 0) headers.set(name, value);
     }
-    headers.set("Cache-Control", CACHE);
+    headers.set("Cache-Control", upstream.ok ? CACHE : "no-store");
     // The page is being served from bookmarker.lol now; nothing needs to read
     // it cross-origin from here.
     headers.delete("Access-Control-Allow-Origin");
@@ -78,6 +81,7 @@ export default {
     headers.set("Content-Type", "text/html; charset=utf-8");
     headers.delete("Content-Security-Policy");
     headers.set("X-Frame-Options", "DENY");
+    headers.set("X-Content-Type-Options", "nosniff");
     headers.set("Referrer-Policy", "no-referrer");
 
     return new Response(request.method === "HEAD" ? null : upstream.body, {
