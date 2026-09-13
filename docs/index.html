@@ -781,6 +781,7 @@
   .card-tags { flex:1 1 100%; font-size:11px; color:var(--meta); overflow-wrap:anywhere; }
   .card-meta { flex-wrap:wrap; }
 </style>
+<link rel="stylesheet" href="/library-layout.css">
 </head>
 <body>
 
@@ -881,6 +882,7 @@
     <section id="view-library">
       <div id="home-sections"></div>
       <nav class="chips" id="platform-chips" aria-label="Filter by source"></nav>
+      <div class="library-tools" id="library-tools"></div>
       <div class="grid" id="grid-library"></div>
       <div class="state" id="empty-library" hidden></div>
     </section>
@@ -906,7 +908,9 @@
       <div id="browse-topic" hidden>
         <button class="backlink" data-act="browse-back">← All topics</button>
         <div class="hero" id="browse-hero"></div>
+        <div id="topic-refinements"></div>
         <div class="grid" id="grid-topic"></div>
+        <p class="state" id="empty-topic" hidden>No borks match these filters.</p>
       </div>
       <div id="browse-search" hidden>
         <!-- Search scope. Nothing pressed searches everything, as it always has;
@@ -941,9 +945,10 @@
     </section>
 
     <section id="view-you" hidden>
+      <h1 class="account-title">You &amp; your library</h1>
       <div class="you-grid">
         <div class="you-col">
-          <div class="you-card">
+          <div class="you-card account-identity">
             <div class="you-head">
               <div class="avatar-big" id="avatar-big" aria-hidden="true">?</div>
               <div>
@@ -968,16 +973,25 @@
         </div>
         <div class="you-col">
           <div class="you-card">
+            <img class="account-art" src="/img/quests/scroll.jpg" alt="">
             <h2 class="section-title" style="margin:0 0 6px;font-size:17px">Import your saves</h2>
             <p class="hint" style="margin:0 0 12px">Bring across everything you already saved on Instagram, TikTok, X, YouTube, Pinterest or in your browser. The export file is read here in your browser and never uploaded.</p>
             <button class="btn ghost" data-act="import">Import from a file</button>
           </div>
           <div class="you-card">
+            <h2 class="section-title" style="margin:0 0 8px;font-size:20px">Across your devices</h2>
+            <p class="account-status" id="account-sync-status" role="status">Checking your library…</p>
+            <button class="linkish" data-act="sync-now">Refresh library</button>
+            <a class="linkish" href="#browse/quests" data-act="library-quests">Your side quests →</a>
+          </div>
+          <div class="you-card">
             <button class="btn ghost" data-act="sign-out">Sign out</button>
+            <details><summary>Account deletion</summary>
             <button class="danger-link" data-act="delete-account">Delete account</button>
             <p class="hint" style="margin-top:12px">Deleting your account removes everything backed up on our servers. Borks on your iPhone stay on your iPhone.</p>
+            </details>
           </div>
-          <p class="hint">
+          <p class="hint account-links">
             <a href="#collections" data-tab-link="collections">Your shared collections</a> · <a href="#help" data-tab-link="help">Help &amp; feedback</a> · <a href="/app">Get the iPhone app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
           </p>
         </div>
@@ -1038,10 +1052,10 @@
     <button class="tab" data-tab-link="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</button>
     <button class="tab" data-tab-link="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
     <button class="fab-mobile" id="add-mobile" aria-label="Bork a link">+</button>
-    <button class="tab" data-tab-link="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>You</button>
     <!-- Help is a form you use once; Revisit is a habit. Help moved to a link
          on the You page, and keeps its place in the desktop header. -->
     <button class="tab" data-tab-link="revisit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>Revisit</button>
+    <button class="tab" data-tab-link="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>You</button>
   </nav>
 </div>
 
@@ -1314,6 +1328,7 @@
 
 <script src="/taxonomy.js"></script>
 <script src="/saved-content.js"></script>
+<script src="/library-presentation.js"></script>
 <script src="/taxonomy-sync.js"></script>
 <script src="/open-signals.js"></script>
 <!-- The Core ports: the export parsers, the offline filer and the tag-recency
@@ -1666,6 +1681,9 @@ let tab = "library";
 let lastTab = null;
 let platformFilter = null;   // Library
 let topicFilter = null;      // Browse drill-in
+let topicRefine = { id: null, sub: null, source: null, tag: null };
+let feedDensity = lsGet("bm.feed-density") === "list" ? "list" : "cards";
+let syncIssue = null, syncCompletedAt = null;
 let browseAxis = "topics";   // Browse's segmented control: topics · sources · quests
 let query = "";              // Browse: a live query shows results instead of topics
 let searchPlatform = null;   // …narrowed to one source
@@ -1867,6 +1885,7 @@ async function pull() {
   const s = await validSession();
   if (!s) return;
   loading = true;
+  syncIssue = null;
   if (!borks.size) render(); // skeleton
   try {
     let after = null; // page continuation only; never persisted
@@ -1880,10 +1899,13 @@ async function pull() {
       if (page === 0) { pulledOnce = true; render(); } // big libraries: show page one while the rest streams in
       if (rows.length < 1000) break;
     }
-    try { await pullMissions(); } catch (e) { toast("Side quests could not sync. " + humanError(e), "Retry", () => pull()); }
-    try { await taxonomySync.sync(); } catch (e) { toast("Topics could not sync. " + humanError(e), "Retry", () => pull()); }
-    try { await openSignals.sync(); } catch (e) { toast("Revisit could not sync. " + humanError(e)); }
+    try { await pullMissions(); } catch (e) { syncIssue = "Side quests could not sync."; toast(syncIssue + " " + humanError(e), "Retry", () => pull()); }
+    try { await taxonomySync.sync(); } catch (e) { syncIssue = "Topics could not sync."; toast(syncIssue + " " + humanError(e), "Retry", () => pull()); }
+    try { await openSignals.sync(); } catch (e) { syncIssue = "Revisit could not sync."; toast(syncIssue + " " + humanError(e)); }
     try { await pullTopicArt(); } catch { /* art is a decoration */ }
+    if (!syncIssue) syncCompletedAt = new Date();
+  } catch (e) {
+    syncIssue = humanError(e); throw e;
   } finally {
     loading = false; pulledOnce = true;
     persist(); render();
@@ -2266,9 +2288,17 @@ function estHeight(r) {
   return 240 * (ah / aw) + 58 + Math.min(2, titleLines) * 19 + (d.author ? 17 : 0);
 }
 function columnCount() {
-  const w = Math.min(window.innerWidth, 1280);
-  if (w < 480) return 1;
-  return w < 761 ? 2 : Math.max(3, Math.floor(w / 250));
+  return LibraryPresentation.columns(window.innerWidth);
+}
+function listCardHTML(r) {
+  const d = displayFields(r), src = picOf(r), t = topicFor(r.category_id);
+  return `<article class="card feed-row" role="button" tabindex="0" data-id="${esc(r.id)}">
+    <span class="feed-thumb">${src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : glyph(r.platform)}</span>
+    <div class="card-body"><div class="card-author">${glyph(r.platform)} ${esc(d.author || PLATFORM[r.platform]?.name || "Web")} · ${fmtDate(r.saved_at)}</div>
+      <div class="card-title">${esc(d.title)}</div><div class="card-meta">
+      <span class="filing-path">${esc(SavedContent.breadcrumb(t?.name, r.subcategory) || "Unfiled")}</span>
+      ${r.tags?.length ? `<span class="card-tags">${esc(r.tags.slice(0, 3).map(t => "#" + t).join(" · "))}</span>` : ""}
+      ${r.note_text ? '<span class="note-dot" title="Has a note">✎</span>' : ""}</div></div></article>`;
 }
 // The app's Masonry.swift in three lines: next card goes to the shortest column.
 function gridHTML(rows, stagger) {
@@ -2291,21 +2321,22 @@ function skeletonHTML() {
 /* Rebuild a grid only when what it shows has changed. A new context (another
    filter, another view) staggers the cards in; a same-context change animates
    only the rows in `justAdded`. */
-function renderGrid(el, rows, ctx, { skeleton = false } = {}) {
+function renderGrid(el, rows, ctx, { skeleton = false, density = "cards" } = {}) {
   const cols = columnCount();
+  el.classList.toggle("list-mode", density === "list");
   if (skeleton) {
     const k = `skel|${cols}`;
     if (memo.get(el.id) === k) return;
     memo.set(el.id, k); el.classList.remove("grid-in"); el.innerHTML = skeletonHTML();
     return;
   }
-  const key = `${ctx}|${cols}|${rows.map(r => r.id + ":" + r.updated_at).join(",")}`;
+  const key = `${ctx}|${density}|${cols}|${rows.map(r => r.id + ":" + r.updated_at).join(",")}`;
   const prev = memo.get(el.id) || "";
   if (prev === key) return;
   const fresh = !prev || prev.startsWith("skel|") || !prev.startsWith(ctx + "|");
   memo.set(el.id, key);
   el.classList.toggle("grid-in", fresh);
-  el.innerHTML = gridHTML(rows, fresh);
+  el.innerHTML = density === "list" ? rows.map(listCardHTML).join("") : gridHTML(rows, fresh);
 }
 const bySaved = (a, b) => (b.saved_at || "").localeCompare(a.saved_at || "");
 
@@ -2524,10 +2555,8 @@ function platformItems(rows) {
 }
 
 function renderLibrary(all, s) {
-  // Home sections: what you saved lately, and the topics you actually use —
-  // the jobs the app serves before "scroll everything".
   const home = $("home-sections");
-  if (all.length && !platformFilter) {
+  if (all.length) {
     const recents = all.slice(0, 12);
     const quests = liveMissions();
     const seeds = suggestedQuests(all, quests);
@@ -2540,40 +2569,30 @@ function renderLibrary(all, s) {
     if (memo.get("home-sections") !== key) {
       memo.set("home-sections", key);
       refineSeedTitles(seeds);
-      const recentsHTML = recents.map(r => recentCardHTML(r)).join("");
-      const pills = topicPillsHTML(all, 10);
       const questCards = quests.map(m => questCardHTML(m)).join("");
-      const questsHTML = quests.length
-        ? `<div class="h-row"><span class="h-title">Side quests</span></div>
-           <div class="quests">${questCards}<button class="quest-new" data-quest="">+ Start another</button></div>`
-        : `<div class="h-row"><span class="h-title">Side quests</span></div>${questStarterHTML()}`;
-      const seedsHTML = seeds.length
-        ? `<div class="h-row"><span class="h-title">From your library</span></div>
-           <div class="quests">${seeds.map(seedCardHTML).join("")}</div>`
-        : "";
-      home.innerHTML = questsHTML + seedsHTML + `
-        <div class="h-row"><span class="h-title">Recent</span></div>
-        <div class="recents">${recentsHTML}</div>
-        ${pills ? `<div class="h-row"><span class="h-title">Most-saved topics</span><button class="h-more" data-tab-link="browse">All topics →</button></div>
-        <div class="topic-pills">${pills}</div>` : ""}
-        <div class="h-row"><span class="h-title">Everything</span>${selectButtonHTML()}</div>`;
+      const recent = all.filter(r => Date.parse(r.saved_at) >= Date.now() - 7 * 86400000);
+      const top = topicCounts(recent)[0];
+      const stats = `${plural(all.length, "bork")} · ${plural(new Set(all.map(r => r.platform)).size, "app")} · ${plural(topicCounts(all).length, "topic")}`;
+      const suggested = seeds.map(seed => `<button class="quest-card" data-seed="${esc(seed.id)}">
+        <img class="quest-art" src="${questArt(seed.category_id)}" alt="">
+        <span><span class="quest-t">${esc(seed.title)}</span><span class="quest-m">Suggested · ${plural(seed.bookmark_ids.length, "bork")}</span></span></button>`).join("");
+      home.innerHTML = `<div class="library-intro"><div><h1>Your library</h1><p>${stats}</p>
+        <button class="library-search" data-act="library-search">Search everything you've borked</button></div>
+        <div class="library-insight"><div><b>What are you finding interesting?</b><p>${top ? `${esc(topicFor(top[0]).name)} is your most-saved topic this week. ` : "Your interests, collected in one place. "}${recent.length ? `You saved ${plural(recent.length, "bork")} in the last 7 days.` : "Save something worth coming back to."}</p></div><img src="/img/quests/scroll.jpg" alt=""></div></div>
+        <div class="h-row"><span class="h-title">Your side quests</span><button class="h-more" data-act="library-quests">See all</button></div>
+        ${quests.length || seeds.length ? `<div class="quests">${questCards}${suggested}<button class="quest-new" data-quest="">+ Start a side quest</button></div>` : questStarterHTML()}`;
     }
   } else {
-    // One source: no home sections, just the row that names it — with the
-    // same Select as the full library, so a mixed pick is built source by
-    // source and the picks survive the chip changing.
-    const key = all.length && platformFilter ? `filtered|${platformFilter}|${sel().on}` : "";
-    if (memo.get("home-sections") !== key) {
-      memo.set("home-sections", key);
-      home.innerHTML = key
-        ? `<div class="h-row"><span class="h-title">${esc(PLATFORM[platformFilter]?.name || "Source")}</span>${selectButtonHTML()}</div>` : "";
-    }
+    memo.delete("home-sections"); home.innerHTML = "";
   }
   const rows = platformFilter ? all.filter(r => r.platform === platformFilter) : all;
   const skeleton = loading && !all.length && !pulledOnce && !demoMode;
   $("platform-chips").hidden = skeleton || !all.length;
   if (!skeleton) renderChips($("platform-chips"), platformItems(all), platformFilter, "data-platform");
-  renderGrid($("grid-library"), rows, `library|${platformFilter || "all"}|${demoMode}`, { skeleton });
+  $("library-tools").hidden = !all.length;
+  $("library-tools").innerHTML = `<span class="h-title">Your borks</span><div class="feed-actions">${selectButtonHTML()}<div class="density" role="group" aria-label="Feed layout">
+    <button data-density="cards" aria-pressed="${feedDensity === "cards"}">Grid</button><button data-density="list" aria-pressed="${feedDensity === "list"}">List</button></div></div>`;
+  renderGrid($("grid-library"), rows, `library|${platformFilter || "all"}|${demoMode}`, { skeleton, density: feedDensity });
   $("empty-library").hidden = skeleton || rows.length > 0;
   if (!skeleton && !rows.length) {
     if (all.length === 0 && !demoMode) {
@@ -2614,7 +2633,16 @@ function renderBrowse(all) {
     const rows = all.filter(r => r.category_id === topicFilter);
     renderTopicHero(t, rows);
     if (t && !demoMode) buildShareCard(t, rows);
-    renderGrid($("grid-topic"), rows, `browse|${topicFilter}|${demoMode}`);
+    if (topicRefine.id !== topicFilter) topicRefine = { id: topicFilter, sub: null, source: null, tag: null };
+    const chip = (key, value, label, active) => `<button class="chip${active ? " on" : ""}" data-refine="${key}" data-value="${esc(value)}" aria-pressed="${active}">${esc(label)}</button>`;
+    const subtopics = LibraryPresentation.subtopics(rows), tags = LibraryPresentation.tags(rows, topicRefine.sub);
+    $("topic-refinements").innerHTML = `${subtopics.length ? `<nav class="chips" aria-label="Subtopics">${chip("sub", "", "All subtopics", !topicRefine.sub)}${subtopics.map(sub => chip("sub", sub, sub, topicRefine.sub === sub)).join("")}</nav>` : ""}
+      <nav class="chips" aria-label="Sources">${platformItems(rows).map(p => chip("source", p.key, p.label, (topicRefine.source || "") === p.key)).join("")}</nav>
+      ${tags.length ? `<nav class="chips" aria-label="Tags">${chip("tag", "", "All tags", !topicRefine.tag)}${tags.map(([tag]) => chip("tag", tag, "#" + tag, topicRefine.tag === tag)).join("")}</nav>` : ""}
+      ${topicRefine.sub || topicRefine.source || topicRefine.tag ? '<button class="linkish" data-refine="clear">Clear filters</button>' : ""}`;
+    const filtered = LibraryPresentation.filter(rows, topicRefine);
+    renderGrid($("grid-topic"), filtered, `browse|${topicFilter}|${demoMode}`);
+    $("empty-topic").hidden = filtered.length > 0;
     return;
   }
   renderSortChips();
@@ -3152,6 +3180,10 @@ function renderYou(all, s) {
   $("stat-topics").textContent = new Set(all.map(r => r.category_id).filter(Boolean)).size;
   const cutoff = Date.now() - 7 * 86_400_000;
   $("stat-week").textContent = all.filter(r => new Date(r.saved_at) >= cutoff).length;
+  $("account-sync-status").textContent = loading ? "Refreshing your library…" : syncIssue
+    ? `Some changes have not synced. ${syncIssue} Please retry.`
+    : syncCompletedAt ? `Library refreshed at ${syncCompletedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Use the same account on your iPhone.`
+    : "Refresh to check your library across devices. Use the same account on your iPhone.";
 }
 
 /* ── Navigation + routes (#browse/fitness survives a reload and the back button) ── */
@@ -4353,6 +4385,17 @@ document.addEventListener("click", (e) => {
   const fbK = e.target.closest("[data-fb-kind]");
   if (fbK) { fbKind = fbK.dataset.fbKind; syncFbKinds(); return; }
   const act = e.target.closest("[data-act]")?.dataset.act;
+  const density = e.target.closest("[data-density]")?.dataset.density;
+  if (density) { feedDensity = density; lsSet("bm.feed-density", density); render(); return; }
+  const refinement = e.target.closest("[data-refine]");
+  if (refinement) {
+    if (refinement.dataset.refine === "clear") topicRefine = { id: topicFilter, sub: null, source: null, tag: null };
+    else { topicRefine[refinement.dataset.refine] = refinement.dataset.value || null; if (refinement.dataset.refine === "sub") topicRefine.tag = null; }
+    render(); return;
+  }
+  if (act === "library-search") { setTab("browse"); $(window.innerWidth <= 760 ? "search-mobile" : "search-desktop").focus(); return; }
+  if (act === "library-quests") { e.preventDefault(); browseAxis = "quests"; clearQuery(); setTab("browse"); return; }
+  if (act === "sync-now") { pull().catch(e => toast(humanError(e))); return; }
   if (act === "peek-demo" || act === "peek-demo-signedout") { enterDemo(); return; }
   if (act === "empty-add") { openAdd(); return; }
   if (act === "new-topic") { openNewTopic(); return; }
@@ -4761,13 +4804,12 @@ const EXPIRY_HINT = {
    so "3 Instagram + 4 YouTube + 1 X" is built the way you would say it. */
 function sel() { return sel.state ??= { on: false, ids: new Set(), from: null }; }
 function selectButtonHTML() {
-  return sel().on ? "" : `<button class="h-more" data-act="select-start">Select</button>`;
+  return `<button class="h-more" data-act="${sel().on ? "select-cancel" : "select-start"}">${sel().on ? "Cancel" : "Select"}</button>`;
 }
 function collectIconHTML() {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h6"/></svg>`;
 }
 function selectStart(from) {
-  if (demoMode) { toast("Sign up free and share your own borks.", "Sign up", exitDemoToSignup); return; }
   const s = sel();
   s.on = true; s.from = from;
   track("select_started", { from });
@@ -4861,6 +4903,7 @@ function setCollectExpiry(v) {
   $("collect-expiry-hint").textContent = EXPIRY_HINT[v] || EXPIRY_HINT[""];
 }
 function openCollect() {
+  if (demoMode || !store.session) { toast("Sign in to share your own borks.", "Sign in", exitDemoToSignup); return; }
   const rows = selectedRows();
   if (!rows.length) return;
   if (rows.length > COLL_MAX) { toast(`A link holds up to ${COLL_MAX} borks — untick ${rows.length - COLL_MAX}.`); return; }
