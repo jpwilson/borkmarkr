@@ -9,3 +9,9 @@ jobs:
         with:
           node-version: 22
       - run: node Scripts/test_account_rules.mjs
+      - run: node Scripts/test_saved_content.mjs
+  swift:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: swiftc -parse-as-library Core/SavedContent.swift Scripts/test_saved_content.swift -o /tmp/content-tests && /tmp/content-tests

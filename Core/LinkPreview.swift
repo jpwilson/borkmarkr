@@ -29,7 +29,7 @@ enum LinkPreview {
         var author: String?
         /// `og:description`. On Instagram and TikTok this is the full caption
         /// with its hashtags — the part of a post that says what it is about,
-        /// where the title says who posted it. Read for filing, never stored.
+        /// where the title says who posted it. Retained when useful.
         var description: String?
         var imageURL: URL?
         var durationSeconds: Int?
@@ -120,7 +120,7 @@ enum LinkPreview {
             result.durationSeconds = value
         }
         result.publishedAt = publishedDate(in: html)
-        return (result.title == nil && result.imageURL == nil && result.publishedAt == nil) ? nil : result
+        return (result.title == nil && result.description == nil && result.imageURL == nil && result.publishedAt == nil) ? nil : result
     }
 
     /// article:published_time, JSON-LD uploadDate / datePublished.
