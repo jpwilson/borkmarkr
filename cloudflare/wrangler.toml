@@ -1,0 +1,5 @@
+name = "bookmarker-collection-proxy"
+main = "collection-proxy.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
+routes = [{ pattern = "bookmarker.lol/c/*", zone_name = "bookmarker.lol" }]
