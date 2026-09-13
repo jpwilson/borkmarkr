@@ -105,7 +105,7 @@ struct BrowseSearchBar: View {
             }
             Spacer(minLength: 0)
         }
-        .accessibilityLabel("Search scope")
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -131,6 +131,7 @@ struct SearchChip: View {
                 .tappableChip()
         }
         .buttonStyle(ChipStyle())
+        .accessibilityLabel(label)
         .accessibilityAddTraits(active ? [.isSelected] : [])
     }
 }

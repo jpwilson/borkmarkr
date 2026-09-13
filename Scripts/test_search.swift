@@ -50,7 +50,7 @@ enum SearchScopeTests {
             topic: "Food", subtopic: "Coffee", tags: ["café", "roasting"], platform: "Web"
         )
 
-        // MARK: Unscoped is the pre-1.1 behaviour, unchanged.
+        // MARK: Unscoped terms may match across fields, in any order.
 
         expect(hamstrings.matches(query: "hamstrings", scopes: []), "unscoped finds a word in the title")
         expect(hamstrings.matches(query: "Stretching", scopes: []), "unscoped finds the subtopic")
@@ -61,7 +61,12 @@ enum SearchScopeTests {
         // The whole trimmed query is one substring, as it always was — this is
         // what makes "long runs" find the hamstring clip.
         expect(hamstrings.matches(query: " long runs ", scopes: []), "unscoped trims and matches a phrase")
-        expect(!hamstrings.matches(query: "runs long", scopes: []), "unscoped is a phrase match, not a term match")
+        expect(hamstrings.matches(query: "runs long", scopes: []), "unscoped matches terms in any order")
+        let crossField = bork(title: "Hip strength", tags: ["mobility"])
+        expect(crossField.matches(query: "hip mobility", scopes: []), "title plus tag matches")
+        expect(crossField.matches(query: "MOBILITY  hip", scopes: []), "case, spacing and order agree")
+        expect(!crossField.matches(query: "hip mobility", scopes: .tags), "tag scope excludes title-only words")
+        expect(!crossField.matches(query: "hip unknown", scopes: []), "every term is required")
 
         // MARK: Scopes narrow, they never widen.
 
