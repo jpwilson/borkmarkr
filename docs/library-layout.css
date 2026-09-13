@@ -59,6 +59,11 @@ main, main > section, .you-col, .card-body { min-width: 0; }
 #quest-suggest .qb-row > div { min-width:0; flex:1; }
 #quest-dialog .qb-add { flex-shrink:0; min-height:44px; }
 #quest-dialog .account-art { float:none; width:100%; height:150px; object-fit:cover; margin:0 0 18px; }
+.quest-brief { background:var(--paper); padding:16px; border-radius:18px; margin:18px 0; }
+.quest-brief h3 { margin:0 0 8px; font-family:var(--font-head); }
+.quest-brief p { line-height:1.5; }
+.quest-brief .linkish { display:block; text-align:left; white-space:normal; }
+.brief-step { display:block; border:1px solid var(--hairline); background:var(--surface); color:var(--ink); text-align:left; padding:12px; border-radius:12px; margin:8px 0; width:100%; min-height:44px; }
 #select-bar { white-space:normal; width:max-content; }
 #select-count { max-width:150px; }
 @media(max-width:760px) {
