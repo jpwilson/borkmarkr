@@ -1843,7 +1843,7 @@ async function pull() {
       if (page === 0) { pulledOnce = true; render(); } // big libraries: show page one while the rest streams in
       if (rows.length < 1000) break;
     }
-    try { await pullMissions(); } catch { /* quests are additive */ }
+    try { await pullMissions(); } catch (e) { toast("Side quests could not sync. " + humanError(e), "Retry", () => pull()); }
     try { await pullTopicArt(); } catch { /* art is a decoration */ }
   } finally {
     loading = false; pulledOnce = true;
@@ -1932,18 +1932,36 @@ function absorbMissions(rows) {
   for (const m of rows) {
     const mine = missions.get(m.id);
     if (mine && mine.updated_at >= m.updated_at) continue;
-    missions.set(m.id, m);
+    missions.set(m.id, { ...m, todos: (m.todos || []).map(t => ({ id: t.id, text: t.text ?? t.title ?? "", done: !!t.done })) });
   }
 }
 const persistM = () => { try { localStorage.setItem("bm.mcache", JSON.stringify([...missions.values()])); } catch {} };
 const liveMissions = () => [...missions.values()].filter(m => !m.deleted_at && !m.is_archived)
   .sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
+const missionOutbox = new Map();
+try {
+  const pending = JSON.parse(lsGet("bm.moutbox") || "null");
+  if (pending?.owner === store.session?.user_id)
+    for (const m of pending.rows || []) missionOutbox.set(m.id, m);
+} catch { /* no pending edits */ }
+function persistMissionOutbox() {
+  lsSet("bm.moutbox", JSON.stringify({ owner: store.session?.user_id, rows: [...missionOutbox.values()] }));
+}
 
 async function pullMissions() {
   const s = await validSession();
   if (!s) return;
-  const rows = await api(`/rest/v1/missions?select=*&owner_id=eq.${s.user_id}&order=updated_at.asc&limit=500`);
-  absorbMissions(rows); persistM();
+  for (const m of [...missionOutbox.values()]) {
+    await pushMission(m, { keepStamp: true });
+    if (missionOutbox.get(m.id)?.updated_at === m.updated_at) missionOutbox.delete(m.id);
+    persistMissionOutbox();
+  }
+  for (let page = 0; page < 30; page++) {
+    const rows = await api(`/rest/v1/missions?select=*&owner_id=eq.${s.user_id}&order=updated_at.asc,id.asc&limit=1000&offset=${page * 1000}`);
+    absorbMissions(rows); persistM();
+    if (rows.length < 1000) return;
+  }
+  throw new Error("The side-quest backup is incomplete. Please retry.");
 }
 
 async function pushMission(m, { keepStamp = false } = {}) {
@@ -1954,6 +1972,7 @@ async function pushMission(m, { keepStamp = false } = {}) {
     category_id: m.category_id ?? null, bookmark_ids: m.bookmark_ids ?? [],
     habit_name: m.habit_name ?? null, completed_days: m.completed_days ?? [],
     todos: m.todos ?? [], is_archived: m.is_archived ?? false,
+    brief_text: m.brief_text ?? null, brief_at: m.brief_at ?? null, brief_bork_count: m.brief_bork_count ?? null,
     created_at: m.created_at ?? new Date().toISOString(),
     updated_at: keepStamp && m.updated_at ? m.updated_at : new Date().toISOString(),
     deleted_at: m.deleted_at ?? null,
@@ -1967,9 +1986,15 @@ async function pushMission(m, { keepStamp = false } = {}) {
 }
 function commitMission(next) {
   next = { ...next, updated_at: new Date().toISOString() };
+  missionOutbox.set(next.id, next); persistMissionOutbox();
   absorbMissions([next]); persistM(); render();
-  return pushMission(next, { keepStamp: true }).catch((e) => {
+  return pushMission(next, { keepStamp: true }).then(saved => {
+    if (missionOutbox.get(next.id)?.updated_at === next.updated_at) missionOutbox.delete(next.id);
+    persistMissionOutbox();
+    return saved;
+  }).catch((e) => {
     toast(humanError(e), "Retry", () => commitMission(next));
+    return null;
   });
 }
 
@@ -3310,6 +3335,7 @@ function signOut(msg) {
   track("signed_out");
   store.session = null; lsDel("bm.cursor"); store.cache = [];
   lsDel("bm.mcache");
+  missionOutbox.clear(); lsDel("bm.moutbox");
   forgetOpens();   // whose library this browser opened is nobody else's business
   forgetTopicArt();
   try { window.posthog?.reset?.(); } catch {}
@@ -4609,6 +4635,9 @@ window.addEventListener("resize", () => {
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && store.session) pull().catch(() => {});
 });
+setInterval(() => {
+  if (!document.hidden && store.session && !demoMode && !loading) pull().catch(() => {});
+}, 30000);
 
 /* ── Boot ── */
 (async function boot() {

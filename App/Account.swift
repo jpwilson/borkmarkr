@@ -128,14 +128,17 @@ final class Account: ObservableObject {
     func sync(context: ModelContext) async {
         guard Supabase.isConfigured, isSignedIn, !isSyncing else { return }
         isSyncing = true
+        let syncStartedAt = Date.now
         defer { isSyncing = false }
 
         do {
             let session = try await validSession()
             try await push(context: context, session: session)
             try await pull(context: context, session: session)
+            try await QuestSync.run(context: context, session: session)
 
-            lastSynced = .now
+            // Edits made while requests were in flight must be pushed next time.
+            lastSynced = syncStartedAt
             UserDefaults.standard.set(lastSynced, forKey: lastSyncKey)
             lastError = nil
         } catch {

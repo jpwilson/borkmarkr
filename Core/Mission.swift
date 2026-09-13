@@ -92,6 +92,7 @@ final class Mission {
         briefText = QuestBrief.encode(brief)
         briefAt = date
         briefBorkCount = count
+        updatedAt = date
     }
 
     /// What the `quest-brief` function is told: the name, the topic, the

@@ -30,3 +30,4 @@ supabase/.branches/
 Config.local.xcconfig
 .build/
 Marketing/captures/
+node_modules/
