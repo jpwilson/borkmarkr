@@ -59,6 +59,17 @@ assert.equal((await db.query("select name from custom_topics")).rows[0].name, "R
 await db.query("select set_config('request.jwt.claim.sub', $1, false)", [other]);
 assert.equal((await db.query("select * from custom_topics")).rows.length, 0);
 assert.equal((await db.query("select * from custom_subtopics")).rows.length, 0);
+await db.exec("reset role");
+await db.exec(fs.readFileSync("supabase/migrations/0015_open_signals.sql", "utf8"));
+await db.exec("grant select, insert, update on bookmark_opens to authenticated; set role authenticated;");
+await db.query("select set_config('request.jwt.claim.sub', $1, false)", [owner]);
+await db.query("insert into bookmark_opens values ($1,'phone:post','post','phone',3,'2026-09-03','2026-09-01','2026-09-03')", [owner]);
+await db.query("insert into bookmark_opens values ($1,'web:post','post','web',2,'2026-09-02','2026-09-01','2026-09-02')", [owner]);
+await db.exec("update bookmark_opens set open_count=1, last_opened_at='2026-09-01', updated_at='2026-09-01' where id='phone:post'");
+assert.equal(Number((await db.query("select sum(open_count) n from bookmark_opens")).rows[0].n), 5);
+await db.query("select set_config('request.jwt.claim.sub', $1, false)", [other]);
+assert.equal((await db.query("select * from bookmark_opens")).rows.length, 0);
 await db.close();
+console.log("Open-signal PostgreSQL migration: monotonic counters and account isolation passed.");
 console.log("Custom taxonomy PostgreSQL migrations: exact metadata, empty records, stale edits and RLS passed.");
 console.log("Quest PostgreSQL migrations: LWW, tombstones, metadata, owner isolation and unsigned denial passed.");
