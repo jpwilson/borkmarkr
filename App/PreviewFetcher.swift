@@ -25,6 +25,7 @@ import SwiftData
 final class PreviewFetcher: ObservableObject {
 
     private var inFlight: Set<String> = []
+    private var revisions: [String: Date] = [:]
     /// Small enough not to look like a crawler, big enough that a fresh import
     /// fills in quickly.
     private let maxConcurrent = 4
@@ -46,7 +47,7 @@ final class PreviewFetcher: ObservableObject {
     ///   previews) means metadata only, exactly as before.
     func fetchMissing(for bookmarks: [Bookmark], in context: ModelContext, account: Account? = nil) async {
         let pending = bookmarks
-            .filter { ($0.needsPreview || $0.needsPostedDate) && !inFlight.contains($0.id) }
+            .filter { $0.needsPreview && !inFlight.contains($0.id) }
             .prefix(24)
 
         guard !pending.isEmpty else { return }
@@ -60,6 +61,7 @@ final class PreviewFetcher: ObservableObject {
                 guard let url = bookmark.url else { continue }
                 let id = bookmark.id
                 inFlight.insert(id)
+                revisions[id] = bookmark.updatedAt
 
                 if running >= maxConcurrent {
                     if let finished = await group.next(), let candidate = apply(finished, in: context) {
@@ -94,24 +96,26 @@ final class PreviewFetcher: ObservableObject {
     private func apply(_ finished: (String, LinkPreview.Result)?, in context: ModelContext) -> Candidate? {
         guard let (id, result) = finished else { return nil }
         inFlight.remove(id)
+        let revision = revisions.removeValue(forKey: id)
 
         var descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate { $0.id == id })
         descriptor.fetchLimit = 1
-        guard let bookmark = try? context.fetch(descriptor).first, let url = bookmark.url else { return nil }
+        guard let bookmark = try? context.fetch(descriptor).first, let url = bookmark.url,
+              bookmark.deletedAt == nil, bookmark.updatedAt == revision else { return nil }
 
-        // Is the current filing the machine's, or a person's? The extension
-        // files from the pre-metadata inputs, so re-running that same pass is
-        // the test: a match means nobody has touched it since. Computed before
-        // the title is replaced below, or the answer would be to a different
-        // question.
-        let machineFiled = bookmark.categoryID == nil || {
-            let before = Categorizer.suggest(url: url, title: bookmark.title, text: bookmark.text)
-            return before.categoryID == bookmark.categoryID && before.subcategory == bookmark.subcategory
-        }()
+        // Explicit provenance only. Legacy choices cannot safely be inferred
+        // by rerunning a categorizer whose rules may since have changed.
+        let machineFiled = EnrichmentPolicy.mayFile(source: bookmark.filingSource)
 
         // Always stamp the attempt, so a page with no metadata isn't retried
         // on every single scroll.
         bookmark.previewFetchedAt = .now
+        bookmark.enrichmentAttempts = (bookmark.enrichmentAttempts ?? 0) + 1
+        if SavedContent.excerpt(result.description) != nil ||
+            (result.title != nil && !Self.isDerivedTitle(result.title!, url: url) &&
+             result.title?.range(of: #" on (X|Instagram|Threads)$"#, options: .regularExpression) == nil) {
+            bookmark.enrichmentVersion = EnrichmentPolicy.version
+        }
 
         if let image = result.imageURL {
             bookmark.imageURLString = image.absoluteString
@@ -136,7 +140,7 @@ final class PreviewFetcher: ObservableObject {
         // Only replace a title we invented from the URL slug. A title the user
         // typed, or a caption the share sheet gave us, is better than anything
         // Open Graph will return.
-        if let fetched = result.title, Self.isDerivedTitle(bookmark.title, url: bookmark.url) {
+        if bookmark.titleEdited != true, let fetched = result.title, Self.isDerivedTitle(bookmark.title, url: bookmark.url) {
             bookmark.title = fetched
         }
 
@@ -153,7 +157,7 @@ final class PreviewFetcher: ObservableObject {
             // The caption and hashtags settle it; no model needed.
             bookmark.categoryID = after.categoryID
             bookmark.subcategory = after.subcategory
-            bookmark.tags = Self.merged(bookmark.tags, after.tags)
+            if bookmark.tagsEdited == false { bookmark.tags = Self.merged(bookmark.tags, after.tags) }
             bookmark.touch()
             return nil
         }
@@ -172,12 +176,13 @@ final class PreviewFetcher: ObservableObject {
         descriptor.fetchLimit = 1
         guard let bookmark = try? context.fetch(descriptor).first,
               bookmark.updatedAt == candidate.stamp,
+              EnrichmentPolicy.mayFile(source: bookmark.filingSource),
               bookmark.deletedAt == nil
         else { return }
 
         bookmark.categoryID = better.categoryID
         bookmark.subcategory = better.subcategory
-        bookmark.tags = Self.merged(bookmark.tags, better.tags)
+        if bookmark.tagsEdited == false { bookmark.tags = Self.merged(bookmark.tags, better.tags) }
         bookmark.touch()
     }
 

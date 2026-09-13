@@ -20,6 +20,8 @@ struct DetailSheet: View {
     @State private var showingPicker = false
     @State private var showingJourneys = false
     @State private var tagDraft = ""
+    @StateObject private var previews = PreviewFetcher()
+    @State private var refreshingPreview = false
 
     @Query(
         filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
@@ -47,6 +49,14 @@ struct DetailSheet: View {
                     tagEditor
                     noteBlock
                     savedLine
+                    Button(refreshingPreview ? "Refreshing preview…" : "Refresh missing content & preview") {
+                        Task {
+                            refreshingPreview = true
+                            bookmark.enrichmentVersion = nil; bookmark.enrichmentAttempts = 0; bookmark.previewFetchedAt = nil
+                            await previews.fetchMissing(for: [bookmark], in: context)
+                            refreshingPreview = false
+                        }
+                    }.font(Typo.ui(12)).disabled(refreshingPreview)
                 }
                 .padding(18)
                 .padding(.bottom, 24)
@@ -77,11 +87,11 @@ struct DetailSheet: View {
             TopicPickerSheet(
                 categoryID: Binding(
                     get: { bookmark.categoryID },
-                    set: { bookmark.categoryID = $0 }
+                    set: { bookmark.categoryID = $0; bookmark.filingSource = "user"; bookmark.touch() }
                 ),
                 subcategory: Binding(
                     get: { bookmark.subcategory },
-                    set: { bookmark.subcategory = $0 }
+                    set: { bookmark.subcategory = $0; bookmark.filingSource = "user"; bookmark.touch() }
                 )
             )
             .environment(\.accent, accent)
@@ -203,6 +213,7 @@ struct DetailSheet: View {
         let cleaned = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleaned.isEmpty else { editingTitle = false; return }
         bookmark.title = cleaned
+        bookmark.titleEdited = true
         bookmark.touch()
         try? context.save()
         editingTitle = false
@@ -289,6 +300,7 @@ struct DetailSheet: View {
                         ForEach(bookmark.tags, id: \.self) { tag in
                             Button {
                                 bookmark.tags = bookmark.tags.filter { $0 != tag }
+                                bookmark.tagsEdited = true
                                 bookmark.touch()
                                 try? context.save()
                             } label: {
@@ -363,6 +375,7 @@ struct DetailSheet: View {
             .lowercased()
         guard !cleaned.isEmpty, !bookmark.tags.contains(cleaned) else { tagDraft = ""; return }
         bookmark.tags = bookmark.tags + [cleaned]
+        bookmark.tagsEdited = true
         bookmark.touch()
         try? context.save()
         tagDraft = ""

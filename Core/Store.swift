@@ -54,14 +54,19 @@ enum Store {
         descriptor.fetchLimit = 1
 
         if let existing = try context.fetch(descriptor).first {
-            if !draft.title.isEmpty { existing.title = draft.title }
+            if !draft.title.isEmpty && (draft.titleEdited == true ||
+                (existing.titleEdited != true && (existing.title.isEmpty || existing.title == Categorizer.fallbackTitle(for: draft.url)))) { existing.title = draft.title }
             if let author = draft.author { existing.author = author }
-            if let categoryID = draft.categoryID { existing.categoryID = categoryID }
-            if let subcategory = draft.subcategory { existing.subcategory = subcategory }
-            if !draft.tags.isEmpty {
+            if draft.filingSource == "user" || (existing.filingSource == "automatic" && draft.categoryID != nil) {
+                existing.categoryID = draft.categoryID; existing.subcategory = draft.subcategory
+                existing.filingSource = draft.filingSource ?? "automatic"
+            }
+            if draft.tagsEdited == true { existing.tags = draft.tags; existing.tagsEdited = true }
+            else if existing.tagsEdited == false && !draft.tags.isEmpty {
                 existing.tags = Array(Set(existing.tags + draft.tags)).sorted()
             }
             if let text = draft.text { existing.text = text }
+            if draft.titleEdited == true { existing.titleEdited = true }
             if let duration = draft.durationSeconds { existing.durationSeconds = duration }
             if let note = draft.noteText { existing.noteText = note; existing.noteDate = draft.noteDate }
             if let image = draft.imageURLString { existing.imageURLString = image }
@@ -86,6 +91,9 @@ enum Store {
             isUnread: draft.isUnread
         )
         bookmark.imageURLString = draft.imageURLString
+        bookmark.filingSource = draft.filingSource ?? "automatic"
+        bookmark.tagsEdited = draft.tagsEdited ?? false
+        bookmark.titleEdited = draft.titleEdited ?? false
         bookmark.postedAt = draft.postedAt
         if draft.previewFetched {
             bookmark.previewFetchedAt = .now
@@ -282,6 +290,7 @@ enum Store {
         for bookmark in bookmarks(categoryID: id, in: context) {
             bookmark.categoryID = nil
             bookmark.subcategory = nil
+            bookmark.filingSource = "user"
             bookmark.touch()
         }
         try? context.save()
@@ -296,6 +305,7 @@ enum Store {
         entry.updatedAt = .now
         for bookmark in bookmarks(categoryID: topicID, in: context) where bookmark.subcategory == old {
             bookmark.subcategory = name
+            bookmark.filingSource = "user"
             bookmark.touch()
         }
         try? context.save()
@@ -308,6 +318,7 @@ enum Store {
         let topicID = entry.categoryID
         for bookmark in bookmarks(categoryID: topicID, in: context) where bookmark.subcategory == old {
             bookmark.subcategory = nil
+            bookmark.filingSource = "user"
             bookmark.touch()
         }
         try? context.save()
@@ -446,4 +457,7 @@ struct BookmarkDraft: Codable, Sendable {
     /// Set when the Add flow already fetched metadata, so the background
     /// fetcher doesn't immediately go and do it again.
     var previewFetched: Bool = false
+    var filingSource: String? = nil
+    var tagsEdited: Bool? = nil
+    var titleEdited: Bool? = nil
 }

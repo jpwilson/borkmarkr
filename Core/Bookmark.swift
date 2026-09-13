@@ -48,6 +48,11 @@ final class Bookmark {
     var imageURLString: String?
     /// When we last tried, so a failed fetch isn't retried on every scroll.
     var previewFetchedAt: Date?
+    var filingSource: String?
+    var tagsEdited: Bool?
+    var titleEdited: Bool?
+    var enrichmentVersion: Int?
+    var enrichmentAttempts: Int?
 
     /// Usage signal. Platform bookmarks are write-only graveyards precisely
     /// because nothing records whether you ever went back to a thing — these
@@ -119,6 +124,9 @@ final class Bookmark {
         self.categoryID = categoryID
         self.subcategory = subcategory
         self.tags = tags
+        self.filingSource = "automatic"
+        self.tagsEdited = false
+        self.titleEdited = false
         self.text = text
         self.durationSeconds = durationSeconds
         self.noteText = noteText
@@ -141,9 +149,8 @@ final class Bookmark {
     /// True when we've never tried, or tried long enough ago that a retry is
     /// reasonable (pages gain OG tags; CDN thumbnails expire).
     var needsPreview: Bool {
-        guard imageURLString == nil else { return false }
-        guard let previewFetchedAt else { return true }
-        return Date.now.timeIntervalSince(previewFetchedAt) > 60 * 60 * 24 * 7
+        deletedAt == nil && !isWaiting && EnrichmentPolicy.due(version: enrichmentVersion,
+            attempts: enrichmentAttempts, lastAttempt: previewFetchedAt)
     }
 
     /// YouTube, Shorts, the open web and Pinterest sometimes publish a date.

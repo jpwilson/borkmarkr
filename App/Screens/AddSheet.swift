@@ -46,6 +46,8 @@ struct AddSheet: View {
     @State private var categoryID: String?
     @State private var subcategory: String?
     @State private var tags: [String] = []
+    @State private var userFiled = false
+    @State private var userTagsEdited = false
     @State private var tagDraft = ""
     @State private var noteOpen = false
     @State private var note = ""
@@ -123,7 +125,8 @@ struct AddSheet: View {
         .presentationDetents([.large])
         .presentationCornerRadius(Tokens.sheetRadius)
         .sheet(isPresented: $showingPicker) {
-            TopicPickerSheet(categoryID: $categoryID, subcategory: $subcategory)
+            TopicPickerSheet(categoryID: Binding(get: { categoryID }, set: { categoryID = $0; userFiled = true }),
+                subcategory: Binding(get: { subcategory }, set: { subcategory = $0; userFiled = true }))
                 .environment(\.accent, accent)
         }
         .sheet(isPresented: $showingNewJourney) {
@@ -572,6 +575,7 @@ struct AddSheet: View {
                         ForEach(tags, id: \.self) { tag in
                             Button {
                                 tags.removeAll { $0 == tag }
+                                userTagsEdited = true
                             } label: {
                                 HStack(spacing: 4) {
                                     Text("#\(tag)").font(Typo.ui(11.5, .semibold))
@@ -628,6 +632,7 @@ struct AddSheet: View {
             if let placement = tagPlacement {
                 Button {
                     categoryID = placement.categoryID
+                    userFiled = true
                     subcategory = placement.subcategory
                     Haptics.tap()
                 } label: {
@@ -839,7 +844,7 @@ struct AddSheet: View {
 
         // The user may have picked a topic themselves while this was in
         // flight. Their choice wins — always.
-        guard categoryID == offline.categoryID, subcategory == offline.subcategory else { return }
+        guard !userFiled, categoryID == offline.categoryID, subcategory == offline.subcategory else { return }
 
         withAnimation(.easeOut(duration: 0.2)) {
             categoryID = better.categoryID
@@ -848,7 +853,7 @@ struct AddSheet: View {
             suggestedCategoryID = better.categoryID
             suggestedSubcategory = better.subcategory
             // Merge rather than replace: tags the user typed in the meantime stay.
-            for tag in better.tags where !tags.contains(tag) && !Platform.isSiteName(tag) {
+            for tag in better.tags where !userTagsEdited && !tags.contains(tag) && !Platform.isSiteName(tag) {
                 tags.append(tag)
             }
         }
@@ -888,6 +893,7 @@ struct AddSheet: View {
             .lowercased()
         guard !cleaned.isEmpty, !tags.contains(cleaned) else { tagDraft = ""; return }
         tags.append(cleaned)
+        userTagsEdited = true
         tagDraft = ""
     }
 
@@ -918,6 +924,7 @@ struct AddSheet: View {
             url: url, title: finalTitle, author: author,
             platform: Platform.detect(from: url), kind: nil,
             categoryID: categoryID, subcategory: subcategory, tags: tags,
+            text: SavedContent.excerpt(pageDescription),
             durationSeconds: duration,
             noteText: noteOpen && !note.isEmpty ? note : nil,
             noteDate: noteOpen && !note.isEmpty ? noteDate : nil
@@ -926,6 +933,9 @@ struct AddSheet: View {
         draft.imageURLString = imageURL?.absoluteString
         draft.postedAt = postedAt
         draft.previewFetched = true
+        draft.filingSource = userFiled ? "user" : "automatic"
+        draft.tagsEdited = userTagsEdited
+        draft.titleEdited = editingTitle
 
         do {
             let saved = try Store.save(draft, in: context)
