@@ -19,6 +19,7 @@ jobs:
       - run: node Scripts/test_library_layout.mjs
       - run: node Scripts/test_quest_presentation.mjs
       - run: node Scripts/test_grounded_briefs.mjs
+      - run: node Scripts/test_enrichment.mjs
   swift:
     runs-on: macos-latest
     steps:

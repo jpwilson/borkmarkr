@@ -208,6 +208,13 @@ final class Account: ObservableObject {
                 "duration_seconds": nullable(bookmark.durationSeconds),
                 "note_text": nullable(bookmark.noteText),
                 "image_url": nullable(bookmark.imageURLString),
+                "note_date": nullable(bookmark.noteDate.map(QuestSyncRecord.dayString)),
+                "filing_source": nullable(bookmark.filingSource),
+                "tags_edited": nullable(bookmark.tagsEdited),
+                "title_edited": nullable(bookmark.titleEdited),
+                "enrichment_version": nullable(bookmark.enrichmentVersion),
+                "enrichment_attempts": nullable(bookmark.enrichmentAttempts),
+                "enrichment_attempted_at": nullable(bookmark.previewFetchedAt.map { SupabaseDate.string(from: $0) }),
                 "deleted_at": nullable(bookmark.deletedAt.map { SupabaseDate.string(from: $0) }),
             ]
         }
@@ -254,8 +261,8 @@ final class Account: ObservableObject {
                 from: "bookmarks", ownerID: session.userID,
                 offset: page * Self.pullPageSize, limit: Self.pullPageSize, session: session
             )
-            guard let rows = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
-                  !rows.isEmpty else { return }
+            guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { throw Supabase.Failure.decoding }
+            if rows.isEmpty { return }
 
             for row in rows { merge(row, into: context, local: &local) }
             // Save per page, so a pull that dies on page four keeps the first
@@ -265,6 +272,7 @@ final class Account: ObservableObject {
             if rows.count < Self.pullPageSize { return }
             await Task.yield()
         }
+        throw Supabase.Failure.http(413, "Your library refresh is incomplete. Please retry.")
     }
 
     /// Fold one remote row into the local store: last-writer-wins on
@@ -304,6 +312,13 @@ final class Account: ObservableObject {
         target.durationSeconds = row["duration_seconds"] as? Int
         target.noteText = row["note_text"] as? String
         target.imageURLString = row["image_url"] as? String
+        target.noteDate = (row["note_date"] as? String).flatMap(QuestSyncRecord.dayDate)
+        target.filingSource = row["filing_source"] as? String
+        target.tagsEdited = row["tags_edited"] as? Bool
+        target.titleEdited = row["title_edited"] as? Bool
+        target.enrichmentVersion = row["enrichment_version"] as? Int
+        target.enrichmentAttempts = row["enrichment_attempts"] as? Int
+        target.previewFetchedAt = (row["enrichment_attempted_at"] as? String).flatMap(SupabaseDate.parse)
         if let savedRaw = row["saved_at"] as? String,
            let saved = SupabaseDate.parse(savedRaw) {
             target.savedAt = saved
