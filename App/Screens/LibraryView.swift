@@ -78,6 +78,7 @@ struct LibraryView: View {
     }
 
     var body: some View {
+        GeometryReader { viewport in
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
@@ -119,7 +120,11 @@ struct LibraryView: View {
                 if !presentPlatforms.isEmpty { filterRow }
                 feed
             }
+            // Bound the scroll content to the viewport, not a child's ideal
+            // width (loaded images and selection labels can be much wider).
+            .frame(width: max(0, viewport.size.width), alignment: .leading)
             .padding(.bottom, 120)
+        }
         }
         .background(Tokens.paper)
         // Above the dock, not under it: the dock is drawn over this view by
@@ -290,7 +295,7 @@ struct LibraryView: View {
     }
 
     private var filterRow: some View {
-        HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 7) {
                     chip("All", active: sourceFilter == nil) { sourceFilter = nil }
@@ -304,10 +309,14 @@ struct LibraryView: View {
             }
 
             HStack(spacing: 8) {
+                Text("Your borks")
+                    .font(Typo.ui(14, .semibold))
+                    .foregroundStyle(Tokens.inkSecondary)
+                Spacer(minLength: 8)
                 selectToggle
                 densityToggle
             }
-            .padding(.trailing, 18)
+            .padding(.horizontal, 18)
         }
     }
 
@@ -352,7 +361,7 @@ struct LibraryView: View {
             Image(systemName: selecting ? "checkmark.circle.fill" : "checkmark.circle")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(selecting ? .white : Tokens.inkMeta)
-                .frame(width: 34, height: 34)
+                .frame(width: 44, height: 44)
                 .background(selecting ? accent.base : Tokens.segmentTrack, in: Capsule())
         }
         .buttonStyle(.plain)
@@ -369,11 +378,12 @@ struct LibraryView: View {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(density == value ? Tokens.ink : Tokens.inkMeta)
-                .frame(width: 32, height: 28)
+                .frame(width: 44, height: 44)
                 .background(density == value ? Tokens.surface : .clear, in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(value == "cards" ? "Card view" : "List view")
+        .accessibilityAddTraits(density == value ? .isSelected : [])
     }
 
     @ViewBuilder
@@ -394,12 +404,7 @@ struct LibraryView: View {
             }
             .padding(.horizontal, 18)
         } else {
-            // No GeometryReader here. An earlier version wrapped this in one
-            // with a guessed `.frame(height:)`, which broke the layout outright
-            // — GeometryReader claims the whole proposal regardless of content,
-            // so with a short feed the cards were drawn over the filter row
-            // above them. MasonryVStack is an HStack of two LazyVStacks and
-            // already sizes to its content; it just needed to be left alone.
+            // The layout measures real card heights at a bounded column width.
             MasonryVStack(
                 items: visible,
                 spacing: 12,

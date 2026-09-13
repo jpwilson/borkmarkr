@@ -151,6 +151,29 @@ enum DebugSeed {
         ]
         context.insert(quest)
 
+        if CommandLine.arguments.contains("-layoutStress") {
+            // Isolated regression fixture: long text, missing/loaded images,
+            // and a library sized like a real heavy user's. No private saves.
+            for i in 0..<230 {
+                let sample = samples[i % samples.count]
+                let row = Bookmark(
+                    url: URL(string: "https://example.invalid/layout/\(i)")!,
+                    title: i.isMultiple(of: 3)
+                        ? String(repeating: "A very long saved-post title with details ", count: 5)
+                        : sample.title,
+                    author: String(repeating: "Long author name ", count: 6),
+                    platform: sample.platform, kind: sample.kind,
+                    categoryID: sample.category,
+                    subcategory: String(repeating: "Long subtopic ", count: 8),
+                    tags: ["Longtagwithoutanybreaksforlayoutregressioncoverage"],
+                    text: sample.text, savedAt: daysAgo(i % 28)
+                )
+                row.imageURLString = i.isMultiple(of: 2) ? sample.image : nil
+                row.previewFetchedAt = .now
+                row.publishedDateChecked = true
+                context.insert(row)
+            }
+        }
         try? context.save()
     }
 
