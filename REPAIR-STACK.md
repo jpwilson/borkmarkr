@@ -31,7 +31,7 @@ new clients. See [release acceptance](RELEASE-ACCEPTANCE.md).
 9. [#83](https://github.com/jpwilson/borkmarkr/pull/83) Quest editor, guidance, and artwork parity.
 10. [#84](https://github.com/jpwilson/borkmarkr/pull/84) Source-grounded briefs and visible generation states.
 11. [#85](https://github.com/jpwilson/borkmarkr/pull/85) Safe, resumable enrichment with preserved user decisions.
-12. `repair/12-sharing-release`: single-save sharing, public routing, recipient experience, release checks.
+12. [#86](https://github.com/jpwilson/borkmarkr/pull/86) Single-save sharing, public routing, recipient experience, release checks.
 
 Backend migrations and functions are reviewed as code before deployment.
 Do not equate a merged PR with a deployed or physically verified release.

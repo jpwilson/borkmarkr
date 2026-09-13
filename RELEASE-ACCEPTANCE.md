@@ -46,6 +46,9 @@ the existing design; changes to its lower feed focus on containment and use.
 - Local synthetic authenticated fixture: Profile on mobile/desktop, quest
   creation entry, search finding the 60th bookmark, attach/save, unavailable AI
   state, and single-share note excluded by default and removed when unchecked.
+  At 320×740, the quest board and Library list→selection→grid stay within the
+  page width, with the selection toolbar above the dock. The narrow header
+  keeps the account visible; the download link remains in the footer.
   The fixture is **not** proof of production authentication or cloud parity.
   Reproduce with `node Scripts/preview_web_fixture.mjs`, then visit its printed
   localhost URL and use the documented fixture email/code. No real emails,
