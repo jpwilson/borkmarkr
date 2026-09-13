@@ -676,9 +676,15 @@ struct MissionDetailSheet: View {
     @State private var draftThoughts = ""
     @State private var newTodo = ""
     @State private var reordering = false
-    /// The attached count the brief was last asked for while this sheet is
-    /// up, so a call that failed is not repeated until the pile changes.
-    @State private var briefAskedFor: Int?
+    /// Content identity, not just a count: replacing a save or renaming the
+    /// quest invalidates the draft. Failed requests can always be retried.
+    @State private var briefAskedFor: String?
+    @State private var briefBusy = false
+    @State private var briefError: String?
+
+    private var briefInputKey: String? {
+        mission.briefRequest(from: attached).map(QuestBrief.inputKey)
+    }
 
     private var attached: [Bookmark] {
         let map = Dictionary(uniqueKeysWithValues: allBookmarks.map { ($0.id, $0) })
@@ -860,21 +866,21 @@ struct MissionDetailSheet: View {
                 }
                 #endif
             }
-            .task(id: attached.count) { await refreshBrief() }
+            .task(id: briefInputKey) { await refreshBrief() }
         }
         .presentationDetents([.large])
         .presentationCornerRadius(Tokens.sheetRadius)
     }
 
-    /// Asks for the brief when there is none, the pile changed, or a week
-    /// passed. Signed out, offline, out of quota: nothing happens and the
-    /// template stays — a brief is never something the sheet waits on.
-    private func refreshBrief() async {
+    /// Refreshes stale inputs without blocking the quest. The previous draft
+    /// stays visible during a retry; failures never masquerade as completion.
+    private func refreshBrief(force: Bool = false) async {
+        guard let request = mission.briefRequest(from: attached) else { return }
+        let key = QuestBrief.inputKey(request)
         let count = attached.count
-        guard
-            QuestBrief.isStale(briefAt: mission.briefAt, briefCount: mission.briefBorkCount, count: count),
-            briefAskedFor != count
-        else { return }
+        if !force && briefAskedFor == key { return }
+        if !force && mission.brief?.version == 2 && mission.brief?.inputKey == key &&
+            !QuestBrief.isStale(briefAt: mission.briefAt, briefCount: mission.briefBorkCount, count: count) { return }
 
         // A tap on + re-runs this. Wait, so five quick taps are one call;
         // the task for the previous count is cancelled by the next.
@@ -883,17 +889,20 @@ struct MissionDetailSheet: View {
             if Task.isCancelled { return }
         }
 
-        guard let session = await account?.currentSession() else { return }
-        briefAskedFor = count
-        guard
-            let request = mission.briefRequest(from: attached),
-            let brief = await QuestBrief.fetch(request, session: session)
-        else { return }
-
-        withAnimation(Motion.gentle) {
-            mission.storeBrief(brief, count: count)
+        guard let session = await account?.currentSession() else {
+            briefError = "Sign in to generate a summary. Your quest and steps work without one."
+            return
         }
-        try? context.save()
+        briefAskedFor = key; briefBusy = true; briefError = nil
+        let outcome = await QuestBrief.generate(request, session: session)
+        briefBusy = false
+        guard !Task.isCancelled, briefInputKey == key else { return }
+        switch outcome {
+        case .ready(let brief):
+            withAnimation(Motion.gentle) { mission.storeBrief(brief, count: count) }
+            try? context.save()
+        case .unavailable(let message): briefError = message
+        }
     }
 
     /// THE THREAD: the model's brief when there is one, the template
@@ -917,6 +926,25 @@ struct MissionDetailSheet: View {
                 .font(Typo.ui(14.5))
                 .foregroundStyle(Tokens.ink)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if let brief {
+                Text(brief.basis == "saved_text" ? "AI draft from saved excerpts — check the originals."
+                     : brief.basis == "goal_only" ? "AI draft from your goal, not saved evidence."
+                     : "AI draft from titles only — source details may be missing.")
+                    .font(Typo.ui(11)).foregroundStyle(Tokens.inkMeta)
+                ForEach((brief.source_ids ?? []).compactMap { id in attached.first { $0.id == id } }) { source in
+                    Button { detail = source } label: {
+                        Label(source.displayTitle, systemImage: "link").font(Typo.ui(12)).lineLimit(2)
+                    }.buttonStyle(.plain).foregroundStyle(accent.deep)
+                }
+            }
+            if briefBusy { ProgressView("Reading saved excerpts…").font(Typo.ui(12)) }
+            if let briefError { Text(briefError).font(Typo.ui(12)).foregroundStyle(Tokens.inkSecondary).accessibilityAddTraits(.updatesFrequently) }
+            Button(briefError != nil ? "Retry summary" : brief == nil ? "Generate summary" : "Refresh summary") {
+                Task { await refreshBrief(force: true) }
+            }.font(Typo.ui(12, .semibold)).disabled(briefBusy)
+            Text("Uses up to 12 saved posts. Your private notes are not sent.")
+                .font(Typo.ui(10)).foregroundStyle(Tokens.inkMeta)
 
             if !pending.isEmpty {
                 Text(Copy.suggestedSteps)

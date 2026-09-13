@@ -7,19 +7,19 @@ import Foundation
 /// Seb's breathing quest showed exactly that and read as *no summary at all*.
 /// This is the second pass: the `quest-brief` Edge Function (Claude Sonnet 5
 /// via OpenRouter, key on the server) reads the quest's name, its topic, the
-/// titles on it — maybe none yet — and the steps already written, and says
+/// saved excerpts on it — maybe none yet — and the steps already written, and says
 /// what the quest is about in the product's voice plus three next actions.
 ///
 /// **The key is not in this app.** Same contract as `SmartNamer` and
-/// `TopicArt`: the user's JWT authenticates, and every failure — signed out,
-/// offline, quota spent, bad JSON — returns nil so the template stands. A
-/// brief is a nicety; the sheet never waits on it and never shows an error.
+/// `TopicArt`: the user's JWT authenticates. Generation is nonblocking and
+/// failures have visible retry states. Private notes and URLs are not sent.
 ///
 /// Pure Foundation apart from the one `Supabase.invoke`, so the shaping and
 /// the staleness rule run under `swiftc` in `Scripts/test_quest_brief.swift`.
 enum QuestBrief {
 
-    /// What is sent. Titles and steps only — never notes, never URLs.
+    /// What is sent: capped captured excerpts, titles, source IDs and steps.
+    /// Never private notes or URLs. Source IDs link back locally.
     static let maxTitles = 12
     static let maxTodos = 8
     static let maxField = 140
@@ -36,6 +36,11 @@ enum QuestBrief {
     static let refreshInterval: TimeInterval = 7 * 24 * 60 * 60
 
     struct Request: Encodable, Equatable {
+        struct Source: Encodable, Equatable {
+            var id: String
+            var title: String
+            var text: String
+        }
         struct Todo: Encodable, Equatable {
             var title: String
             var done: Bool
@@ -47,11 +52,16 @@ enum QuestBrief {
         var subtopic: String?
         var titles: [String]
         var todos: [Todo]
+        var sources: [Source] = []
     }
 
     struct Brief: Codable, Equatable {
         var summary: String
         var steps: [String]
+        var source_ids: [String]? = nil
+        var basis: String? = nil
+        var version: Int? = nil
+        var inputKey: String? = nil
     }
 
     // MARK: - Shaping
@@ -65,7 +75,8 @@ enum QuestBrief {
         topic: String?,
         subtopic: String?,
         titles: [String],
-        todos: [Request.Todo]
+        todos: [Request.Todo],
+        sources: [Request.Source] = []
     ) -> Request? {
         let name = clamp(title)
         guard !name.isEmpty else { return nil }
@@ -79,7 +90,9 @@ enum QuestBrief {
                 .map { Request.Todo(title: clamp($0.title), done: $0.done) }
                 .filter { !$0.title.isEmpty }
                 .prefix(maxTodos)
-                .map { $0 }
+                .map { $0 },
+            sources: sources.prefix(maxTitles).map { .init(id: String($0.id.prefix(100)),
+                title: String($0.title.prefix(300)), text: String($0.text.prefix(1600))) }
         )
     }
 
@@ -92,7 +105,11 @@ enum QuestBrief {
     static func parse(_ data: Data) -> Brief? {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         let steps = (object["steps"] as? [Any])?.compactMap { $0 as? String } ?? []
-        return brief(summary: object["summary"] as? String, steps: steps)
+        guard var result = brief(summary: object["summary"] as? String, steps: steps) else { return nil }
+        result.source_ids = object["source_ids"] as? [String]
+        result.basis = object["basis"] as? String
+        result.version = object["version"] as? Int
+        return result
     }
 
     static func brief(summary: String?, steps: [String]) -> Brief? {
@@ -151,6 +168,35 @@ enum QuestBrief {
     }
 
     // MARK: - Network
+
+    static func inputKey(_ request: Request) -> String {
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        let bytes = (try? encoder.encode(request)) ?? Data()
+        var hash: UInt64 = 14695981039346656037
+        for byte in bytes { hash = (hash ^ UInt64(byte)) &* 1099511628211 }
+        return String(hash, radix: 16)
+    }
+
+    enum Outcome { case ready(Brief), unavailable(String) }
+
+    static func generate(_ request: Request, session: Supabase.Session) async -> Outcome {
+        do {
+            let data = try await Supabase.invoke(function: "quest-brief", bodyJSON: JSONEncoder().encode(request), session: session, timeout: 25)
+            if var brief = parse(data), brief.version == 2 {
+                let known = Set(request.sources.map(\.id))
+                brief.source_ids = brief.source_ids?.filter(known.contains)
+                brief.inputKey = inputKey(request)
+                return .ready(brief)
+            }
+            let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            if object?["reason"] as? String == "quota_or_unavailable" {
+                return .unavailable("Summary generation is temporarily unavailable or the daily limit was reached. Try again later.")
+            }
+            return .unavailable("Couldn't generate a summary. Your quest is saved; try again later.")
+        } catch {
+            return .unavailable("Couldn't reach the summary service. Check your connection and retry.")
+        }
+    }
 
     /// One call, nil on any failure. Signed out is not a failure; it is the
     /// common case, and the template is what it gets.

@@ -104,7 +104,9 @@ final class Mission {
             topic: topic?.name,
             subtopic: Self.dominantSubcategory(among: attached),
             titles: attached.map(\.displayTitle),
-            todos: todos.map { QuestBrief.Request.Todo(title: $0.title, done: $0.done) }
+            todos: todos.map { QuestBrief.Request.Todo(title: $0.title, done: $0.done) },
+            sources: attached.map { .init(id: $0.id, title: $0.displayTitle,
+                text: SavedContent.excerpt($0.text) ?? "") }
         )
     }
 
