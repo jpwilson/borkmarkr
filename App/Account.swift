@@ -133,6 +133,7 @@ final class Account: ObservableObject {
 
         do {
             let session = try await validSession()
+            try await TaxonomySync.run(context: context, session: session)
             try await push(context: context, session: session)
             try await pull(context: context, session: session)
             try await QuestSync.run(context: context, session: session)

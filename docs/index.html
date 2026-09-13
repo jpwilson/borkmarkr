@@ -1314,6 +1314,7 @@
 
 <script src="/taxonomy.js"></script>
 <script src="/saved-content.js"></script>
+<script src="/taxonomy-sync.js"></script>
 <!-- The Core ports: the export parsers, the offline filer and the tag-recency
      rank, from Core/Importers.swift, Core/Categorizer.swift and
      Core/TagRecency.swift. Loaded before the app so `Importer`, `Filer` and
@@ -1444,6 +1445,11 @@ const addedTopics = new Map();
    shipped 50, which is what the picker and the quest form list from. */
 function topicFor(id) {
   if (!id) return null;
+  const saved = taxonomySync.topics.get(id);
+  if (saved) {
+    if (saved.deleted_at) return null;
+    return TOPIC_BY_ID[id] = { id, name: saved.name, hue: saved.hue, image_url: saved.image_url, subs: [], custom: true };
+  }
   const known = TOPIC_BY_ID[id];
   const named = addedTopics.get(id);
   if (known && (!named || known.name === named)) return known;
@@ -1456,8 +1462,9 @@ function topicFor(id) {
    named in this tab. The phone's MergedTaxonomy.allTopics, second half. */
 function myTopics() {
   const ids = new Set(addedTopics.keys());
+  for (const id of taxonomySync.topics.keys()) ids.add(id);
   for (const r of live()) if (isCustom(r.category_id)) ids.add(r.category_id);
-  return [...ids].map(topicFor)
+  return [...ids].map(topicFor).filter(Boolean)
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
 }
 
@@ -1670,6 +1677,20 @@ let loading = false;         // a pull is in flight
 let pulledOnce = false;      // the first pull has finished (skeleton → real/empty)
 const justAdded = new Set(); // ids to animate in on the next render
 const memo = new Map();      // element id → key of what it currently shows
+const taxonomySync = new TaxonomyStore({
+  session: () => store.session, request: api, read: lsGet, write: lsSet,
+  changed: () => {
+    memo.clear();
+    for (const r of borks.values()) {
+      if (taxonomySync.topics.get(r.category_id)?.deleted_at) {
+        r.category_id = null; r.subcategory = null;
+      }
+      r._blob = blob(r); r._disp = null;
+    }
+    render();
+  },
+  error: e => toast("Topic saved on this browser; backup pending. " + humanError(e)),
+});
 
 const blob = (r) => fold([
   r.title, r.author, r.body_text, r.note_text, (r.tags || []).join(" "),
@@ -1787,6 +1808,9 @@ function exitDemoToSignup() {
 
 /* Everything that belongs to one signed-in person, back to zero. */
 function resetLocalState() {
+  taxonomySync.reset();
+  missionOutbox.clear();
+  for (const id of Object.keys(TOPIC_BY_ID)) if (isCustom(id)) delete TOPIC_BY_ID[id];
   borks = new Map(); missions = new Map(); questDraft = null;
   profile = { handle: null, display_name: null };
   platformFilter = null; topicFilter = null; query = ""; searchPlatform = null; lastSearchCount = 0;
@@ -1801,6 +1825,7 @@ function resetLocalState() {
 }
 function rebootFromStorage() {
   resetLocalState();
+  taxonomySync.restore();
   if (!store.session) { showAuthStage("choose"); render(); return; }
   absorb(store.cache);
   try { absorbMissions(JSON.parse(lsGet("bm.mcache")) || []); } catch { /* fresh */ }
@@ -1844,6 +1869,7 @@ async function pull() {
       if (rows.length < 1000) break;
     }
     try { await pullMissions(); } catch (e) { toast("Side quests could not sync. " + humanError(e), "Retry", () => pull()); }
+    try { await taxonomySync.sync(); } catch (e) { toast("Topics could not sync. " + humanError(e), "Retry", () => pull()); }
     try { await pullTopicArt(); } catch { /* art is a decoration */ }
   } finally {
     loading = false; pulledOnce = true;
@@ -2020,7 +2046,7 @@ for (const [id, v] of Object.entries(artStamps)) if (v && v.url) topicArt.set(id
 
 /* A built-in resolves to its bundled file; yours to whatever the server drew,
    or to nothing, which is the lettered tile. */
-const topicArtSrc = (t) => t.custom ? (topicArt.get(t.id) || null) : `/img/topics/${t.id}.jpg`;
+const topicArtSrc = (t) => t.custom ? (topicArt.get(t.id) || t.image_url || null) : `/img/topics/${t.id}.jpg`;
 function stampArt(id, url) {
   artStamps[id] = { url: url || artStamps[id]?.url || null, at: Date.now() };
   if (url) topicArt.set(id, url);
@@ -2622,8 +2648,8 @@ function browseTiles(all) {
     const at = Date.parse(r.saved_at) || 0;
     if (at > (newest.get(id) || 0)) newest.set(id, at);
   }
-  const mine = [...new Set([...[...counts.keys()].filter(isCustom), ...addedTopics.keys()])]
-    .map(topicFor).sort((a, b) => BrowseSort.byName(a.name, b.name));
+  const mine = [...new Set([...[...counts.keys()].filter(isCustom), ...addedTopics.keys(), ...taxonomySync.topics.keys()])]
+    .map(topicFor).filter(Boolean).sort((a, b) => BrowseSort.byName(a.name, b.name));
   const shown = TAXONOMY.filter(t => counts.has(t.id)).concat(mine);
   const entries = shown.map((t, rank) => ({
     id: t.id, name: t.name, count: counts.get(t.id) || 0, recent: newest.get(t.id) ?? null, rank,
@@ -3374,8 +3400,12 @@ const tpCanAdd = TopicPickerQuery.canAdd;
 function ownSubs(topicID) {
   const builtin = new Set((TOPIC_BY_ID[topicID]?.subs || []).map(x => x.toLowerCase()));
   const out = new Map();
+  for (const t of taxonomySync.subtopics.values())
+    if (t.category_id === topicID && !t.deleted_at) out.set(t.name.toLowerCase(), t.name);
   for (const r of live()) if (r.category_id === topicID && r.subcategory && !builtin.has(r.subcategory.toLowerCase())) out.set(r.subcategory.toLowerCase(), r.subcategory);
   for (const x of addedSubs.get(topicID) || []) if (!builtin.has(x.toLowerCase())) out.set(x.toLowerCase(), x);
+  for (const t of taxonomySync.subtopics.values())
+    if (t.category_id === topicID && t.deleted_at) out.delete(t.name.toLowerCase());
   return [...out.values()].sort((a, b) => a.localeCompare(b));
 }
 // A–Z, built-in and the person's own together: taxonomy order means nothing
@@ -3534,7 +3564,12 @@ function addSubtopicTo(topicID, raw, dismissAfter) {
   if (name.length < 2) { $("tp-new-name")?.focus(); return; }
   const subs = allSubs(topicID);
   const existing = subs.find(x => x.toLowerCase() === name.toLowerCase());
-  if (!existing) { if (!addedSubs.has(topicID)) addedSubs.set(topicID, new Set()); addedSubs.get(topicID).add(name); track("subtopic_added"); }
+  if (!existing) {
+    if (!addedSubs.has(topicID)) addedSubs.set(topicID, new Set());
+    addedSubs.get(topicID).add(name);
+    taxonomySync.put("subtopics", { id: topicID + "|" + name.toLowerCase(), category_id: topicID, name });
+    track("subtopic_added");
+  }
   const p = picks[tp.which];
   p.topic = topicID; p.sub = existing || name; p.source = "user";
   tp.expanded = topicID; tp.adding = null;
@@ -3552,7 +3587,11 @@ function addTopicNamed(raw) {
   const lower = name.toLowerCase(), id = makeTopicID(name);
   const match = TAXONOMY.find(t => t.name.toLowerCase() === lower)
     || myTopics().find(t => t.name.toLowerCase() === lower || t.id === id);
-  if (!match) { addedTopics.set(id, name); track("topic_created", { where: tp.which }); }
+  if (!match) {
+    addedTopics.set(id, name);
+    taxonomySync.put("topics", { id, name, hue: customHue(id), image_url: null });
+    track("topic_created", { where: tp.which });
+  }
   const topic = match || topicFor(id);
   const p = picks[tp.which];
   p.topic = topic.id; p.sub = null; p.source = "user";

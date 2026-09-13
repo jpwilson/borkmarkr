@@ -293,6 +293,7 @@ enum Store {
         let old = entry.name
         let topicID = entry.categoryID
         entry.name = name
+        entry.updatedAt = .now
         for bookmark in bookmarks(categoryID: topicID, in: context) where bookmark.subcategory == old {
             bookmark.subcategory = name
             bookmark.touch()
@@ -302,6 +303,7 @@ enum Store {
 
     static func deleteSubtopic(_ entry: CustomSubtopic, in context: ModelContext) {
         entry.deletedAt = .now
+        entry.updatedAt = .now
         let old = entry.name
         let topicID = entry.categoryID
         for bookmark in bookmarks(categoryID: topicID, in: context) where bookmark.subcategory == old {
@@ -353,6 +355,8 @@ enum Store {
         let topics = (try? context.fetch(FetchDescriptor<CustomTopic>())) ?? []
         var claimed = Set(topics.map(\.id))
         for topic in topics {
+            // A valid ID is permanent, even after its label is renamed.
+            guard !TopicArt.isCustomID(topic.id) else { continue }
             let folded = CustomTopic.makeID(from: topic.name)
             guard folded != topic.id else { continue }
             rekeyed[topic.id] = folded
@@ -378,6 +382,7 @@ enum Store {
         for entry in subtopics {
             guard let folded = rekeyed[entry.categoryID] else { continue }
             entry.categoryID = folded
+            entry.updatedAt = .now
             let newID = "\(folded)|\(entry.name.lowercased())"
             if newID != entry.id {
                 if subtopicIDs.contains(newID) {

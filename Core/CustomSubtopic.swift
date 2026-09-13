@@ -20,6 +20,8 @@ final class CustomSubtopic {
     var categoryID: String
     var name: String
     var createdAt: Date
+    /// Optional for existing SwiftData stores; legacy rows use createdAt.
+    var updatedAt: Date?
     var deletedAt: Date?
 
     init(categoryID: String, name: String) {
@@ -29,6 +31,7 @@ final class CustomSubtopic {
         self.categoryID = categoryID
         self.name = name
         self.createdAt = .now
+        self.updatedAt = .now
     }
 }
 

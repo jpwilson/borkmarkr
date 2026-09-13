@@ -14,6 +14,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run test:sync
       - run: node Scripts/test_quest_web_sync.mjs
+      - run: node Scripts/test_taxonomy_sync.mjs
   swift:
     runs-on: macos-latest
     steps:
