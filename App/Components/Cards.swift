@@ -202,7 +202,7 @@ struct BookmarkCard: View {
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
 
-            footer(label: bookmark.category?.name)
+            footer()
         }
         .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -250,7 +250,7 @@ struct BookmarkCard: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
 
-                footer(label: bookmark.subcategory ?? bookmark.category?.name)
+                footer()
             }
             .padding(11)
         }
@@ -289,7 +289,7 @@ struct BookmarkCard: View {
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
 
-            footer(label: bookmark.category?.name)
+            footer()
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -297,23 +297,10 @@ struct BookmarkCard: View {
 
     // MARK: Shared footer
 
-    private func footer(label: String?) -> some View {
+    private func footer() -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            BookmarkFiling(bookmark: bookmark)
         HStack(spacing: 6) {
-            // The pill takes the topic chip's place rather than sitting beside
-            // it. Both together crush a masonry column to "Wai…" and "Stren…",
-            // and a waiting bork is not counted under that topic yet anyway —
-            // "Waiting" is the truer of the two labels until it is admitted.
-            if bookmark.isWaiting {
-                WaitingPill()
-            } else if let label {
-                Text(label)
-                    .font(Typo.ui(10.5, .semibold))
-                    .foregroundStyle(palette.deep)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(palette.tint, in: Capsule())
-                    .lineLimit(1)
-            }
             Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 1) {
                 Text(RelativeDate.label(for: bookmark.savedAt))
@@ -327,6 +314,7 @@ struct BookmarkCard: View {
                 }
             }
             if bookmark.hasNote { NoteDot() }
+        }
         }
     }
 
@@ -410,28 +398,7 @@ struct BookmarkRow: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
-                HStack(spacing: 5) {
-                    if bookmark.isWaiting {
-                        WaitingPill()
-                    } else if let sub = bookmark.subcategory, !sub.isEmpty {
-                        Text("#\(sub)")
-                            .font(Typo.ui(10.5, .semibold))
-                            .foregroundStyle(palette.deep)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(palette.tint, in: Capsule())
-                            .lineLimit(1)
-                    } else if let category = bookmark.category {
-                        Text(category.name)
-                            .font(Typo.ui(10.5, .semibold))
-                            .foregroundStyle(palette.deep)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(palette.tint, in: Capsule())
-                            .lineLimit(1)
-                    }
-                    if bookmark.hasNote { NoteDot() }
-                }
+                BookmarkFiling(bookmark: bookmark)
             }
 
             Spacer(minLength: 0)
@@ -575,5 +542,31 @@ extension View {
         } else {
             self
         }
+    }
+}
+
+/// One filing contract across all card densities; subtopics are not hashtags.
+struct BookmarkFiling: View {
+    let bookmark: Bookmark
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if bookmark.isWaiting {
+                WaitingPill()
+            } else {
+                Text(bookmark.filingPath)
+                    .font(Typo.ui(10.5, .semibold))
+                    .foregroundStyle(Tokens.inkSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !bookmark.tags.isEmpty {
+                    Text(bookmark.tags.prefix(2).map { "#\($0)" }.joined(separator: " · ")
+                         + (bookmark.tags.count > 2 ? " +\(bookmark.tags.count - 2)" : ""))
+                        .font(Typo.ui(10, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

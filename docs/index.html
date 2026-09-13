@@ -777,6 +777,9 @@
     #select-bar { animation: bar-in .22s var(--ease-out); }
     .selecting .card::after { transition: background-color .14s ease; }
   }
+  .filing-path { flex-basis:100%; font-size:12px; font-weight:600; color:var(--ink-2); overflow-wrap:anywhere; }
+  .card-tags { flex:1 1 100%; font-size:11px; color:var(--meta); overflow-wrap:anywhere; }
+  .card-meta { flex-wrap:wrap; }
 </style>
 </head>
 <body>
@@ -1310,6 +1313,7 @@
 <div id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button id="toast-act" hidden></button></div>
 
 <script src="/taxonomy.js"></script>
+<script src="/saved-content.js"></script>
 <!-- The Core ports: the export parsers, the offline filer and the tag-recency
      rank, from Core/Importers.swift, Core/Categorizer.swift and
      Core/TagRecency.swift. Loaded before the app so `Importer`, `Filer` and
@@ -2132,6 +2136,8 @@ function displayFields(r) {
     const b = decodeEntities(r.body_text).trim();
     if (b && b !== title && !title.startsWith(b.slice(0, 40))) snippet = b;
   }
+  title = SavedContent.title(raw, r.body_text, r.platform);
+  if (snippet && title.startsWith(snippet.slice(0, 40))) snippet = null;
   r._disp = { title, author, snippet };
   return r._disp;
 }
@@ -2154,7 +2160,8 @@ function cardHTML(r, o = {}) {
   const cls = `card${isText ? " card-text" : ""}${o.fresh ? " card-in" : ""}`;
   const style = o.idx != null ? ` style="--i:${o.idx}"` : "";
   const meta = `<div class="card-meta">
-      ${topic ? `<span class="topic-chip" style="${chipStyle(hue)}">${esc(topic.name)}</span>` : ""}
+      <span class="filing-path">${esc(SavedContent.breadcrumb(topic?.name, r.subcategory) || "Unfiled")}</span>
+      ${r.tags?.length ? `<span class="card-tags">${esc(r.tags.slice(0, 2).map(t => "#" + t).join(" · "))}${r.tags.length > 2 ? ` +${r.tags.length - 2}` : ""}</span>` : ""}
       ${r.note_text ? `<span class="note-dot" title="Has a note">✎</span>` : ""}
       <span class="date">${fmtDate(r.saved_at)}</span>
     </div>`;
@@ -3911,7 +3918,7 @@ function saveAdd({ again = false } = {}) {
     category_id: picks.add.topic, subcategory: picks.add.topic ? picks.add.sub : null,
     // Nothing on this sheet writes body_text, so a re-save must not erase the
     // one the importer or the phone put there.
-    body_text: dupe ? (existing.body_text ?? null) : null,
+    body_text: (dupe && existing.body_text) || SavedContent.excerpt(addPreview?.description),
     note_text: note || null, note_date: note ? ($("add-note-date").value || todayISO()) : null,
     author: addPreview?.author ?? Filer.fallbackAuthor(url),
     image_url: addPreview?.image_url ?? null,

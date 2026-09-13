@@ -198,15 +198,12 @@ final class Bookmark {
     /// `"Name on Instagram: \"caption\""` — using that raw makes every IG card
     /// a three-line crush. Prefer the caption; fall back to the name.
     var displayTitle: String {
-        let raw = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard platform == .instagram else { return raw }
-        guard let range = raw.range(of: " on Instagram:", options: .caseInsensitive) else {
-            return raw
-        }
-        var caption = String(raw[range.upperBound...])
-            .trimmingCharacters(in: CharacterSet(charactersIn: " \"“”"))
-        if caption.count >= 6 { return caption }
-        return String(raw[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+        SavedContent.title(title, body: text, platform: platformRaw)
+    }
+
+    var filingPath: String {
+        let path = SavedContent.breadcrumb(topic: category?.name, subtopic: subcategory)
+        return path.isEmpty ? "Unfiled" : path
     }
 
     /// "M:SS" for display. Formatting lives here, not in storage.
