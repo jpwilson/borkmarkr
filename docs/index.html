@@ -1244,9 +1244,12 @@
 <!-- Side quest -->
 <dialog id="quest-dialog" aria-labelledby="quest-h">
   <h2 id="quest-h">Start a side quest</h2>
+  <img id="quest-editor-art" class="account-art" src="/img/quests/compass.jpg" alt="">
   <p class="hint" style="margin:0 0 4px">A side quest is why you kept something — get better at running, pick a van, learn pottery.</p>
   <label class="field-label" for="quest-title">What are you working on?</label>
   <input class="field" id="quest-title" placeholder="Run a faster 10k" autocomplete="off" maxlength="80">
+  <label class="field-label" for="quest-detail">Why this matters <span class="opt">(optional)</span></label>
+  <textarea class="field" id="quest-detail" placeholder="What would progress look like?" maxlength="2000"></textarea>
   <label class="field-label" for="quest-topic">Topic</label>
   <select id="quest-topic"></select>
   <label class="field-label" for="quest-new-todo">To-dos</label>
@@ -1257,12 +1260,15 @@
   </div>
   <label class="field-label">Borks on this quest</label>
   <div id="quest-borks"></div>
+  <label class="field-label" for="quest-search">Find borks to add</label>
+  <input class="field" type="search" id="quest-search" placeholder="Search your saved posts, notes or tags">
+  <label class="hint"><input type="checkbox" id="quest-all-topics"> Search across all topics</label>
   <div id="quest-suggest"></div>
   <p class="err" id="quest-err" role="alert"></p>
   <button class="danger-link" id="quest-delete" data-act="delete-quest" hidden>Delete this side quest</button>
   <div class="dialog-row">
     <button class="btn ghost" data-act="close-quest">Not now</button>
-    <button class="btn" data-act="save-quest">Save quest</button>
+    <button class="btn" id="quest-save" data-act="save-quest">Save quest</button>
   </div>
 </dialog>
 
@@ -1329,6 +1335,7 @@
 <script src="/taxonomy.js"></script>
 <script src="/saved-content.js"></script>
 <script src="/library-presentation.js"></script>
+<script src="/quest-presentation.js"></script>
 <script src="/taxonomy-sync.js"></script>
 <script src="/open-signals.js"></script>
 <!-- The Core ports: the export parsers, the offline filer and the tag-recency
@@ -1975,19 +1982,8 @@ function commit(next, prev) {
 }
 
 /* ── Side quests (public.missions) ── */
-/* The cover, in the same order as QuestCover.resolve on iOS minus the title
-   pass: a topic the quest kit draws → the topic's own clay scene (every
-   built-in ships one in /img/topics) → the compass. The map is the iOS
-   category switch verbatim, so both sides pick the same scene for a topic;
-   a custom topic has no bundled scene and gets the compass, as on the phone. */
-const QUEST_ART_MAP = {
-  beliefs: "rabbit", truecrime: "rabbit", business: "business", fitness: "run", sports: "run",
-  marketing: "market", creator: "market", recipes: "cook", fooddrink: "cook", nutrition: "cook",
-  books: "learn", learning: "learn", photovideo: "create", art: "create", crafts: "create",
-  money: "money", investing: "money", crypto: "money",
-};
-const questArt = (categoryID) => QUEST_ART_MAP[categoryID] ? `/img/quests/${QUEST_ART_MAP[categoryID]}.jpg`
-  : TOPIC_BY_ID[categoryID] ? `/img/topics/${categoryID}.jpg` : "/img/quests/compass.jpg";
+/* Same title/topic/family passes as the native QuestCover resolver. */
+const questArt = (categoryID, title = "", subtopic = "") => QuestPresentation.art(title, categoryID, subtopic, TOPIC_BY_ID);
 
 function absorbMissions(rows) {
   for (const m of rows) {
@@ -2359,7 +2355,7 @@ function questCardHTML(m) {
                 m.bookmark_ids?.length ? plural(m.bookmark_ids.length, "bork") : null]
                 .filter(Boolean).join(" · ") || "just started";
   return `<button class="quest-card" data-quest="${esc(m.id)}">
-    <img class="quest-art" src="${questArt(m.category_id)}" alt="" data-fb="remove">
+    <img class="quest-art" src="${questArt(m.category_id, m.title)}" alt="" data-fb="remove">
     <span><span class="quest-t">${esc(m.title)}</span><span class="quest-m" style="display:block">${meta}</span></span>
   </button>`;
 }
@@ -2463,7 +2459,7 @@ async function refineSeedTitles(seeds) {
   } catch { /* the offline name stands */ }
 }
 const seedCardHTML = (s) => `<div class="quest-seed">
-    <img class="quest-art" src="${questArt(s.category_id)}" alt="" data-fb="remove">
+    <img class="quest-art" src="${questArt(s.category_id, s.title, s.subcategory)}" alt="" data-fb="remove">
     <div class="qs-body">
       <span class="qs-t">${esc(s.title)}</span>
       <span class="qs-b">${esc(s.blurb)}</span>
@@ -2475,12 +2471,12 @@ function startSeed(id) {
   const s = seedCache.get(id);
   if (!s) return;
   if (demoMode) { toast("Side quests come with an account.", "Sign up", exitDemoToSignup); return; }
-  const m = { id: uuid().toUpperCase(), title: s.title, detail: null, category_id: s.category_id,
-    bookmark_ids: s.bookmark_ids, habit_name: null, completed_days: [], todos: [], is_archived: false,
-    created_at: new Date().toISOString() };
-  track("quest_created", { source: "suggested", todos: 0, borks: m.bookmark_ids.length });
-  toast("Side quest started.", "Open", () => openQuest(m.id));
-  commitMission(m);
+  openQuest(null);
+  questDraft.title = s.title; questDraft.category_id = s.category_id;
+  questDraft.bookmark_ids = [...s.bookmark_ids];
+  $("quest-title").value = s.title;
+  fillTopicSelect($("quest-topic"), s.category_id);
+  renderQuestLists();
 }
 
 const questStarterHTML = () => `
@@ -2574,7 +2570,7 @@ function renderLibrary(all, s) {
       const top = topicCounts(recent)[0];
       const stats = `${plural(all.length, "bork")} · ${plural(new Set(all.map(r => r.platform)).size, "app")} · ${plural(topicCounts(all).length, "topic")}`;
       const suggested = seeds.map(seed => `<button class="quest-card" data-seed="${esc(seed.id)}">
-        <img class="quest-art" src="${questArt(seed.category_id)}" alt="">
+        <img class="quest-art" src="${questArt(seed.category_id, seed.title, seed.subcategory)}" alt="">
         <span><span class="quest-t">${esc(seed.title)}</span><span class="quest-m">Suggested · ${plural(seed.bookmark_ids.length, "bork")}</span></span></button>`).join("");
       home.innerHTML = `<div class="library-intro"><div><h1>Your library</h1><p>${stats}</p>
         <button class="library-search" data-act="library-search">Search everything you've borked</button></div>
@@ -2756,8 +2752,15 @@ function renderBrowseQuests() {
   if (memo.get("quests-list") === key) return;
   memo.set("quests-list", key);
   $("quests-list").innerHTML = quests.length
-    ? `<div class="quests">${quests.map(m => questCardHTML(m)).join("")}<button class="quest-new" data-quest="">+ Start a side quest</button></div>`
-    : questStarterHTML();
+    ? `<div class="h-row"><h1 class="h-title">Your side quests</h1><button class="btn-sm btn-coral" data-quest="">+ Start a side quest</button></div><div class="quest-board">${quests.map(m => questCardHTML(m)).join("")}</div>${questGuideHTML(false)}`
+    : questGuideHTML(true);
+}
+function questGuideHTML(empty) {
+  const steps = `<ol><li><b>Choose something you want to do.</b><p>Get better at running, decide on a van, learn pottery.</p></li>
+    <li><b>Add the borks that help.</b><p>Bring posts from different apps together around that goal.</p></li>
+    <li><b>Turn a save into a next step.</b><p>Write a small action, try it, then come back and tick it off.</p></li></ol>`;
+  return empty ? `<section class="quest-guide"><img src="/img/quests/rabbit.jpg" alt=""><div><h1>What are you working on?</h1><p>A topic files what something is. A side quest is what you want to do with it.</p>${steps}<button class="btn-sm btn-coral" data-quest="">Start a side quest</button></div></section>`
+    : `<details class="quest-guide-more"><summary>How side quests work</summary>${steps}</details>`;
 }
 
 /* ── The topic page hero, and sharing what's on it ─────────────────────────
@@ -4311,6 +4314,10 @@ function openQuest(id) {
   $("quest-h").textContent = m ? "Side quest" : "Start a side quest";
   $("quest-delete").hidden = !m;
   $("quest-title").value = questDraft.title || "";
+  $("quest-detail").value = questDraft.detail || "";
+  $("quest-search").value = "";
+  $("quest-all-topics").checked = false;
+  $("quest-new-todo").value = "";
   $("quest-err").textContent = "";
   fillTopicSelect($("quest-topic"), questDraft.category_id);
   renderQuestLists();
@@ -4318,6 +4325,7 @@ function openQuest(id) {
   if (!m) $("quest-title").focus();
 }
 function renderQuestLists() {
+  $("quest-editor-art").src = questArt($("quest-topic").value, $("quest-title").value);
   const todos = questDraft.todos || [];
   $("quest-todos").innerHTML = todos.map(t =>
     `<div class="todo-row${t.done ? " done" : ""}">
@@ -4325,27 +4333,33 @@ function renderQuestLists() {
       <span>${esc(t.text)}</span>
       <button class="todo-x" data-todo-x="${esc(t.id)}" title="Remove" aria-label="Remove step">✕</button>
     </div>`).join("") || `<p class="hint" style="margin:4px 0">Break it into a few steps — or don't.</p>`;
-  const attached = (questDraft.bookmark_ids || []).map(id => borks.get(id)).filter(Boolean);
+  const attached = (questDraft.bookmark_ids || []).map(id => borks.get(id)).filter(r => r && !r.deleted_at);
   $("quest-borks").innerHTML = attached.map(r =>
     `<div class="qb-row"><b>${esc(displayFields(r).title)}</b><button class="qb-x" data-qb-x="${esc(r.id)}" title="Remove" aria-label="Remove bork">✕</button></div>`
   ).join("") || `<p class="hint" style="margin:4px 0">No borks attached yet.</p>`;
-  const topic = $("quest-topic").value || questDraft.category_id;
-  const pool = live().filter(r => (!topic || r.category_id === topic) && !(questDraft.bookmark_ids || []).includes(r.id)).slice(0, 6);
+  const topic = $("quest-all-topics").checked ? null : $("quest-topic").value;
+  const pool = QuestPresentation.candidates(live(), questDraft.bookmark_ids || [], topic, $("quest-search").value, fold);
   $("quest-suggest").innerHTML = pool.length
-    ? `<p class="hint" style="margin:8px 0 2px">Add from your library:</p>` + pool.map(r =>
-      `<div class="qb-row"><b>${esc(displayFields(r).title)}</b><button class="qb-add" data-qb-add="${esc(r.id)}">+ Add</button></div>`).join("")
-    : "";
+    ? `<p class="hint" style="margin:8px 0 2px">${pool.length} available${pool.length > 40 ? " · showing first 40; search to narrow" : ""}</p>` + pool.slice(0, 40).map(r =>
+      `<div class="qb-row"><div><b>${esc(displayFields(r).title)}</b><div class="hint">${esc(SavedContent.breadcrumb(topicFor(r.category_id)?.name, r.subcategory) || "Unfiled")}</div></div><button class="qb-add" data-qb-add="${esc(r.id)}" aria-label="Add ${esc(displayFields(r).title)}">+ Add</button></div>`).join("")
+    : '<p class="hint">No matching borks. Try another search or all topics.</p>';
 }
-function saveQuest() {
+async function saveQuest() {
+  if ($("quest-save").disabled) return;
   questDraft.title = $("quest-title").value.trim();
   questDraft.category_id = $("quest-topic").value || null;
+  questDraft.detail = $("quest-detail").value.trim() || null;
   if (!questDraft.title) { $("quest-err").textContent = "Give it a name — what are you working on?"; $("quest-title").focus(); return; }
   const isNew = !missions.has(questDraft.id);
   const draft = questDraft;
+  $("quest-save").disabled = true; $("quest-save").textContent = "Saving…";
+  const saved = await commitMission(draft);
+  $("quest-save").disabled = false; $("quest-save").textContent = "Save quest";
+  if (questDraft.id !== draft.id) return;
+  if (!saved) { $("quest-err").textContent = "Saved on this browser; not yet backed up. Keep this account signed in and retry when connected."; return; }
   closeDlg($("quest-dialog"));
   toast(isNew ? "Side quest started." : "Side quest saved.");
   if (isNew) track("quest_created", { todos: (draft.todos || []).length, borks: (draft.bookmark_ids || []).length });
-  commitMission(draft);
   // Started from the Add sheet: the bork you're saving joins it, obviously.
   if (questFromAdd) { questFromAdd = false; addQuests.add(draft.id); renderAddQuests(); }
 }
@@ -4712,6 +4726,9 @@ if (window.visualViewport) {
   visualViewport.addEventListener("scroll", () => fitSheets(false));
 }
 $("quest-topic").addEventListener("change", renderQuestLists);
+$("quest-title").addEventListener("input", () => { $("quest-editor-art").src = questArt($("quest-topic").value, $("quest-title").value); });
+$("quest-search").addEventListener("input", renderQuestLists);
+$("quest-all-topics").addEventListener("change", renderQuestLists);
 document.addEventListener("change", (e) => {
   const cb = e.target.closest("[data-todo]");
   if (cb && questDraft) {

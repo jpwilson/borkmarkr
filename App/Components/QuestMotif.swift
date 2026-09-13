@@ -45,7 +45,8 @@ enum QuestMotif: String, CaseIterable, Sendable {
             .lowercased()
 
         func mentions(_ words: String...) -> Bool {
-            words.contains { blob.contains($0) }
+            let tokens = blob.components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-")).inverted)
+            return words.contains { stem in tokens.contains { $0.hasPrefix(stem) } }
         }
 
         if mentions("rabbit", "conspirac", "cover-up", "unsolved", "truecrime", "beliefs") {
@@ -54,7 +55,7 @@ enum QuestMotif: String, CaseIterable, Sendable {
         if mentions("market", "social", "audience", "hook", "megaphone", "creator") {
             return .market
         }
-        if mentions("startup", "founder", "venture", "business", "shop", "storefront") {
+        if mentions("startup", "founder", "venture", "business", "shop", "storefront", "profit") {
             return .business
         }
         if mentions("run", "marathon", "5k", "10k", "mobility", "stretch", "fitness", "hip", "hamstring", "tendon") {
@@ -97,7 +98,8 @@ enum QuestMotif: String, CaseIterable, Sendable {
     static func bodyMindTopic(in fragments: [String?]) -> String? {
         let blob = fragments.compactMap { $0 }.joined(separator: " ").lowercased()
         func mentions(_ words: String...) -> Bool {
-            words.contains { blob.contains($0) }
+            let tokens = blob.components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-")).inverted)
+            return words.contains { stem in stem.contains(" ") ? blob.contains(stem) : tokens.contains { $0.hasPrefix(stem) } }
         }
         if mentions("anxiet", "stress", "burnout", "therap", "depress", "adhd", "grief", "panic", "overthink") {
             return "mentalhealth"
@@ -125,7 +127,7 @@ enum QuestMotif: String, CaseIterable, Sendable {
 /// the app has a picture of, or a custom topic whose scene lives on the
 /// server and is not bundled (paper would be worse than a map).
 ///
-/// `docs/index.html`'s `questArt` walks the same passes minus the title one.
+/// `docs/quest-presentation.js` walks the same title/topic/family passes.
 enum QuestCover: Equatable {
     case motif(QuestMotif)
     case topic(String)
