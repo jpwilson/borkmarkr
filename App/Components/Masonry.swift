@@ -1,66 +1,53 @@
 import SwiftUI
 
-/// Two-column masonry for the Library feed.
-///
-/// **Engineering deviation from the handoff.** The spec says items alternate
-/// columns strictly — "evens→left stack, odds→right stack" — and explicitly
-/// warns against CSS `column-count` because it fills sequentially and destroys
-/// recency ordering. That warning is right, but strict alternation trades one
-/// problem for another: it ignores how tall the cards actually are.
-///
-/// Card heights here range from ~96pt (a short article) to ~260pt (a TikTok
-/// cover with a 3-line title). With 26 fixed sample items that averages out. In
-/// a real library it doesn't — a run of tall media into one column and short
-/// text posts into the other leaves the columns hundreds of points apart, so
-/// the feed ends in a long one-sided stack with dead space beside it.
-///
-/// This packs each item into whichever column is currently shorter. Items are
-/// still placed in strict recency order, so the newest saves stay at the top
-/// exactly as the spec requires — but the columns stay level. Where heights
-/// happen to be equal it degenerates to the spec's alternation, which is the
-/// behaviour the design was actually reaching for.
+/// Bounded masonry shared by all feeds. Each child is measured at its actual
+/// column width. Bitmap loading and long text cannot resize another column.
 struct MasonryVStack<Item: Identifiable, Content: View>: View {
     let items: [Item]
     let spacing: CGFloat
-    /// Estimated laid-out height. Only relative accuracy matters — it decides
-    /// placement, never the real frame.
+    // Retained for source compatibility; placement now uses measured heights.
     let estimatedHeight: (Item) -> CGFloat
     @ViewBuilder let content: (Item) -> Content
 
-    private var columns: (left: [Item], right: [Item]) {
-        var left: [Item] = [], right: [Item] = []
-        var leftHeight: CGFloat = 0, rightHeight: CGFloat = 0
-
-        for item in items {
-            let height = estimatedHeight(item) + spacing
-            // Ties go left so the very first item is top-left, matching the
-            // spec's reading order.
-            if leftHeight <= rightHeight {
-                left.append(item)
-                leftHeight += height
-            } else {
-                right.append(item)
-                rightHeight += height
-            }
+    var body: some View {
+        MasonryLayout(spacing: spacing) {
+            ForEach(items) { content($0) }
         }
-        return (left, right)
+    }
+}
+
+private struct MasonryLayout: Layout {
+    let spacing: CGFloat
+
+    private func arrangement(_ proposal: ProposedViewSize, _ subviews: Subviews)
+        -> (width: CGFloat, height: CGFloat, frames: [CGRect]) {
+        let width = max(0, proposal.width ?? 320)
+        let gap = min(spacing, width)
+        let columnWidth = max(0, (width - gap) / 2)
+        var heights: [CGFloat] = [0, 0]
+        var frames: [CGRect] = []
+        for child in subviews {
+            let column = heights[0] <= heights[1] ? 0 : 1
+            let size = child.sizeThatFits(ProposedViewSize(width: columnWidth, height: nil))
+            let height = max(0, size.height.isFinite ? size.height : 0)
+            frames.append(CGRect(x: CGFloat(column) * (columnWidth + gap),
+                                 y: heights[column], width: columnWidth, height: height))
+            heights[column] += height + spacing
+        }
+        return (width, max(0, (heights.max() ?? 0) - spacing), frames)
     }
 
-    var body: some View {
-        let split = columns
-        // Eager VStacks, not LazyVStack. This view already lives inside
-        // Library's ScrollView; a nested lazy stack is not the scroll
-        // container, so SwiftUI proposes unbounded height, the lazy stack
-        // under-reports, and cards paint on top of each other.
-        HStack(alignment: .top, spacing: spacing) {
-            VStack(spacing: spacing) {
-                ForEach(split.left) { content($0) }
-            }
-            .frame(maxWidth: .infinity, alignment: .top)
-            VStack(spacing: spacing) {
-                ForEach(split.right) { content($0) }
-            }
-            .frame(maxWidth: .infinity, alignment: .top)
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = arrangement(proposal, subviews)
+        return CGSize(width: result.width, height: result.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrangement(ProposedViewSize(width: bounds.width, height: nil), subviews)
+        for (child, frame) in zip(subviews, result.frames) {
+            child.place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+                        anchor: .topLeading,
+                        proposal: ProposedViewSize(width: frame.width, height: frame.height))
         }
     }
 }

@@ -11,8 +11,7 @@ struct CoverImage: View {
     let palette: CategoryPalette
 
     var body: some View {
-        ZStack {
-            gradient
+        gradient.overlay {
             if let url {
                 AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.22))) { phase in
                     if case .success(let image) = phase {
@@ -24,9 +23,8 @@ struct CoverImage: View {
                 }
             }
         }
-        // The bitmap must not decide layout width. `.fill` on a loose
-        // proposal adopts the image's pixel size and the card blows out
-        // of its masonry column, painting over the neighbour.
+        // An overlay receives the gradient's bounds and contributes no
+        // intrinsic size. A loaded bitmap cannot enlarge the card.
         .frame(maxWidth: .infinity)
         .clipped()
     }

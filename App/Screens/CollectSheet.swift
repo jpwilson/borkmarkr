@@ -526,28 +526,32 @@ struct SelectionBar: View {
     @Environment(\.accent) private var accent
 
     var body: some View {
+        VStack(spacing: 6) {
+        if count == 0 {
+            Text("Tap borks to pick them")
+                .font(Typo.ui(12.5, .medium))
+                .foregroundStyle(Tokens.inkMeta)
+        }
         HStack(spacing: 12) {
             Button("Cancel", action: onCancel)
                 .font(Typo.ui(14, .semibold))
                 .foregroundStyle(Tokens.inkSecondary)
+                .frame(minHeight: 44)
 
             Spacer(minLength: 0)
 
-            Text(count == 0 ? "Tap borks to pick them" : "\(count) picked")
-                .font(Typo.ui(12.5, .medium))
-                .foregroundStyle(Tokens.inkMeta)
-                .lineLimit(1)
-
             Button(action: onShare) {
-                Text(count == 0 ? "Share as one link" : "Share \(Copy.countedBorks(count))")
+                Text(count == 0 ? "Share link" : "Share link (\(count))")
                     .font(Typo.ui(14, .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
+                    .frame(minHeight: 44)
                     .background(count == 0 ? Tokens.inkFaint : accent.base, in: Capsule())
             }
             .buttonStyle(PressableStyle())
             .disabled(count == 0)
+        }
         }
         .padding(.leading, 18)
         .padding(.trailing, 8)
