@@ -12,14 +12,9 @@ import Foundation
 /// all four hundred when the phone goes in a river, and still can't open
 /// bookmarker.lol and find a thing.
 ///
-/// Fifty is the number because twenty turned out to be *trying it*, not past
-/// it. The first outside user saved eleven or twelve a day and hit twenty on
-/// his second day — before the habit had formed, before he had gone back and
-/// found anything, while the app was still on trial. The habit forms somewhere
-/// between thirty and fifty borks, and that is also the point at which losing
-/// the library would actually hurt: an account is a reasonable ask there and a
-/// toll before it. A limit that bites at 200 still arrives after the damage it
-/// exists to prevent. (1.1 build 13 shipped with twenty; fifty is build 14.)
+/// Product policy (September 2026): try twenty saves on iPhone without an
+/// account. Sign in to keep saving and to use the web library. This is an
+/// account requirement, not a payment gate. Existing saves are never removed.
 ///
 /// ## Why this does not break the core product rule
 ///
@@ -37,7 +32,7 @@ import Foundation
 /// - The only place anything is actually refused is the **Add sheet**, where a
 ///   person is already in the app, has a keyboard up, and can read a sheet.
 ///
-/// So the limit gates *the fifty-first slot*, never the act of saving.
+/// So the limit gates *the twenty-first slot*, never the act of saving.
 ///
 /// ## Signed in
 ///
@@ -50,20 +45,20 @@ import Foundation
 enum SaveLimit {
 
     /// Live borks a signed-out library may hold.
-    static let limit = 50
+    static let limit = 20
 
     /// Where the Library card stops saying where your library lives and starts
     /// counting down. Ten saves is about a day for someone saving the way the
     /// first outside user did (eleven a day) and a week or more for most —
     /// enough warning to act on, late enough that many people never see it.
-    static let counterFloor = 40
+    static let counterFloor = 10
 
     // MARK: - The numbers
 
     /// Saves left before an account is needed, or `nil` when there is no limit.
     ///
     /// Never negative. A library that is over the limit — someone who signed
-    /// out with more than fifty — has zero left, not minus fourteen.
+    /// out with more than twenty — has zero left, not minus fourteen.
     static func remaining(liveCount: Int, signedIn: Bool) -> Int? {
         guard !signedIn else { return nil }
         return max(0, limit - liveCount)
@@ -99,9 +94,9 @@ enum SaveLimit {
 
     /// The card's headline, or `nil` to leave the 1.0.2 wording alone.
     ///
-    /// At the limit this counts the *real* library rather than printing "50".
+    /// At the limit this counts the *real* library rather than printing "20".
     /// Someone who signed out of an account holding sixty-four borks sees
-    /// sixty-four; telling them they have fifty would be the app arguing
+    /// sixty-four; telling them they have twenty would be the app arguing
     /// with the screen behind it.
     static func bannerHeadline(liveCount: Int, signedIn: Bool) -> String? {
         guard let left = remaining(liveCount: liveCount, signedIn: signedIn),
@@ -121,7 +116,7 @@ enum SaveLimit {
     }
 
     static let wallBody =
-        "That's the free limit without an account. Sign up — it's free — and keep saving: everything backs up and shows up at bookmarker.lol."
+        "That's the limit without an account. Sign up — it's free — and keep saving: everything backs up and shows up at bookmarker.lol."
 
     /// Lead and body of the privacy promise, split so the view can weight the
     /// first half. One sentence, no hedging, and true of the code: bookmarks
@@ -158,11 +153,11 @@ enum SaveLimit {
 
     // MARK: - The You tab
 
-    /// "17 of 50". `nil` signed in, where there is nothing to be out of.
+    /// "17 of 20". `nil` signed in, where there is nothing to be out of.
     static func youCount(liveCount: Int, signedIn: Bool) -> String? {
         guard !signedIn else { return nil }
         return "\(liveCount) of \(limit)"
     }
 
-    static let youLine = "Free limit: 50 borks. Sign up for unlimited, backed up, and on the web."
+    static let youLine = "Without an account: 20 borks. Sign up for unlimited, backed up, and on the web."
 }
