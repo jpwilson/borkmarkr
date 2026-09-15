@@ -1,0 +1,10 @@
+[
+  {"raw":"Taylor (@taylor) on X","body":"A short mobility routine for desk breaks.","platform":"x","want":"A short mobility routine for desk breaks."},
+  {"raw":"Taylor on Instagram: \"Try these three hip exercises\"","body":null,"platform":"instagram","want":"Try these three hip exercises"},
+  {"raw":"Taylor on X: The actual post text","body":null,"platform":"x","want":"The actual post text"},
+  {"raw":"My own useful title","body":"A different longer caption.","platform":"web","want":"My own useful title"},
+  {"raw":"Taylor on X","body":"Log in to see more posts.","platform":"x","want":"Taylor on X"},
+  {"raw":"","body":null,"platform":"web","want":"Saved post"},
+  {"raw":"Status","body":"A retained caption with useful details.","platform":"x","want":"A retained caption with useful details."},
+  {"raw":"Taylor on Threads: Keep the original words","body":null,"platform":"threads","want":"Keep the original words"}
+]

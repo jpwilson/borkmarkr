@@ -116,6 +116,10 @@ final class PreviewFetcher: ObservableObject {
         if let image = result.imageURL {
             bookmark.imageURLString = image.absoluteString
         }
+        if SavedContent.excerpt(bookmark.text) == nil,
+           let excerpt = SavedContent.excerpt(result.description) {
+            bookmark.text = excerpt
+        }
         if let author = result.author, bookmark.author == nil || bookmark.author == bookmark.url?.host {
             bookmark.author = author
         }
