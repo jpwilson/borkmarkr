@@ -103,9 +103,8 @@ struct SearchSubject: Hashable, Sendable {
 
     /// Does this bork match?
     ///
-    /// - No scopes: the whole trimmed query as one substring of `blob`. This is
-    ///   verbatim the pre-1.1 behaviour and must stay that way — it is what
-    ///   every existing user's muscle memory is built on.
+    /// - No scopes: every term must occur somewhere in the searchable content,
+    ///   independent of word order. This is the same contract as the web.
     /// - One or more scopes: **every** term in the query has to land somewhere
     ///   in the selected fields, and the scopes OR together per term. So
     ///   "hip mobility" with Subtopics+Tags matches a bork tagged `hips` and
@@ -118,7 +117,7 @@ struct SearchSubject: Hashable, Sendable {
         guard !terms.isEmpty else { return true }
 
         guard !scopes.isEmpty else {
-            return blob.contains(SearchText.fold(query))
+            return terms.allSatisfy { blob.contains($0) }
         }
 
         let haystacks = haystacks(for: scopes)

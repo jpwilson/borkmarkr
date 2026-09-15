@@ -82,7 +82,11 @@ struct TopicPage: View {
         let scope = inCategory.filter { $0.subcategory == sub }
         let counts = Dictionary(grouping: scope.flatMap(\.tags)) { $0 }.mapValues(\.count)
         return counts.filter { $0.value >= 2 }
-            .sorted { $0.value > $1.value }
+            .sorted {
+                $0.value == $1.value
+                    ? $0.key.localizedStandardCompare($1.key) == .orderedAscending
+                    : $0.value > $1.value
+            }
             .prefix(6)
             .map(\.key)
     }
