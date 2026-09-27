@@ -10,6 +10,7 @@ jobs:
           node-version: 22
       - run: node Scripts/test_account_rules.mjs
       - run: node Scripts/test_saved_content.mjs
+      - run: node Scripts/test_search_parity.mjs
   swift:
     runs-on: macos-latest
     steps:

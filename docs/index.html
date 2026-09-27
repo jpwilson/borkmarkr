@@ -2490,7 +2490,7 @@ function renderLibrary(all, s) {
       home.innerHTML = questsHTML + seedsHTML + `
         <div class="h-row"><span class="h-title">Recent</span></div>
         <div class="recents">${recentsHTML}</div>
-        ${pills ? `<div class="h-row"><span class="h-title">Your topics</span><button class="h-more" data-tab-link="browse">All topics →</button></div>
+        ${pills ? `<div class="h-row"><span class="h-title">Most-saved topics</span><button class="h-more" data-tab-link="browse">All topics →</button></div>
         <div class="topic-pills">${pills}</div>` : ""}
         <div class="h-row"><span class="h-title">Everything</span>${selectButtonHTML()}</div>`;
     }
@@ -3638,11 +3638,9 @@ function parsedURL(raw) {
 }
 function fillTopicSelect(sel, chosen) {
   const opt = (t) => `<option value="${esc(t.id)}"${t.id === chosen ? " selected" : ""}>${esc(t.name)}</option>`;
-  const mine = myTopics();
-  sel.innerHTML = `<option value="">— none —</option>` + TAXONOMY.map(opt).join("")
-    // Without these a quest already filed under a topic of yours would lose it
-    // the moment the form was saved.
-    + (mine.length ? `<optgroup label="Your topics">${mine.map(opt).join("")}</optgroup>` : "");
+  const topics = [...TAXONOMY, ...myTopics()].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }) || a.id.localeCompare(b.id));
+  sel.innerHTML = `<option value="">— none —</option>` + topics.map(opt).join("");
 }
 function openAdd() {
   if (!store.session && !demoMode) { render(); showAuthStage("choose"); return; }
