@@ -241,10 +241,14 @@ final class Bookmark {
         if let category { parts.append(category.name) }
         parts.append(platform.name)
         parts.append(urlString)
-        searchBlob = parts
+        let blob = parts
             .joined(separator: " ")
             .lowercased()
             .folding(options: .diacriticInsensitive, locale: .current)
+        // Assigning an unchanged value still dirties the row. Sync rebuilds
+        // every bork's blob on every pass, and a dirty row is a row saved
+        // and a Library re-rendered — every thirty seconds, signed in.
+        if blob != searchBlob { searchBlob = blob }
     }
 
     // MARK: - Identity

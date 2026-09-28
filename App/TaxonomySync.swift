@@ -37,7 +37,7 @@ import SwiftData
                 b.subcategory = nil; b.filingSource = "user"; b.touch()
             } else { b.rebuildSearchBlob() }
         }
-        try context.save()
+        if context.hasChanges { try context.save() }
     }
     private static func fetch(_ table: String, _ session: Supabase.Session) async throws -> [[String: Any]] {
         var result: [[String: Any]] = []
