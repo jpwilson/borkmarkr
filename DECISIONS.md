@@ -1431,3 +1431,64 @@ in `Core/SaveLimit.swift` ("never shared, never visible to anyone else"),
 which the previous section said must soften in the PR that ships the sharing
 UI, is not softened here: that file belongs to the cap-50 PR this round, and
 the sentence is still true of a bork you have not put in a link.
+
+## The zoomed, slow Library, and saved videos that look like videos (overnight, 28 Sep)
+
+**The zoom.** On 1.1 build 14 (iPhone 17 Pro Max) the Library laid out ~70pt
+wider than the screen on each side, dock included. Cause: a cover image with
+`.scaledToFill()` inside a `ZStack` adopted its bitmap's size, widened its
+card, then its column, then the scroll content; the root `ZStack` is as wide
+as its widest child and re-proposes that width to every child, so the dock
+went with it. The trigger is a **landscape** cover: YouTube's oEmbed returns
+a 480×360 thumbnail for videos *and* Shorts, and 4:3 filling a ~250pt-tall
+cover is ~333pt wide in a ~197pt column — which is the 578pt screen measured
+from the owner's screenshot. Reproduced exactly on build 14's code in the
+iOS 27 Simulator by giving the seed's YouTube/Shorts borks that thumbnail;
+the portrait-only seed covers are why earlier attempts could not. The repair stack's #76 already moved the cover into an overlay.
+This round makes every remote bitmap size-neutral by construction
+(`RemoteImage` reads its box from a `GeometryReader`), fixes the same bug in
+`TopicClayArt`'s remote path, and pins tab content and dock to the container
+width so any future overflow stays inside its tab.
+
+**The slowness.** The masonry `Layout` measured every card, twice, on every
+pass, with every card and every full-resolution `AsyncImage` alive at once; a
+pass ran whenever any card changed, including each cover arriving. Two
+`LazyVStack` columns balanced by (memoised) estimates, plus `RemoteImage`
+(ImageIO downsampling to the drawn size, `NSCache`, 300 MB `URLCache`):
+~890 MB → ~390 MB and ~9.8 s → ~2.6 s CPU at launch with 269 borks in the
+Simulator. Signed in, sync also dirtied every row every 30 s (search blobs,
+open counts reassigned unchanged); it now writes only changes.
+
+**Creators and titles are display rules, not data.** The share sheet stores
+the host as author and a URL-derived title; both stay stored exactly as
+before (Swift/JS parity fixtures and `isDerivedTitle` depend on them).
+`displayAuthor` treats a host on a social post as no author and falls back to
+the handle the URL names; `displayTitle` calls a never-read post what it is
+("Instagram reel"). Only placeholders are ever replaced by enrichment or a
+re-share. `Bookmark.stableID` is untouched — merging youtu.be / Shorts /
+watch?v= duplicates is an identity migration and was left for a decision.
+
+**TikTok and X previews come from their public oEmbed.** No key, no login,
+documented for this. The old header's claim that TikTok's was gated was
+wrong. Instagram still has none, and nothing scrapes past a login.
+
+**Press-and-hold carries Delete.** With a confirmation, the same soft delete
+as the detail sheet's bin, and the same sentence. Off in select mode.
+
+**Sync survives a server that is behind the app.** Optional parts (topics,
+quests, opens) skip on "table/column does not exist"; the bookmark push
+retries once without the 0016 columns. Applying 0013–0017 before release is
+still the plan; this makes the order survivable.
+
+**Not done.** No widget (a new target and provisioning), no "add a note" in
+the share extension (release-critical path, needs device acceptance), no
+duplicate merging across URL forms, no install on the owner's phone.
+UI tests: `bookmarkerUITests` runs on the DEBUG `-layoutStress` fixture,
+which now includes the landscape YouTube thumbnail. Run with
+`-collect-test-diagnostics never`: in the iOS 26/27 Simulator XCTest spends
+many minutes symbolicating a failure before reporting it, which looks like a
+hang. `measure` hangs after its last iteration there, and its hitch, CPU and
+memory metrics only harvest on a device, so the scroll test times itself.
+Card accessibility frames in a scrolled `LazyVStack` are reported taller than
+drawn, so the layout test checks horizontal containment only and attaches a
+screenshot per pass; decorative covers are hidden from accessibility.
