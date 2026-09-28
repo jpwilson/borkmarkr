@@ -1602,6 +1602,11 @@ function stableID(raw) {
 }
 
 /* ── Platform: port of Platform.detect ── */
+const OPEN_LABEL = {
+  x: "Open on X", instagram: "Open on Instagram", tiktok: "Open on TikTok",
+  youtube: "Watch on YouTube", shorts: "Watch on YouTube", threads: "Open on Threads",
+  pinterest: "Open on Pinterest", grok: "Open on Grok",
+};
 const PLATFORM = {
   x: { name: "X", short: "X", kind: "thread" },
   instagram: { name: "Instagram", short: "IG", kind: "reel" },
@@ -4172,6 +4177,8 @@ function openEdit(id) {
   $("edit-title").textContent = displayFields(r).title;
   const open = $("edit-open");
   if (/^https?:/i.test(r.url)) open.href = r.url; else open.removeAttribute("href");
+  // Say where it goes, as the app does ("Open in TikTok").
+  open.textContent = `${OPEN_LABEL[r.platform] || "Open original"} ↗`;
   picks.edit = { topic: topicFor(r.category_id) ? r.category_id : null, sub: r.subcategory || null, source: null };
   sheetTags.edit = (r.tags || []).map(cleanTag).filter(Boolean);
   $("edit-tag").value = ""; syncTagGo("edit");
