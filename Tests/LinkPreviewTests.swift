@@ -36,3 +36,29 @@ final class LinkPreviewTests: XCTestCase {
         XCTAssertNil(LinkPreview.parseOEmbed(Data(#"{"html":"<div></div>"}"#.utf8), platform: .x))
     }
 }
+
+/// The "Save a link" shortcut and the share sheet make the same bork.
+final class SaveLinkIntentTests: XCTestCase {
+    func testFindsThePostLinkInCopiedText() {
+        XCTAssertEqual(SaveLinkIntent.link(in: "https://www.tiktok.com/@physio.jen/video/1")?.host, "www.tiktok.com")
+        XCTAssertEqual(SaveLinkIntent.link(in: "  https://x.com/jack/status/20 \n")?.path, "/jack/status/20")
+        XCTAssertEqual(SaveLinkIntent.link(in: "Hip flow for runners 🔥 https://www.instagram.com/reel/C9x/?igsh=abc")?.path, "/reel/C9x")
+        XCTAssertNil(SaveLinkIntent.link(in: "no link here"))
+        XCTAssertNil(SaveLinkIntent.link(in: "mailto:someone@example.com"))
+    }
+
+    func testHandedOverDraftIsWhatTheShareSheetQueues() {
+        let url = URL(string: "https://www.tiktok.com/@physio.jen/video/1")!
+        let draft = BookmarkDraft.handedOver(url: url, caption: nil)
+        XCTAssertEqual(draft.platform, .tiktok)
+        XCTAssertEqual(draft.kind, .clip)
+        XCTAssertEqual(draft.title, Categorizer.fallbackTitle(for: url))
+        XCTAssertEqual(draft.author, Categorizer.fallbackAuthor(for: url))
+        XCTAssertTrue(draft.isUnread)
+        XCTAssertNil(draft.text)
+
+        let post = BookmarkDraft.handedOver(url: URL(string: "https://x.com/jack/status/20")!,
+                                            caption: "just setting up my twttr https://x.com/jack/status/20")
+        XCTAssertEqual(post.text, ShareInput.cleanBody("just setting up my twttr https://x.com/jack/status/20"))
+    }
+}

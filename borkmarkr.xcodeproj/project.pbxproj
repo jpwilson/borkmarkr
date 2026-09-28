@@ -125,6 +125,7 @@
 		EB2791874BA499EA12151C79 /* Bookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = B61EA7E6AEBDAC784261C9AD /* Bookmark.swift */; };
 		EB98761211C8B4BC02EC2580 /* SearchScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 333D4353EBA093B39B7A70CA /* SearchScope.swift */; };
 		EE7D84676997EFB8049226B7 /* AuthSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF909279FB420B93DF4052F /* AuthSheet.swift */; };
+		F094D4DB1F75AA19B2FAFB7D /* SaveLinkIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2404329AF0FC49DB71B13443 /* SaveLinkIntent.swift */; };
 		F197F99C8893BB23755F9989 /* Initials.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5DEAB92D3F359003446A3EA /* Initials.swift */; };
 		F2D8832FC7BAA2952C95A8E5 /* BrowseSort.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1437CD1DC0D467279D18AEFD /* BrowseSort.swift */; };
 		F3D4BB66FD3FC357598AD918 /* SmartNamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F55F700EFC2936BB8A241D7 /* SmartNamer.swift */; };
@@ -182,6 +183,7 @@
 		1F93E7A1E9CEFD4F91EB5D0B /* Categorizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Categorizer.swift; sourceTree = "<group>"; };
 		206AF2993B64DBD0939AA40B /* BorkmarkrApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorkmarkrApp.swift; sourceTree = "<group>"; };
 		2248E48281AB5A806D58B00D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2404329AF0FC49DB71B13443 /* SaveLinkIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveLinkIntent.swift; sourceTree = "<group>"; };
 		25911EF7451F262AAF7346BB /* Copy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Copy.swift; sourceTree = "<group>"; };
 		292B159D7B2467224C46A761 /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
 		2DB634E76EFD52850729102D /* OpenSignalSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSignalSync.swift; sourceTree = "<group>"; };
@@ -267,7 +269,7 @@
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FE34B4FBABBE3D8CBC12C053 /* OpenSignalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSignalTests.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_74A431B1-E815-4963-B7D2-DBC60C64F708" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_0B1D884F-A401-4734-9682-CE005C514E47" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -358,6 +360,7 @@
 				4318FF02267652956B342759 /* QuestSync.swift */,
 				9719C55A5DD346B1A928F944 /* ReviewPrompter.swift */,
 				C1CA06BC436065B1A852B227 /* RootView.swift */,
+				2404329AF0FC49DB71B13443 /* SaveLinkIntent.swift */,
 				B01FDBE763C913D9F86D91E3 /* ScreenshotDefaults.swift */,
 				DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */,
 				0D5D86A799ECF3849265132A /* SignInNudge.swift */,
@@ -448,10 +451,10 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		"TEMP_A3CCCA6E-7AA5-4BD1-A907-86CCFD8A4589" /* bookmarker-overnight */ = {
+		"TEMP_CD362E14-2001-4165-81EE-BC6BA532159D" /* bookmarker-overnight */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_74A431B1-E815-4963-B7D2-DBC60C64F708" /* Config.xcconfig */,
+				"TEMP_0B1D884F-A401-4734-9682-CE005C514E47" /* Config.xcconfig */,
 			);
 			path = "bookmarker-overnight";
 			sourceTree = "<group>";
@@ -630,6 +633,7 @@
 				F841A68AF1596C46146A47E0 /* RevisitView.swift in Sources */,
 				479D2D8E66358814CD4DC70B /* RootView.swift in Sources */,
 				8096F8950D0562EACB2FCA07 /* SaveLimit.swift in Sources */,
+				F094D4DB1F75AA19B2FAFB7D /* SaveLinkIntent.swift in Sources */,
 				35D0E97EE8F413EDA2864888 /* SavedContent.swift in Sources */,
 				FEA2BEEA8FF522D12E774522 /* ScreenshotDefaults.swift in Sources */,
 				F85F9BB8D37561E4CD622870 /* SearchScope.swift in Sources */,
@@ -734,7 +738,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_74A431B1-E815-4963-B7D2-DBC60C64F708" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_0B1D884F-A401-4734-9682-CE005C514E47" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -821,7 +825,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_74A431B1-E815-4963-B7D2-DBC60C64F708" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_0B1D884F-A401-4734-9682-CE005C514E47" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;

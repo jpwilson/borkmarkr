@@ -509,3 +509,32 @@ struct BookmarkDraft: Codable, Sendable {
     var tagsEdited: Bool? = nil
     var titleEdited: Bool? = nil
 }
+
+extension BookmarkDraft {
+    /// A link handed to bookmarker from outside — the share sheet, or the
+    /// "Save a link" shortcut — with whatever text came with it. Filed
+    /// offline, instantly; enrichment reads the page later. One definition,
+    /// so a link saved from Shortcuts is exactly the bork a share makes.
+    static func handedOver(url: URL, caption: String?) -> BookmarkDraft {
+        let platform = Platform.detect(from: url)
+        let title = ShareInput.title(from: caption, url: url)
+
+        // X and Threads carry real post bodies; elsewhere the caption is just a
+        // caption and shouldn't turn the card into a text post.
+        let body: String? = platform.carriesTextPosts ? ShareInput.cleanBody(caption) : nil
+        let suggestion = Categorizer.suggest(url: url, title: title, text: body)
+
+        return BookmarkDraft(
+            url: url,
+            title: title,
+            author: Categorizer.fallbackAuthor(for: url),
+            platform: platform,
+            kind: platform.defaultKind,
+            categoryID: suggestion.categoryID,
+            subcategory: suggestion.subcategory,
+            tags: suggestion.tags,
+            text: body,
+            isUnread: true
+        )
+    }
+}
