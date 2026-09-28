@@ -12,16 +12,7 @@ struct CoverImage: View {
 
     var body: some View {
         gradient.overlay {
-            if let url {
-                AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.22))) { phase in
-                    if case .success(let image) = phase {
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .transition(.opacity)
-                    }
-                }
-            }
+            if let url { RemoteImage(url: url) }
         }
         // An overlay receives the gradient's bounds and contributes no
         // intrinsic size. A loaded bitmap cannot enlarge the card.
@@ -89,16 +80,7 @@ struct PlatformBadge: View {
     @ViewBuilder
     private var webMark: some View {
         if let host = pageURL?.host, let icon = Self.faviconURL(for: host) {
-            AsyncImage(url: icon) { phase in
-                if case .success(let image) = phase {
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .padding(size * 0.16)
-                } else {
-                    webFallback
-                }
-            }
+            RemoteImage(url: icon, contentMode: .fit, inset: size * 0.16) { webFallback }
         } else {
             webFallback
         }
