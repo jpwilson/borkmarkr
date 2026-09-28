@@ -410,7 +410,7 @@ struct LibraryView: View {
             }
             .padding(.horizontal, 18)
         } else {
-            // The layout measures real card heights at a bounded column width.
+            // Two lazy columns: only the cards on screen are built.
             MasonryVStack(
                 items: visible,
                 spacing: 12,
