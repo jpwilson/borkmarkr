@@ -55,7 +55,7 @@ struct JourneyRail: View {
                                         title: quest.title,
                                         categoryID: quest.categoryID,
                                         subcategory: Mission.dominantSubcategory(
-                                            among: bookmarks.filter { quest.bookmarkIDs.contains($0.id) }
+                                            among: quest.attached(from: bookmarks)
                                         )
                                     ),
                                     layout: .rail,

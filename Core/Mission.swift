@@ -156,7 +156,7 @@ final class Mission {
     }
 
     func summary(from bookmarks: [Bookmark]) -> String {
-        let items = bookmarks.filter { bookmarkIDs.contains($0.id) }
+        let items = attached(from: bookmarks)
         guard !items.isEmpty else {
             return "Nothing on this quest yet. Add a few borks and I’ll sum them up."
         }
@@ -245,8 +245,18 @@ final class Mission {
     }
 
     /// A journey goes quiet when nothing on it has been opened or saved recently.
+    /// The borks on this quest, in `bookmarks` order.
+    ///
+    /// Reads `bookmarkIDs` once. Filtering with `bookmarkIDs.contains` read
+    /// the persisted array afresh for every bork in the library, and did a
+    /// linear search of it each time — per quest, per render of the rail.
+    func attached(from bookmarks: [Bookmark]) -> [Bookmark] {
+        let ids = Set(bookmarkIDs)
+        return bookmarks.filter { ids.contains($0.id) }
+    }
+
     func isQuiet(among bookmarks: [Bookmark], days: Int = 14) -> Bool {
-        let attached = bookmarks.filter { bookmarkIDs.contains($0.id) }
+        let attached = self.attached(from: bookmarks)
         guard attached.count >= 1 else { return false }
         let calendar = Calendar.current
         guard let cutoff = calendar.date(byAdding: .day, value: -days, to: calendar.startOfDay(for: .now))
@@ -257,7 +267,7 @@ final class Mission {
     }
 
     func shareText(from bookmarks: [Bookmark]) -> String {
-        let items = bookmarks.filter { bookmarkIDs.contains($0.id) }
+        let items = attached(from: bookmarks)
         let lines = items.prefix(50).map { "• \($0.displayTitle)\n  \($0.urlString)" }
         let body = lines.isEmpty ? "Nothing attached yet." : lines.joined(separator: "\n\n")
         return "\(title) — a side quest from bookmarker\n\n\(body)"

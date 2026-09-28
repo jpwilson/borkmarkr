@@ -55,10 +55,6 @@ struct LibraryView: View {
         bookmarks.filter { !$0.isWaiting }
     }
 
-    private var waiting: [Bookmark] {
-        bookmarks.filter(\.isWaiting)
-    }
-
     /// The feed, which shows waiting borks — greyed, pilled, and deletable.
     /// Hiding them would turn "your share was saved" into a disappearing act.
     private var visible: [Bookmark] {
@@ -71,20 +67,31 @@ struct LibraryView: View {
         return Platform.ordered.filter { used.contains($0) }
     }
 
-    private var statsLine: String {
+    private static func statsLine(_ live: [Bookmark]) -> String {
+        var platforms = Set<String>(), categories = Set<String>()
+        for bookmark in live {
+            platforms.insert(bookmark.platformRaw)
+            if let id = bookmark.categoryID { categories.insert(id) }
+        }
         let borks = live.count
-        let apps = Set(live.map(\.platform)).count
-        let topics = Set(live.compactMap(\.categoryID)).count
+        let apps = platforms.count
+        let topics = categories.count
         return "\(borks) \(Copy.borks(borks)) · \(apps) app\(apps == 1 ? "" : "s") · \(topics) topic\(topics == 1 ? "" : "s")"
     }
 
     var body: some View {
+        // Each of these is a pass over the whole library. Taken once per
+        // render and handed down, rather than re-derived at every read.
+        let live = self.live
+        let waitingCount = bookmarks.count - live.count
+        let visible = self.visible
+        let platforms = presentPlatforms
         GeometryReader { viewport in
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                header
-                if !waiting.isEmpty {
-                    WaitingBanner(count: waiting.count) { onShowWall(.waiting) }
+                header(stats: Self.statsLine(live))
+                if waitingCount > 0 {
+                    WaitingBanner(count: waitingCount) { onShowWall(.waiting) }
                         .padding(.horizontal, 18)
                         .transition(.opacity)
                 }
@@ -118,8 +125,8 @@ struct LibraryView: View {
                     onAcceptSeed: acceptSeed,
                     account: account
                 )
-                if !presentPlatforms.isEmpty { filterRow }
-                feed
+                if !platforms.isEmpty { filterRow(platforms) }
+                feed(visible)
             }
             // Bound the scroll content to the viewport, not a child's ideal
             // width (loaded images and selection labels can be much wider).
@@ -214,7 +221,7 @@ struct LibraryView: View {
         }
     }
 
-    private var header: some View {
+    private func header(stats: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 HStack(spacing: 7) {
@@ -251,7 +258,7 @@ struct LibraryView: View {
                 .foregroundStyle(Tokens.ink)
                 .padding(.top, 12)
 
-            Text(statsLine)
+            Text(stats)
                 .font(Typo.ui(12.5, .medium))
                 .foregroundStyle(Tokens.inkMeta)
         }
@@ -300,12 +307,12 @@ struct LibraryView: View {
         openJourney = journey
     }
 
-    private var filterRow: some View {
+    private func filterRow(_ platforms: [Platform]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 7) {
                     chip("All", active: sourceFilter == nil) { sourceFilter = nil }
-                    ForEach(presentPlatforms, id: \.self) { platform in
+                    ForEach(platforms, id: \.self) { platform in
                         chip(platform.name, active: sourceFilter == platform) {
                             sourceFilter = sourceFilter == platform ? nil : platform
                         }
@@ -393,7 +400,7 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
-    private var feed: some View {
+    private func feed(_ visible: [Bookmark]) -> some View {
         if visible.isEmpty {
             EmptyFeedState(filtered: sourceFilter != nil, onAdd: onAdd)
                 .padding(.top, 50)
