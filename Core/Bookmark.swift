@@ -234,6 +234,15 @@ final class Bookmark {
     /// they must not take the media path or the card collapses.
     var isMedia: Bool { !isTextPost && !isArticle && kind.coverHeight > 0 }
     var isVideo: Bool { durationSeconds != nil }
+    /// A post that plays: a reel, a TikTok, a Short, a YouTube video — known
+    /// from where it lives, not only from a duration, which TikTok,
+    /// Instagram and Shorts never publish. An Instagram `/p/` post may be a
+    /// photo, so only its reels count.
+    var isPlayable: Bool {
+        guard platform != .web, [.clip, .reel, .short, .video].contains(kind) else { return isVideo }
+        if platform == .instagram { return url?.path.lowercased().contains("/reel") ?? false }
+        return true
+    }
 
     /// Title shown on cards. Instagram's og:title is
     /// `"Name on Instagram: \"caption\""` — using that raw makes every IG card

@@ -206,10 +206,14 @@ struct BookmarkCard: View {
                 HStack(alignment: .top) {
                     PlatformBadge(platform: bookmark.platform, size: 22, pageURL: bookmark.url)
                     Spacer()
-                    if let duration = bookmark.durationLabel {
+                    // A video reads as one at a glance: the play pill, with its
+                    // running time when the platform publishes it.
+                    if bookmark.isPlayable || bookmark.durationLabel != nil {
                         HStack(spacing: 3) {
                             Image(systemName: "play.fill").font(.system(size: 7, weight: .black))
-                            Text(duration).font(Typo.ui(10.5, .bold))
+                            if let duration = bookmark.durationLabel {
+                                Text(duration).font(Typo.ui(10.5, .bold))
+                            }
                         }
                         .foregroundStyle(.white)
                         .padding(.horizontal, 7)
@@ -357,7 +361,7 @@ struct BookmarkRow: View {
                         .foregroundStyle(.white.opacity(0.55))
                 } else {
                     CoverImage(url: bookmark.imageURL, palette: palette)
-                    if bookmark.isVideo {
+                    if bookmark.isPlayable {
                         Image(systemName: "play.fill")
                             .font(.system(size: 13, weight: .black))
                             .foregroundStyle(.white.opacity(0.9))
