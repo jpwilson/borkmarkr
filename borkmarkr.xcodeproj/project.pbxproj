@@ -17,6 +17,7 @@
 		07A3E5E75659299B8276A81D /* SemanticIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */; };
 		098665250A57251F836E0008 /* Revisit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EA5D89EE1B35028615E7B7 /* Revisit.swift */; };
 		09A643DBB0504F845CB233EC /* Initials.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5DEAB92D3F359003446A3EA /* Initials.swift */; };
+		0AAA527D9250C8CDC7764374 /* RevisitQueueSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C63336BBF4F9E400E07A7134 /* RevisitQueueSheet.swift */; };
 		0AC0D391E574FE8B1E535F43 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C24641D23CFCE82884ADCC9D /* Assets.xcassets */; };
 		0AFAB03D05E50963DBFED9C7 /* BrowseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3FABFC1A9084B9C0360A43C /* BrowseView.swift */; };
 		0B28E94044C6EC0AAFC5B708 /* QuestBrief.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA943D319F3640BAEAB60794 /* QuestBrief.swift */; };
@@ -246,6 +247,7 @@
 		C24641D23CFCE82884ADCC9D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C28995D31AAC20CABE2409DA /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		C294E25F8F0174C03A881C1C /* SavedContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedContent.swift; sourceTree = "<group>"; };
+		C63336BBF4F9E400E07A7134 /* RevisitQueueSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevisitQueueSheet.swift; sourceTree = "<group>"; };
 		C711BD3A0E1046941AB2AD33 /* AddSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSheet.swift; sourceTree = "<group>"; };
 		CD79CD5BA19A197B3FA8F09D /* TopicArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicArt.swift; sourceTree = "<group>"; };
 		CFC62950D5538EA53D438815 /* TopicPickerQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicPickerQuery.swift; sourceTree = "<group>"; };
@@ -265,7 +267,7 @@
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FE34B4FBABBE3D8CBC12C053 /* OpenSignalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSignalTests.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_AEEB0087-DB0B-4B80-B6A5-A4C387C5A98E" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_DF2B7A28-8E0B-4DA5-A253-C6B284DCD51C" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -400,6 +402,7 @@
 				1547735EA275A76D8C7A99DD /* LibraryView.swift */,
 				4FA4E66670607199DDC15B32 /* MissionsView.swift */,
 				C28995D31AAC20CABE2409DA /* OnboardingView.swift */,
+				C63336BBF4F9E400E07A7134 /* RevisitQueueSheet.swift */,
 				3D6AF10CC10308E9BE9C7558 /* RevisitView.swift */,
 				5DD9B359B078417F28B1A70B /* ShareSheetGuide.swift */,
 				15913DD9D48C7753917F7969 /* SingleShareSheet.swift */,
@@ -445,10 +448,10 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		"TEMP_E2FA3EA4-694C-466A-B5C0-3E5488ADA353" /* bookmarker-overnight */ = {
+		"TEMP_80239772-723A-46B0-8814-80B30618E92C" /* bookmarker-overnight */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_AEEB0087-DB0B-4B80-B6A5-A4C387C5A98E" /* Config.xcconfig */,
+				"TEMP_DF2B7A28-8E0B-4DA5-A253-C6B284DCD51C" /* Config.xcconfig */,
 			);
 			path = "bookmarker-overnight";
 			sourceTree = "<group>";
@@ -622,6 +625,7 @@
 				0519BF513FC9ECBA69ADE39D /* RemoteImage.swift in Sources */,
 				DCAB85EBA6E027CC669F1364 /* ReviewPrompter.swift in Sources */,
 				404C6EC411857992B8CB1F67 /* Revisit.swift in Sources */,
+				0AAA527D9250C8CDC7764374 /* RevisitQueueSheet.swift in Sources */,
 				E4D65DAA039F381D2A1B515C /* RevisitSource.swift in Sources */,
 				F841A68AF1596C46146A47E0 /* RevisitView.swift in Sources */,
 				479D2D8E66358814CD4DC70B /* RootView.swift in Sources */,
@@ -730,7 +734,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_AEEB0087-DB0B-4B80-B6A5-A4C387C5A98E" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_DF2B7A28-8E0B-4DA5-A253-C6B284DCD51C" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -817,7 +821,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_AEEB0087-DB0B-4B80-B6A5-A4C387C5A98E" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_DF2B7A28-8E0B-4DA5-A253-C6B284DCD51C" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
