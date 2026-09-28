@@ -71,6 +71,25 @@ enum LinkPreview {
         return result
     }
 
+    /// `fetch`, but never longer than `limit`: `nil` when time ran out.
+    ///
+    /// For the Add sheet, which someone is watching. A login wall or a slow
+    /// page must not hold "Reading the link…" — after the limit the sheet
+    /// opens on what the link itself says, and the bork's preview is filled
+    /// in after it is saved, the way a share's is.
+    static func fetch(for url: URL, within limit: Duration) async -> Result? {
+        await withTaskGroup(of: Result?.self) { group in
+            group.addTask { await fetch(for: url) }
+            group.addTask {
+                try? await Task.sleep(for: limit)
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
+    }
+
     // MARK: - oEmbed
 
     private static func oembedEndpoint(for url: URL) -> URL? {

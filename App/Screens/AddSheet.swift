@@ -60,6 +60,9 @@ struct AddSheet: View {
     /// Whether the title came from the page or was generated. Drives whether we
     /// present it as a fact or as something to fill in.
     @State private var titleWasFetched = false
+    /// The preview ran out of time. The bork saves without one, and
+    /// enrichment fills it in afterwards.
+    @State private var previewTimedOut = false
     /// `og:description` — the full caption on Instagram and TikTok. Read for
     /// filing, shown nowhere, saved nowhere.
     @State private var pageDescription: String?
@@ -787,8 +790,11 @@ struct AddSheet: View {
         step = .reading
 
         Task { @MainActor in
-            // Real fetch: oEmbed for YouTube, Open Graph for most of the web.
-            let preview = await LinkPreview.fetch(for: url)
+            // Real fetch: oEmbed for YouTube, TikTok and X, Open Graph for
+            // most of the web — but never more than three seconds of it.
+            let fetched = await LinkPreview.fetch(for: url, within: .seconds(3))
+            previewTimedOut = fetched == nil
+            let preview = fetched ?? LinkPreview.Result()
 
             imageURL = preview.imageURL
             duration = preview.durationSeconds
@@ -933,7 +939,9 @@ struct AddSheet: View {
 
         draft.imageURLString = imageURL?.absoluteString
         draft.postedAt = postedAt
-        draft.previewFetched = true
+        // Timed out: leave it for enrichment, which runs as soon as the
+        // Library sees the new bork.
+        draft.previewFetched = !previewTimedOut
         draft.filingSource = userFiled ? "user" : "automatic"
         draft.tagsEdited = userTagsEdited
         draft.titleEdited = editingTitle
