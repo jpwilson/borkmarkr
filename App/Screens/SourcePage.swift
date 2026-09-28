@@ -15,6 +15,8 @@ struct SourcePage: View {
     private var all: [Bookmark]
 
     @State private var topic: String?
+    /// A creator picked from the CREATOR row, as `displayAuthor` shows it.
+    @State private var creator: String?
     @State private var detail: Bookmark?
 
     @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
@@ -25,8 +27,21 @@ struct SourcePage: View {
     private var inSource: [Bookmark] { all.filter { $0.platform == platform } }
 
     private var visible: [Bookmark] {
-        guard let topic else { return inSource }
-        return inSource.filter { $0.categoryID == topic }
+        inSource.filter { bookmark in
+            (topic == nil || bookmark.categoryID == topic)
+                && (creator == nil || bookmark.displayAuthor == creator)
+        }
+    }
+
+    /// Creators with at least two borks here, most first — "that physio on
+    /// TikTok" is how people look for a video. One-offs would make the row
+    /// as long as the list.
+    private var presentCreators: [(name: String, count: Int)] {
+        let counts = Dictionary(grouping: inSource.compactMap(\.displayAuthor)) { $0 }.mapValues(\.count)
+        return counts.filter { $0.value >= 2 }
+            .sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
+            .prefix(20)
+            .map { (name: $0.key, count: $0.value) }
     }
 
     private var presentTopics: [Topic] {
@@ -41,6 +56,8 @@ struct SourcePage: View {
             VStack(alignment: .leading, spacing: 14) {
                 header
                 if !presentTopics.isEmpty { topicRow }
+                let creators = presentCreators
+                if !creators.isEmpty { creatorRow(creators) }
                 list
             }
             .padding(.bottom, 120)
@@ -123,6 +140,42 @@ struct SourcePage: View {
                                 .tappableChip()
                         }
                         .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 18)
+            }
+        }
+    }
+
+    private func creatorRow(_ creators: [(name: String, count: Int)]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("CREATOR")
+                .font(Typo.ui(10, .heavy)).tracking(0.6)
+                .foregroundStyle(Tokens.mutedHeading)
+                .padding(.horizontal, 18)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
+                    ForEach(creators, id: \.name) { entry in
+                        let active = creator == entry.name
+                        Button {
+                            creator = active ? nil : entry.name
+                        } label: {
+                            HStack(spacing: 5) {
+                                Text(entry.name)
+                                Text("\(entry.count)")
+                                    .foregroundStyle(active ? .white.opacity(0.75) : Tokens.inkMeta)
+                            }
+                            .font(Typo.ui(12.5, .semibold))
+                            .foregroundStyle(active ? .white : Tokens.inkSecondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(active ? Tokens.ink : Tokens.surface, in: Capsule())
+                            .overlay(Capsule().stroke(active ? .clear : Tokens.hairline, lineWidth: 1))
+                            .tappableChip()
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(entry.name), \(Copy.countedBorks(entry.count))")
+                        .accessibilityAddTraits(active ? .isSelected : [])
                     }
                 }
                 .padding(.horizontal, 18)
