@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Security
+import OSLog
 
 /// Signed-in state and two-way sync.
 ///
@@ -133,11 +134,21 @@ final class Account: ObservableObject {
 
         do {
             let session = try await validSession()
-            try await TaxonomySync.run(context: context, session: session)
+            // The borks themselves always back up. Topics, quests and opens
+            // live in tables a server may not have yet (migrations 0013–0017),
+            // and until it does they sync nothing rather than stopping the
+            // backup of everything else.
+            try await unlessServerBehind("custom topics") {
+                try await TaxonomySync.run(context: context, session: session)
+            }
             try await push(context: context, session: session)
             try await pull(context: context, session: session)
-            try await QuestSync.run(context: context, session: session)
-            try await OpenSignalSync.run(context: context, session: session)
+            try await unlessServerBehind("side quests") {
+                try await QuestSync.run(context: context, session: session)
+            }
+            try await unlessServerBehind("opens") {
+                try await OpenSignalSync.run(context: context, session: session)
+            }
 
             // Edits made while requests were in flight must be pushed next time.
             lastSynced = syncStartedAt
@@ -147,6 +158,26 @@ final class Account: ObservableObject {
             lastError = error.localizedDescription
         }
     }
+
+    /// Runs one optional part of sync; a server not yet migrated for it is
+    /// logged and skipped (`Supabase.isSchemaBehind`). Any other failure
+    /// still fails the sync, as before.
+    private func unlessServerBehind(_ part: String, _ run: () async throws -> Void) async throws {
+        do {
+            try await run()
+        } catch where Supabase.isSchemaBehind(error) {
+            Logger(subsystem: "com.jpwilson.borkmarkr", category: "sync")
+                .notice("Server not migrated for \(part, privacy: .public); skipped")
+        }
+    }
+
+    /// Columns migration 0016 added to `bookmarks`. A server without them
+    /// rejects a whole upsert that mentions them, so a push retries without
+    /// them rather than not backing up at all.
+    private static let provenanceColumns: Set<String> = [
+        "filing_source", "tags_edited", "title_edited",
+        "enrichment_version", "enrichment_attempts", "enrichment_attempted_at",
+    ]
 
     /// Runs a sync and waits for it — including one already in flight.
     ///
@@ -224,8 +255,14 @@ final class Account: ObservableObject {
         for start in stride(from: 0, to: rows.count, by: 200) {
             let chunk = Array(rows[start..<min(start + 200, rows.count)])
             let json = try JSONSerialization.data(withJSONObject: chunk)
-            try await Supabase.upsert(rowsJSON: json, into: "bookmarks",
-                                      onConflict: "owner_id,id", session: session)
+            do {
+                try await Supabase.upsert(rowsJSON: json, into: "bookmarks",
+                                          onConflict: "owner_id,id", session: session)
+            } catch where Supabase.isSchemaBehind(error) {
+                let trimmed = chunk.map { $0.filter { !Self.provenanceColumns.contains($0.key) } }
+                try await Supabase.upsert(rowsJSON: JSONSerialization.data(withJSONObject: trimmed),
+                                          into: "bookmarks", onConflict: "owner_id,id", session: session)
+            }
         }
     }
 
@@ -313,12 +350,17 @@ final class Account: ObservableObject {
         target.noteText = row["note_text"] as? String
         target.imageURLString = row["image_url"] as? String
         target.noteDate = (row["note_date"] as? String).flatMap(QuestSyncRecord.dayDate)
-        target.filingSource = row["filing_source"] as? String
-        target.tagsEdited = row["tags_edited"] as? Bool
-        target.titleEdited = row["title_edited"] as? Bool
-        target.enrichmentVersion = row["enrichment_version"] as? Int
-        target.enrichmentAttempts = row["enrichment_attempts"] as? Int
-        target.previewFetchedAt = (row["enrichment_attempted_at"] as? String).flatMap(SupabaseDate.parse)
+        // Only what the server actually sent. A server without migration 0016
+        // has no such keys, and reading their absence as "none" would erase
+        // who filed a bork and how far its enrichment got.
+        if row.keys.contains("filing_source") { target.filingSource = row["filing_source"] as? String }
+        if row.keys.contains("tags_edited") { target.tagsEdited = row["tags_edited"] as? Bool }
+        if row.keys.contains("title_edited") { target.titleEdited = row["title_edited"] as? Bool }
+        if row.keys.contains("enrichment_version") { target.enrichmentVersion = row["enrichment_version"] as? Int }
+        if row.keys.contains("enrichment_attempts") { target.enrichmentAttempts = row["enrichment_attempts"] as? Int }
+        if row.keys.contains("enrichment_attempted_at") {
+            target.previewFetchedAt = (row["enrichment_attempted_at"] as? String).flatMap(SupabaseDate.parse)
+        }
         if let savedRaw = row["saved_at"] as? String,
            let saved = SupabaseDate.parse(savedRaw) {
             target.savedAt = saved
