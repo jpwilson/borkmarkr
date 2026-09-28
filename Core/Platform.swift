@@ -79,6 +79,28 @@ enum Platform: String, Codable, CaseIterable, Sendable {
         return ordered.contains { value == $0.name.lowercased() }
     }
 
+    /// What to call a post whose page we could not read: "Instagram reel",
+    /// "TikTok video". Honest, and recognisable at a glance — the alternative
+    /// was a title made from the URL, which for most posts turns an ID into
+    /// a fake handle ("@C9xYz12Abc on Instagram").
+    func untitledLabel(for url: URL) -> String {
+        let path = url.path.lowercased()
+        switch self {
+        case .instagram:
+            if path.contains("/reel") { return "Instagram reel" }
+            if path.contains("/stories/") { return "Instagram story" }
+            return "Instagram post"
+        case .tiktok: return path.contains("/photo/") ? "TikTok photos" : "TikTok video"
+        case .youtube: return "YouTube video"
+        case .shorts: return "YouTube Short"
+        case .x: return "Post on X"
+        case .threads: return "Threads post"
+        case .pinterest: return "Pinterest pin"
+        case .grok: return "Grok answer"
+        case .web: return url.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? "Saved link"
+        }
+    }
+
     /// The account a post belongs to, as `@handle`, when its URL says so.
     ///
     /// This is how people remember a video — "that physio on TikTok" — and

@@ -238,8 +238,18 @@ final class Bookmark {
     /// Title shown on cards. Instagram's og:title is
     /// `"Name on Instagram: \"caption\""` — using that raw makes every IG card
     /// a three-line crush. Prefer the caption; fall back to the name.
+    ///
+    /// A social post still wearing the title we made from its URL — its page
+    /// never read, no caption shared with it — is called what it is
+    /// ("Instagram reel") rather than by that URL title, which is usually an
+    /// ID dressed as a handle. The creator, where the link names one, is on
+    /// the card beside it. Display only: the stored title is untouched, so
+    /// enrichment still recognises it as ours to replace.
     var displayTitle: String {
-        SavedContent.title(title, body: text, platform: platformRaw)
+        let shown = SavedContent.title(title, body: text, platform: platformRaw)
+        guard platform != .web, title.isEmpty || shown == title.trimmingCharacters(in: .whitespacesAndNewlines),
+              let url, Categorizer.isDerivedTitle(title, for: url) else { return shown }
+        return platform.untitledLabel(for: url)
     }
 
     var filingPath: String {

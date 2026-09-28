@@ -181,11 +181,14 @@ struct DetailSheet: View {
                 // Tap the title to fix it. A fetched title is usually right but
                 // not always, and a brk you can't correct is a brk you distrust.
                 Button {
-                    draftTitle = bookmark.title
+                    draftTitle = bookmark.displayTitle
                     withAnimation(.easeOut(duration: 0.15)) { editingTitle = true }
                 } label: {
                     HStack(alignment: .top, spacing: 7) {
-                        Text(bookmark.title)
+                        // The same title the card shows. The raw one is often
+                        // `Name on Instagram: "caption"` or a title made from
+                        // the URL; editing still writes the stored title.
+                        Text(bookmark.displayTitle)
                             .font(Typo.display(20, .bold))
                             .foregroundStyle(Tokens.ink)
                             .fixedSize(horizontal: false, vertical: true)
@@ -215,7 +218,9 @@ struct DetailSheet: View {
 
     private func commitTitle() {
         let cleaned = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleaned.isEmpty else { editingTitle = false; return }
+        // Saving what was already shown is not an edit — and marking it one
+        // would stop the real title ever arriving.
+        guard !cleaned.isEmpty, cleaned != bookmark.displayTitle else { editingTitle = false; return }
         bookmark.title = cleaned
         bookmark.titleEdited = true
         bookmark.touch()
