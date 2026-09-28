@@ -76,6 +76,7 @@ struct RootView: View {
     @State private var showingWallAuth = false
     @State private var wallAuthMode: AuthSheet.Mode = .signUp
     @State private var toast: String?
+    @State private var toastToken = UUID()
     /// Drives the You-tab dot. A count rather than a `@Query` of every
     /// bookmark: the root view re-renders on every tab change and does not
     /// need the rows, only how many there are.
@@ -393,7 +394,7 @@ struct RootView: View {
         refreshBorkCount()
         guard added > 0 else { return }
         tab = .library
-        showToast(added == 1 ? "1 new save" : "\(added) new saves")
+        showToast(added == 1 ? "1 new bork" : "\(added) new borks")
     }
 
     private func presentWallAuth(_ mode: AuthSheet.Mode) {
@@ -417,8 +418,12 @@ struct RootView: View {
 
     private func drain() {
         let result = Store.drainInbox(into: context, signedIn: account.isSignedIn)
+        if result.saved > 0 {
+            showToast(result.saved == 1 ? "1 new bork" : "\(result.saved) new borks")
+        } else if result.alreadyHad > 0 {
+            showToast(result.alreadyHad == 1 ? "Already in your library" : "\(result.alreadyHad) already in your library")
+        }
         guard result.saved > 0 else { return }
-        showToast(result.saved == 1 ? "1 new save" : "\(result.saved) new saves")
 
         // A share that landed over the limit is already saved and already on
         // screen, greyed, in the Library. The wall is what explains it — and
@@ -434,9 +439,14 @@ struct RootView: View {
     }
 
     private func showToast(_ message: String) {
+        let token = UUID()
+        toastToken = token
         withAnimation(.spring(response: 0.26, dampingFraction: 0.85)) { toast = message }
         Task {
             try? await Task.sleep(for: .seconds(2.1))
+            // Only this toast's own timer may take it down. Without the check,
+            // a toast shown a second after another vanished a second later.
+            guard toastToken == token else { return }
             withAnimation(.easeOut(duration: 0.2)) { toast = nil }
         }
     }

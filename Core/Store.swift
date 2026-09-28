@@ -139,11 +139,15 @@ enum Store {
         try data.write(to: inboxURL.appendingPathComponent(name), options: .atomic)
     }
 
-    /// What one drain did. `waiting` is the subset of `saved` that arrived
-    /// over the signed-out limit and is being held (`SaveLimit`).
+    /// What one drain did. `saved` counts new borks; `waiting` is the subset
+    /// of them that arrived over the signed-out limit and is being held
+    /// (`SaveLimit`). `alreadyHad` counts shares of links already in the
+    /// library — updated in place, not new, and announced as such: "1 new
+    /// save" with nothing new at the top of the Library read as a bug.
     struct Drain {
         var saved = 0
         var waiting = 0
+        var alreadyHad = 0
     }
 
     /// Called by the app on launch and foreground. Drains every queued draft
@@ -191,9 +195,12 @@ enum Store {
 
             guard let bookmark = try? save(draft, in: context) else { continue }
             try? FileManager.default.removeItem(at: file)
-            result.saved += 1
 
-            guard !wasLive else { continue }
+            guard !wasLive else {
+                result.alreadyHad += 1
+                continue
+            }
+            result.saved += 1
 
             if bookmark.isWaiting {
                 result.waiting += 1
