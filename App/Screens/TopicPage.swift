@@ -396,6 +396,7 @@ struct TopicPage: View {
                         BookmarkRow(bookmark: bookmark)
                     }
                     .buttonStyle(.plain)
+                    .borkActions(bookmark)
                 }
             }
             .padding(.horizontal, 18)
@@ -440,6 +441,7 @@ struct UncategorisedPage: View {
                         BookmarkRow(bookmark: bookmark)
                     }
                     .buttonStyle(.plain)
+                    .borkActions(bookmark)
                 }
             }
             .padding(18)

@@ -79,6 +79,22 @@ enum Platform: String, Codable, CaseIterable, Sendable {
         return ordered.contains { value == $0.name.lowercased() }
     }
 
+    /// The label on the button that opens a bork, naming where it goes.
+    /// iOS hands these links to the app when it is installed, so "Open in
+    /// TikTok" is what actually happens — "Open original" never said.
+    var openLabel: String {
+        switch self {
+        case .x: "Open in X"
+        case .instagram: "Open in Instagram"
+        case .tiktok: "Open in TikTok"
+        case .youtube, .shorts: "Watch on YouTube"
+        case .threads: "Open in Threads"
+        case .pinterest: "Open in Pinterest"
+        case .grok: "Open in Grok"
+        case .web: "Open original"
+        }
+    }
+
     /// What to call a post whose page we could not read: "Instagram reel",
     /// "TikTok video". Honest, and recognisable at a glance — the alternative
     /// was a title made from the URL, which for most posts turns an ID into

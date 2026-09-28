@@ -217,6 +217,7 @@ struct RevisitView: View {
                                 .frame(width: 176)
                             }
                             .buttonStyle(PressableStyle())
+                            .borkActions(bookmark)
                         }
                     }
                 }
@@ -252,6 +253,7 @@ struct RevisitView: View {
                             BookmarkRow(bookmark: bookmark)
                         }
                         .buttonStyle(PressableStyle())
+                        .borkActions(bookmark)
                     }
                 }
             }
@@ -286,6 +288,7 @@ struct RevisitView: View {
                             BookmarkRow(bookmark: bookmark)
                         }
                         .buttonStyle(PressableStyle())
+                        .borkActions(bookmark)
                     }
                 }
             }
@@ -472,6 +475,7 @@ private struct NeverOpenedList: View {
                         BookmarkRow(bookmark: bookmark)
                     }
                     .buttonStyle(PressableStyle())
+                    .borkActions(bookmark)
                 }
             }
             .padding(.horizontal, 18)

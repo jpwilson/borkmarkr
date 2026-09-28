@@ -504,15 +504,10 @@ struct DetailSheet: View {
             .buttonStyle(.plain)
 
             Button {
-                guard let url = bookmark.url else { return }
-                // Records that you actually went back to this. Without it the
-                // library is as blind as the platform bookmarks it replaces.
-                bookmark.markOpened()
-                try? context.save()
-                openURL(url)
+                BorkOpener.open(bookmark, in: context, using: openURL)
             } label: {
                 HStack(spacing: 7) {
-                    Text("Open original").font(Typo.ui(15, .bold))
+                    Text(bookmark.platform.openLabel).font(Typo.ui(15, .bold))
                     Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .bold))
                 }
                 .foregroundStyle(.white)

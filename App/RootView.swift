@@ -87,6 +87,12 @@ struct RootView: View {
     private var customTopics: [CustomTopic]
     @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
     private var customSubtopics: [CustomSubtopic]
+    /// For the press-and-hold "Side quest" menu on every bork.
+    @Query(
+        filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
+        sort: \Mission.createdAt, order: .reverse
+    )
+    private var sideQuests: [Mission]
 
     /// Deep-link target when a category chip is tapped from a detail sheet.
     @State private var pendingTopic: String?
@@ -143,6 +149,7 @@ struct RootView: View {
             .containerRelativeFrame(.horizontal)
             .environment(\.accent, accent)
             .environment(\.account, account)
+            .environment(\.sideQuests, sideQuests)
 
             TabDock(
                 tab: $tab,

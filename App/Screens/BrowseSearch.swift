@@ -169,6 +169,7 @@ struct BrowseSearchResults: View {
                             BookmarkRow(bookmark: bookmark)
                         }
                         .buttonStyle(PressableStyle())
+                        .borkActions(bookmark)
                     }
                 }
                 .padding(.horizontal, 18)
@@ -247,6 +248,7 @@ struct BrowseSearchResults: View {
                         BookmarkRow(bookmark: hit.bookmark)
                     }
                     .buttonStyle(PressableStyle())
+                    .borkActions(hit.bookmark)
                 }
             }
             .padding(.horizontal, 18)

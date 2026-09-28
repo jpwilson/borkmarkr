@@ -412,6 +412,7 @@ struct LibraryView: View {
                             .selectable(selecting, selected: selected.contains(bookmark.id), radius: 18)
                     }
                     .buttonStyle(PressableStyle())
+                    .borkActions(bookmark, enabled: !selecting)
                     .frame(maxWidth: .infinity)
                 }
             }
@@ -428,6 +429,7 @@ struct LibraryView: View {
                         .selectable(selecting, selected: selected.contains(bookmark.id))
                 }
                 .buttonStyle(PressableStyle())
+                .borkActions(bookmark, enabled: !selecting)
                 .frame(maxWidth: .infinity, alignment: .top)
             }
             .padding(.horizontal, 18)

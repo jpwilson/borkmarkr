@@ -152,6 +152,7 @@ struct SourcePage: View {
                         BookmarkRow(bookmark: bookmark, showPlatformBadge: false)
                     }
                     .buttonStyle(.plain)
+                    .borkActions(bookmark)
                 }
             }
             .padding(.horizontal, 18)

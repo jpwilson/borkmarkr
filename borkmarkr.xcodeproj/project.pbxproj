@@ -43,6 +43,7 @@
 		478AC008ED03817412776254 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DE193BE10A36E1AD5BAC530 /* Store.swift */; };
 		479D2D8E66358814CD4DC70B /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CA06BC436065B1A852B227 /* RootView.swift */; };
 		4C4AB897F9D55ED2A62C18F9 /* Mission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB8BBAF60DC48399905E1C5 /* Mission.swift */; };
+		59BC388722852EC08C3DAF61 /* BorkActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED815814E77B130C55022282 /* BorkActions.swift */; };
 		5C4A2BEF8C66278C3899244C /* Cards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EA1C66CA0BA94A77F47942D /* Cards.swift */; };
 		5D819BBB4A5FE65BFFA80833 /* BorkmarkrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206AF2993B64DBD0939AA40B /* BorkmarkrApp.swift */; };
 		60D2B14C57ABD4B726989FFE /* AddSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C711BD3A0E1046941AB2AD33 /* AddSheet.swift */; };
@@ -254,6 +255,7 @@
 		E8F30257A075EE186C671BF9 /* EnrichmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrichmentTests.swift; sourceTree = "<group>"; };
 		EA943D319F3640BAEAB60794 /* QuestBrief.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestBrief.swift; sourceTree = "<group>"; };
 		EBB6C87B29BC3F22C2D5624C /* TopicShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicShare.swift; sourceTree = "<group>"; };
+		ED815814E77B130C55022282 /* BorkActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorkActions.swift; sourceTree = "<group>"; };
 		EDBB7054C8299B44B29CB0DD /* JourneyViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViews.swift; sourceTree = "<group>"; };
 		F120A252FDAF436430A54F54 /* InsightsEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsEntry.swift; sourceTree = "<group>"; };
 		F5DEAB92D3F359003446A3EA /* Initials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Initials.swift; sourceTree = "<group>"; };
@@ -261,7 +263,7 @@
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FE34B4FBABBE3D8CBC12C053 /* OpenSignalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSignalTests.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_8BB8060C-4EC6-4E3A-8CE0-3A9D627E2860" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_5BD68C41-18BB-495A-8563-9C972D9AB8CC" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -367,6 +369,7 @@
 		BA8CEE91D89E2D173C22AD21 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				ED815814E77B130C55022282 /* BorkActions.swift */,
 				7EA1C66CA0BA94A77F47942D /* Cards.swift */,
 				F120A252FDAF436430A54F54 /* InsightsEntry.swift */,
 				EDBB7054C8299B44B29CB0DD /* JourneyViews.swift */,
@@ -439,10 +442,10 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		"TEMP_CD756B33-0E9F-4B3D-948F-5F2F0F34689F" /* bookmarker-overnight */ = {
+		"TEMP_6ED17BFD-541D-4A40-9BB3-C9F1793BB955" /* bookmarker-overnight */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_8BB8060C-4EC6-4E3A-8CE0-3A9D627E2860" /* Config.xcconfig */,
+				"TEMP_5BD68C41-18BB-495A-8563-9C972D9AB8CC" /* Config.xcconfig */,
 			);
 			path = "bookmarker-overnight";
 			sourceTree = "<group>";
@@ -573,6 +576,7 @@
 				60D2B14C57ABD4B726989FFE /* AddSheet.swift in Sources */,
 				EE7D84676997EFB8049226B7 /* AuthSheet.swift in Sources */,
 				EB2791874BA499EA12151C79 /* Bookmark.swift in Sources */,
+				59BC388722852EC08C3DAF61 /* BorkActions.swift in Sources */,
 				5D819BBB4A5FE65BFFA80833 /* BorkmarkrApp.swift in Sources */,
 				7DDF3C18FE6285FC81B9B22C /* BrowseSearch.swift in Sources */,
 				01F3BCAB0E337EFA3BB2EC22 /* BrowseSort.swift in Sources */,
@@ -722,7 +726,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_8BB8060C-4EC6-4E3A-8CE0-3A9D627E2860" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_5BD68C41-18BB-495A-8563-9C972D9AB8CC" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -809,7 +813,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_8BB8060C-4EC6-4E3A-8CE0-3A9D627E2860" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_5BD68C41-18BB-495A-8563-9C972D9AB8CC" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
