@@ -135,6 +135,12 @@ struct RootView: View {
                 case .you: YouView(onReplayTour: { hasOnboarded = false }, account: account)
                 }
             }
+            // Pinned to the screen's width. A ZStack is as wide as its widest
+            // child and re-proposes that width to every child, so one tab
+            // laying out too wide (build 14: a cover widened the Library by
+            // ~70pt a side) dragged the dock off both edges with it. Pinned,
+            // an overflow stays that tab's problem and the dock stays put.
+            .containerRelativeFrame(.horizontal)
             .environment(\.accent, accent)
             .environment(\.account, account)
 
@@ -143,6 +149,7 @@ struct RootView: View {
                 onAdd: requestAdd,
                 signedOutDot: SignInNudge.showsBadge(signedIn: account.isSignedIn, borks: borkCount)
             )
+                .containerRelativeFrame(.horizontal)
                 .environment(\.accent, accent)
 
             if let toast {
