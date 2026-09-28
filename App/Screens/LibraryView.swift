@@ -422,7 +422,7 @@ struct LibraryView: View {
             MasonryVStack(
                 items: visible,
                 spacing: 12,
-                estimatedHeight: { BookmarkCard.estimatedHeight(for: $0, columnWidth: Self.columnWidth) }
+                estimatedHeight: { BookmarkCard.cachedEstimate(for: $0, columnWidth: Self.columnWidth) }
             ) { bookmark in
                 Button { open(bookmark) } label: {
                     BookmarkCard(bookmark: bookmark)

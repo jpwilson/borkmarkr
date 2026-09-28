@@ -220,6 +220,7 @@ struct BookmarkCard: View {
                         .padding(.vertical, 4)
                         .background(.ultraThinMaterial, in: Capsule())
                         .environment(\.colorScheme, .dark)
+                        .accessibilityLabel(bookmark.durationLabel.map { "Video, \($0)" } ?? "Video")
                     }
                 }
                 .padding(9)
@@ -313,6 +314,28 @@ struct BookmarkCard: View {
         }
         }
     }
+
+    /// `estimatedHeight`, remembered per bork revision. The Library balances
+    /// its columns on every render, over every bork, and the estimate reads
+    /// the display title and creator — string and URL work that only
+    /// changes when the bork does (every edit goes through `touch()`).
+    @MainActor
+    static func cachedEstimate(for bookmark: Bookmark, columnWidth: CGFloat) -> CGFloat {
+        let key = EstimateKey(id: bookmark.id, revision: bookmark.updatedAt, width: Int(columnWidth))
+        if let hit = estimates[key] { return hit }
+        if estimates.count > 5_000 { estimates.removeAll(keepingCapacity: true) }
+        let height = estimatedHeight(for: bookmark, columnWidth: columnWidth)
+        estimates[key] = height
+        return height
+    }
+
+    private struct EstimateKey: Hashable {
+        let id: String
+        let revision: Date
+        let width: Int
+    }
+
+    @MainActor private static var estimates: [EstimateKey: CGFloat] = [:]
 
     /// Estimated height for masonry packing. Approximate by design — it only
     /// has to rank cards against each other, not match the final frame.
