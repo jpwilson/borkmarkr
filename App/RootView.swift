@@ -257,6 +257,7 @@ struct RootView: View {
                     .notice("Folded custom topic ids: \(folded, privacy: .public) rows re-keyed")
             }
             _ = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
+            Store.retryOEmbedPreviews(in: context)
             if let saved = AppTab.resolve(startingTabRaw) {
                 tab = saved
                 // Write the migrated value back so the You tab's picker has

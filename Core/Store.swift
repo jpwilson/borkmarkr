@@ -341,6 +341,41 @@ enum Store {
         }
     }
 
+    // MARK: - Preview retry
+
+    /// Gives TikTok and X borks another go at a preview, once per install.
+    ///
+    /// Both platforms gained a real preview source (their public oEmbed) after
+    /// many borks had already spent their three attempts on login walls and
+    /// been left as gradients with titles made from the URL. Only borks still
+    /// missing what oEmbed provides are reopened — a TikTok without a cover,
+    /// an X post without its text — and nothing about them changes but the
+    /// attempt count: the fetch itself still decides what to fill in, and
+    /// never replaces a title or filing someone chose.
+    @discardableResult
+    static func retryOEmbedPreviews(in context: ModelContext, defaults: UserDefaults = .standard) -> Int {
+        let key = "enrichment.oembed.tiktok-x.v1"
+        guard !defaults.bool(forKey: key) else { return 0 }
+        let tiktok = Platform.tiktok.rawValue, x = Platform.x.rawValue
+        let descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate {
+            $0.deletedAt == nil && ($0.platformRaw == tiktok || $0.platformRaw == x)
+        })
+        var reopened = 0
+        for bookmark in (try? context.fetch(descriptor)) ?? [] {
+            let missing = bookmark.platform == .tiktok
+                ? bookmark.imageURLString == nil
+                : SavedContent.excerpt(bookmark.text) == nil
+            guard missing else { continue }
+            bookmark.enrichmentVersion = nil
+            bookmark.enrichmentAttempts = 0
+            bookmark.previewFetchedAt = nil
+            reopened += 1
+        }
+        if context.hasChanges { try? context.save() }
+        defaults.set(true, forKey: key)
+        return reopened
+    }
+
     // MARK: - Custom topic id fold (build 13)
 
     /// Re-key any custom topic whose id predates the ASCII fold.
