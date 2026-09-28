@@ -2226,6 +2226,52 @@ const cleanAuthor = (a) => {
   return SITE_NAMES.has(t) || /^[a-z0-9-]+\.(com|net|org|co|io|lol)$/.test(t) ? null : a.trim();
 };
 
+/* Who a post belongs to, read from its URL — the app's Platform.handle(in:).
+   Only paths that *mean* an account: /@name/video/…, x.com/name/status/…,
+   instagram.com/name/reel/…. A bare /reel/ID or /shorts/ID has no person in
+   it, and an ID is never passed off as one. */
+const HANDLE_RESERVED_X = new Set(["i", "home", "search", "hashtag", "intent", "share", "explore", "messages", "notifications", "settings"]);
+const IG_POST_PATHS = new Set(["reel", "reels", "p", "tv"]);
+function urlHandle(url, platform) {
+  let seg;
+  try { seg = new URL(url).pathname.split("/").filter(Boolean); } catch { return null; }
+  if (!seg.length) return null;
+  const clean = (s) => {
+    const name = s.replace(/^@/, "");
+    return /^[A-Za-z0-9._-]{1,40}$/.test(name) ? "@" + name : null;
+  };
+  switch (platform) {
+    case "tiktok": case "threads": case "youtube": case "shorts":
+      return seg[0].startsWith("@") ? clean(seg[0]) : null;
+    case "x":
+      return seg.length >= 3 && seg[1] === "status" && !HANDLE_RESERVED_X.has(seg[0].toLowerCase()) ? clean(seg[0]) : null;
+    case "instagram":
+      if (seg[0] === "stories" && seg.length >= 2) return clean(seg[1]);
+      return seg.length >= 3 && IG_POST_PATHS.has(seg[1]) && !IG_POST_PATHS.has(seg[0]) ? clean(seg[0]) : null;
+    default:
+      return null;
+  }
+}
+
+/* What to call a post whose page was never read — "Instagram reel", not the
+   title made from its URL, which for most posts is an ID dressed as a handle
+   ("@C9xYz12Abc on Instagram"). The app's Platform.untitledLabel(for:). */
+function untitledLabel(url, platform) {
+  let path = "";
+  try { path = new URL(url).pathname.toLowerCase(); } catch {}
+  switch (platform) {
+    case "instagram": return path.includes("/reel") ? "Instagram reel" : path.includes("/stories/") ? "Instagram story" : "Instagram post";
+    case "tiktok": return path.includes("/photo/") ? "TikTok photos" : "TikTok video";
+    case "youtube": return "YouTube video";
+    case "shorts": return "YouTube Short";
+    case "x": return "Post on X";
+    case "threads": return "Threads post";
+    case "pinterest": return "Pinterest pin";
+    case "grok": return "Grok answer";
+    default: return null;
+  }
+}
+
 /* What the card says. Platform page titles are built for search engines
    ("Name (@handle) on X: …", 'Name on Instagram: "caption"'); the card wants
    the person and the words, not the boilerplate. Memoised on the row. */
@@ -2249,6 +2295,12 @@ function displayFields(r) {
     if (b && b !== title && !title.startsWith(b.slice(0, 40))) snippet = b;
   }
   title = SavedContent.title(raw, r.body_text, r.platform);
+  // Still the title we made from the URL, and nothing better to show: say
+  // what it is. Display only — the stored title stays ours to replace.
+  if (r.platform !== "web" && title === (raw || title) && (!raw || raw === Filer.fallbackTitle(r.url))) {
+    title = untitledLabel(r.url, r.platform) || title;
+  }
+  author = author || urlHandle(r.url, r.platform);
   if (snippet && title.startsWith(snippet.slice(0, 40))) snippet = null;
   r._disp = { title, author, snippet };
   return r._disp;
