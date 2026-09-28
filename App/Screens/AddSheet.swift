@@ -416,7 +416,7 @@ struct AddSheet: View {
                         .foregroundStyle(Tokens.ink)
                         .lineLimit(3)
                         .multilineTextAlignment(.leading)
-                    Text(bork.author ?? bork.url?.host ?? bork.platform.name)
+                    Text(bork.displayAuthor ?? bork.url?.host ?? bork.platform.name)
                         .font(Typo.ui(11.5, .medium))
                         .foregroundStyle(Tokens.inkMeta)
                         .lineLimit(1)
@@ -492,7 +492,8 @@ struct AddSheet: View {
                         .lineLimit(3)
                         .multilineTextAlignment(.leading)
                     HStack(spacing: 5) {
-                        Text(author ?? url.host ?? platform.name)
+                        Text((Bookmark.isPlaceholderAuthor(author, url: url, platform: platform)
+                              ? Platform.handle(in: url) : author) ?? url.host ?? platform.name)
                             .font(Typo.ui(11.5, .medium))
                             .foregroundStyle(Tokens.inkMeta)
                             .lineLimit(1)

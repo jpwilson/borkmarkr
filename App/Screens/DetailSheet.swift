@@ -116,7 +116,7 @@ struct DetailSheet: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 7) {
                     PlatformBadge(platform: bookmark.platform, size: 26, pageURL: bookmark.url)
-                    Text(bookmark.author ?? bookmark.platform.name)
+                    Text(bookmark.displayAuthor ?? bookmark.platform.name)
                         .font(Typo.ui(13, .semibold))
                         .foregroundStyle(Tokens.inkSecondary)
                 }
@@ -201,7 +201,7 @@ struct DetailSheet: View {
             }
 
             HStack(spacing: 6) {
-                Text([bookmark.author, bookmark.platform.name].compactMap { $0 }.joined(separator: " · "))
+                Text([bookmark.displayAuthor, bookmark.platform.name].compactMap { $0 }.joined(separator: " · "))
                     .font(Typo.ui(12.5, .medium))
                     .foregroundStyle(Tokens.inkMeta)
                 if bookmark.openCount > 0 {

@@ -124,7 +124,13 @@ final class PreviewFetcher: ObservableObject {
            let excerpt = SavedContent.excerpt(result.description) {
             bookmark.text = excerpt
         }
-        if let author = result.author, bookmark.author == nil || bookmark.author == bookmark.url?.host {
+        // Replace only a stand-in ("instagram.com", a platform name). The
+        // old test compared against `url.host`, which keeps its "www." while
+        // the stored stand-in drops it — so for most links a real creator
+        // never landed.
+        if let author = result.author,
+           !Bookmark.isPlaceholderAuthor(author, url: url, platform: bookmark.platform),
+           Bookmark.isPlaceholderAuthor(bookmark.author, url: url, platform: bookmark.platform) {
             bookmark.author = author
         }
         if let duration = result.durationSeconds, bookmark.durationSeconds == nil {

@@ -171,7 +171,7 @@ struct BookmarkCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 PlatformBadge(platform: bookmark.platform, size: 20, pageURL: bookmark.url)
-                Text(bookmark.author ?? bookmark.platform.name)
+                Text(bookmark.displayAuthor ?? bookmark.platform.name)
                     .font(Typo.ui(11.5, .semibold))
                     .foregroundStyle(Tokens.inkSecondary)
                     .lineLimit(1)
@@ -225,12 +225,22 @@ struct BookmarkCard: View {
             .clipped()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(bookmark.displayTitle)
-                    .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(Tokens.ink)
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 3) {
+                    // Who made it is how people remember a reel — "that
+                    // physio on TikTok" — so it sits right on the card.
+                    if let creator = bookmark.displayAuthor {
+                        Text(creator)
+                            .font(Typo.ui(11, .semibold))
+                            .foregroundStyle(Tokens.inkSecondary)
+                            .lineLimit(1)
+                    }
+                    Text(bookmark.displayTitle)
+                        .font(Typo.ui(13.5, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 footer()
             }
@@ -316,7 +326,8 @@ struct BookmarkCard: View {
         if bookmark.isMedia {
             let charsPerLine = max(1, Int(columnWidth / 7.2))
             let lines = min(3, max(1, Int(ceil(Double(title.count) / Double(charsPerLine)))))
-            return bookmark.coverHeight + 11 + CGFloat(lines) * 18 + footerHeight + 11
+            let creator: CGFloat = bookmark.displayAuthor == nil ? 0 : 17
+            return bookmark.coverHeight + 11 + creator + CGFloat(lines) * 18 + footerHeight + 11
         }
 
         let charsPerLine = max(1, Int(columnWidth / 7.4))

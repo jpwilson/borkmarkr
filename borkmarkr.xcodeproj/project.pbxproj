@@ -107,6 +107,7 @@
 		D4F3FEDEFE26E1810AAD7150 /* DuplicateSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EFFAF4608164B3C3448B2B1 /* DuplicateSave.swift */; };
 		D7089D86A614BA58428D49DF /* SmartCategorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0810F447AD16FAB04860D7 /* SmartCategorizer.swift */; };
 		D7C7FAEC7DAD053716A44AE3 /* TagRecency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D6884E4D424E7446777654 /* TagRecency.swift */; };
+		D9E612D389753ABADB7D8571 /* CreatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D9E35206A8CE0B0BF0EEFB /* CreatorTests.swift */; };
 		DAAA31C1092CE54F9C9CC41B /* Categorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F93E7A1E9CEFD4F91EB5D0B /* Categorizer.swift */; };
 		DCAB85EBA6E027CC669F1364 /* ReviewPrompter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719C55A5DD346B1A928F944 /* ReviewPrompter.swift */; };
 		DE28BBEB32231321D56E645B /* SmartInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8181BE7C68067E61B50D0B5E /* SmartInsights.swift */; };
@@ -216,6 +217,7 @@
 		94FAEE4CF56506B42CB4F371 /* ShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9719C55A5DD346B1A928F944 /* ReviewPrompter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPrompter.swift; sourceTree = "<group>"; };
 		9883626D300D557C8B8F2061 /* YouView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouView.swift; sourceTree = "<group>"; };
+		98D9E35206A8CE0B0BF0EEFB /* CreatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorTests.swift; sourceTree = "<group>"; };
 		990CE9B08FEB9BF177C21611 /* Platform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Platform.swift; sourceTree = "<group>"; };
 		995339125120E35036234EEE /* RevisitSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevisitSource.swift; sourceTree = "<group>"; };
 		A40712F07BE93C8B2F47CACA /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
@@ -259,7 +261,7 @@
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FE34B4FBABBE3D8CBC12C053 /* OpenSignalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSignalTests.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_6F4E31E8-1BDE-4B30-846C-DBF68A012ECF" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_C29808D3-4E8D-4D7B-9042-7EC6751F48B1" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -426,6 +428,7 @@
 		EB2F290E67B5EB43BD7F3C42 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				98D9E35206A8CE0B0BF0EEFB /* CreatorTests.swift */,
 				E8F30257A075EE186C671BF9 /* EnrichmentTests.swift */,
 				FE34B4FBABBE3D8CBC12C053 /* OpenSignalTests.swift */,
 				4C72C582E6EA96D78463C84A /* QuestArtworkTests.swift */,
@@ -436,10 +439,10 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		"TEMP_08A1ED86-65ED-4960-A225-EC63BC0F7FBD" /* bookmarker-overnight */ = {
+		"TEMP_4365B59A-CAC8-4A41-9927-4311B4325CAA" /* bookmarker-overnight */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_6F4E31E8-1BDE-4B30-846C-DBF68A012ECF" /* Config.xcconfig */,
+				"TEMP_C29808D3-4E8D-4D7B-9042-7EC6751F48B1" /* Config.xcconfig */,
 			);
 			path = "bookmarker-overnight";
 			sourceTree = "<group>";
@@ -691,6 +694,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D9E612D389753ABADB7D8571 /* CreatorTests.swift in Sources */,
 				FFD1E7B62FB526F04D981654 /* EnrichmentTests.swift in Sources */,
 				CE2E9DD3AB547B48D368908B /* OpenSignalTests.swift in Sources */,
 				DF542C030843DDCE3E7DDD07 /* QuestArtworkTests.swift in Sources */,
@@ -718,7 +722,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_6F4E31E8-1BDE-4B30-846C-DBF68A012ECF" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_C29808D3-4E8D-4D7B-9042-7EC6751F48B1" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -805,7 +809,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_6F4E31E8-1BDE-4B30-846C-DBF68A012ECF" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_C29808D3-4E8D-4D7B-9042-7EC6751F48B1" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;

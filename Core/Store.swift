@@ -56,7 +56,13 @@ enum Store {
         if let existing = try context.fetch(descriptor).first {
             if !draft.title.isEmpty && (draft.titleEdited == true ||
                 (existing.titleEdited != true && (existing.title.isEmpty || existing.title == Categorizer.fallbackTitle(for: draft.url)))) { existing.title = draft.title }
-            if let author = draft.author { existing.author = author }
+            // Sharing the same reel again must not swap a creator we learned
+            // for the host the share sheet stands in with.
+            if let author = draft.author,
+               !Bookmark.isPlaceholderAuthor(author, url: draft.url, platform: existing.platform)
+                || Bookmark.isPlaceholderAuthor(existing.author, url: draft.url, platform: existing.platform) {
+                existing.author = author
+            }
             if draft.filingSource == "user" || (existing.filingSource == "automatic" && draft.categoryID != nil) {
                 existing.categoryID = draft.categoryID; existing.subcategory = draft.subcategory
                 existing.filingSource = draft.filingSource ?? "automatic"

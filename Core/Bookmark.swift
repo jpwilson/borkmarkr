@@ -188,10 +188,40 @@ final class Bookmark {
         SearchSubject(blob: searchBlob, topicName: category?.name, subtopic: subcategory, tags: tags)
     }
 
-    /// A person or handle — never "Instagram" or "X (formerly Twitter)".
+    /// A person or handle — never "Instagram", "X (formerly Twitter)" or
+    /// "instagram.com".
+    ///
+    /// The share extension and the Add sheet record the site's host as the
+    /// author until the page is read, and for Instagram it usually never is.
+    /// So for a social post a host is treated as no author at all, and the
+    /// handle in the URL (`/@name/video/…`) stands in. A web article keeps its
+    /// host: "nytimes.com" is exactly who wrote it, as far as a card goes.
     var displayAuthor: String? {
-        guard let author, !author.isEmpty, !Platform.isSiteName(author) else { return nil }
-        return author
+        if let author, !Self.isPlaceholderAuthor(author, url: url, platform: platform) { return author }
+        guard platform != .web, let url else { return nil }
+        return Platform.handle(in: url)
+    }
+
+    /// True for an author that names the site rather than a person: empty,
+    /// a platform name, or — on a social platform — the link's own host.
+    ///
+    /// Enrichment and re-shares use this to decide whether a real creator may
+    /// replace what is stored. Only a placeholder is ever replaced, so a
+    /// creator that has been learned is never overwritten by "instagram.com".
+    static func isPlaceholderAuthor(_ author: String?, url: URL?, platform: Platform) -> Bool {
+        guard let raw = author?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return true }
+        if Platform.isSiteName(raw) { return true }
+        guard platform != .web else { return false }
+        func bare(_ host: String) -> String {
+            let lower = host.lowercased()
+            return lower.hasPrefix("www.") ? String(lower.dropFirst(4)) : lower
+        }
+        if let host = url?.host, bare(raw) == bare(host) { return true }
+        // "instagram.com" on a link from "m.instagram.com", "tiktok.com" on
+        // one from "vm.tiktok.com": any social platform's host is a site.
+        guard raw.contains("."), !raw.contains(" "), !raw.hasPrefix("@"),
+              let asURL = URL(string: "https://\(bare(raw))/") else { return false }
+        return Platform.detect(from: asURL) != .web
     }
 
     /// X and Threads are always text cards. A pasted x.com link often has no
