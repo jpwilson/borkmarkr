@@ -203,6 +203,37 @@ private struct RemoteBitmap<Placeholder: View>: View {
         _image = State(initialValue: ImagePipeline.shared.cached(url)?.image)
     }
 
+    /// `.fill` draws a bitmap already cut to the box, rather than a larger
+    /// one scaled up and clipped: clipping hides the overflow from the eye
+    /// but not from layout, and the card's accessibility frame still took
+    /// in the whole 4:3 thumbnail — 267pt of it in a 197pt column.
+    @ViewBuilder
+    private func bitmap(_ image: UIImage) -> some View {
+        if contentMode == .fill {
+            Image(uiImage: Self.cut(image, toAspectOf: size)).resizable()
+        } else {
+            Image(uiImage: image).resizable().aspectRatio(contentMode: .fit)
+        }
+    }
+
+    /// The centred part of `image` with `box`'s aspect ratio. A sub-image
+    /// that shares the original's pixels — no copy, no redraw.
+    private static func cut(_ image: UIImage, toAspectOf box: CGSize) -> UIImage {
+        guard let cg = image.cgImage, box.width > 0, box.height > 0 else { return image }
+        let width = CGFloat(cg.width), height = CGFloat(cg.height)
+        let target = box.width / box.height
+        var rect = CGRect(x: 0, y: 0, width: width, height: height)
+        if width / height > target {
+            rect.size.width = height * target
+            rect.origin.x = (width - rect.width) / 2
+        } else {
+            rect.size.height = width / target
+            rect.origin.y = (height - rect.height) / 2
+        }
+        guard let cropped = cg.cropping(to: rect.integral) else { return image }
+        return UIImage(cgImage: cropped)
+    }
+
     private struct Key: Equatable {
         let url: URL?
         let width: Int
@@ -212,11 +243,12 @@ private struct RemoteBitmap<Placeholder: View>: View {
     var body: some View {
         ZStack {
             if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: contentMode)
+                bitmap(image)
                     .frame(width: size.width, height: size.height)
-                    .clipped()
+                    // Decorative: the card's title and creator say what it
+                    // is. Exposed, every cover was an unlabelled "image" to
+                    // VoiceOver.
+                    .accessibilityHidden(true)
                     .transition(.opacity)
             } else {
                 placeholder()
