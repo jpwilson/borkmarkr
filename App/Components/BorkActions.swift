@@ -58,7 +58,7 @@ private struct BorkActionsModifier: ViewModifier {
                     Button("Delete", role: .destructive, action: delete)
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text(bookmark.displayTitle)
+                    Text("It's removed from bookmarker. The original post isn't touched.")
                 }
         } else {
             content

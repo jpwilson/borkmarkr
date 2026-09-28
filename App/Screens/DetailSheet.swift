@@ -94,7 +94,7 @@ struct DetailSheet: View {
         .sheet(isPresented: $showingSingleShare) {
             SingleShareSheet(bookmark:bookmark).environment(\.accent,accent)
         }
-        .confirmationDialog("Delete this save?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+        .confirmationDialog("Delete this bork?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive, action: softDelete)
             Button("Cancel", role: .cancel) {}
         } message: {

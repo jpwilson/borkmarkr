@@ -53,6 +53,8 @@ struct RevisitQueueSheet: View {
         .confirmationDialog("Delete this bork?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { deleteCurrent(queue) }
             Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("It's removed from bookmarker. The original post isn't touched.")
         }
     }
 
