@@ -39,7 +39,7 @@ targets:
     # App Group store the app reads.
     sources: [App, Core]
     scheme:
-      testTargets: [bookmarkerTests]
+      testTargets: [bookmarkerTests, bookmarkerUITests]
     settings:
       base:
         # iPhone only. XcodeGen's per-target default is "1,2", which overrides
@@ -98,6 +98,23 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.jpwilson.borkmarkr.tests
+
+  # Drives the real app: scroll smoothness and layout on a heavy library.
+  # Uses the DEBUG `-seed -layoutStress` fixture, so no private data.
+  bookmarkerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: borkmarkr
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.jpwilson.borkmarkr.uitests
+        TEST_TARGET_NAME: borkmarkr
+        # XCUITest's API predates strict concurrency; Swift 6 mode turns every
+        # query in a measure block into an isolation error.
+        SWIFT_VERSION: "5.0"
 
   ShareExtension:
     type: app-extension

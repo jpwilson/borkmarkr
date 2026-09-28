@@ -169,6 +169,13 @@ enum DebugSeed {
                     text: sample.text, savedAt: daysAgo(i % 28)
                 )
                 row.imageURLString = i.isMultiple(of: 2) ? sample.image : nil
+                // YouTube and Shorts publish 4:3 landscape thumbnails. One of
+                // those filling a tall cover is what widened the build 14
+                // Library ~70pt past both edges; keep the trigger in the
+                // fixture so the layout test exercises it.
+                if sample.platform == .youtube || sample.platform == .shorts {
+                    row.imageURLString = Cover.landscapeVideo
+                }
                 row.previewFetchedAt = .now
                 row.publishedDateChecked = true
                 context.insert(row)
@@ -241,6 +248,9 @@ enum DebugSeed {
         static let postScreenshot = bucket + "c2a51b2fc848e622fe4bd05fcd820b78a73f3daec11c3b02153d236c93df4500"
         /// Talking to camera, shot in a car.
         static let talkingHead = bucket + "c39f2b624a35cb86f55d8948f6cb1f6c68a366ac3cfc1bf811262a0ea43d1353"
+        /// A YouTube thumbnail: 480×360, landscape, as oEmbed returns for
+        /// videos and Shorts alike.
+        static let landscapeVideo = "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
         /// Supermarket aisle, scoring food.
         static let groceries = bucket + "3348920972b98fa1d12afdb8e739de3a9d2b7054e7fd5f76da320bc8b353df7f"
 

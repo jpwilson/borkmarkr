@@ -430,6 +430,7 @@ struct LibraryView: View {
                 }
                 .buttonStyle(PressableStyle())
                 .borkActions(bookmark, enabled: !selecting)
+                .accessibilityIdentifier("bork-card")
                 .frame(maxWidth: .infinity, alignment: .top)
             }
             .padding(.horizontal, 18)
