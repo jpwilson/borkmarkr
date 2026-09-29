@@ -63,6 +63,10 @@ struct AddSheet: View {
     /// The preview ran out of time. The bork saves without one, and
     /// enrichment fills it in afterwards.
     @State private var previewTimedOut = false
+    /// This sheet has just saved its link. It is on its way out, and the
+    /// bork it made must not read, mid-dismissal, as "Already in your
+    /// library" — which it did, for the half second the sheet slid away.
+    @State private var didSave = false
     /// `og:description` — the full caption on Instagram and TikTok. Read for
     /// filing, shown nowhere, saved nowhere.
     @State private var pageDescription: String?
@@ -352,7 +356,7 @@ struct AddSheet: View {
     /// `DuplicateSave.match` checks the tombstone again anyway, because that
     /// rule is the one worth being sure of.
     private var duplicate: Bookmark? {
-        guard !saveAnyway, let url = parsedURL else { return nil }
+        guard !saveAnyway, !didSave, let url = parsedURL else { return nil }
         return DuplicateSave.match(
             stableID: Bookmark.stableID(for: url),
             in: allBookmarks,
@@ -947,6 +951,7 @@ struct AddSheet: View {
         draft.titleEdited = editingTitle
 
         do {
+            didSave = true
             let saved = try Store.save(draft, in: context)
             if !selectedJourneyIDs.isEmpty {
                 for journey in journeys where selectedJourneyIDs.contains(journey.id) {
@@ -961,6 +966,7 @@ struct AddSheet: View {
             onSaved("Saved to \(where_)")
             ReviewPrompter.reached(.borkSaved, requestReview)
         } catch {
+            didSave = false
             self.error = error.localizedDescription
         }
     }
