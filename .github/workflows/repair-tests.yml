@@ -16,6 +16,7 @@ jobs:
       - run: node Scripts/test_quest_web_sync.mjs
       - run: node Scripts/test_taxonomy_sync.mjs
       - run: node Scripts/test_open_signals.mjs
+      - run: node Scripts/test_library_layout.mjs
   swift:
     runs-on: macos-latest
     steps:
