@@ -35,6 +35,7 @@
 		404C6EC411857992B8CB1F67 /* Revisit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EA5D89EE1B35028615E7B7 /* Revisit.swift */; };
 		437A31C7D71F12BACDF1A23E /* SourcePage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3017F4E89202463E1FC026 /* SourcePage.swift */; };
 		4563A5A761361CF17ADC7BD8 /* CollectionShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C9252895BB90B4A491F45E /* CollectionShare.swift */; };
+		4676DAA69C4962CA53F43548 /* TaxonomySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DDBE1BF6D7C645FC3823A1 /* TaxonomySync.swift */; };
 		478AC008ED03817412776254 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DE193BE10A36E1AD5BAC530 /* Store.swift */; };
 		479D2D8E66358814CD4DC70B /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CA06BC436065B1A852B227 /* RootView.swift */; };
 		4C4AB897F9D55ED2A62C18F9 /* Mission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB8BBAF60DC48399905E1C5 /* Mission.swift */; };
@@ -86,6 +87,7 @@
 		BB99233A22CD123B47F0B1FA /* QuestSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4318FF02267652956B342759 /* QuestSync.swift */; };
 		BD0B7558844927CC6E32E046 /* TopicPickerQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC62950D5538EA53D438815 /* TopicPickerQuery.swift */; };
 		BD28CFDDA8873720B1F555B5 /* InsightsEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F120A252FDAF436430A54F54 /* InsightsEntry.swift */; };
+		BE04471C8FB6170548ABAD39 /* TaxonomySyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A0ECE29CE5F6685AD4BC1D /* TaxonomySyncTests.swift */; };
 		C8CA5FB1B5C24930EB18E92D /* Categorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F93E7A1E9CEFD4F91EB5D0B /* Categorizer.swift */; };
 		CC338097341DC5659292DB83 /* TopicPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBF6488680E970F8BD800FF /* TopicPage.swift */; };
 		CEE5127AB255372BA1980F20 /* SmartNamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F55F700EFC2936BB8A241D7 /* SmartNamer.swift */; };
@@ -202,6 +204,8 @@
 		A718ED51F6FE9ED9260A3174 /* SaveLimit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveLimit.swift; sourceTree = "<group>"; };
 		A8EA5D89EE1B35028615E7B7 /* Revisit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Revisit.swift; sourceTree = "<group>"; };
 		B01FDBE763C913D9F86D91E3 /* ScreenshotDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotDefaults.swift; sourceTree = "<group>"; };
+		B0DDBE1BF6D7C645FC3823A1 /* TaxonomySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxonomySync.swift; sourceTree = "<group>"; };
+		B5A0ECE29CE5F6685AD4BC1D /* TaxonomySyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxonomySyncTests.swift; sourceTree = "<group>"; };
 		B5A4C0A7FD18816B0ABDEBE4 /* TopicPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicPickerSheet.swift; sourceTree = "<group>"; };
 		B61EA7E6AEBDAC784261C9AD /* Bookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bookmark.swift; sourceTree = "<group>"; };
 		B6EFED0D5A77564B19E2159D /* LinkPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkPreview.swift; sourceTree = "<group>"; };
@@ -232,7 +236,7 @@
 		F91794C010FF35E650EB340F /* borkmarkr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = borkmarkr.entitlements; sourceTree = "<group>"; };
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_FAEB62C8-DBB7-453E-82F8-463078620730" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_72EC3D5F-9022-491B-8861-6E1CB5EC7709" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -322,6 +326,7 @@
 				B01FDBE763C913D9F86D91E3 /* ScreenshotDefaults.swift */,
 				DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */,
 				0D5D86A799ECF3849265132A /* SignInNudge.swift */,
+				B0DDBE1BF6D7C645FC3823A1 /* TaxonomySync.swift */,
 				BA8CEE91D89E2D173C22AD21 /* Components */,
 				C68779537C81C72108BA8E40 /* DesignSystem */,
 				8EDF8BE3CA28326A227F5DBD /* Fonts */,
@@ -393,14 +398,15 @@
 			isa = PBXGroup;
 			children = (
 				659DCCA380B9927587FA608C /* QuestSyncTests.swift */,
+				B5A0ECE29CE5F6685AD4BC1D /* TaxonomySyncTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		"TEMP_91844E2B-1D20-4A9A-AD78-B39EF41B97A6" /* bookmarker-repair */ = {
+		"TEMP_B483CD26-2FAB-4983-B87E-2FE7F4EAEAE8" /* bookmarker-repair */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_FAEB62C8-DBB7-453E-82F8-463078620730" /* Config.xcconfig */,
+				"TEMP_72EC3D5F-9022-491B-8861-6E1CB5EC7709" /* Config.xcconfig */,
 			);
 			path = "bookmarker-repair";
 			sourceTree = "<group>";
@@ -588,6 +594,7 @@
 				8E09E7953F3242F92A276127 /* Supabase.swift in Sources */,
 				D159765B4658570659BB565B /* TagRecency.swift in Sources */,
 				79ED586D9F3A1651B2A5EFED /* Taxonomy.swift in Sources */,
+				4676DAA69C4962CA53F43548 /* TaxonomySync.swift in Sources */,
 				1E4797F66B55D7A7C9EC3369 /* Tokens.swift in Sources */,
 				859886A567BDA508C3964224 /* TopicArt.swift in Sources */,
 				CC338097341DC5659292DB83 /* TopicPage.swift in Sources */,
@@ -643,6 +650,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7C5C8F501070DA7F9601BAA6 /* QuestSyncTests.swift in Sources */,
+				BE04471C8FB6170548ABAD39 /* TaxonomySyncTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -664,7 +672,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_FAEB62C8-DBB7-453E-82F8-463078620730" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_72EC3D5F-9022-491B-8861-6E1CB5EC7709" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -751,7 +759,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_FAEB62C8-DBB7-453E-82F8-463078620730" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_72EC3D5F-9022-491B-8861-6E1CB5EC7709" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
