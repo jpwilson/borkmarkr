@@ -55,6 +55,7 @@ final class Bookmark {
     /// opened", and time-of-day insights possible later.
     var openCount: Int = 0
     var lastOpenedAt: Date?
+    var openSignalsMigrated: Bool = false
 
     var savedAt: Date
     /// When the original post went up, if the page publishes it. Instagram and
@@ -158,7 +159,10 @@ final class Bookmark {
         postedAt == nil && canHavePostedDate && !publishedDateChecked
     }
 
-    func markOpened() {
+    @MainActor func markOpened() {
+        // Record before incrementing the aggregate so legacy backfill cannot
+        // count the same new open twice.
+        try? OpenSignal.record(self)
         openCount += 1
         lastOpenedAt = .now
     }

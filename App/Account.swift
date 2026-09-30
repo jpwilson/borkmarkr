@@ -137,6 +137,7 @@ final class Account: ObservableObject {
             try await push(context: context, session: session)
             try await pull(context: context, session: session)
             try await QuestSync.run(context: context, session: session)
+            try await OpenSignalSync.run(context: context, session: session)
 
             // Edits made while requests were in flight must be pushed next time.
             lastSynced = syncStartedAt
