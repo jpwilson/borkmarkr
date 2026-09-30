@@ -22,6 +22,7 @@ struct DetailSheet: View {
     @State private var tagDraft = ""
     @StateObject private var previews = PreviewFetcher()
     @State private var refreshingPreview = false
+    @State private var showingSingleShare = false
 
     @Query(
         filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
@@ -68,15 +69,18 @@ struct DetailSheet: View {
                     Button("Close") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    ShareLink(item: bookmark.url ?? URL(string: "https://bookmarker.lol")!) {
+                    Button { showingSingleShare = true } label: {
                         Image(systemName: "square.and.arrow.up")
-                    }
+                    }.accessibilityLabel("Share this bork")
                 }
             }
             .safeAreaInset(edge: .bottom) { footerBar }
         }
         .presentationDetents([.large])
         .presentationCornerRadius(Tokens.sheetRadius)
+        .sheet(isPresented: $showingSingleShare) {
+            SingleShareSheet(bookmark:bookmark).environment(\.accent,accent)
+        }
         .confirmationDialog("Delete this save?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive, action: softDelete)
             Button("Cancel", role: .cancel) {}

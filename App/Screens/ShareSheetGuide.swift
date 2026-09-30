@@ -38,7 +38,7 @@ struct ShareSheetGuide: View {
                             .font(Typo.display(24, .heavy))
                             .tracking(-0.5)
                             .foregroundStyle(Tokens.ink)
-                        Text("Four taps, once. After that it's the first icon every time you share.")
+                        Text("Add bookmarker to your iOS Favorites so it's easier to reach. Each app controls the menu before this sheet.")
                             .font(Typo.ui(14))
                             .foregroundStyle(Tokens.inkSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -52,7 +52,7 @@ struct ShareSheetGuide: View {
                         step(3, "Tap Edit, then add bookmarker",
                              "Tap the green **+** next to **bookmarker** to put it in your Favorites.")
                         step(4, "Drag it to the front",
-                             "Hold the handle beside it and drag it to the top of the list. Next time you share, it's the first icon.")
+                             "Hold the handle beside it and move it near the front. Instagram or X may still require Share to… or Share via… before the iOS sheet appears.")
                     }
 
                     Text("bookmarker shows up when you share a post or a link — not a photo or a screenshot.")

@@ -20,4 +20,7 @@ const tabs=html.slice(html.indexOf('<nav class="tabbar"'),html.indexOf('<!-- Add
 assert.ok(tabs.indexOf('data-tab-link="revisit"') < tabs.indexOf('data-tab-link="you"'));
 assert.match(html,/density: feedDensity/);
 assert.match(html,/No borks match these filters/);
+const css=fs.readFileSync("docs/library-layout.css","utf8");
+assert.match(css,/minmax\(min\(100%,290px\),1fr\)/);
+assert.match(css,/@media\(max-width:360px\)\s*\{\s*\.nav-in > \.btn-sm \{ display:none; \}/);
 console.log("Responsive feed rules, refinements, navigation and script syntax passed.");

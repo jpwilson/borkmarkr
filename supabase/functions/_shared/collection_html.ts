@@ -32,6 +32,7 @@ export interface CollectionItem {
   platform: string;
   kind: string;
   category_id: string | null;
+  category_name?: string | null;
   subcategory: string | null;
   tags: string[];
   image_url: string | null;
@@ -365,6 +366,7 @@ function baseCSS() {
     "-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}",
     ".chips{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px}",
     ".chip{font-size:11px;font-weight:700;border-radius:7px;padding:2.5px 7px}",
+    ".filing{font-size:12px;font-weight:600;margin-top:10px;overflow-wrap:anywhere}.tags{font-size:11px;color:var(--meta);margin-top:5px;overflow-wrap:anywhere}",
     ".dead{color:var(--meta);font-size:11px}",
     ".empty{border:1px dashed #D7CDBD;border-radius:var(--radius);padding:44px 20px;text-align:center;color:var(--ink-2)}",
     ".empty h2{font-size:19px;margin:0 0 6px}",
@@ -546,9 +548,14 @@ function card(row) {
   const topic = topicFor(row.category_id);
   const hue = topic ? topic.hue : 24;
   const cover = shareableImage(row.image_url);
-  const title = String(row.title || "").trim();
+  const rawTitle = String(row.title || "").trim();
+  const captured = String(row.body_text || "").replace(/\s+/g," ").trim();
+  const generic = !rawTitle || /^https?:/.test(rawTitle) || / on (X|Instagram|Threads)( \(formerly Twitter\))?$/i.test(rawTitle);
+  const title = generic && captured && !/^(log in|sign in|create an account)/i.test(captured) ? captured.slice(0,180) : rawTitle;
   const author = row.author ? String(row.author) : "";
-  const snippet = row.body_text ? String(row.body_text).slice(0, 240) : "";
+  const snippet = captured && !title.startsWith(captured.slice(0,40)) ? captured.slice(0,240) : "";
+  const filing = [row.category_name || topic?.name, row.subcategory].filter(Boolean).join(" › ");
+  const tags = (Array.isArray(row.tags) ? row.tags : []).filter(t => typeof t === "string");
   const kind = String(row.kind || "");
   const tall = TALL_KINDS.indexOf(kind) >= 0;
   const hasCover = tall || WIDE_KINDS.indexOf(kind) >= 0 || cover !== "";
@@ -570,7 +577,8 @@ function card(row) {
       : "",
     '<div class="title">' + (title !== "" ? esc(title) : esc(hostOf(href) || "Untitled")) + "</div>",
     snippet !== "" ? '<div class="snippet">' + esc(snippet) + "</div>" : "",
-    topic ? '<div class="chips"><span class="chip c' + hue + '">' + esc(topic.name) + "</span></div>" : "",
+    filing ? '<div class="filing">' + esc(filing) + '</div>' : "",
+    tags.length ? '<div class="tags">' + esc(tags.slice(0,8).map(t => "#" + t).join(" · ")) + (tags.length > 8 ? " +" + (tags.length-8) : "") + '</div>' : "",
     "</div>",
   ].join("");
 

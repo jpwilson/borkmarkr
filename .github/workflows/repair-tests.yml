@@ -20,6 +20,10 @@ jobs:
       - run: node Scripts/test_quest_presentation.mjs
       - run: node Scripts/test_grounded_briefs.mjs
       - run: node Scripts/test_enrichment.mjs
+      - run: node Scripts/test_single_share.mjs
+      - run: node Scripts/test_collection_proxy.mjs
+      - run: node Scripts/test_collection_page.mjs
+      - run: node Scripts/test_collection_taxonomy.mjs
   swift:
     runs-on: macos-latest
     steps:

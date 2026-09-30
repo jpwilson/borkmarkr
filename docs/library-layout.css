@@ -51,10 +51,11 @@ main, main > section, .you-col, .card-body { min-width: 0; }
 .quest-guide li { padding-left:6px; }
 .quest-guide-more { padding:22px 0; }
 .quest-guide-more summary { cursor:pointer; font-weight:600; min-height:44px; }
-.quest-board { display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:16px; }
+.quest-board { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:16px; }
 .quest-board .quest-card { width:100%; padding:20px; }
 .quest-board .quest-art { width:90px; height:90px; border-radius:18px; }
 .quest-board .quest-t { font-size:20px; }
+#quests-list > .h-row { flex-wrap:wrap; gap:10px; margin-bottom:20px; }
 #quest-suggest { max-height:320px; overflow:auto; overscroll-behavior:contain; margin-top:12px; }
 #quest-suggest .qb-row > div { min-width:0; flex:1; }
 #quest-dialog .qb-add { flex-shrink:0; min-height:44px; }
@@ -67,6 +68,7 @@ main, main > section, .you-col, .card-body { min-width: 0; }
 #select-bar { white-space:normal; width:max-content; }
 #select-count { max-width:150px; }
 @media(max-width:760px) {
+  .nav-in { gap:10px; }
   .quest-guide { grid-template-columns:1fr; padding:22px; gap:20px; }
   .quest-guide > img { width:130px; height:130px; }
   .quest-guide h1 { font-size:28px; }
@@ -98,4 +100,9 @@ main, main > section, .you-col, .card-body { min-width: 0; }
   #view-you .account-identity { grid-template-columns:1fr; gap:22px; }
   #view-you .you-card { padding:20px; }
   input.field, textarea.field, select.field { font-size:16px; }
+}
+/* The download link stays in the footer; keep the brand and account reachable
+   without horizontal page drift on the narrowest phones. */
+@media(max-width:360px) {
+  .nav-in > .btn-sm { display:none; }
 }

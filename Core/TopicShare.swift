@@ -10,8 +10,8 @@ import Foundation
 ///
 /// **A share is an invitation, not an archive.** So: titles only, never body
 /// text; ten of them, newest first; a count line that says how many there
-/// really are; and one link to the app at the end. Someone who wants all four
-/// hundred can install it.
+/// really are; and one link to the app at the end. This text/image preview
+/// does not grant access to omitted saves; use Share as one link for those.
 ///
 /// Pure Foundation so `Scripts/test_topic_share.swift` exercises the
 /// formatting — truncation, ordering, the count line, "+ N more" — without a
@@ -90,7 +90,10 @@ enum TopicShare {
             lines.append("   \(linkLine(item.url))")
         }
         let remaining = ordered.count - shown.count
-        if remaining > 0 { lines.append("+ \(remaining) more") }
+        if remaining > 0 {
+            lines.append("+ \(remaining) more (not included in this preview)")
+            lines.append("Ask me for the collection link to see the rest.")
+        }
 
         lines.append("")
         lines.append(footer)

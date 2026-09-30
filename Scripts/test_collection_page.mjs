@@ -350,5 +350,13 @@ group("the document", () => {
   ok(missingFields.includes("by <b>Someone</b>"), "a missing owner name falls back");
 });
 
+group("recipient filing and private-note boundary", () => {
+  const html=render(collection({items:[item({category_id:"custom.a",category_name:"Exact & personal",subcategory:"Breathing",tags:["calm","<script>"],note_text:"NEVER PUBLIC",title:"Author on X",body_text:"A useful captured caption",platform:"x"})]}));
+  ok(html.includes("Exact &amp; personal › Breathing"),"exact custom topic and subtopic are visible");
+  ok(html.includes("#calm · #&lt;script&gt;"),"tags are visible and escaped");
+  ok(html.includes("A useful captured caption"),"author-only titles use retained content");
+  ok(!html.includes("NEVER PUBLIC"),"private bookmark notes are never rendered");
+});
+
 console.log(`\n${checks - failures}/${checks} checks passed`);
 process.exit(failures ? 1 : 0);
