@@ -307,7 +307,7 @@ struct RevisitView: View {
                                     title: quest.title,
                                     count: quest.bookmarkIDs.count,
                                     palette: quest.topic?.palette ?? NeutralPalette.value,
-                                    motif: QuestMotif.resolve(title: quest.title, categoryID: quest.categoryID),
+                                    cover: QuestCover.resolve(title: quest.title, categoryID: quest.categoryID),
                                     layout: .rail,
                                     habit: quest.hasHabit,
                                     topicName: quest.topic?.name
