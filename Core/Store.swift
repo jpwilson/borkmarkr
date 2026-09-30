@@ -56,7 +56,13 @@ enum Store {
         if let existing = try context.fetch(descriptor).first {
             if !draft.title.isEmpty && (draft.titleEdited == true ||
                 (existing.titleEdited != true && (existing.title.isEmpty || existing.title == Categorizer.fallbackTitle(for: draft.url)))) { existing.title = draft.title }
-            if let author = draft.author { existing.author = author }
+            // Sharing the same reel again must not swap a creator we learned
+            // for the host the share sheet stands in with.
+            if let author = draft.author,
+               !Bookmark.isPlaceholderAuthor(author, url: draft.url, platform: existing.platform)
+                || Bookmark.isPlaceholderAuthor(existing.author, url: draft.url, platform: existing.platform) {
+                existing.author = author
+            }
             if draft.filingSource == "user" || (existing.filingSource == "automatic" && draft.categoryID != nil) {
                 existing.categoryID = draft.categoryID; existing.subcategory = draft.subcategory
                 existing.filingSource = draft.filingSource ?? "automatic"
@@ -133,11 +139,15 @@ enum Store {
         try data.write(to: inboxURL.appendingPathComponent(name), options: .atomic)
     }
 
-    /// What one drain did. `waiting` is the subset of `saved` that arrived
-    /// over the signed-out limit and is being held (`SaveLimit`).
+    /// What one drain did. `saved` counts new borks; `waiting` is the subset
+    /// of them that arrived over the signed-out limit and is being held
+    /// (`SaveLimit`). `alreadyHad` counts shares of links already in the
+    /// library — updated in place, not new, and announced as such: "1 new
+    /// save" with nothing new at the top of the Library read as a bug.
     struct Drain {
         var saved = 0
         var waiting = 0
+        var alreadyHad = 0
     }
 
     /// Called by the app on launch and foreground. Drains every queued draft
@@ -185,9 +195,12 @@ enum Store {
 
             guard let bookmark = try? save(draft, in: context) else { continue }
             try? FileManager.default.removeItem(at: file)
-            result.saved += 1
 
-            guard !wasLive else { continue }
+            guard !wasLive else {
+                result.alreadyHad += 1
+                continue
+            }
+            result.saved += 1
 
             if bookmark.isWaiting {
                 result.waiting += 1
@@ -335,6 +348,41 @@ enum Store {
         }
     }
 
+    // MARK: - Preview retry
+
+    /// Gives TikTok and X borks another go at a preview, once per install.
+    ///
+    /// Both platforms gained a real preview source (their public oEmbed) after
+    /// many borks had already spent their three attempts on login walls and
+    /// been left as gradients with titles made from the URL. Only borks still
+    /// missing what oEmbed provides are reopened — a TikTok without a cover,
+    /// an X post without its text — and nothing about them changes but the
+    /// attempt count: the fetch itself still decides what to fill in, and
+    /// never replaces a title or filing someone chose.
+    @discardableResult
+    static func retryOEmbedPreviews(in context: ModelContext, defaults: UserDefaults = .standard) -> Int {
+        let key = "enrichment.oembed.tiktok-x.v1"
+        guard !defaults.bool(forKey: key) else { return 0 }
+        let tiktok = Platform.tiktok.rawValue, x = Platform.x.rawValue
+        let descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate {
+            $0.deletedAt == nil && ($0.platformRaw == tiktok || $0.platformRaw == x)
+        })
+        var reopened = 0
+        for bookmark in (try? context.fetch(descriptor)) ?? [] {
+            let missing = bookmark.platform == .tiktok
+                ? bookmark.imageURLString == nil
+                : SavedContent.excerpt(bookmark.text) == nil
+            guard missing else { continue }
+            bookmark.enrichmentVersion = nil
+            bookmark.enrichmentAttempts = 0
+            bookmark.previewFetchedAt = nil
+            reopened += 1
+        }
+        if context.hasChanges { try? context.save() }
+        defaults.set(true, forKey: key)
+        return reopened
+    }
+
     // MARK: - Custom topic id fold (build 13)
 
     /// Re-key any custom topic whose id predates the ASCII fold.
@@ -460,4 +508,33 @@ struct BookmarkDraft: Codable, Sendable {
     var filingSource: String? = nil
     var tagsEdited: Bool? = nil
     var titleEdited: Bool? = nil
+}
+
+extension BookmarkDraft {
+    /// A link handed to bookmarker from outside — the share sheet, or the
+    /// "Save a link" shortcut — with whatever text came with it. Filed
+    /// offline, instantly; enrichment reads the page later. One definition,
+    /// so a link saved from Shortcuts is exactly the bork a share makes.
+    static func handedOver(url: URL, caption: String?) -> BookmarkDraft {
+        let platform = Platform.detect(from: url)
+        let title = ShareInput.title(from: caption, url: url)
+
+        // X and Threads carry real post bodies; elsewhere the caption is just a
+        // caption and shouldn't turn the card into a text post.
+        let body: String? = platform.carriesTextPosts ? ShareInput.cleanBody(caption) : nil
+        let suggestion = Categorizer.suggest(url: url, title: title, text: body)
+
+        return BookmarkDraft(
+            url: url,
+            title: title,
+            author: Categorizer.fallbackAuthor(for: url),
+            platform: platform,
+            kind: platform.defaultKind,
+            categoryID: suggestion.categoryID,
+            subcategory: suggestion.subcategory,
+            tags: suggestion.tags,
+            text: body,
+            isUnread: true
+        )
+    }
 }

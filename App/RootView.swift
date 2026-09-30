@@ -76,6 +76,7 @@ struct RootView: View {
     @State private var showingWallAuth = false
     @State private var wallAuthMode: AuthSheet.Mode = .signUp
     @State private var toast: String?
+    @State private var toastToken = UUID()
     /// Drives the You-tab dot. A count rather than a `@Query` of every
     /// bookmark: the root view re-renders on every tab change and does not
     /// need the rows, only how many there are.
@@ -87,6 +88,12 @@ struct RootView: View {
     private var customTopics: [CustomTopic]
     @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
     private var customSubtopics: [CustomSubtopic]
+    /// For the press-and-hold "Side quest" menu on every bork.
+    @Query(
+        filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
+        sort: \Mission.createdAt, order: .reverse
+    )
+    private var sideQuests: [Mission]
 
     /// Deep-link target when a category chip is tapped from a detail sheet.
     @State private var pendingTopic: String?
@@ -135,14 +142,22 @@ struct RootView: View {
                 case .you: YouView(onReplayTour: { hasOnboarded = false }, account: account)
                 }
             }
+            // Pinned to the screen's width. A ZStack is as wide as its widest
+            // child and re-proposes that width to every child, so one tab
+            // laying out too wide (build 14: a cover widened the Library by
+            // ~70pt a side) dragged the dock off both edges with it. Pinned,
+            // an overflow stays that tab's problem and the dock stays put.
+            .containerRelativeFrame(.horizontal)
             .environment(\.accent, accent)
             .environment(\.account, account)
+            .environment(\.sideQuests, sideQuests)
 
             TabDock(
                 tab: $tab,
                 onAdd: requestAdd,
                 signedOutDot: SignInNudge.showsBadge(signedIn: account.isSignedIn, borks: borkCount)
             )
+                .containerRelativeFrame(.horizontal)
                 .environment(\.accent, accent)
 
             if let toast {
@@ -243,6 +258,7 @@ struct RootView: View {
                     .notice("Folded custom topic ids: \(folded, privacy: .public) rows re-keyed")
             }
             _ = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
+            Store.retryOEmbedPreviews(in: context)
             if let saved = AppTab.resolve(startingTabRaw) {
                 tab = saved
                 // Write the migrated value back so the You tab's picker has
@@ -378,7 +394,7 @@ struct RootView: View {
         refreshBorkCount()
         guard added > 0 else { return }
         tab = .library
-        showToast(added == 1 ? "1 new save" : "\(added) new saves")
+        showToast(added == 1 ? "1 new bork" : "\(added) new borks")
     }
 
     private func presentWallAuth(_ mode: AuthSheet.Mode) {
@@ -402,8 +418,12 @@ struct RootView: View {
 
     private func drain() {
         let result = Store.drainInbox(into: context, signedIn: account.isSignedIn)
+        if result.saved > 0 {
+            showToast(result.saved == 1 ? "1 new bork" : "\(result.saved) new borks")
+        } else if result.alreadyHad > 0 {
+            showToast(result.alreadyHad == 1 ? "Already in your library" : "\(result.alreadyHad) already in your library")
+        }
         guard result.saved > 0 else { return }
-        showToast(result.saved == 1 ? "1 new save" : "\(result.saved) new saves")
 
         // A share that landed over the limit is already saved and already on
         // screen, greyed, in the Library. The wall is what explains it — and
@@ -419,9 +439,14 @@ struct RootView: View {
     }
 
     private func showToast(_ message: String) {
+        let token = UUID()
+        toastToken = token
         withAnimation(.spring(response: 0.26, dampingFraction: 0.85)) { toast = message }
         Task {
             try? await Task.sleep(for: .seconds(2.1))
+            // Only this toast's own timer may take it down. Without the check,
+            // a toast shown a second after another vanished a second later.
+            guard toastToken == token else { return }
             withAnimation(.easeOut(duration: 0.2)) { toast = nil }
         }
     }

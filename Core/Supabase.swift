@@ -76,6 +76,19 @@ enum Supabase {
         _ = try await post(path: "/auth/v1/otp", body: body, config: config, token: nil)
     }
 
+    /// A newer app talking to a server not yet migrated for it: PostgREST's
+    /// "Could not find the table …" (PGRST205) or "Could not find the '…'
+    /// column" (PGRST204), or Postgres' "relation/column … does not exist"
+    /// (42P01 / 42703). Not an outage and not the user's problem — the part
+    /// of sync that needs the new schema waits for it, the rest carries on.
+    static func isSchemaBehind(_ error: Error) -> Bool {
+        guard case Failure.http(_, let body) = error else { return false }
+        let text = body.lowercased()
+        return text.contains("could not find the table")
+            || (text.contains("could not find the '") && text.contains("column"))
+            || (text.contains("does not exist") && (text.contains("relation") || text.contains("column")))
+    }
+
     /// Sign in with an address that has no account. Supabase phrases it as a
     /// signup restriction ("Signups not allowed for otp"); the user needs to
     /// hear "tap Sign up".

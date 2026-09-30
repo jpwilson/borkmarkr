@@ -188,10 +188,40 @@ final class Bookmark {
         SearchSubject(blob: searchBlob, topicName: category?.name, subtopic: subcategory, tags: tags)
     }
 
-    /// A person or handle — never "Instagram" or "X (formerly Twitter)".
+    /// A person or handle — never "Instagram", "X (formerly Twitter)" or
+    /// "instagram.com".
+    ///
+    /// The share extension and the Add sheet record the site's host as the
+    /// author until the page is read, and for Instagram it usually never is.
+    /// So for a social post a host is treated as no author at all, and the
+    /// handle in the URL (`/@name/video/…`) stands in. A web article keeps its
+    /// host: "nytimes.com" is exactly who wrote it, as far as a card goes.
     var displayAuthor: String? {
-        guard let author, !author.isEmpty, !Platform.isSiteName(author) else { return nil }
-        return author
+        if let author, !Self.isPlaceholderAuthor(author, url: url, platform: platform) { return author }
+        guard platform != .web, let url else { return nil }
+        return Platform.handle(in: url)
+    }
+
+    /// True for an author that names the site rather than a person: empty,
+    /// a platform name, or — on a social platform — the link's own host.
+    ///
+    /// Enrichment and re-shares use this to decide whether a real creator may
+    /// replace what is stored. Only a placeholder is ever replaced, so a
+    /// creator that has been learned is never overwritten by "instagram.com".
+    static func isPlaceholderAuthor(_ author: String?, url: URL?, platform: Platform) -> Bool {
+        guard let raw = author?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return true }
+        if Platform.isSiteName(raw) { return true }
+        guard platform != .web else { return false }
+        func bare(_ host: String) -> String {
+            let lower = host.lowercased()
+            return lower.hasPrefix("www.") ? String(lower.dropFirst(4)) : lower
+        }
+        if let host = url?.host, bare(raw) == bare(host) { return true }
+        // "instagram.com" on a link from "m.instagram.com", "tiktok.com" on
+        // one from "vm.tiktok.com": any social platform's host is a site.
+        guard raw.contains("."), !raw.contains(" "), !raw.hasPrefix("@"),
+              let asURL = URL(string: "https://\(bare(raw))/") else { return false }
+        return Platform.detect(from: asURL) != .web
     }
 
     /// X and Threads are always text cards. A pasted x.com link often has no
@@ -204,12 +234,31 @@ final class Bookmark {
     /// they must not take the media path or the card collapses.
     var isMedia: Bool { !isTextPost && !isArticle && kind.coverHeight > 0 }
     var isVideo: Bool { durationSeconds != nil }
+    /// A post that plays: a reel, a TikTok, a Short, a YouTube video — known
+    /// from where it lives, not only from a duration, which TikTok,
+    /// Instagram and Shorts never publish. An Instagram `/p/` post may be a
+    /// photo, so only its reels count.
+    var isPlayable: Bool {
+        guard platform != .web, [.clip, .reel, .short, .video].contains(kind) else { return isVideo }
+        if platform == .instagram { return url?.path.lowercased().contains("/reel") ?? false }
+        return true
+    }
 
     /// Title shown on cards. Instagram's og:title is
     /// `"Name on Instagram: \"caption\""` — using that raw makes every IG card
     /// a three-line crush. Prefer the caption; fall back to the name.
+    ///
+    /// A social post still wearing the title we made from its URL — its page
+    /// never read, no caption shared with it — is called what it is
+    /// ("Instagram reel") rather than by that URL title, which is usually an
+    /// ID dressed as a handle. The creator, where the link names one, is on
+    /// the card beside it. Display only: the stored title is untouched, so
+    /// enrichment still recognises it as ours to replace.
     var displayTitle: String {
-        SavedContent.title(title, body: text, platform: platformRaw)
+        let shown = SavedContent.title(title, body: text, platform: platformRaw)
+        guard platform != .web, title.isEmpty || shown == title.trimmingCharacters(in: .whitespacesAndNewlines),
+              let url, Categorizer.isDerivedTitle(title, for: url) else { return shown }
+        return platform.untitledLabel(for: url)
     }
 
     var filingPath: String {
@@ -241,10 +290,14 @@ final class Bookmark {
         if let category { parts.append(category.name) }
         parts.append(platform.name)
         parts.append(urlString)
-        searchBlob = parts
+        let blob = parts
             .joined(separator: " ")
             .lowercased()
             .folding(options: .diacriticInsensitive, locale: .current)
+        // Assigning an unchanged value still dirties the row. Sync rebuilds
+        // every bork's blob on every pass, and a dirty row is a row saved
+        // and a Library re-rendered — every thirty seconds, signed in.
+        if blob != searchBlob { searchBlob = blob }
     }
 
     // MARK: - Identity

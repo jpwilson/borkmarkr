@@ -50,6 +50,17 @@
                ReferencedContainer = "container:borkmarkr.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "49A8B5BA4579AD48F7E44A58"
+               BuildableName = "bookmarkerUITests.xctest"
+               BlueprintName = "bookmarkerUITests"
+               ReferencedContainer = "container:borkmarkr.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

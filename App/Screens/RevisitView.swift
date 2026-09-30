@@ -54,10 +54,16 @@ struct RevisitView: View {
     @State private var openQuest: Mission?
     @State private var showingBackupBanner = false
     @State private var showingAuth = false
+    /// The never-opened pile, dealt one at a time.
+    @State private var goingThrough: [Bookmark]?
 
     private enum Route: Hashable {
         case topic(String)
         case neverOpened
+    }
+
+    private var openTotal: Int {
+        bookmarks.reduce(0) { $0 + $1.openCount }
     }
 
     private var merged: MergedTaxonomy {
@@ -115,11 +121,17 @@ struct RevisitView: View {
                 }
             }
         }
-        // Rebuilt on appearance and whenever the library changes size. The
-        // build itself runs off the main actor, so switching to this tab never
-        // waits on it — the sections fade in a frame later on a big library
-        // rather than holding the dock.
-        .task(id: "\(bookmarks.count)-\(quests.count)") { await rebuild() }
+        // Rebuilt on appearance, whenever the library changes size, and
+        // whenever something is opened — keyed on counts alone, a bork you had
+        // just opened stayed under "Saved, never opened" until the next save.
+        // The build itself runs off the main actor, so switching to this tab
+        // never waits on it — the sections fade in a frame later on a big
+        // library rather than holding the dock.
+        .task(id: "\(bookmarks.count)-\(quests.count)-\(openTotal)") { await rebuild() }
+        .sheet(isPresented: Binding(get: { goingThrough != nil }, set: { if !$0 { goingThrough = nil } })) {
+            RevisitQueueSheet(bookmarks: goingThrough ?? [])
+                .environment(\.accent, accent)
+        }
         .onAppear { readNudgePolicy() }
         .onChange(of: account?.isSignedIn ?? false) { _, _ in readNudgePolicy() }
     }
@@ -217,6 +229,7 @@ struct RevisitView: View {
                                 .frame(width: 176)
                             }
                             .buttonStyle(PressableStyle())
+                            .borkActions(bookmark)
                         }
                     }
                 }
@@ -242,6 +255,24 @@ struct RevisitView: View {
                     .font(Typo.ui(13.5, .medium))
                     .foregroundStyle(Tokens.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    Haptics.tap()
+                    goingThrough = stale.items.compactMap { index[$0.id] }
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: "play.fill").font(.system(size: 11, weight: .black))
+                        Text("Go through them, one at a time").font(Typo.ui(14, .bold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 11)
+                    .background(accent.base, in: Capsule())
+                    .shadow(color: accent.base.opacity(0.28), radius: 10, y: 6)
+                }
+                .buttonStyle(PressableStyle())
+                .padding(.top, 6)
+                .accessibilityIdentifier("revisit-go-through")
             }
             .padding(.horizontal, 18)
 
@@ -252,6 +283,7 @@ struct RevisitView: View {
                             BookmarkRow(bookmark: bookmark)
                         }
                         .buttonStyle(PressableStyle())
+                        .borkActions(bookmark)
                     }
                 }
             }
@@ -286,6 +318,7 @@ struct RevisitView: View {
                             BookmarkRow(bookmark: bookmark)
                         }
                         .buttonStyle(PressableStyle())
+                        .borkActions(bookmark)
                     }
                 }
             }
@@ -472,6 +505,7 @@ private struct NeverOpenedList: View {
                         BookmarkRow(bookmark: bookmark)
                     }
                     .buttonStyle(PressableStyle())
+                    .borkActions(bookmark)
                 }
             }
             .padding(.horizontal, 18)

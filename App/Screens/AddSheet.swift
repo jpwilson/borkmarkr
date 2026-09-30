@@ -60,6 +60,13 @@ struct AddSheet: View {
     /// Whether the title came from the page or was generated. Drives whether we
     /// present it as a fact or as something to fill in.
     @State private var titleWasFetched = false
+    /// The preview ran out of time. The bork saves without one, and
+    /// enrichment fills it in afterwards.
+    @State private var previewTimedOut = false
+    /// This sheet has just saved its link. It is on its way out, and the
+    /// bork it made must not read, mid-dismissal, as "Already in your
+    /// library" — which it did, for the half second the sheet slid away.
+    @State private var didSave = false
     /// `og:description` — the full caption on Instagram and TikTok. Read for
     /// filing, shown nowhere, saved nowhere.
     @State private var pageDescription: String?
@@ -349,7 +356,7 @@ struct AddSheet: View {
     /// `DuplicateSave.match` checks the tombstone again anyway, because that
     /// rule is the one worth being sure of.
     private var duplicate: Bookmark? {
-        guard !saveAnyway, let url = parsedURL else { return nil }
+        guard !saveAnyway, !didSave, let url = parsedURL else { return nil }
         return DuplicateSave.match(
             stableID: Bookmark.stableID(for: url),
             in: allBookmarks,
@@ -416,7 +423,7 @@ struct AddSheet: View {
                         .foregroundStyle(Tokens.ink)
                         .lineLimit(3)
                         .multilineTextAlignment(.leading)
-                    Text(bork.author ?? bork.url?.host ?? bork.platform.name)
+                    Text(bork.displayAuthor ?? bork.url?.host ?? bork.platform.name)
                         .font(Typo.ui(11.5, .medium))
                         .foregroundStyle(Tokens.inkMeta)
                         .lineLimit(1)
@@ -492,7 +499,8 @@ struct AddSheet: View {
                         .lineLimit(3)
                         .multilineTextAlignment(.leading)
                     HStack(spacing: 5) {
-                        Text(author ?? url.host ?? platform.name)
+                        Text((Bookmark.isPlaceholderAuthor(author, url: url, platform: platform)
+                              ? Platform.handle(in: url) : author) ?? url.host ?? platform.name)
                             .font(Typo.ui(11.5, .medium))
                             .foregroundStyle(Tokens.inkMeta)
                             .lineLimit(1)
@@ -786,8 +794,11 @@ struct AddSheet: View {
         step = .reading
 
         Task { @MainActor in
-            // Real fetch: oEmbed for YouTube, Open Graph for most of the web.
-            let preview = await LinkPreview.fetch(for: url)
+            // Real fetch: oEmbed for YouTube, TikTok and X, Open Graph for
+            // most of the web — but never more than three seconds of it.
+            let fetched = await LinkPreview.fetch(for: url, within: .seconds(3))
+            previewTimedOut = fetched == nil
+            let preview = fetched ?? LinkPreview.Result()
 
             imageURL = preview.imageURL
             duration = preview.durationSeconds
@@ -932,12 +943,15 @@ struct AddSheet: View {
 
         draft.imageURLString = imageURL?.absoluteString
         draft.postedAt = postedAt
-        draft.previewFetched = true
+        // Timed out: leave it for enrichment, which runs as soon as the
+        // Library sees the new bork.
+        draft.previewFetched = !previewTimedOut
         draft.filingSource = userFiled ? "user" : "automatic"
         draft.tagsEdited = userTagsEdited
         draft.titleEdited = editingTitle
 
         do {
+            didSave = true
             let saved = try Store.save(draft, in: context)
             if !selectedJourneyIDs.isEmpty {
                 for journey in journeys where selectedJourneyIDs.contains(journey.id) {
@@ -952,6 +966,7 @@ struct AddSheet: View {
             onSaved("Saved to \(where_)")
             ReviewPrompter.reached(.borkSaved, requestReview)
         } catch {
+            didSave = false
             self.error = error.localizedDescription
         }
     }

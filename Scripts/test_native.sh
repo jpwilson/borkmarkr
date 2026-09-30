@@ -12,4 +12,5 @@ process.stdin.on("end", () => {
 });')
 xcodebuild -project borkmarkr.xcodeproj -scheme borkmarkr \
   -destination "id=$repair_device_id" -configuration Debug \
-  -derivedDataPath /tmp/bookmarker-native-tests test -quiet
+  -derivedDataPath /tmp/bookmarker-native-tests test -quiet \
+  -only-testing:bookmarkerTests

@@ -157,26 +157,7 @@ final class ShareViewController: UIViewController {
     @MainActor
     private func save(url: URL, caption: String?) {
         guard !done else { return }
-        let platform = Platform.detect(from: url)
-        let title = ShareInput.title(from: caption, url: url)
-
-        // X and Threads carry real post bodies; elsewhere the caption is just a
-        // caption and shouldn't turn the card into a text post.
-        let body: String? = platform.carriesTextPosts ? ShareInput.cleanBody(caption) : nil
-        let suggestion = Categorizer.suggest(url: url, title: title, text: body)
-
-        let draft = BookmarkDraft(
-            url: url,
-            title: title,
-            author: Categorizer.fallbackAuthor(for: url),
-            platform: platform,
-            kind: platform.defaultKind,
-            categoryID: suggestion.categoryID,
-            subcategory: suggestion.subcategory,
-            tags: suggestion.tags,
-            text: body,
-            isUnread: true
-        )
+        let draft = BookmarkDraft.handedOver(url: url, caption: caption)
 
         do {
             try Store.enqueue(draft)

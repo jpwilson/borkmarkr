@@ -5,7 +5,7 @@ import SwiftData
     static func run(context: ModelContext, session: Supabase.Session) async throws {
         let bookmarks = try context.fetch(FetchDescriptor<Bookmark>())
         for b in bookmarks { try OpenSignal.seedLegacy(b, context: context) }
-        try context.save()
+        if context.hasChanges { try context.save() }
         var remote: [[String: Any]] = []
         var complete = false
         for page in 0..<30 {
@@ -38,10 +38,14 @@ import SwiftData
         let groups = Dictionary(grouping: all, by: \.bookmarkID)
         for b in bookmarks {
             let signals = groups[b.id] ?? []
-            b.openCount = signals.reduce(0) { $0 + $1.count }
-            b.lastOpenedAt = signals.compactMap(\.lastOpenedAt).max()
+            let count = signals.reduce(0) { $0 + $1.count }
+            let last = signals.compactMap(\.lastOpenedAt).max()
+            // Only real changes: an unchanged assignment still dirties the
+            // row, and this runs over the whole library every sync.
+            if b.openCount != count { b.openCount = count }
+            if b.lastOpenedAt != last { b.lastOpenedAt = last }
         }
-        try context.save()
+        if context.hasChanges { try context.save() }
     }
     static func merge(_ rows: [[String: Any]], context: ModelContext) throws {
         var local = Dictionary(uniqueKeysWithValues: try context.fetch(FetchDescriptor<OpenSignal>()).map { ($0.id, $0) })
@@ -52,10 +56,13 @@ import SwiftData
             else { throw Supabase.Failure.decoding }
             let signal = local[id] ?? OpenSignal(bookmarkID: bookmark, deviceID: device)
             if local[id] == nil { signal.id = id; context.insert(signal); local[id] = signal }
-            signal.count = max(signal.count, count)
-            signal.lastOpenedAt = [signal.lastOpenedAt, (row["last_opened_at"] as? String).flatMap(SupabaseDate.parse)].compactMap { $0 }.max()
-            signal.updatedAt = max(signal.updatedAt, updated)
+            let merged = max(signal.count, count)
+            let last = [signal.lastOpenedAt, (row["last_opened_at"] as? String).flatMap(SupabaseDate.parse)].compactMap { $0 }.max()
+            let stamp = max(signal.updatedAt, updated)
+            if signal.count != merged { signal.count = merged }
+            if signal.lastOpenedAt != last { signal.lastOpenedAt = last }
+            if signal.updatedAt != stamp { signal.updatedAt = stamp }
         }
-        try context.save()
+        if context.hasChanges { try context.save() }
     }
 }

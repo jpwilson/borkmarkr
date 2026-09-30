@@ -23,6 +23,8 @@ struct DetailSheet: View {
     @StateObject private var previews = PreviewFetcher()
     @State private var refreshingPreview = false
     @State private var showingSingleShare = false
+    /// Another bork opened from "More from …", stacked over this one.
+    @State private var nested: Bookmark?
 
     @Query(
         filter: #Predicate<Mission> { $0.deletedAt == nil && !$0.isArchived },
@@ -49,15 +51,23 @@ struct DetailSheet: View {
                     journeyRow
                     tagEditor
                     noteBlock
+                    moreFromCreator
                     savedLine
-                    Button(refreshingPreview ? "Refreshing preview…" : "Refresh missing content & preview") {
+                    Button {
                         Task {
                             refreshingPreview = true
                             bookmark.enrichmentVersion = nil; bookmark.enrichmentAttempts = 0; bookmark.previewFetchedAt = nil
                             await previews.fetchMissing(for: [bookmark], in: context)
                             refreshingPreview = false
                         }
-                    }.font(Typo.ui(12)).disabled(refreshingPreview)
+                    } label: {
+                        Label(refreshingPreview ? "Refreshing the preview…" : "Refresh the preview",
+                              systemImage: "arrow.clockwise")
+                            .font(Typo.ui(12.5, .semibold))
+                            .foregroundStyle(Tokens.inkMeta)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(refreshingPreview)
                 }
                 .padding(18)
                 .padding(.bottom, 24)
@@ -78,10 +88,13 @@ struct DetailSheet: View {
         }
         .presentationDetents([.large])
         .presentationCornerRadius(Tokens.sheetRadius)
+        .sheet(item: $nested) { other in
+            DetailSheet(bookmark: other).environment(\.accent, accent)
+        }
         .sheet(isPresented: $showingSingleShare) {
             SingleShareSheet(bookmark:bookmark).environment(\.accent,accent)
         }
-        .confirmationDialog("Delete this save?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+        .confirmationDialog("Delete this bork?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive, action: softDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -116,7 +129,7 @@ struct DetailSheet: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 7) {
                     PlatformBadge(platform: bookmark.platform, size: 26, pageURL: bookmark.url)
-                    Text(bookmark.author ?? bookmark.platform.name)
+                    Text(bookmark.displayAuthor ?? bookmark.platform.name)
                         .font(Typo.ui(13, .semibold))
                         .foregroundStyle(Tokens.inkSecondary)
                 }
@@ -181,11 +194,14 @@ struct DetailSheet: View {
                 // Tap the title to fix it. A fetched title is usually right but
                 // not always, and a brk you can't correct is a brk you distrust.
                 Button {
-                    draftTitle = bookmark.title
+                    draftTitle = bookmark.displayTitle
                     withAnimation(.easeOut(duration: 0.15)) { editingTitle = true }
                 } label: {
                     HStack(alignment: .top, spacing: 7) {
-                        Text(bookmark.title)
+                        // The same title the card shows. The raw one is often
+                        // `Name on Instagram: "caption"` or a title made from
+                        // the URL; editing still writes the stored title.
+                        Text(bookmark.displayTitle)
                             .font(Typo.display(20, .bold))
                             .foregroundStyle(Tokens.ink)
                             .fixedSize(horizontal: false, vertical: true)
@@ -201,7 +217,7 @@ struct DetailSheet: View {
             }
 
             HStack(spacing: 6) {
-                Text([bookmark.author, bookmark.platform.name].compactMap { $0 }.joined(separator: " · "))
+                Text([bookmark.displayAuthor, bookmark.platform.name].compactMap { $0 }.joined(separator: " · "))
                     .font(Typo.ui(12.5, .medium))
                     .foregroundStyle(Tokens.inkMeta)
                 if bookmark.openCount > 0 {
@@ -215,7 +231,9 @@ struct DetailSheet: View {
 
     private func commitTitle() {
         let cleaned = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleaned.isEmpty else { editingTitle = false; return }
+        // Saving what was already shown is not an edit — and marking it one
+        // would stop the real title ever arriving.
+        guard !cleaned.isEmpty, cleaned != bookmark.displayTitle else { editingTitle = false; return }
         bookmark.title = cleaned
         bookmark.titleEdited = true
         bookmark.touch()
@@ -464,6 +482,33 @@ struct DetailSheet: View {
                        startPoint: .top, endPoint: .bottom)
     }
 
+    /// Other borks from the same creator — the way people actually look for
+    /// things ("that physio on TikTok"). Hidden when there are none.
+    @ViewBuilder
+    private var moreFromCreator: some View {
+        if let creator = bookmark.displayAuthor {
+            let others = Array(allBookmarks.lazy
+                .filter { $0.id != bookmark.id && $0.displayAuthor == creator }
+                .prefix(10))
+            if !others.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("More from \(creator)")
+                        .font(Typo.ui(13, .bold))
+                        .foregroundStyle(Tokens.inkSecondary)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: 10) {
+                            ForEach(others) { other in
+                                Button { nested = other } label: { CreatorTile(bookmark: other) }
+                                    .buttonStyle(PressableStyle())
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            }
+        }
+    }
+
     private var savedLine: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text("Liked \(RelativeDate.full(bookmark.savedAt)) · from \(bookmark.platform.name)")
@@ -473,7 +518,7 @@ struct DetailSheet: View {
                 Text("Posted \(RelativeDate.full(posted))")
                     .font(Typo.ui(11.5, .medium))
                     .foregroundStyle(Tokens.inkMeta)
-            } else if bookmark.platform == .instagram || bookmark.platform == .tiktok || bookmark.platform == .x {
+            } else if bookmark.platform == .instagram || bookmark.platform == .tiktok {
                 Text("Posted date isn’t published by \(bookmark.platform.name)")
                     .font(Typo.ui(11, .medium))
                     .foregroundStyle(Tokens.inkFaint)
@@ -499,15 +544,10 @@ struct DetailSheet: View {
             .buttonStyle(.plain)
 
             Button {
-                guard let url = bookmark.url else { return }
-                // Records that you actually went back to this. Without it the
-                // library is as blind as the platform bookmarks it replaces.
-                bookmark.markOpened()
-                try? context.save()
-                openURL(url)
+                BorkOpener.open(bookmark, in: context, using: openURL)
             } label: {
                 HStack(spacing: 7) {
-                    Text("Open original").font(Typo.ui(15, .bold))
+                    Text(bookmark.platform.openLabel).font(Typo.ui(15, .bold))
                     Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .bold))
                 }
                 .foregroundStyle(.white)
@@ -546,5 +586,41 @@ struct DetailSheet: View {
         bookmark.touch()
         try? context.save()
         dismiss()
+    }
+}
+
+/// A small cover-and-title tile for "More from …".
+private struct CreatorTile: View {
+    let bookmark: Bookmark
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ZStack {
+                if bookmark.isTextPost && bookmark.imageURL == nil {
+                    LinearGradient(colors: [Color(hex: "2A2C33"), Color(hex: "111318")],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                    Text(bookmark.text ?? bookmark.displayTitle)
+                        .font(Typo.ui(11, .medium))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .lineLimit(6)
+                        .padding(10)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                } else {
+                    CoverImage(url: bookmark.imageURL, palette: bookmark.category?.palette ?? NeutralPalette.value)
+                }
+            }
+            .frame(width: 118, height: 148)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(alignment: .topLeading) {
+                PlatformBadge(platform: bookmark.platform, size: 18, pageURL: bookmark.url).padding(7)
+            }
+
+            Text(bookmark.displayTitle)
+                .font(Typo.ui(11.5, .semibold))
+                .foregroundStyle(Tokens.ink)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .frame(width: 118, alignment: .leading)
+        }
     }
 }

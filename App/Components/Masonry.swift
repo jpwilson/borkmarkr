@@ -1,53 +1,59 @@
 import SwiftUI
 
-/// Bounded masonry shared by all feeds. Each child is measured at its actual
-/// column width. Bitmap loading and long text cannot resize another column.
+/// Two-column masonry for the Library feed: two **lazy** columns, balanced by
+/// estimated height.
+///
+/// Items go, in recency order, into whichever column is currently shorter by
+/// estimate, so the newest borks stay at the top and the columns stay level.
+/// The estimate only decides placement — each card still lays out at its real
+/// height, at exactly its column's width.
+///
+/// Lazy is the point. The previous `Layout` measured every card in the
+/// library, twice, on every layout pass, and kept every card (and every
+/// cover download) alive at once — a pass ran whenever *any* card changed,
+/// including each cover arriving. A few hundred borks made the whole app
+/// slow. `LazyVStack` builds only what is on screen, and it is fine nested
+/// here: SwiftUI resolves visibility against the enclosing `ScrollView`.
 struct MasonryVStack<Item: Identifiable, Content: View>: View {
     let items: [Item]
     let spacing: CGFloat
-    // Retained for source compatibility; placement now uses measured heights.
+    /// Relative height, for balancing only.
     let estimatedHeight: (Item) -> CGFloat
     @ViewBuilder let content: (Item) -> Content
 
     var body: some View {
-        MasonryLayout(spacing: spacing) {
+        let split = Self.columns(items, spacing: spacing, estimatedHeight: estimatedHeight)
+        HStack(alignment: .top, spacing: spacing) {
+            column(split.left)
+            column(split.right)
+        }
+    }
+
+    private func column(_ items: [Item]) -> some View {
+        LazyVStack(spacing: spacing) {
             ForEach(items) { content($0) }
         }
+        // Each column takes exactly half; nothing inside may widen it.
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .top)
     }
-}
 
-private struct MasonryLayout: Layout {
-    let spacing: CGFloat
-
-    private func arrangement(_ proposal: ProposedViewSize, _ subviews: Subviews)
-        -> (width: CGFloat, height: CGFloat, frames: [CGRect]) {
-        let width = max(0, proposal.width ?? 320)
-        let gap = min(spacing, width)
-        let columnWidth = max(0, (width - gap) / 2)
-        var heights: [CGFloat] = [0, 0]
-        var frames: [CGRect] = []
-        for child in subviews {
-            let column = heights[0] <= heights[1] ? 0 : 1
-            let size = child.sizeThatFits(ProposedViewSize(width: columnWidth, height: nil))
-            let height = max(0, size.height.isFinite ? size.height : 0)
-            frames.append(CGRect(x: CGFloat(column) * (columnWidth + gap),
-                                 y: heights[column], width: columnWidth, height: height))
-            heights[column] += height + spacing
+    static func columns(_ items: [Item], spacing: CGFloat,
+                        estimatedHeight: (Item) -> CGFloat) -> (left: [Item], right: [Item]) {
+        var left: [Item] = [], right: [Item] = []
+        var leftHeight: CGFloat = 0, rightHeight: CGFloat = 0
+        left.reserveCapacity(items.count / 2 + 1)
+        right.reserveCapacity(items.count / 2 + 1)
+        for item in items {
+            let height = estimatedHeight(item) + spacing
+            // Ties go left, so the newest bork is top-left.
+            if leftHeight <= rightHeight {
+                left.append(item)
+                leftHeight += height
+            } else {
+                right.append(item)
+                rightHeight += height
+            }
         }
-        return (width, max(0, (heights.max() ?? 0) - spacing), frames)
-    }
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = arrangement(proposal, subviews)
-        return CGSize(width: result.width, height: result.height)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = arrangement(ProposedViewSize(width: bounds.width, height: nil), subviews)
-        for (child, frame) in zip(subviews, result.frames) {
-            child.place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
-                        anchor: .topLeading,
-                        proposal: ProposedViewSize(width: frame.width, height: frame.height))
-        }
+        return (left, right)
     }
 }

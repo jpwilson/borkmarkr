@@ -65,7 +65,7 @@ struct MissionsView: View {
                     MissionCard(
                         mission: mission,
                         subcategory: Mission.dominantSubcategory(
-                            among: bookmarks.filter { mission.bookmarkIDs.contains($0.id) }
+                            among: mission.attached(from: bookmarks)
                         )
                     ) {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -152,7 +152,7 @@ struct MissionsView: View {
 
             let stiff = missions.filter { $0.title.lowercased().hasPrefix("get into ") }
             for quest in stiff {
-                let items = bookmarks.filter { quest.bookmarkIDs.contains($0.id) }
+                let items = quest.attached(from: bookmarks)
                 quest.title = Mission.draftTitle(
                     topic: quest.topic?.name ?? "",
                     subcategory: items.compactMap(\.subcategory).first,
@@ -164,7 +164,7 @@ struct MissionsView: View {
 
             let session = await account?.currentSession()
             let stiffSeeds: [Mission.Seed] = stiff.map { quest in
-                let items = bookmarks.filter { quest.bookmarkIDs.contains($0.id) }
+                let items = quest.attached(from: bookmarks)
                 return Mission.Seed(
                     title: quest.title,
                     categoryID: quest.categoryID,
@@ -705,7 +705,8 @@ struct MissionDetailSheet: View {
     /// A quest with no topic, or whose family holds nothing, gets the most
     /// recent borks instead — a new quest always has something to pull in.
     private var suggested: Suggestions {
-        let unattached = allBookmarks.filter { !mission.bookmarkIDs.contains($0.id) }
+        let attachedIDs = Set(mission.bookmarkIDs)
+        let unattached = allBookmarks.filter { !attachedIDs.contains($0.id) }
         if let categoryID = mission.categoryID {
             let related = Mission.relatedTopicIDs(to: categoryID)
             let same = unattached.filter { $0.categoryID == categoryID }

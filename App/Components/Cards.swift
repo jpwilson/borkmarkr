@@ -12,16 +12,7 @@ struct CoverImage: View {
 
     var body: some View {
         gradient.overlay {
-            if let url {
-                AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.22))) { phase in
-                    if case .success(let image) = phase {
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .transition(.opacity)
-                    }
-                }
-            }
+            if let url { RemoteImage(url: url) }
         }
         // An overlay receives the gradient's bounds and contributes no
         // intrinsic size. A loaded bitmap cannot enlarge the card.
@@ -89,16 +80,7 @@ struct PlatformBadge: View {
     @ViewBuilder
     private var webMark: some View {
         if let host = pageURL?.host, let icon = Self.faviconURL(for: host) {
-            AsyncImage(url: icon) { phase in
-                if case .success(let image) = phase {
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .padding(size * 0.16)
-                } else {
-                    webFallback
-                }
-            }
+            RemoteImage(url: icon, contentMode: .fit, inset: size * 0.16) { webFallback }
         } else {
             webFallback
         }
@@ -189,7 +171,7 @@ struct BookmarkCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 PlatformBadge(platform: bookmark.platform, size: 20, pageURL: bookmark.url)
-                Text(bookmark.author ?? bookmark.platform.name)
+                Text(bookmark.displayAuthor ?? bookmark.platform.name)
                     .font(Typo.ui(11.5, .semibold))
                     .foregroundStyle(Tokens.inkSecondary)
                     .lineLimit(1)
@@ -224,16 +206,21 @@ struct BookmarkCard: View {
                 HStack(alignment: .top) {
                     PlatformBadge(platform: bookmark.platform, size: 22, pageURL: bookmark.url)
                     Spacer()
-                    if let duration = bookmark.durationLabel {
+                    // A video reads as one at a glance: the play pill, with its
+                    // running time when the platform publishes it.
+                    if bookmark.isPlayable || bookmark.durationLabel != nil {
                         HStack(spacing: 3) {
                             Image(systemName: "play.fill").font(.system(size: 7, weight: .black))
-                            Text(duration).font(Typo.ui(10.5, .bold))
+                            if let duration = bookmark.durationLabel {
+                                Text(duration).font(Typo.ui(10.5, .bold))
+                            }
                         }
                         .foregroundStyle(.white)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 4)
                         .background(.ultraThinMaterial, in: Capsule())
                         .environment(\.colorScheme, .dark)
+                        .accessibilityLabel(bookmark.durationLabel.map { "Video, \($0)" } ?? "Video")
                     }
                 }
                 .padding(9)
@@ -243,12 +230,22 @@ struct BookmarkCard: View {
             .clipped()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(bookmark.displayTitle)
-                    .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(Tokens.ink)
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 3) {
+                    // Who made it is how people remember a reel — "that
+                    // physio on TikTok" — so it sits right on the card.
+                    if let creator = bookmark.displayAuthor {
+                        Text(creator)
+                            .font(Typo.ui(11, .semibold))
+                            .foregroundStyle(Tokens.inkSecondary)
+                            .lineLimit(1)
+                    }
+                    Text(bookmark.displayTitle)
+                        .font(Typo.ui(13.5, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 footer()
             }
@@ -318,6 +315,28 @@ struct BookmarkCard: View {
         }
     }
 
+    /// `estimatedHeight`, remembered per bork revision. The Library balances
+    /// its columns on every render, over every bork, and the estimate reads
+    /// the display title and creator — string and URL work that only
+    /// changes when the bork does (every edit goes through `touch()`).
+    @MainActor
+    static func cachedEstimate(for bookmark: Bookmark, columnWidth: CGFloat) -> CGFloat {
+        let key = EstimateKey(id: bookmark.id, revision: bookmark.updatedAt, width: Int(columnWidth))
+        if let hit = estimates[key] { return hit }
+        if estimates.count > 5_000 { estimates.removeAll(keepingCapacity: true) }
+        let height = estimatedHeight(for: bookmark, columnWidth: columnWidth)
+        estimates[key] = height
+        return height
+    }
+
+    private struct EstimateKey: Hashable {
+        let id: String
+        let revision: Date
+        let width: Int
+    }
+
+    @MainActor private static var estimates: [EstimateKey: CGFloat] = [:]
+
     /// Estimated height for masonry packing. Approximate by design — it only
     /// has to rank cards against each other, not match the final frame.
     static func estimatedHeight(for bookmark: Bookmark, columnWidth: CGFloat) -> CGFloat {
@@ -334,7 +353,8 @@ struct BookmarkCard: View {
         if bookmark.isMedia {
             let charsPerLine = max(1, Int(columnWidth / 7.2))
             let lines = min(3, max(1, Int(ceil(Double(title.count) / Double(charsPerLine)))))
-            return bookmark.coverHeight + 11 + CGFloat(lines) * 18 + footerHeight + 11
+            let creator: CGFloat = bookmark.displayAuthor == nil ? 0 : 17
+            return bookmark.coverHeight + 11 + creator + CGFloat(lines) * 18 + footerHeight + 11
         }
 
         let charsPerLine = max(1, Int(columnWidth / 7.4))
@@ -364,7 +384,7 @@ struct BookmarkRow: View {
                         .foregroundStyle(.white.opacity(0.55))
                 } else {
                     CoverImage(url: bookmark.imageURL, palette: palette)
-                    if bookmark.isVideo {
+                    if bookmark.isPlayable {
                         Image(systemName: "play.fill")
                             .font(.system(size: 13, weight: .black))
                             .foregroundStyle(.white.opacity(0.9))

@@ -79,6 +79,87 @@ enum Platform: String, Codable, CaseIterable, Sendable {
         return ordered.contains { value == $0.name.lowercased() }
     }
 
+    /// The label on the button that opens a bork, naming where it goes.
+    /// iOS hands these links to the app when it is installed, so "Open in
+    /// TikTok" is what actually happens — "Open original" never said.
+    var openLabel: String {
+        switch self {
+        case .x: "Open in X"
+        case .instagram: "Open in Instagram"
+        case .tiktok: "Open in TikTok"
+        case .youtube, .shorts: "Watch on YouTube"
+        case .threads: "Open in Threads"
+        case .pinterest: "Open in Pinterest"
+        case .grok: "Open in Grok"
+        case .web: "Open original"
+        }
+    }
+
+    /// What to call a post whose page we could not read: "Instagram reel",
+    /// "TikTok video". Honest, and recognisable at a glance — the alternative
+    /// was a title made from the URL, which for most posts turns an ID into
+    /// a fake handle ("@C9xYz12Abc on Instagram").
+    func untitledLabel(for url: URL) -> String {
+        let path = url.path.lowercased()
+        switch self {
+        case .instagram:
+            if path.contains("/reel") { return "Instagram reel" }
+            if path.contains("/stories/") { return "Instagram story" }
+            return "Instagram post"
+        case .tiktok: return path.contains("/photo/") ? "TikTok photos" : "TikTok video"
+        case .youtube: return "YouTube video"
+        case .shorts: return "YouTube Short"
+        case .x: return "Post on X"
+        case .threads: return "Threads post"
+        case .pinterest: return "Pinterest pin"
+        case .grok: return "Grok answer"
+        case .web: return url.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? "Saved link"
+        }
+    }
+
+    /// The account a post belongs to, as `@handle`, when its URL says so.
+    ///
+    /// This is how people remember a video — "that physio on TikTok" — and
+    /// the URL is the one place it is reliably written down for posts whose
+    /// page we cannot read (Instagram) or have not read yet. Only paths that
+    /// *mean* an account are trusted: `/@x/video/…`, `x.com/x/status/…`,
+    /// `instagram.com/x/reel/…`. A bare `/reel/ID` or `/shorts/ID` has no
+    /// account in it, and an ID is never passed off as one.
+    static func handle(in url: URL) -> String? {
+        let segments = url.pathComponents.filter { $0 != "/" && !$0.isEmpty }
+        guard let first = segments.first else { return nil }
+
+        func clean(_ raw: String) -> String? {
+            let name = raw.hasPrefix("@") ? String(raw.dropFirst()) : raw
+            let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "._-"))
+            guard !name.isEmpty, name.count <= 40,
+                  name.unicodeScalars.allSatisfy(allowed.contains) else { return nil }
+            return "@" + name
+        }
+
+        switch detect(from: url) {
+        case .tiktok, .threads, .youtube, .shorts:
+            // `/@name/video/…`, `/@name/post/…`, `youtube.com/@name…`
+            return first.hasPrefix("@") ? clean(first) : nil
+        case .x:
+            // `/name/status/ID`. Reserved first segments are pages, not people.
+            let reserved: Set<String> = ["i", "home", "search", "hashtag", "intent", "share", "explore", "messages", "notifications", "settings"]
+            guard segments.count >= 3, segments[1] == "status",
+                  !reserved.contains(first.lowercased()) else { return nil }
+            return clean(first)
+        case .instagram:
+            // `/name/reel/ID` and `/name/p/ID` — the newer share links — and
+            // `/stories/name/ID`. Never `/reel/ID`: that ID is not a person.
+            if first == "stories", segments.count >= 2 { return clean(segments[1]) }
+            let postPaths: Set<String> = ["reel", "reels", "p", "tv"]
+            guard segments.count >= 3, postPaths.contains(segments[1]),
+                  !postPaths.contains(first) else { return nil }
+            return clean(first)
+        case .pinterest, .grok, .web:
+            return nil
+        }
+    }
+
     /// Detects the source from the URL's **host**, not a substring of the whole
     /// URL.
     ///

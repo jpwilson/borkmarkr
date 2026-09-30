@@ -215,29 +215,25 @@ struct TopicClayArt: View {
         if UIImage(named: asset) != nil {
             ClayArt(name: asset, contentMode: contentMode)
         } else {
-            ZStack {
-                if let fallbackTint {
-                    LinearGradient(colors: [fallbackTint, fallbackTint.opacity(0.45)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                } else {
-                    Tokens.paper
+            backdrop
+                // An overlay takes the backdrop's bounds and reports no size
+                // of its own. The old ZStack let a `.fill` bitmap adopt its
+                // pixel size and push the tile out of its grid column.
+                .overlay {
+                    if let remote { RemoteImage(url: remote, contentMode: contentMode) }
                 }
-                if let remote {
-                    AsyncImage(url: remote, transaction: Transaction(animation: .easeOut(duration: 0.22))) { phase in
-                        if case .success(let image) = phase {
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: contentMode)
-                                .transition(.opacity)
-                        }
-                    }
-                }
-            }
-            // Same reason as CoverImage: a `.fill` bitmap on a loose
-            // proposal adopts its own pixel size and blows the tile out of
-            // the grid column.
-            .frame(maxWidth: .infinity)
-            .clipped()
+                .frame(maxWidth: .infinity)
+                .clipped()
+        }
+    }
+
+    @ViewBuilder
+    private var backdrop: some View {
+        if let fallbackTint {
+            LinearGradient(colors: [fallbackTint, fallbackTint.opacity(0.45)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        } else {
+            Tokens.paper
         }
     }
 }

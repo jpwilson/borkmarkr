@@ -17,12 +17,15 @@ struct InsightsEntry: View {
     }
 
     var body: some View {
+        // Built once per render. As a computed property it was rebuilt on
+        // every read — three or four full passes over the week per render.
+        let report = self.report
         Group {
-            if compact { compactCard } else { heroCard }
+            if compact { compactCard(report) } else { heroCard(report) }
         }
     }
 
-    private var heroCard: some View {
+    private func heroCard(_ report: SmartInsights.Report) -> some View {
         HStack(alignment: .center, spacing: 10) {
             VStack(alignment: .leading, spacing: 5) {
                 Text(Copy.insightsQuestion)
@@ -63,7 +66,7 @@ struct InsightsEntry: View {
         .shadow(color: accent.base.opacity(0.12), radius: 16, y: 8)
     }
 
-    private var compactCard: some View {
+    private func compactCard(_ report: SmartInsights.Report) -> some View {
         HStack(spacing: 11) {
             QuestArt(motif: .scroll)
                 .frame(width: 44, height: 44)
