@@ -1250,6 +1250,12 @@
   <input class="field" id="quest-title" placeholder="Run a faster 10k" autocomplete="off" maxlength="80">
   <label class="field-label" for="quest-detail">Why this matters <span class="opt">(optional)</span></label>
   <textarea class="field" id="quest-detail" placeholder="What would progress look like?" maxlength="2000"></textarea>
+  <section class="quest-brief" aria-label="Quest summary">
+    <div id="quest-brief-content"></div>
+    <p class="hint" id="quest-brief-status" role="status"></p>
+    <button class="linkish" id="quest-brief-generate" data-act="quest-brief">Generate summary</button>
+    <p class="hint">Uses up to 12 saved posts. Your private notes are not sent. Save the quest to keep this draft.</p>
+  </section>
   <label class="field-label" for="quest-topic">Topic</label>
   <select id="quest-topic"></select>
   <label class="field-label" for="quest-new-todo">To-dos</label>
@@ -1336,6 +1342,7 @@
 <script src="/saved-content.js"></script>
 <script src="/library-presentation.js"></script>
 <script src="/quest-presentation.js"></script>
+<script src="/quest-brief-client.js"></script>
 <script src="/taxonomy-sync.js"></script>
 <script src="/open-signals.js"></script>
 <!-- The Core ports: the export parsers, the offline filer and the tag-recency
@@ -4303,6 +4310,39 @@ async function runImport() {
 }
 
 /* ── Quest dialog ── */
+let questBriefBusy = false;
+function questBriefInput() {
+  const rows = (questDraft.bookmark_ids || []).map(id => borks.get(id)).filter(r => r && !r.deleted_at);
+  return QuestBriefClient.request({ ...questDraft, title: $("quest-title").value,
+    topic: topicFor($("quest-topic").value)?.name }, rows);
+}
+function renderQuestBrief() {
+  let brief; try { brief = JSON.parse(questDraft.brief_text || "null"); } catch { /* legacy malformed cache */ }
+  const sources = (brief?.source_ids || []).map(id => borks.get(id)).filter(r => r && !r.deleted_at);
+  $("quest-brief-content").innerHTML = brief?.summary ? `<h3>The thread</h3><p>${esc(brief.summary)}</p><p class="hint">${esc(QuestBriefClient.label(brief))}</p>
+    ${sources.map(r => `<button class="linkish" data-brief-source="${esc(r.id)}">↗ ${esc(displayFields(r).title)}</button>`).join("")}
+    ${(brief.steps || []).filter(step => !(questDraft.todos || []).some(t => fold(t.text) === fold(step))).map(step => `<button class="brief-step" data-brief-step="${esc(step)}">+ ${esc(step)}</button>`).join("")}`
+    : '<h3>The thread</h3><p class="hint">Pull together what these saved posts say, and choose a useful next step.</p>';
+  $("quest-brief-generate").disabled = questBriefBusy;
+  $("quest-brief-generate").textContent = questBriefBusy ? "Reading saved excerpts…" : brief ? "Refresh summary" : "Generate summary";
+}
+async function generateQuestBrief() {
+  if (questBriefBusy || demoMode || !store.session) return;
+  const input = questBriefInput(), id = questDraft.id;
+  if (!input.title) { $("quest-brief-status").textContent = "Name the quest first."; return; }
+  questBriefBusy = true; $("quest-brief-status").textContent = ""; renderQuestBrief();
+  try {
+    const raw = await api("/functions/v1/quest-brief", {method:"POST",body:input});
+    if (questDraft.id !== id) return;
+    if (JSON.stringify(questBriefInput()) !== JSON.stringify(input)) { $("quest-brief-status").textContent = "Your quest changed while the draft was being written. Please refresh it."; return; }
+    const brief = QuestBriefClient.parse(raw,input);
+    if (!brief) { $("quest-brief-status").textContent = raw?.reason === "quota_or_unavailable" ? "Generation is temporarily unavailable or the daily limit was reached. Try later." : "Couldn't generate a summary. Your quest is unchanged; try again."; return; }
+    questDraft.brief_text = JSON.stringify(brief); questDraft.brief_at = new Date().toISOString();
+    questDraft.brief_bork_count = questDraft.bookmark_ids.length;
+    $("quest-brief-status").textContent = "Draft ready. Check its sources, then save your quest.";
+  } catch (e) { if (questDraft.id === id) $("quest-brief-status").textContent = humanError(e) + " You can retry."; }
+  finally { questBriefBusy = false; renderQuestBrief(); }
+}
 function openQuest(id) {
   if (demoMode) { toast("Side quests come with an account.", "Sign up", exitDemoToSignup); return; }
   const m = id ? missions.get(id) : null;
@@ -4319,12 +4359,14 @@ function openQuest(id) {
   $("quest-all-topics").checked = false;
   $("quest-new-todo").value = "";
   $("quest-err").textContent = "";
+  $("quest-brief-status").textContent = "";
   fillTopicSelect($("quest-topic"), questDraft.category_id);
   renderQuestLists();
   openDlg($("quest-dialog"));
   if (!m) $("quest-title").focus();
 }
 function renderQuestLists() {
+  renderQuestBrief();
   $("quest-editor-art").src = questArt($("quest-topic").value, $("quest-title").value);
   const todos = questDraft.todos || [];
   $("quest-todos").innerHTML = todos.map(t =>
@@ -4525,6 +4567,11 @@ document.addEventListener("click", (e) => {
   if (srcRow) { platformFilter = srcRow.dataset.platformRow; setTab("library"); return; }
   if (act === "close-quest") { questFromAdd = false; closeDlg($("quest-dialog")); }
   if (act === "save-quest") saveQuest();
+  if (act === "quest-brief") { generateQuestBrief(); return; }
+  const briefStep = e.target.closest("[data-brief-step]");
+  if (briefStep) { (questDraft.todos ??= []).push({id:uuid(),text:briefStep.dataset.briefStep,done:false}); renderQuestLists(); return; }
+  const briefSource = e.target.closest("[data-brief-source]");
+  if (briefSource) { openEdit(briefSource.dataset.briefSource); return; }
   if (act === "delete-quest") deleteQuest();
   if (act === "quest-add-todo") {
     const v = $("quest-new-todo").value.trim();

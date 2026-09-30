@@ -3,6 +3,18 @@ import SwiftData
 @testable import borkmarkr
 
 final class QuestSyncTests: XCTestCase {
+    @MainActor func testBriefInputKeepsCapturedTextAndExcludesPrivateNotes() throws {
+        let request = QuestBrief.request(id: "q", title: "Goal", topic: nil, subtopic: nil,
+            titles: ["Post"], todos: [], sources: [.init(id: "one", title: "Post", text: String(repeating: "x", count: 2000))])!
+        XCTAssertEqual(request.sources[0].text.count, 1600)
+        var changed = request; changed.sources[0].id = "two"
+        XCTAssertNotEqual(QuestBrief.inputKey(request), QuestBrief.inputKey(changed))
+        let encoded = try JSONEncoder().encode(request)
+        let keys = (try JSONSerialization.jsonObject(with: encoded) as! [String: Any]).keys
+        XCTAssertFalse(keys.contains("notes")); XCTAssertFalse(keys.contains("detail"))
+        let brief = QuestBrief.parse(Data(#"{"summary":"Draft","steps":[],"source_ids":["one"],"basis":"saved_text","version":2}"#.utf8))!
+        XCTAssertEqual(QuestBrief.decode(QuestBrief.encode(brief)), brief)
+    }
     @MainActor func testExistingQuestRoundTripsAllFieldsAndDeletion() throws {
         let container = try ModelContainer(for: Mission.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true))
