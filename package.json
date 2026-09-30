@@ -1,0 +1,6 @@
+{
+  "name": "bookmarker-regression-tests",
+  "private": true,
+  "scripts": { "test:sync": "node Scripts/test_sync_sql.mjs" },
+  "devDependencies": { "@electric-sql/pglite": "0.5.8" }
+}

@@ -38,6 +38,8 @@ targets:
     # into BOTH targets — the Share Extension writes straight into the same
     # App Group store the app reads.
     sources: [App, Core]
+    scheme:
+      testTargets: [bookmarkerTests]
     settings:
       base:
         # iPhone only. XcodeGen's per-target default is "1,2", which overrides
@@ -85,6 +87,17 @@ targets:
           - CFBundleURLName: com.jpwilson.borkmarkr.collection
             CFBundleURLSchemes:
               - bookmarker
+
+  bookmarkerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: borkmarkr
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.jpwilson.borkmarkr.tests
 
   ShareExtension:
     type: app-extension

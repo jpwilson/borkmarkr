@@ -289,6 +289,15 @@ struct RootView: View {
                 Task { await account.sync(context: context) }
             }
         }
+        // Keep both clients current while the app stays open after editing.
+        // This task is cancelled automatically when the root leaves the tree.
+        .task(id: account.isSignedIn) {
+            guard account.isSignedIn else { return }
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(30)) } catch { return }
+                if scenePhase == .active { await account.sync(context: context) }
+            }
+        }
         .onChange(of: account.isSignedIn) { _, signedIn in
             guard signedIn else { return }
             // Admit before syncing, not after. A waiting bork is deliberately
