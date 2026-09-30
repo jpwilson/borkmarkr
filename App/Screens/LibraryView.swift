@@ -4,6 +4,7 @@ import SwiftData
 /// Home. Wordmark, "Your library" + live stats, search entry, source chips,
 /// density toggle, and the masonry feed.
 struct LibraryView: View {
+    @Environment(\.scenePhase) private var enrichmentScenePhase
     let onAdd: () -> Void
     var onSearch: () -> Void = {}
     var onSeeJourneys: () -> Void = {}
@@ -204,7 +205,12 @@ struct LibraryView: View {
         // Fill in real titles and thumbnails for anything still missing them.
         // Keyed on count so a fresh batch of brks triggers another pass.
         .task(id: bookmarks.count) {
-            await previews.fetchMissing(for: bookmarks, in: context, account: account)
+            while !Task.isCancelled {
+                if enrichmentScenePhase == .active {
+                    await previews.fetchMissing(for: bookmarks, in: context, account: account)
+                }
+                do { try await Task.sleep(for: .seconds(30)) } catch { break }
+            }
         }
     }
 

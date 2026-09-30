@@ -1198,6 +1198,8 @@
 <dialog id="edit-dialog" aria-labelledby="edit-title">
   <h2 id="edit-title" style="overflow-wrap:anywhere"></h2>
   <p style="margin:0 0 4px"><a id="edit-open" target="_blank" rel="noopener">Open original ↗</a></p>
+  <button class="linkish" data-act="refresh-preview">Refresh missing content &amp; preview</button>
+  <p class="hint" id="edit-preview-status" role="status"></p>
   <section class="sorted">
     <div class="sorted-h"><span aria-hidden="true">✨</span>Filed under</div>
     <button type="button" class="topic-trigger" id="edit-topic" data-act="pick-topic" data-for="edit" aria-haspopup="dialog"></button>
@@ -1343,6 +1345,7 @@
 <script src="/library-presentation.js"></script>
 <script src="/quest-presentation.js"></script>
 <script src="/quest-brief-client.js"></script>
+<script src="/enrichment.js"></script>
 <script src="/taxonomy-sync.js"></script>
 <script src="/open-signals.js"></script>
 <!-- The Core ports: the export parsers, the offline filer and the tag-recency
@@ -1680,8 +1683,12 @@ async function api(path, { method = "GET", body, headers = {}, auth = true } = {
     if (!s) { const err = new Error("Signed out."); err.status = 401; throw err; }
     h.Authorization = `Bearer ${s.access_token}`;
   }
-  const res = await fetch(`${SUPABASE_URL}${path}`, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
-  const text = await res.text();
+  const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 30000);
+  let res, text;
+  try {
+    res = await fetch(`${SUPABASE_URL}${path}`, { method, headers: h, body: body ? JSON.stringify(body) : undefined, signal:abort.signal });
+    text = await res.text();
+  } finally { clearTimeout(timer); }
   if (!res.ok) { const err = new Error(supaError(text, `Server error (${res.status})`)); err.status = res.status; throw err; }
   return text ? JSON.parse(text) : null;
 }
@@ -1902,22 +1909,23 @@ async function pull() {
   syncIssue = null;
   if (!borks.size) render(); // skeleton
   try {
-    let after = null; // page continuation only; never persisted
+    let finished = false;
     for (let page = 0; page < 30; page++) {
       let path = `/rest/v1/bookmarks?select=*&owner_id=eq.${s.user_id}&order=updated_at.asc,id.asc&limit=1000`;
-      if (after) path += `&updated_at=gte.${encodeURIComponent(after)}`;
+      path += `&offset=${page * 1000}`;
       const rows = await api(path);
       absorb(rows);
-      if (rows.length) after = rows[rows.length - 1].updated_at; // raw server string
       persist();
       if (page === 0) { pulledOnce = true; render(); } // big libraries: show page one while the rest streams in
-      if (rows.length < 1000) break;
+      if (rows.length < 1000) { finished = true; break; }
     }
+    if (!finished) throw new Error("Your library refresh is incomplete. Please retry.");
     try { await pullMissions(); } catch (e) { syncIssue = "Side quests could not sync."; toast(syncIssue + " " + humanError(e), "Retry", () => pull()); }
     try { await taxonomySync.sync(); } catch (e) { syncIssue = "Topics could not sync."; toast(syncIssue + " " + humanError(e), "Retry", () => pull()); }
     try { await openSignals.sync(); } catch (e) { syncIssue = "Revisit could not sync."; toast(syncIssue + " " + humanError(e)); }
     try { await pullTopicArt(); } catch { /* art is a decoration */ }
     if (!syncIssue) syncCompletedAt = new Date();
+    if (!demoMode) enrichmentQueue.run();
   } catch (e) {
     syncIssue = humanError(e); throw e;
   } finally {
@@ -1944,6 +1952,9 @@ function fullRow(row, ownerID, { keepStamp = false } = {}) {
     // web keeps the date it was given. Wire it up on the phone next release.
     note_date: row.note_date ?? null,
     image_url: row.image_url ?? null, deleted_at: row.deleted_at ?? null,
+    filing_source: row.filing_source ?? null, tags_edited: row.tags_edited ?? null,
+    title_edited: row.title_edited ?? null, enrichment_version: row.enrichment_version ?? null,
+    enrichment_attempts: row.enrichment_attempts ?? null, enrichment_attempted_at: row.enrichment_attempted_at ?? null,
   };
 }
 
@@ -4034,6 +4045,11 @@ function saveAdd({ again = false } = {}) {
     title: $("add-title-input").value.trim() || addTitle || Filer.fallbackTitle(url),
     platform, kind: PLATFORM[platform].kind, tags: sheetTags.add.slice(),
     category_id: picks.add.topic, subcategory: picks.add.topic ? picks.add.sub : null,
+    filing_source: picks.add.source === "user" ? "user" : "automatic",
+    tags_edited: true, title_edited: addTitleTouched || existing?.title_edited || false,
+    enrichment_version: existing?.enrichment_version ?? null,
+    enrichment_attempts: existing?.enrichment_attempts ?? null,
+    enrichment_attempted_at: existing?.enrichment_attempted_at ?? null,
     // Nothing on this sheet writes body_text, so a re-save must not erase the
     // one the importer or the phone put there.
     body_text: (dupe && existing.body_text) || SavedContent.excerpt(addPreview?.description),
@@ -4049,7 +4065,7 @@ function saveAdd({ again = false } = {}) {
   closeDlg($("add-dialog"));
   platformFilter = null;
   if (tab !== "library") setTab("library", { focus: false }); else { render(); window.scrollTo({ top: 0 }); }
-  toast("Borked. It's on your phone too.");
+  toast("Borked. Syncing to your account…");
   const props = { platform, is_first: isFirst, had_preview: !!addPreview, filed: picks.add.source || "none",
     tags: row.tags.length, note: !!note, quest: quests.length > 0 };
   if (again) props.duplicate = true;   // only ever true; a first save says nothing about it
@@ -4093,6 +4109,8 @@ function saveEdit() {
   commitTag("edit");
   const note = $("edit-note-on").checked ? $("edit-note").value.trim() : "";
   const next = { ...r,
+    filing_source: "user", tags_edited: true,
+    title_edited: $("edit-title-input").value.trim() !== r.title || r.title_edited === true,
     title: $("edit-title-input").value.trim() || r.title,
     category_id: picks.edit.topic,
     subcategory: picks.edit.topic ? picks.edit.sub : null,
@@ -4441,6 +4459,14 @@ document.addEventListener("click", (e) => {
   const fbK = e.target.closest("[data-fb-kind]");
   if (fbK) { fbKind = fbK.dataset.fbKind; syncFbKinds(); return; }
   const act = e.target.closest("[data-act]")?.dataset.act;
+  if (act === "refresh-preview") {
+    $("edit-preview-status").textContent = "Refreshing… Some sources do not provide text or images.";
+    enrichmentQueue.run({id:editing,force:true}).then(status => { $("edit-preview-status").textContent = status.busy ? "Another preview batch is running. Try again shortly."
+      : status.failed ? "Couldn't refresh the preview. Your save is unchanged; please retry."
+      : status.updated ? "Fetched available metadata. Some sources provide no text or images. Your notes and filing were left alone."
+      : "This save changed during the check. Your latest edits were kept; retry to refresh."; });
+    return;
+  }
   const density = e.target.closest("[data-density]")?.dataset.density;
   if (density) { feedDensity = density; lsSet("bm.feed-density", density); render(); return; }
   const refinement = e.target.closest("[data-refine]");
@@ -4799,6 +4825,13 @@ setInterval(() => {
 }, 30000);
 
 /* ── Boot ── */
+const enrichmentQueue = new EnrichmentQueue({
+  session: () => demoMode ? null : store.session, rows: () => [...borks.values()],
+  preview: row => api("/functions/v1/preview",{method:"POST",body:{url:row.url}}),
+  save: (row, preview, stamp) => api("/rest/v1/rpc/apply_bookmark_preview", {method:"POST",body:{
+    p_id:row.id,p_expected:stamp,p_preview:Enrichment.preview(row,preview,Filer.fallbackTitle(row.url))}}),
+  changed: rows => { absorb(rows); persist(); render(); }
+});
 (async function boot() {
   const hash = location.hash || "";
   // OAuth providers land back here with tokens in the hash (implicit flow).

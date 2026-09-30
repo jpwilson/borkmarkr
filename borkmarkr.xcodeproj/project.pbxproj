@@ -72,11 +72,13 @@
 		8E09E7953F3242F92A276127 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292B159D7B2467224C46A761 /* Supabase.swift */; };
 		8F5FE92CDC2DC339F92B2535 /* Masonry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BADA1DD4A470DDE392E9E348 /* Masonry.swift */; };
 		90A6A59716AEE73AA75582EB /* QuestSyncRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4B80CB7B611371DB59227A /* QuestSyncRecord.swift */; };
+		95234DAB01EDF8F28AABA74E /* EnrichmentPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85DCDD0796A9B9E10DB6EFA2 /* EnrichmentPolicy.swift */; };
 		95796B7540B5235A1E4A3ECF /* QuestCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B89AD5B449931A41A4D130 /* QuestCard.swift */; };
 		964A772F380819487AC6886F /* LinkPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6EFED0D5A77564B19E2159D /* LinkPreview.swift */; };
 		99B02D4F9FD3308F8139ACA6 /* TopicShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBB6C87B29BC3F22C2D5624C /* TopicShare.swift */; };
 		A1F7026BC0D7A393F6EB15F2 /* OpenSignalSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB634E76EFD52850729102D /* OpenSignalSync.swift */; };
 		A2F072A20BA5FE73B2605DC0 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC10B3CE0C10FE6631F2BD11 /* ShareViewController.swift */; };
+		AB5B056B7F143CF3577D5193 /* EnrichmentPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85DCDD0796A9B9E10DB6EFA2 /* EnrichmentPolicy.swift */; };
 		ABBDFC9F1D12C8F37F7EED12 /* OFL-Bricolage.txt in Resources */ = {isa = PBXBuildFile; fileRef = 9046840905787DF56F670280 /* OFL-Bricolage.txt */; };
 		AC4BD882269AA3AC947CD748 /* TopicPickerQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC62950D5538EA53D438815 /* TopicPickerQuery.swift */; };
 		AD51C6F132E881E691CB7C4C /* Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88674C0234F92868C875DE08 /* Motion.swift */; };
@@ -122,6 +124,7 @@
 		F85F9BB8D37561E4CD622870 /* SearchScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 333D4353EBA093B39B7A70CA /* SearchScope.swift */; };
 		FBB12614782641CF156F0DDF /* CustomSubtopic.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E2561707E17515E4370A4C /* CustomSubtopic.swift */; };
 		FEA2BEEA8FF522D12E774522 /* ScreenshotDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01FDBE763C913D9F86D91E3 /* ScreenshotDefaults.swift */; };
+		FFD1E7B62FB526F04D981654 /* EnrichmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F30257A075EE186C671BF9 /* EnrichmentTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -197,6 +200,7 @@
 		81D6884E4D424E7446777654 /* TagRecency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagRecency.swift; sourceTree = "<group>"; };
 		82F6D03124B7F87471EECA4C /* OFL-InstrumentSans.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "OFL-InstrumentSans.txt"; sourceTree = "<group>"; };
 		8311727C8921073B5B0C270E /* ShareInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInput.swift; sourceTree = "<group>"; };
+		85DCDD0796A9B9E10DB6EFA2 /* EnrichmentPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrichmentPolicy.swift; sourceTree = "<group>"; };
 		88674C0234F92868C875DE08 /* Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Motion.swift; sourceTree = "<group>"; };
 		8EF909279FB420B93DF4052F /* AuthSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSheet.swift; sourceTree = "<group>"; };
 		9046840905787DF56F670280 /* OFL-Bricolage.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "OFL-Bricolage.txt"; sourceTree = "<group>"; };
@@ -236,6 +240,7 @@
 		D469560AFA41606ABFDBBAF7 /* OpenSignal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSignal.swift; sourceTree = "<group>"; };
 		DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
 		E2B89AD5B449931A41A4D130 /* QuestCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestCard.swift; sourceTree = "<group>"; };
+		E8F30257A075EE186C671BF9 /* EnrichmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrichmentTests.swift; sourceTree = "<group>"; };
 		EA943D319F3640BAEAB60794 /* QuestBrief.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestBrief.swift; sourceTree = "<group>"; };
 		EBB6C87B29BC3F22C2D5624C /* TopicShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicShare.swift; sourceTree = "<group>"; };
 		EDBB7054C8299B44B29CB0DD /* JourneyViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyViews.swift; sourceTree = "<group>"; };
@@ -245,7 +250,7 @@
 		FDFD000324870B4100EC567A /* PlatformMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformMarks.swift; sourceTree = "<group>"; };
 		FE34B4FBABBE3D8CBC12C053 /* OpenSignalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSignalTests.swift; sourceTree = "<group>"; };
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
-		"TEMP_C4039E52-483C-43DD-8F0C-7D9C285C0147" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_36CB81E4-DB3B-44E0-BB77-A5125618F62F" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -269,6 +274,7 @@
 				25911EF7451F262AAF7346BB /* Copy.swift */,
 				D0E2561707E17515E4370A4C /* CustomSubtopic.swift */,
 				2EFFAF4608164B3C3448B2B1 /* DuplicateSave.swift */,
+				85DCDD0796A9B9E10DB6EFA2 /* EnrichmentPolicy.swift */,
 				931EE76C8F04FB683B65ECBE /* Importers.swift */,
 				F5DEAB92D3F359003446A3EA /* Initials.swift */,
 				B6EFED0D5A77564B19E2159D /* LinkPreview.swift */,
@@ -408,6 +414,7 @@
 		EB2F290E67B5EB43BD7F3C42 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				E8F30257A075EE186C671BF9 /* EnrichmentTests.swift */,
 				FE34B4FBABBE3D8CBC12C053 /* OpenSignalTests.swift */,
 				4C72C582E6EA96D78463C84A /* QuestArtworkTests.swift */,
 				659DCCA380B9927587FA608C /* QuestSyncTests.swift */,
@@ -416,10 +423,10 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		"TEMP_7ECA9134-C20C-4615-B85E-0B98582C2E23" /* bookmarker-repair */ = {
+		"TEMP_ED8F9F74-EDB4-4D5C-A4C1-D87EEDE2A5E4" /* bookmarker-repair */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_C4039E52-483C-43DD-8F0C-7D9C285C0147" /* Config.xcconfig */,
+				"TEMP_36CB81E4-DB3B-44E0-BB77-A5125618F62F" /* Config.xcconfig */,
 			);
 			path = "bookmarker-repair";
 			sourceTree = "<group>";
@@ -564,6 +571,7 @@
 				25F6D0428BE78A001F455570 /* DebugSeed.swift in Sources */,
 				E0AAF5B400F21B8F35C87F16 /* DetailSheet.swift in Sources */,
 				D4F3FEDEFE26E1810AAD7150 /* DuplicateSave.swift in Sources */,
+				AB5B056B7F143CF3577D5193 /* EnrichmentPolicy.swift in Sources */,
 				EA4274450968EFD91AD5617A /* ImportSheet.swift in Sources */,
 				3A11A2A53692AD245251E721 /* Importers.swift in Sources */,
 				09A643DBB0504F845CB233EC /* Initials.swift in Sources */,
@@ -632,6 +640,7 @@
 				B9A2569C00EE5902576E56C7 /* Copy.swift in Sources */,
 				FBB12614782641CF156F0DDF /* CustomSubtopic.swift in Sources */,
 				872ADFC3CFE7F0EAE637A4F7 /* DuplicateSave.swift in Sources */,
+				95234DAB01EDF8F28AABA74E /* EnrichmentPolicy.swift in Sources */,
 				B67DE9D28EBA23033E89FEBD /* Importers.swift in Sources */,
 				F197F99C8893BB23755F9989 /* Initials.swift in Sources */,
 				6C0E90372436F3A28CAA365E /* LinkPreview.swift in Sources */,
@@ -665,6 +674,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FFD1E7B62FB526F04D981654 /* EnrichmentTests.swift in Sources */,
 				CE2E9DD3AB547B48D368908B /* OpenSignalTests.swift in Sources */,
 				DF542C030843DDCE3E7DDD07 /* QuestArtworkTests.swift in Sources */,
 				7C5C8F501070DA7F9601BAA6 /* QuestSyncTests.swift in Sources */,
@@ -690,7 +700,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_C4039E52-483C-43DD-8F0C-7D9C285C0147" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_36CB81E4-DB3B-44E0-BB77-A5125618F62F" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -777,7 +787,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_C4039E52-483C-43DD-8F0C-7D9C285C0147" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_36CB81E4-DB3B-44E0-BB77-A5125618F62F" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;

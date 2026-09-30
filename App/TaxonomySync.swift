@@ -32,9 +32,9 @@ import SwiftData
         let deletedSubs = Set(subs.filter { $0.deletedAt != nil }.map { "\($0.categoryID)|\($0.name)" })
         for b in try context.fetch(FetchDescriptor<Bookmark>()) {
             if let id = b.categoryID, deletedTopics.contains(id) {
-                b.categoryID = nil; b.subcategory = nil; b.touch()
+                b.categoryID = nil; b.subcategory = nil; b.filingSource = "user"; b.touch()
             } else if let id = b.categoryID, let sub = b.subcategory, deletedSubs.contains("\(id)|\(sub)") {
-                b.subcategory = nil; b.touch()
+                b.subcategory = nil; b.filingSource = "user"; b.touch()
             } else { b.rebuildSearchBlob() }
         }
         try context.save()
