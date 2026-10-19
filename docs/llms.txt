@@ -1,0 +1,62 @@
+# bookmarker
+
+https://bookmarker.lol
+
+## What is bookmarker?
+
+bookmarker is a native iOS app that consolidates all your saved content from Instagram, X (Twitter), TikTok, and YouTube into one searchable library. It solves the problem of scattered, unsearchable bookmarks across multiple social media apps.
+
+## Key features
+
+- **Universal save**: Save any link from any social app into one unified library
+- **Auto-categorization**: Every save is automatically categorized by topic (Technology, Food & Drink, Fitness, etc.)
+- **Full-text search**: Find anything you've saved by searching the actual content, not just titles
+- **Share extension**: Save directly from Instagram, X, TikTok, YouTube, Safari, and any app with a share sheet
+- **SwiftUI + SwiftData**: Native iOS app built with modern Apple frameworks, no backend required
+- **Privacy-first**: Your data stays on your device with optional iCloud sync
+
+## How it works
+
+1. Install the bookmarker iOS app from the App Store
+2. Use the share sheet in any app (Instagram, X, TikTok, YouTube, Safari) to save a link
+3. bookmarker automatically fetches the content, categorizes it, and adds it to your library
+4. Search and browse your saves by topic, platform, or full-text search
+
+## Who is it for?
+
+- People who save hundreds or thousands of posts across multiple social apps
+- Content creators who need to organize inspiration and references
+- Researchers collecting sources from various platforms
+- Anyone who's ever thought "I saved that somewhere but can't find it"
+
+## Pricing
+
+- Free tier available
+- Premium features for advanced users
+
+## Platform availability
+
+- iOS app (native SwiftUI)
+- Web app at bookmarker.lol for browsing and managing your library
+
+## Common use cases
+
+- Organizing recipe videos saved from Instagram and TikTok
+- Collecting workout routines from YouTube and Instagram
+- Saving articles and threads from X for later reading
+- Building topic-based collections (travel inspiration, coding tutorials, etc.)
+- Sharing curated collections with others via public links
+
+## Technical details
+
+- Built with SwiftUI and SwiftData
+- Share Extension for system-wide integration
+- Automatic content enrichment and categorization
+- Cross-device sync via iCloud
+- Supports URL normalization to prevent duplicates
+
+## Contact
+
+- Website: https://bookmarker.lol
+- Privacy Policy: https://bookmarker.lol/privacy.html
+- Terms of Service: https://bookmarker.lol/terms.html
