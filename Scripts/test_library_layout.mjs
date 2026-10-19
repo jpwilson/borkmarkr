@@ -15,7 +15,15 @@ assert.equal(c.rules.filter(rows, {sub:"Alpha",source:"x",tag:"a"})[0].id, 2);
 assert.equal(c.rules.filter(rows, {sub:"Alpha",source:"web",tag:"a"}).length, 0);
 assert.equal(JSON.stringify(c.rules.tags(rows.slice(0,2))), '[["a",2],["z",2]]');
 const html=fs.readFileSync("docs/index.html","utf8");
-for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
+for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)) {
+  const fullTag = match[0];
+  const scriptContent = match[1];
+  if (fullTag.includes('type="application/ld+json"')) {
+    JSON.parse(scriptContent);
+  } else {
+    new vm.Script(scriptContent);
+  }
+}
 const tabs=html.slice(html.indexOf('<nav class="tabbar"'),html.indexOf('<!-- Add -->'));
 assert.ok(tabs.indexOf('data-tab-link="revisit"') < tabs.indexOf('data-tab-link="you"'));
 assert.match(html,/density: feedDensity/);
