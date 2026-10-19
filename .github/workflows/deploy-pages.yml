@@ -1,0 +1,63 @@
+name: Deploy to GitHub Pages with PostHog
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Generate PostHog configuration
+        env:
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+        run: |
+          # Generate posthog-config.js with the API key from secrets
+          cat > docs/posthog-config.js << 'CONFIGEOF'
+          /**
+           * PostHog Analytics Configuration
+           * Generated at build time from GitHub secrets.
+           */
+          window.__POSTHOG_CONFIG__ = {
+            apiKey: '${{ secrets.POSTHOG_KEY }}',
+            apiHost: 'https://us.i.posthog.com',
+            options: {
+              defaults: '2025-05-24'
+            }
+          };
+          CONFIGEOF
+          
+          echo "PostHog config generated"
+          
+          # If POSTHOG_KEY is not set, the site will work without analytics
+          if [ -z "${{ secrets.POSTHOG_KEY }}" ]; then
+            echo "⚠️ Warning: POSTHOG_KEY secret not set. Site will work without analytics."
+          else
+            echo "✓ PostHog key configured"
+          fi
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
