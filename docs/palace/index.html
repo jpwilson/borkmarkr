@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memory Palace — bookmarker</title>
+  <meta name="description" content="Explore your bookmarks in a 3D memory palace where each category is a room and every link has a place.">
+  <link rel="canonical" href="https://bookmarker.lol/palace">
+  <meta name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14110E" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="bookmarker">
+  <meta property="og:url" content="https://bookmarker.lol/palace">
+  <meta property="og:title" content="Memory Palace — bookmarker">
+  <meta property="og:description" content="A 3D world where your bookmarks live as objects in themed rooms.">
+  <meta property="og:image" content="https://bookmarker.lol/img/share-v2.jpg">
+
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --paper: #F6F3EE;
+      --ink: #191510;
+      --ink-2: #6E655A;
+      --hairline: #EAE4DA;
+      --surface: #FFFFFF;
+      --coral: #FF5A2D;
+      --coral-dark: #E8451C;
+      --accent-text: #C93A12;
+      --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #14110E;
+        --ink: #F2EEE8;
+        --ink-2: #A39A8D;
+        --hairline: #2A241E;
+        --surface: #1C1814;
+        --accent-text: #FF7A55;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 16px;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* UI Overlay */
+    .ui-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .ui-overlay > * {
+      pointer-events: auto;
+    }
+
+    /* Header */
+    .header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(180deg, var(--paper) 0%, transparent 100%);
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      color: var(--ink);
+    }
+
+    .brand img {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .brand span {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 1.2rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand small {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--ink-2);
+      margin-left: 0.25rem;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      min-height: 44px;
+      padding: 0 1.2rem;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.15s, background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary {
+      background: var(--coral);
+      color: #fff;
+      border-color: var(--coral);
+    }
+
+    .btn-primary:hover { background: var(--coral-dark); }
+
+    .btn-ghost {
+      background: var(--surface);
+      color: var(--ink);
+      border-color: var(--hairline);
+      box-shadow: 0 1px 2px rgba(25, 21, 16, .04), 0 8px 24px -12px rgba(25, 21, 16, .12);
+    }
+
+    .btn-ghost:hover { border-color: var(--ink-2); }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Info Panel */
+    .info-panel {
+      position: absolute;
+      bottom: 2rem;
+      left: 2rem;
+      max-width: 340px;
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 2px rgba(25, 21, 16, .04), 0 16px 48px -16px rgba(25, 21, 16, .18);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+
+    .info-panel.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .info-panel h2 {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      color: var(--ink);
+    }
+
+    .info-panel .subtitle {
+      font-size: 0.9rem;
+      color: var(--ink-2);
+      margin-bottom: 0.75rem;
+    }
+
+    .info-panel .count {
+      font-weight: 600;
+      color: var(--accent-text);
+    }
+
+    .info-panel .desc {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+
+    .info-panel .close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--ink-2);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 0.15s;
+    }
+
+    .info-panel .close-btn:hover {
+      background: var(--hairline);
+    }
+
+    /* Controls */
+    .controls {
+      position: absolute;
+      bottom: 2rem;
+      right: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    /* Loading */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 30;
+    }
+
+    .loading .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--hairline);
+      border-top-color: var(--coral);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading p {
+      font-weight: 600;
+      color: var(--ink-2);
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+      .header {
+        padding: 1rem 1.25rem;
+        flex-wrap: wrap;
+      }
+
+      .brand small {
+        display: none;
+      }
+
+      .btn-group {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .btn {
+        font-size: 0.85rem;
+        min-height: 40px;
+        padding: 0 1rem;
+      }
+
+      .info-panel {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        max-width: none;
+      }
+
+      .controls {
+        right: 1rem;
+        bottom: 1rem;
+      }
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--ink);
+      pointer-events: none;
+      z-index: 100;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px -4px rgba(25, 21, 16, .16);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <!-- Canvas container -->
+  <div id="canvas-container"></div>
+
+  <!-- UI Overlay -->
+  <div class="ui-overlay">
+    <header class="header">
+      <a class="brand" href="/" aria-label="Back to bookmarker">
+        <img src="/img/mark-192.png" width="32" height="32" alt="">
+        <span>bookmarker</span>
+        <small>Memory Palace</small>
+      </a>
+      <div class="btn-group">
+        <button id="tour-btn" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="10 8 16 12 10 16 10 8"/>
+          </svg>
+          Guided Tour
+        </button>
+        <button id="map-btn" class="btn btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 8l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/>
+            <path d="M9 5v13"/>
+            <path d="M15 8v13"/>
+          </svg>
+          Map View
+        </button>
+        <a href="/" class="btn btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          Home
+        </a>
+      </div>
+    </header>
+
+    <div class="info-panel" id="info-panel">
+      <button class="close-btn" id="close-info" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <h2 id="info-title">Welcome</h2>
+      <p class="subtitle" id="info-subtitle">
+        <span class="count" id="info-count">150 bookmarks</span> across 8 categories
+      </p>
+      <p class="desc" id="info-desc">
+        Navigate through themed rooms where each category is a wing and bookmarks float as glowing orbs. Click to explore, hover to preview.
+      </p>
+    </div>
+
+    <div class="controls">
+      <button id="reset-btn" class="btn btn-ghost" title="Reset camera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Building your memory palace...</p>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module" src="palace.js"></script>
+</body>
+</html>
