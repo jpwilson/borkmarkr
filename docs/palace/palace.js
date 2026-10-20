@@ -2,6 +2,17 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // ========================================
+// Supabase Configuration
+// ========================================
+
+const SUPABASE_URL = "https://pcjuxnhqxyfvgagnblzv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjanV4bmhxeHlmdmdhZ25ibHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE3MTEzNzcsImV4cCI6MjA0NzI4NzM3N30.i1bk-fSJE7DlDQSc-yZ5lX_A3zPhvnUbMn5w-RJ1dnY";
+
+let supabaseClient = null;
+let currentUser = null;
+let isViewingMyPalace = false;
+
+// ========================================
 // Configuration & Constants
 // ========================================
 
@@ -138,6 +149,12 @@ let tourStep = 0;
 let demoData = [];
 
 function init() {
+  // Initialize Supabase
+  if (typeof supabase !== 'undefined') {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    checkAuth();
+  }
+
   // Scene
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xF6F3EE);
@@ -221,19 +238,126 @@ function init() {
   document.getElementById('map-btn').addEventListener('click', goToMapView);
   document.getElementById('reset-btn').addEventListener('click', resetCamera);
   document.getElementById('close-info').addEventListener('click', hideInfoPanel);
+  document.getElementById('my-palace-btn').addEventListener('click', loadMyPalace);
 
   // Hide loading
   document.getElementById('loading').style.display = 'none';
 
   // Show welcome info
+  const dataSource = isViewingMyPalace ? 'your bookmarks' : 'demo bookmarks';
   showInfoPanel({
     title: 'Memory Palace',
-    subtitle: `${demoData.length} bookmarks across ${TAXONOMY.length} categories`,
+    subtitle: `${demoData.length} ${dataSource} across ${TAXONOMY.length} categories`,
     desc: 'Navigate through themed rooms where each category is a wing and bookmarks float as glowing orbs. Click a room to explore, or start the guided tour.'
   });
 
   // Start animation loop
   animate();
+}
+
+// ========================================
+// Authentication
+// ========================================
+
+async function checkAuth() {
+  if (!supabaseClient) return;
+
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session?.user) {
+      currentUser = session.user;
+      document.getElementById('my-palace-btn').style.display = 'inline-flex';
+    }
+  } catch (error) {
+    console.error('Auth check failed:', error);
+  }
+}
+
+async function loadMyPalace() {
+  if (!supabaseClient || !currentUser) return;
+
+  // Show loading
+  document.getElementById('loading').style.display = 'block';
+  
+  try {
+    const { data: bookmarks, error } = await supabaseClient
+      .from('bookmarks')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    if (error) throw error;
+
+    if (bookmarks && bookmarks.length > 0) {
+      // Transform user bookmarks to our format
+      demoData = bookmarks.map((b, idx) => {
+        const categoryData = TAXONOMY.find(t => t.id === b.category) || TAXONOMY[0];
+        return {
+          id: b.id,
+          title: b.title || 'Untitled',
+          category: b.category || 'tech',
+          categoryName: categoryData.name,
+          subcategory: b.subcategory || categoryData.subs[0],
+          platform: b.platform || 'web',
+          platformName: getPlatformName(b.platform),
+          platformIcon: getPlatformIcon(b.platform),
+          hue: categoryData.hue
+        };
+      });
+
+      isViewingMyPalace = true;
+
+      // Rebuild the palace with user's data
+      rebuildPalace();
+
+      showInfoPanel({
+        title: 'Your Memory Palace',
+        subtitle: `${demoData.length} of your bookmarks across ${TAXONOMY.length} categories`,
+        desc: 'These are your real bookmarks, organized in 3D space. Explore your personal collection!'
+      });
+    } else {
+      showInfoPanel({
+        title: 'No Bookmarks Yet',
+        subtitle: 'Your library is empty',
+        desc: 'Start saving bookmarks in the app, and they\'ll appear here in your personal Memory Palace.'
+      });
+    }
+  } catch (error) {
+    console.error('Failed to load bookmarks:', error);
+    showInfoPanel({
+      title: 'Error Loading Bookmarks',
+      subtitle: 'Could not fetch your data',
+      desc: 'Using demo data instead. Check your connection and try again.'
+    });
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function getPlatformName(platformId) {
+  const platform = PLATFORMS.find(p => p.id === platformId);
+  return platform ? platform.name : 'Web';
+}
+
+function getPlatformIcon(platformId) {
+  const platform = PLATFORMS.find(p => p.id === platformId);
+  return platform ? platform.icon : '🌐';
+}
+
+function rebuildPalace() {
+  // Clear existing rooms and bookmarks
+  rooms.forEach(room => {
+    scene.remove(room.group);
+  });
+  rooms = [];
+  bookmarkObjects = [];
+
+  // Rebuild with new data
+  buildPalace();
+
+  // Reset camera
+  resetCamera();
 }
 
 // ========================================
