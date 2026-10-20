@@ -392,6 +392,14 @@
     box-shadow: 0 1px 2px rgba(25,21,16,.04), 0 14px 34px -18px rgba(25,21,16,.22); }
   .pitch-links { color: var(--faint); font-size: 12.5px; }
   .pitch-links a { color: var(--ink-2); font-weight: 600; }
+  .pitch-palace { display: flex; align-items: center; gap: 12px; max-width: 400px; margin: 0 0 22px; padding: 11px 16px 11px 12px;
+    border-radius: 16px; background: #1F1611; color: #F7EFE5; box-shadow: var(--shadow-card); transition: background .15s; }
+  .pitch-palace:hover { background: #2C1F18; }
+  .pitch-palace .pp-tag { flex: none; padding: 3px 8px; border-radius: 999px; background: var(--coral); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .pitch-palace b { display: block; font-family: var(--font-head); font-weight: 800; font-size: 15px; letter-spacing: -.01em; }
+  .pitch-palace small { display: block; color: rgba(247, 239, 229, .68); font-size: 12.5px; margin-top: 1px; }
+  .pitch-palace .pp-go { margin-left: auto; color: #FF946F; font-weight: 800; }
   .auth-card { width: min(400px, 100%); flex: 0 0 auto; background: var(--surface); border: 1px solid var(--hairline);
     border-radius: 24px; padding: 28px 24px; box-shadow: var(--shadow-card); }
   .auth-card .brand { margin-bottom: 18px; }
@@ -401,6 +409,7 @@
     .auth-wrap { flex-direction: column; gap: 26px; align-items: stretch; padding-top: 40px; }
     .auth-pitch { max-width: none; }
     .pitch-points { margin-bottom: 4px; }
+    .pitch-palace { margin: 18px 0 0; max-width: none; }
     .pitch-art { display: none; }
     .auth-pitch .pitch-links { display: none; }
     .auth-card { width: 100%; }
@@ -892,8 +901,13 @@
         <li>Search everything you've ever saved</li>
         <li>Free — here on the web and <a href="/app">on iPhone</a></li>
       </ul>
+      <a class="pitch-palace" href="/palace">
+        <span class="pp-tag">New</span>
+        <span><b>Walk through the Memory Palace</b><small>A 3D library: every topic a room, every save a card</small></span>
+        <span class="pp-go" aria-hidden="true">→</span>
+      </a>
       <img class="pitch-art" src="/img/hero-bookmark.jpg" width="900" height="900" alt="A coral clay bookmark with the Instagram, X, TikTok and YouTube app icons set into it.">
-      <p class="pitch-links">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a></p>
+      <p class="pitch-links">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/palace">Memory Palace</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a></p>
     </div>
   <div class="auth-card">
     <a class="brand auth-card-brand" href="/app"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
@@ -933,7 +947,7 @@
       <p class="err" id="code-err" role="alert"></p>
     </div>
   </div>
-  <p class="pitch-links m-links" style="text-align:center;padding-bottom:30px">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+  <p class="pitch-links m-links" style="text-align:center;padding-bottom:30px">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/palace">Memory Palace</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
   </div>
 </section>
 
