@@ -175,6 +175,11 @@ async function boot() {
     const cut = S.mode === "map" || y > DIM.cutHero - 0.4 ? DIM.cutHero : 100;
     if (cut !== S.cut) { S.cut = cut; W.setCut(cut); renderer.shadowMap.needsUpdate = true; }
     const open = cut < 50 ? ramp(DIM.cutHero - 0.4, 34, y) : 0;
+    /* Crossing the cut height swaps a roofed interior, sunlit only through
+       the oculus, for an open one in full sun. Sun, shaft and floor
+       reflections fade out just below the swap and the sun fades back in
+       above it, so the swap itself happens with the sun off. */
+    const sunK = cut < 50 ? ramp(DIM.cutHero - 0.4, 26, y) : 1 - ramp(6.4, DIM.cutHero - 0.4, y);
     sunIn.copy(W.sunInterior);
     const heroPhi = L.rooms[L.N - 1].phi + Math.PI;
     const az = heroPhi + Math.PI + 0.85, el = 0.62;
@@ -189,7 +194,7 @@ async function boot() {
       W.sun.target.updateMatrixWorld();
       renderer.shadowMap.needsUpdate = true;
     }
-    W.sun.intensity = lerp(6.5, 3.7, open);
+    W.sun.intensity = lerp(6.5, 3.7, open) * sunK;
     W.hemi.intensity = lerp(0.16, 0.55, open);
     scene.fog.density = lerp(0.0105, 0.0034, open);
     renderer.toneMappingExposure = lerp(0.9, 0.86, open);
@@ -198,7 +203,8 @@ async function boot() {
     bloom.threshold = lerp(1.0, 1.12, open);
     const env = lerp(0.2, 0.34, open);
     for (const m of S.mats) m.envMapIntensity = env * m.userData.envBase;
-    W.setShaft(cut < 50 ? 0 : 1);
+    W.setShaft(cut < 50 ? 0 : sunK);
+    W.setReflection(sunK);
     S.open = open;
   }
 

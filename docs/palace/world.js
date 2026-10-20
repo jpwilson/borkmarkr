@@ -10,6 +10,9 @@ import * as ART from "./art.js";
 
 const UP = new THREE.Vector3(0, 1, 0);
 const V = (a) => new THREE.Vector3(a[0], a[1], a[2]);
+/* Floors are slightly see-through so the mirrored scene beneath reads as a
+   reflection. */
+const FLOOR_OPACITY = 0.86;
 
 function basis(right, normal, origin) {
   const m = new THREE.Matrix4().makeBasis(V(right), UP, V(normal));
@@ -225,8 +228,8 @@ export function buildWorld(L, { tier, renderer }) {
     stone: new THREE.MeshStandardMaterial({ map: stoneTex, color: 0xE2D7C8, roughness: 0.88, ...clip }),
     trim: new THREE.MeshStandardMaterial({ color: 0xE2D6C5, roughness: 0.62, ...clip }),
     column: new THREE.MeshStandardMaterial({ map: colTex, roughness: 0.3, metalness: 0.02, ...clip }),
-    floor: new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.22, transparent: true, opacity: 0.86, ...clip }),
-    rotunda: new THREE.MeshStandardMaterial({ map: rotTex, roughness: 0.2, transparent: true, opacity: 0.86, ...clip }),
+    floor: new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.22, transparent: true, opacity: FLOOR_OPACITY, ...clip }),
+    rotunda: new THREE.MeshStandardMaterial({ map: rotTex, roughness: 0.2, transparent: true, opacity: FLOOR_OPACITY, ...clip }),
     ceiling: new THREE.MeshStandardMaterial({ map: ceilTex, roughness: 0.9, ...clip }),
     domeIn: new THREE.MeshStandardMaterial({ map: cofTex, roughness: 0.85, side: THREE.BackSide, ...clip }),
     domeOut: new THREE.MeshStandardMaterial({ color: 0x8F7B67, roughness: 0.7, ...clip }),
@@ -560,6 +563,8 @@ export function buildWorld(L, { tier, renderer }) {
       dustMat.uniforms.uIntensity.value = 1.6 * k;
       shaft.visible = dust.visible = k > 0.01;
     },
+    /* k = 1 is the usual reflective floor, k = 0 a fully opaque one. */
+    setReflection(k) { mats.floor.opacity = mats.rotunda.opacity = 1 - (1 - FLOOR_OPACITY) * k; },
     dispose() {
       root.traverse((o) => { if (o.isMesh && o.geometry && !disposables.includes(o.geometry)) o.geometry.dispose(); });
       for (const d of disposables) d.dispose?.();
