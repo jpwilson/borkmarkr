@@ -7,6 +7,7 @@ import { MAP } from "./atlas-layout.js";
 
 /* ── Noise ──────────────────────────────────────────────────────────────── */
 const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
 function gradient(ix, iz, seed) {
   let h = (seed ^ Math.imul(ix, 374761393) ^ Math.imul(iz, 668265263)) >>> 0;
@@ -51,7 +52,7 @@ function ridged(x, z, seed, octaves = 8, lac = 2.0, gain = 0.58) {
 }
 
 /* ── Height field ───────────────────────────────────────────────────────── */
-export const GRID = 520;                 // cells across the terrain plate
+export const GRID = 560;                 // cells across the terrain plate
 const CELL = (MAP.PLATE * 2) / GRID;
 const F = 1 / 1150;                      // first ridge octave ≈ 1150 m across
 
@@ -73,9 +74,17 @@ export function buildHeightField(layout) {
       const wz = z + fbm(x * F * 0.7 + 40, z * F * 0.7 - 40, 733, 3) * 380 + fbm(x * F * 3.4 + 9, z * F * 3.4 + 3, 1933, 2) * 48;
       const main = crest(ridged(wx * F, wz * F, 1337, 7, 2.0, 0.43));
       const cross = crest(ridged(wz * F * 1.81 + 11, wx * F * 1.81 - 7, 7717, 4, 2.0, 0.43));
-      // smooth small-scale bumps instead of another ridged octave, which at
-      // this grid spacing would alias into a field of identical pyramids
+      // Surface texture, not another ridged octave: three smooth bands, the
+      // finest still four cells wide, so hillsides have grain without the
+      // field of identical pyramids that aliasing produces.
       const grain = fbm(x * F * 8.5, z * F * 8.5, 4409, 3);
+      const fine = fbm(x * F * 19, z * F * 19, 6421, 3);
+      const micro = fbm(x * F * 44, z * F * 44, 7717, 2);
+      // The close-up frames look at a patch ~150 units wide, so the only
+      // detail that can read there lives at the grid's own resolution: two
+      // more bands at roughly 22 m and 14 m, the finest the cell can carry.
+      const rough = fbm(x * F * 52, z * F * 52, 1559, 2);
+      const nano = fbm(x * F * 82, z * F * 82, 3301, 2);
       const broad = fbm(x * F * 0.42, z * F * 0.42, 5521, 4);
 
       // every region is a massif: high ground with the ridges still running
@@ -90,12 +99,16 @@ export function buildHeightField(layout) {
       }
 
       const amp = 126 + 76 * mask + 52 * broad;
-      let h = 18 + broad * 70 + lift + main * amp + cross * amp * 0.42 + grain * 15;
-      // ease the plateau tops so districts have ground to stand on
-      if (mask > 0.5) {
-        const k = (mask - 0.5) * 1.1;
-        h = h * (1 - k) + (lift + 86 + broad * 34) * k;
+      let h = 18 + broad * 70 + lift + main * amp + cross * amp * 0.42;
+      // Ease the ridges where a region sits, so districts stand on ground
+      // rather than on a cliff. The flattening is applied to the ridge system
+      // only — the surface grain below is added afterwards, so a plateau still
+      // has texture instead of turning into a sheet of clay.
+      if (mask > 0.38) {
+        const k = Math.min(0.62, (mask - 0.38) * 1.1);
+        h = h * (1 - k) + (lift + 78 + broad * 30) * k;
       }
+      h += grain * 26 + fine * 17 + micro * 8 + rough * 7 + nano * 4;
 
       // coast: a ragged shoreline well out past the atlas, then open water
       const rad = Math.hypot(x, z) + fbm(x * F * 1.1, z * F * 1.1, 9173, 3) * 190;
@@ -135,6 +148,7 @@ const C = {
   rock: new THREE.Color("#8f877a"),
   cliff: new THREE.Color("#79736a"),
   scree: new THREE.Color("#c3bba9"),
+  clay: new THREE.Color("#b59a74"),
 };
 
 /* Height picks the band, slope pulls it towards bare rock, and a mottling
@@ -147,11 +161,21 @@ function terrainColor(h, s, m, out) {
   else if (h < 160) c = C.ochre.clone().lerp(C.tan, Math.min(1, (h - 92) / 68));
   else if (h < 215) c = C.tan.clone().lerp(C.rock, Math.min(1, (h - 160) / 55));
   else c = C.rock.clone().lerp(C.scree, Math.min(1, (h - 215) / 80));
-  if (s > 0.45) c.lerp(C.cliff, Math.min(0.85, (s - 0.45) * 1.15));
-  if (h > 4 && h < 130) c.lerp(C.sage, Math.max(0, m - 0.55) * 0.9 * (1 - Math.min(1, s)));
+  if (s > 0.32) c.lerp(C.cliff, Math.min(0.88, (s - 0.32) * 1.35));
+  if (h > 4 && h < 180) c.lerp(C.sage, Math.max(0, m - 0.5) * 1.0 * (1 - Math.min(1, s)));
+  if (m < 0.42) c.lerp(C.clay, (0.42 - m) * 0.9);
   const k = 0.9 + 0.2 * m;
   out.setRGB(c.r * k, c.g * k, c.b * k);
   return out;
+}
+
+/* How much forest wants to grow at a point: the same field scatterTrees()
+   samples, so the ground under a wood is tinted and darkened and the canopy
+   reads as one mass rather than as scattered cones. */
+export function canopyAt(x, z) {
+  const d1 = 0.5 + 0.5 * fbm(x * F * 2.6, z * F * 2.6, 8111, 4);
+  const d2 = 0.5 + 0.5 * fbm(x * F * 7.5, z * F * 7.5, 2287, 3);
+  return Math.max(0, Math.min(1, Math.pow(Math.max(0, d1 * 1.25 - 0.22), 1.5) * (0.6 + 0.7 * d2) * 2.1));
 }
 
 export function buildTerrain(field) {
@@ -161,20 +185,35 @@ export function buildTerrain(field) {
   const pos = geo.attributes.position;
   const colors = new Float32Array(pos.count * 3);
   const tmp = new THREE.Color();
+  const H = (i, j) => field.data[Math.min(n - 1, Math.max(0, j)) * n + Math.min(n - 1, Math.max(0, i))];
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
       const k = j * n + i;
       const h = field.data[k];
       pos.setY(k, h);
       const x = -MAP.PLATE + i * field.cell, z = -MAP.PLATE + j * field.cell;
-      const mottle = 0.5 + 0.5 * fbm(x * F * 5.2, z * F * 5.2, 4211, 3);
+      const mottle = clamp01(0.5 + 0.55 * fbm(x * F * 5.2, z * F * 5.2, 4211, 3)
+        + 0.2 * fbm(x * F * 17, z * F * 17, 9311, 2)
+        + 0.26 * fbm(x * F * 70, z * F * 70, 4441, 2));
       terrainColor(h, field.slope(x, z), mottle, tmp);
-      colors[k * 3] = tmp.r; colors[k * 3 + 1] = tmp.g; colors[k * 3 + 2] = tmp.b;
+      // Concave ground is in shadow far more often than convex ground; baking
+      // that in is what turns a smooth hillside into readable gullies.
+      const curve = h - (H(i - 1, j) + H(i + 1, j) + H(i, j - 1) + H(i, j + 1)) / 4;
+      const ao = Math.max(0.52, Math.min(1.16, 1 + curve * 0.06));
+      // woodland floor: darker, greener, and it holds the canopy's shape
+      const wood = h > 6 && h < 250 ? canopyAt(x, z) : 0;
+      const r = tmp.r * ao, g = tmp.g * ao, b = tmp.b * ao;
+      colors[k * 3] = r * (1 - wood * 0.34) + 0.21 * wood * 0.34;
+      colors[k * 3 + 1] = g * (1 - wood * 0.25) + 0.27 * wood * 0.25;
+      colors[k * 3 + 2] = b * (1 - wood * 0.38) + 0.17 * wood * 0.38;
     }
   }
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   geo.computeVertexNormals();
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.97, metalness: 0, flatShading: true });
+  // Smooth normals, not flat shading: at this cell size flat shading turns
+  // every hillside into a mosaic of plates. The faceting that remains comes
+  // from the heightfield itself.
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96, metalness: 0, flatShading: false });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   mesh.castShadow = true;
@@ -237,61 +276,163 @@ function rng(seed) {
   };
 }
 
-/* Tens of thousands of conifers on the ground that would actually hold them:
-   above the beach, below the scree line, off the cliffs, and clumped by a
-   density noise so the forest has edges, clearings and treelines. */
-export function scatterTrees(field, { count = 30000, seed = 17 } = {}) {
-  const geo = coneGeometry(4.4, 16, 5);
-  const mat = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, flatShading: true });
-  const dark = new THREE.Color("#2b3b28"), mid = new THREE.Color("#44563a"), dusty = new THREE.Color("#6d7a53");
-  const mesh = new THREE.InstancedMesh(geo, mat, count);
-  mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(count * 3), 3);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
-  const axis = new THREE.Vector3(0, 1, 0);
-  const col = new THREE.Color();
+/* Two conifer silhouettes so a wood isn't one shape repeated: a narrow
+   spire and a broader fir. Both are small — a tree is a texture here, not a
+   landmark. */
+function treeGeometries() {
+  const spire = new THREE.ConeGeometry(2.4, 12.5, 5, 2);
+  spire.translate(0, 6.25, 0);
+  const fir = new THREE.ConeGeometry(3.5, 9, 6, 2);
+  fir.translate(0, 4.5, 0);
+  return [spire, fir];
+}
+
+/* Forests, tiled. Each tile is its own InstancedMesh with a real bounding
+   sphere, so the renderer culls the woods behind the camera instead of
+   submitting every tree every frame, and distance thins them instead of the
+   old all-or-nothing cut. */
+export function scatterTrees(field, { count = 120000, seed = 17, tiles = 8 } = {}) {
+  const reach = MAP.PLATE - 40;
+  const span = (reach * 2) / tiles;
+  const geos = treeGeometries();
+  const mats = geos.map(() => new THREE.MeshStandardMaterial({ roughness: 0.94, metalness: 0, flatShading: true }));
+  const dark = new THREE.Color("#32432a"), mid = new THREE.Color("#4a5e38"), dusty = new THREE.Color("#73825a");
+
+  const buckets = [];
+  for (let ty = 0; ty < tiles; ty++) {
+    for (let tx = 0; tx < tiles; tx++) buckets.push({ tx, ty, list: [[], []] });
+  }
   const r = rng(seed);
-  // Trees only inside the band the camera ever looks at; past this the haze
-  // has taken over anyway, and the instances would be wasted.
-  const reach = 1780;
+  const col = new THREE.Color();
   let placed = 0, tries = 0;
-  while (placed < count && tries < count * 40) {
+  while (placed < count && tries < count * 26) {
+    tries++;
+    // clustered: pick a clump centre, then sprinkle around it
+    const cx = (r() * 2 - 1) * reach, cz = (r() * 2 - 1) * reach;
+    const clump = 6 + Math.floor(r() * 9);
+    for (let c = 0; c < clump && placed < count; c++) {
+      const a = r() * Math.PI * 2, rad = Math.sqrt(r()) * (9 + r() * 20);
+      const x = cx + Math.cos(a) * rad, z = cz + Math.sin(a) * rad;
+      if (Math.abs(x) > reach || Math.abs(z) > reach) continue;
+      const h = field.sample(x, z);
+      if (h < 4 || h > 250) continue;
+      const sl = field.slope(x, z);
+      if (sl > 1.3) continue;
+      const density = canopyAt(x, z);
+      const altitude = h < 20 ? 0.55 : h > 220 ? 0.3 : h > 175 ? 0.66 : 1;
+      const exposure = 1 - Math.min(0.5, Math.max(0, sl - 0.8) * 0.7);
+      // groves where the canopy field is strong, plus the occasional lone
+      // tree on open ground — a forest with a hard edge looks painted on
+      if (density * altitude * exposure < 0.14 + 0.4 * r() && r() > 0.025) continue;
+      const kind = r() < 0.62 ? 0 : 1;
+      const tall = 0.55 + 1.15 * Math.pow(r(), 1.5);
+      const wide = tall * (0.78 + 0.4 * r());
+      const tx = Math.min(tiles - 1, Math.floor((x + reach) / span));
+      const ty = Math.min(tiles - 1, Math.floor((z + reach) / span));
+      const t = r();
+      col.copy(dark).lerp(t > 0.84 ? dusty : mid, t * (h > 120 ? 0.9 : 0.55));
+      buckets[ty * tiles + tx].list[kind].push([x, h - 0.8, z, wide, tall, r() * Math.PI * 2, col.r, col.g, col.b]);
+      placed++;
+    }
+  }
+
+  const group = new THREE.Group();
+  group.name = "forest";
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3();
+  const axis = new THREE.Vector3(0, 1, 0);
+  for (const bucket of buckets) {
+    bucket.list.forEach((list, kind) => {
+      if (!list.length) return;
+      const mesh = new THREE.InstancedMesh(geos[kind], mats[kind], list.length);
+      mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(list.length * 3), 3);
+      list.forEach((t, i) => {
+        p.set(t[0], t[1], t[2]);
+        sc.set(t[3], t[4], t[3]);
+        q.setFromAxisAngle(axis, t[5]);
+        m.compose(p, q, sc);
+        mesh.setMatrixAt(i, m);
+        mesh.instanceColor.setXYZ(i, t[6], t[7], t[8]);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.instanceColor.needsUpdate = true;
+      mesh.castShadow = true;
+      mesh.receiveShadow = false;
+      mesh.computeBoundingSphere();
+      mesh.userData.full = list.length;
+      mesh.userData.centre = new THREE.Vector2((bucket.tx + 0.5) * span - reach, (bucket.ty + 0.5) * span - reach);
+      group.add(mesh);
+    });
+  }
+  group.userData.total = placed;
+  return group;
+}
+
+/* Low scrub and loose stones, tiled and culled like the forests. This is
+   the texture a close-up actually lives on: at 5x zoom a hillside with no
+   ground cover reads as clay however good the heightfield is. */
+export function scatterScrub(field, { count = 150000, seed = 404, tiles = 8 } = {}) {
+  // only over the atlas itself: this is close-up texture, and nothing ever
+  // flies low over the scenery beyond it
+  const reach = 640;
+  const span = (reach * 2) / tiles;
+  const geo = new THREE.IcosahedronGeometry(1, 0);
+  geo.scale(1, 0.55, 1);
+  const mat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0, flatShading: true });
+  const shrub = new THREE.Color("#44512f"), stone = new THREE.Color("#938872"), dry = new THREE.Color("#72653f");
+  const buckets = Array.from({ length: tiles * tiles }, () => []);
+  const r = rng(seed);
+  const col = new THREE.Color();
+  let placed = 0, tries = 0;
+  while (placed < count && tries < count * 8) {
     tries++;
     const x = (r() * 2 - 1) * reach, z = (r() * 2 - 1) * reach;
     const h = field.sample(x, z);
-    if (h < 4 || h > 262) continue;
+    if (h < 2 || h > 290) continue;
     const sl = field.slope(x, z);
-    if (sl > 1.35) continue;
-    const d1 = 0.5 + 0.5 * fbm(x * F * 2.6, z * F * 2.6, 8111, 4);
-    const d2 = 0.5 + 0.5 * fbm(x * F * 7.5, z * F * 7.5, 2287, 3);
-    const density = Math.pow(Math.max(0, d1 * 1.25 - 0.22), 1.5) * (0.6 + 0.7 * d2);
-    const altitude = h < 22 ? 0.55 : h > 236 ? 0.3 : h > 190 ? 0.62 : h > 150 ? 0.85 : 1;
-    const exposure = 1 - Math.min(0.55, Math.max(0, (sl - 0.75)) * 0.7);
-    if (density * altitude * exposure < 0.08 + 0.2 * r()) continue;
-    const scale = (0.6 + 0.85 * r()) * (h > 140 ? 0.74 : 1);
-    const lean = 0.8 + 0.35 * r();
-    p.set(x, h - 1.4, z);
-    s.set(scale * lean, scale * (0.85 + 0.5 * r()), scale * lean);
-    q.setFromAxisAngle(axis, r() * Math.PI * 2);
-    m.compose(p, q, s);
-    mesh.setMatrixAt(placed, m);
+    const open = 1 - canopyAt(x, z) * 0.75;
+    if (r() > 0.22 + 0.5 * open) continue;
+    const scale = 1.5 + 3.4 * Math.pow(r(), 1.7);
     const t = r();
-    col.copy(dark).lerp(t > 0.8 ? dusty : mid, t * (h > 110 ? 0.95 : 0.6));
-    mesh.instanceColor.setXYZ(placed, col.r, col.g, col.b);
+    if (t < 0.62 && sl < 1.0) col.copy(shrub).lerp(dry, r() * 0.7);
+    else col.copy(stone).lerp(dry, r() * 0.6);
+    const tx = Math.min(tiles - 1, Math.floor((x + reach) / span));
+    const ty = Math.min(tiles - 1, Math.floor((z + reach) / span));
+    buckets[ty * tiles + tx].push([x, h - scale * 0.3, z, scale * (0.8 + 0.6 * r()), scale, r() * 3, col.r, col.g, col.b]);
     placed++;
   }
-  mesh.count = placed;
-  mesh.instanceMatrix.needsUpdate = true;
-  mesh.instanceColor.needsUpdate = true;
-  mesh.castShadow = true;
-  mesh.receiveShadow = false;
-  mesh.name = "forest";
-  mesh.frustumCulled = false;
-  return mesh;
+  const group = new THREE.Group();
+  group.name = "scrub";
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3();
+  const axis = new THREE.Vector3(0, 1, 0);
+  buckets.forEach((list, i) => {
+    if (!list.length) return;
+    const mesh = new THREE.InstancedMesh(geo, mat, list.length);
+    mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(list.length * 3), 3);
+    list.forEach((t, k) => {
+      p.set(t[0], t[1], t[2]);
+      sc.set(t[3], t[4], t[3]);
+      q.setFromAxisAngle(axis, t[5]);
+      m.compose(p, q, sc);
+      mesh.setMatrixAt(k, m);
+      mesh.instanceColor.setXYZ(k, t[6], t[7], t[8]);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.instanceColor.needsUpdate = true;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.computeBoundingSphere();
+    mesh.userData.full = list.length;
+    const tx = i % tiles, ty = Math.floor(i / tiles);
+    mesh.userData.centre = new THREE.Vector2((tx + 0.5) * span - reach, (ty + 0.5) * span - reach);
+    group.add(mesh);
+  });
+  group.userData.total = placed;
+  return group;
 }
 
 export function scatterRocks(field, { count = 2600, seed = 91 } = {}) {
-  const geo = new THREE.IcosahedronGeometry(4.2, 0);
-  const mat = new THREE.MeshStandardMaterial({ color: "#8f877a", roughness: 1, metalness: 0, flatShading: true });
+  const geo = new THREE.IcosahedronGeometry(2.4, 1);
+  const mat = new THREE.MeshStandardMaterial({ color: "#8c8478", roughness: 1, metalness: 0, flatShading: true });
   const mesh = new THREE.InstancedMesh(geo, mat, count);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
   const r = rng(seed);
@@ -304,7 +445,7 @@ export function scatterRocks(field, { count = 2600, seed = 91 } = {}) {
     if (h < 10) continue;
     const sl = field.slope(x, z);
     if (sl < 0.55 && h < 150) continue;
-    const scale = 0.35 + 1.5 * r();
+    const scale = 0.45 + 1.4 * r();
     p.set(x, h - 1.5, z);
     s.set(scale * 1.4, scale * 0.75, scale);
     q.setFromEuler(new THREE.Euler(r() * 3, r() * 3, r() * 3));
@@ -325,24 +466,29 @@ export function scatterRocks(field, { count = 2600, seed = 91 } = {}) {
    on a polar grid so it fits the outline exactly without any clipping. */
 export function drapeDisc(cx, cz, boundaryPts, field, { lift = 1.4, rings = 16 } = {}) {
   const spokes = boundaryPts.length;
-  const verts = [], idx = [];
+  const verts = [], idx = [], rgba = [];
   for (let r = 0; r <= rings; r++) {
     const t = r / rings;
+    // faint over the middle of a region, firmer towards its edge
+    const a = 0.22 + 0.78 * Math.pow(t, 2.0);
     for (let s = 0; s < spokes; s++) {
       const [bx, bz] = boundaryPts[s];
       const x = cx + (bx - cx) * t, z = cz + (bz - cz) * t;
       verts.push(x, field.sample(x, z) + lift, z);
+      rgba.push(1, 1, 1, a);
     }
   }
   for (let r = 0; r < rings; r++) {
     for (let s = 0; s < spokes; s++) {
       const a = r * spokes + s, b = r * spokes + ((s + 1) % spokes);
       const c = (r + 1) * spokes + s, d = (r + 1) * spokes + ((s + 1) % spokes);
-      idx.push(a, c, b, b, c, d);
+      // wound counter-clockwise seen from above, so the tint faces the camera
+      idx.push(a, b, c, b, d, c);
     }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(rgba, 4));
   geo.setIndex(idx);
   geo.computeVertexNormals();
   return geo;
@@ -362,7 +508,7 @@ export function ribbon(points, field, { width = 2.6, lift = 2.0, closed = false,
     const dx = x1 - x0, dz = z1 - z0;
     const len = Math.hypot(dx, dz) || 1e-6;
     const nx = -dz / len, nz = dx / len;
-    const steps = Math.max(1, Math.ceil(len / 5));
+    const steps = Math.max(1, Math.ceil(len / 3.2));
     for (let s = 0; s < steps; s++) {
       const t0 = s / steps, t1 = (s + 1) / steps;
       const seg = len / steps;

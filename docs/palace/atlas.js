@@ -3,14 +3,17 @@
    deterministic hook set (window.palace) so the marketing frames can be
    rendered headless without any clocks running. */
 import * as THREE from "three";
-import { computeLayout, readingTrail, regionById } from "./atlas-layout.js";
+import { computeLayout, readingTrail, regionById, libraryBounds } from "./atlas-layout.js";
 import { AtlasScene } from "./atlas-scene.js";
-import { AtlasUI, fmtDate } from "./atlas-ui.js";
+import { AtlasUI } from "./atlas-ui.js";
 import { Tour } from "./atlas-tour.js";
 
 const params = new URLSearchParams(location.search);
 const CAPTURE = params.has("capture");
+const STRESS = params.has("stress");
 const el = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const state = {
   mode: "topics",
@@ -30,43 +33,54 @@ const state = {
     tints: { on: true, opacity: 1 },
     edges: { on: true, opacity: 0.85 },
     markers: { on: true, opacity: 1 },
-    trail: { on: true, opacity: 0.9 },
+    trail: { on: true, opacity: 0.95 },
     labels: { on: true, opacity: 1 },
   },
   tour: { active: false, t: 0 },
 };
 
 let atlas, layout, scene, ui, tour;
+let canvasAbort = null;
+let flight = null;
 
 /* ── data ───────────────────────────────────────────────────────────────── */
-function loadDemo() {
-  return PalaceData.demoAtlas(TAXONOMY);
-}
+const loadDemo = () => (STRESS ? PalaceData.stressAtlas(TAXONOMY) : PalaceData.demoAtlas(TAXONOMY));
 
 async function loadMine() {
-  const { rows, customTopics, email } = await PalaceData.loadOwnLibrary({ storage: localStorage, fetch: window.fetch.bind(window) });
-  return PalaceData.buildAtlas(rows, { taxonomy: TAXONOMY, customTopics, demo: false, label: email || "My library" });
+  const { rows, customTopics, truncated, email } = await PalaceData.loadOwnLibrary({
+    storage: localStorage, fetch: window.fetch.bind(window),
+  });
+  return PalaceData.buildAtlas(rows, {
+    taxonomy: TAXONOMY, customTopics, demo: false, truncated,
+    label: email || "My library",
+  });
 }
 
-/* ── menus ──────────────────────────────────────────────────────────────── */
+/* ── menus (built as elements; a label is never parsed as markup) ───────── */
 let openMenu = null;
 function menu(anchor, items) {
   closeMenu();
   const box = document.createElement("div");
-  box.style.cssText = "position:fixed;z-index:40;min-width:190px;padding:4px;border-radius:8px;background:#ECE8DF;border:1px solid #CFC8B8;box-shadow:0 10px 30px -12px rgba(30,28,25,.45);font-size:12.5px";
+  box.className = "menu";
+  box.setAttribute("role", "menu");
   for (const it of items) {
     if (it.divider) {
       const d = document.createElement("div");
-      d.style.cssText = "height:1px;background:#CFC8B8;margin:4px 2px";
+      d.className = "menu-div";
       box.appendChild(d);
       continue;
     }
     const b = document.createElement("button");
     b.type = "button";
-    b.style.cssText = "display:flex;width:100%;align-items:center;gap:8px;height:28px;padding:0 9px;border:0;border-radius:5px;background:transparent;cursor:pointer;text-align:left";
-    b.innerHTML = `<span style="flex:1 1 auto">${it.label}</span>${it.note ? `<small style="color:#6E685E">${it.note}</small>` : ""}`;
-    b.addEventListener("mouseenter", () => { b.style.background = "#E2DDD0"; });
-    b.addEventListener("mouseleave", () => { b.style.background = "transparent"; });
+    b.setAttribute("role", "menuitem");
+    const label = document.createElement("span");
+    label.textContent = it.label;
+    b.appendChild(label);
+    if (it.note) {
+      const note = document.createElement("small");
+      note.textContent = it.note;
+      b.appendChild(note);
+    }
     b.addEventListener("click", () => { closeMenu(); it.onPick && it.onPick(); });
     box.appendChild(b);
   }
@@ -74,6 +88,7 @@ function menu(anchor, items) {
   const r = anchor.getBoundingClientRect();
   box.style.left = `${Math.min(r.left, innerWidth - box.offsetWidth - 8)}px`;
   box.style.top = `${r.bottom + 4}px`;
+  box.querySelector("button")?.focus();
   openMenu = box;
   setTimeout(() => document.addEventListener("pointerdown", closeMenu, { once: true }), 0);
 }
@@ -81,29 +96,31 @@ function closeMenu() { if (openMenu) { openMenu.remove(); openMenu = null; } }
 
 function toast(text) {
   const t = document.createElement("div");
+  t.className = "toast";
+  t.setAttribute("role", "status");
   t.textContent = text;
-  t.style.cssText = "position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:50;padding:8px 14px;border-radius:8px;background:#1E1C19;color:#F3EFE6;font-size:12.5px;box-shadow:0 10px 30px -12px rgba(0,0,0,.5)";
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3200);
+  setTimeout(() => t.remove(), 3600);
 }
 
 /* ── actions the shell calls back into ──────────────────────────────────── */
 const actions = {
   setMode(mode) {
     state.mode = mode;
-    state.tab = mode === "timeline" ? "overview" : state.tab;
+    if (mode === "timeline") state.tab = "overview";
     scene.setColorMode(mode === "sources" ? "sources" : "topics");
     scene.setTimeFilter(state.time);
     scene.applyLayers();
-    ui.buildLayers();
+    ui.chartCache = null;
     ui.refresh();
-    if (mode === "timeline" && !CAPTURE) actions.setTime(0), actions.togglePlay();
+    if (mode === "timeline" && !CAPTURE && !REDUCED) { actions.setTime(0); actions.togglePlay(); }
   },
   setTab(tab) { state.tab = tab; ui.refresh(); },
   setDim(dim) { state.dim = dim; scene.setDim(dim); ui.refresh(); },
   setTime(frac) {
-    state.time = Math.min(1, Math.max(0, frac));
+    state.time = clamp(frac, 0, 1);
     scene.setTimeFilter(state.time);
+    scene.applyLayers();          // the trail only exists once time has run out
     ui.refresh();
   },
   togglePlay() {
@@ -119,7 +136,7 @@ const actions = {
   stepMoment(dir) {
     if (!atlas.moments.length) return;
     const next = state.moment == null ? (dir > 0 ? 0 : atlas.moments.length - 1) : state.moment + dir;
-    actions.goToMoment(Math.min(atlas.moments.length - 1, Math.max(0, next)));
+    actions.goToMoment(clamp(next, 0, atlas.moments.length - 1));
   },
   goToMoment(i) {
     const m = atlas.moments[i];
@@ -128,44 +145,45 @@ const actions = {
     state.playing = false;
     actions.setTime(ui.frac(m.at));
   },
-  toggleLayer(id) {
-    state.layers[id].on = !state.layers[id].on;
+  setLayerVisible(id, on) {
+    state.layers[id].on = on;
     scene.applyLayers();
-    ui.buildLayers();
+    ui.syncLayers();
   },
   setLayerOpacity(id, v) {
     state.layers[id].opacity = v;
     state.layers[id].on = v > 0.02;
     scene.applyLayers();
-    ui.buildLayers();
+    ui.syncLayers();
   },
-  toggleGroup(key) {
-    if (state.hidden.has(key)) state.hidden.delete(key); else state.hidden.add(key);
+  setGroupVisible(key, on) {
+    if (on) state.hidden.delete(key); else state.hidden.add(key);
     scene.setTimeFilter(state.time);
     scene.applyLayers();
-    ui.buildLayers();
+    ui.syncLayers();
   },
   setGroupOpacity(key, v) {
     state.groupOpacity.set(key, v);
     if (v <= 0.02) state.hidden.add(key); else state.hidden.delete(key);
     scene.setTimeFilter(state.time);
     scene.applyLayers();
-    ui.buildLayers();
+    ui.syncLayers();
   },
   focusRegion(id) {
     state.focus = id;
-    scene.applyLayers();
+    ui.chartCache = null;
     if (id) {
       const r = regionById(layout, id);
       scene.buildTrail(readingTrail(layout, { regionId: id, count: 8 }));
       scene.rebuildTrailLabels();
-      if (r) flyTo({ tx: r.x, ty: scene.groundAt(r.x, r.z) + 24, tz: r.z, dist: Math.max(230, r.r * 2.9), pol: 1.14, az: Math.atan2(r.x, r.z) - 0.35 });
+      scene.applyLayers();
+      if (r) flyTo({ tx: r.x, ty: scene.groundAt(r.x, r.z) + 20, tz: r.z, dist: Math.max(230, r.r * 3.1), pol: 1.1, az: Math.atan2(r.x, r.z) - 0.35 });
     } else {
       scene.buildTrail(readingTrail(layout, { count: 7 }));
       scene.rebuildTrailLabels();
-      flyTo({ tx: 0, ty: scene.groundAt(0, 0) + 70, tz: 0, dist: 930, pol: 1.145, az: scene.cam.az });
+      scene.applyLayers();
+      flyTo(overviewPose());
     }
-    ui.buildLayers();
     ui.refresh();
   },
   select(marker) {
@@ -173,23 +191,43 @@ const actions = {
     scene.selectMarker(marker);
     ui.refresh();
   },
+  selectById(id, { fly = false } = {}) {
+    const m = scene.markerById(id);
+    if (!m) return;
+    state.focus = m.regionId;
+    ui.chartCache = null;
+    scene.applyLayers();
+    actions.select(m);
+    if (fly) actions.flyToSelection();
+  },
   flyToSelection() {
     const sel = state.selection;
     if (!sel) return;
-    const m = scene.markers.find((x) => x.id === sel.id);
-    if (m) flyTo({ tx: m.x, ty: scene.groundAt(m.x, m.z) + 9, tz: m.z, dist: 190, pol: 1.06, az: scene.cam.az });
+    const m = scene.markerById(sel.id);
+    if (m) flyTo({ tx: m.x, ty: scene.groundAt(m.x, m.z) + 8, tz: m.z, dist: 235, pol: 1.05, az: scene.cam.az });
   },
   resetView() {
     state.focus = null;
+    ui.chartCache = null;
     scene.applyLayers();
-    ui.buildLayers();
-    flyTo({ tx: 0, ty: scene.groundAt(0, 0) + 70, tz: 0, dist: 930, pol: 1.145, az: 0.5 });
+    flyTo({ ...overviewPose(), az: 0.5 });
+    ui.refresh();
   },
 };
 
+/* The pose that frames the library itself: steep enough that the viewport is
+   terrain and data rather than sky, close enough that the regions fill it. */
+function overviewPose(az) {
+  return {
+    tx: 0, ty: scene.groundAt(0, 0) + 55, tz: 0,
+    dist: scene.frameDistance(1.06), pol: 1.055,
+    az: az != null ? az : scene.cam.az,
+  };
+}
+
 /* ── camera easing for interactive flights ──────────────────────────────── */
-let flight = null;
 function flyTo(pose, ms = 1700) {
+  if (REDUCED) { scene.setCamera(pose); flight = null; return; }
   flight = { from: { ...scene.cam }, to: { ...scene.cam, ...pose }, t0: performance.now(), ms };
 }
 function stepFlight(now) {
@@ -205,18 +243,23 @@ function stepFlight(now) {
   if (u >= 1) flight = null;
 }
 
-/* ── pointer interaction ────────────────────────────────────────────────── */
+/* ── pointer interaction, re-attached to every new canvas ───────────────── */
 function wireCanvas() {
+  canvasAbort?.abort();
+  canvasAbort = new AbortController();
+  const signal = canvasAbort.signal;
   const stage = el("stage"), canvas = el("scene");
   let drag = null, moved = 0;
-  canvas.addEventListener("pointerdown", (ev) => {
+  const add = (node, type, fn, opts) => node.addEventListener(type, fn, { ...(opts || {}), signal });
+
+  add(canvas, "pointerdown", (ev) => {
     canvas.setPointerCapture(ev.pointerId);
     drag = { x: ev.clientX, y: ev.clientY };
     moved = 0;
     stage.classList.add("dragging");
     flight = null;
   });
-  canvas.addEventListener("pointermove", (ev) => {
+  add(canvas, "pointermove", (ev) => {
     const r = canvas.getBoundingClientRect();
     if (drag) {
       const dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
@@ -239,42 +282,51 @@ function wireCanvas() {
     if (drag && moved < 5) {
       const r = canvas.getBoundingClientRect();
       const m = scene.pick(ev.clientX - r.left, ev.clientY - r.top);
-      actions.select(m);
-      if (m) state.focus = m.regionId, scene.applyLayers(), ui.buildLayers();
+      if (m) actions.selectById(m.id);
+      else actions.select(null);
     }
     drag = null;
     stage.classList.remove("dragging");
   };
-  canvas.addEventListener("pointerup", end);
-  canvas.addEventListener("pointercancel", () => { drag = null; stage.classList.remove("dragging"); });
-  canvas.addEventListener("wheel", (ev) => {
+  add(canvas, "pointerup", end);
+  add(canvas, "pointercancel", () => { drag = null; stage.classList.remove("dragging"); });
+  add(canvas, "wheel", (ev) => {
     ev.preventDefault();
     flight = null;
     scene.setCamera({ dist: scene.cam.dist * Math.exp(ev.deltaY * 0.0011) });
   }, { passive: false });
-  canvas.addEventListener("pointerleave", () => ui.setTip(null, null));
+  add(canvas, "pointerleave", () => ui.setTip(null, null));
+}
 
+/* ── shell wiring: attached once, survives a library switch ─────────────── */
+function wireShell() {
   el("menu-view").addEventListener("click", (e) => menu(e.currentTarget, [
     { label: state.tour.active ? "Stop tour" : "Play tour", note: `${Math.round(tour.duration)}s`, onPick: () => toggleTour() },
     { label: "Reset camera", note: "R", onPick: () => actions.resetView() },
     { divider: true },
-    { label: state.dim === "2d" ? "3D terrain" : "2D flat map", onPick: () => actions.setDim(state.dim === "2d" ? "3d" : "2d") },
-    { label: state.layers.labels.on ? "Hide labels" : "Show labels", onPick: () => actions.toggleLayer("labels") },
+    { label: state.dim === "2d" ? "3D terrain" : "2D flat map", note: "M", onPick: () => actions.setDim(state.dim === "2d" ? "3d" : "2d") },
+    { label: state.layers.labels.on ? "Hide labels" : "Show labels", onPick: () => actions.setLayerVisible("labels", !state.layers.labels.on) },
   ]));
   el("menu-share").addEventListener("click", (e) => menu(e.currentTarget, [
     { label: "Copy link to this atlas", onPick: () => { navigator.clipboard?.writeText(location.href); toast("Link copied"); } },
-    { label: "Open bookmarker ↗", onPick: () => { location.href = "/"; } },
+    { label: "Open bookmarker", onPick: () => { location.href = "/"; } },
   ]));
   el("library-pick").addEventListener("click", (e) => menu(e.currentTarget, [
     { label: "Demo library", note: `${PalaceData.demoRows().length}`, onPick: () => swapLibrary(loadDemo()) },
     { label: "My library", note: "read-only", onPick: () => mine() },
   ]));
 
+  window.addEventListener("resize", resize);
   addEventListener("keydown", (ev) => {
+    // shortcuts belong to the page, not to whatever control has focus
+    const t = ev.target;
+    const typing = t && (t.matches?.("input, textarea, select, [contenteditable]") || t.getAttribute?.("role") === "slider");
+    if (typing || ev.metaKey || ev.ctrlKey || ev.altKey) return;
     if (ev.key === "t") toggleTour();
-    if (ev.key === "r") actions.resetView();
-    if (ev.key === "m") actions.setDim(state.dim === "2d" ? "3d" : "2d");
-    if (ev.key === " ") { ev.preventDefault(); actions.togglePlay(); }
+    else if (ev.key === "r") actions.resetView();
+    else if (ev.key === "m") actions.setDim(state.dim === "2d" ? "3d" : "2d");
+    else if (ev.key === "Escape") { closeMenu(); actions.select(null); }
+    else if (ev.key === " " && !(t && t.matches?.("button, a"))) { ev.preventDefault(); actions.togglePlay(); }
   });
 }
 
@@ -291,33 +343,39 @@ function swapLibrary(next) {
   atlas = next;
   layout = computeLayout(atlas);
   state.focus = null; state.selection = null; state.time = 1; state.moment = null;
+  state.playing = false; state.tour.active = false; state.tour.t = 0;
   state.hidden.clear(); state.groupOpacity.clear();
-  location.hash = "";
+  flight = null;
   rebuild();
 }
 
-/* ── build ──────────────────────────────────────────────────────────────── */
+/* ── build / rebuild ────────────────────────────────────────────────────── */
 function rebuild() {
+  if (scene) scene.dispose();
+  if (ui) ui.destroy();
   if (scene) {
-    scene.renderer.dispose();
-    el("scene").replaceWith(Object.assign(document.createElement("canvas"), { id: "scene" }));
+    const fresh = document.createElement("canvas");
+    fresh.id = "scene";
+    el("scene").replaceWith(fresh);
   }
   scene = new AtlasScene({ canvas: el("scene"), labelHost: el("labels"), atlas, layout, state, capture: CAPTURE }).init();
   // The whole-library reading trail is on by default, so the overview carries
   // the same kind of dated path the reference draws over its terrain.
   scene.buildTrail(readingTrail(layout, { count: 7 }));
   scene.rebuildTrailLabels();
-  tour = new Tour({ atlas, layout, ground: (x, z) => scene.groundAt(x, z) });
+  tour = new Tour({ atlas, layout, ground: (x, z) => scene.groundAt(x, z), frameDist: (m) => scene.frameDistance(m) });
   ui = new AtlasUI({ atlas, state, actions });
   ui.build();
-  scene.setCamera(tour.cameraAt(0.0));
-  scene.setCamera({ tx: 0, ty: scene.groundAt(0, 0) + 70, tz: 0, az: 0.5, dist: 930, pol: 1.145 });
+  wireCanvas();
   resize();
+  scene.setDim(state.dim);
+  scene.setCamera(overviewPose(0.5));
 }
 
 function resize() {
   const stage = el("stage");
   scene.resize(stage.clientWidth, stage.clientHeight);
+  ui.chartCache = null;
   ui.drawCharts();
 }
 
@@ -328,16 +386,19 @@ function toggleTour() {
   if (!state.tour.active) { ui.setLower(null); actions.resetView(); }
 }
 
+let lastTourKey = "";
 function applyTourState(t) {
   const s = tour.stateAt(t);
   const modeChanged = s.mode !== state.mode;
   state.mode = s.mode;
   state.tab = s.tab;
   if (state.dim !== s.dim) { state.dim = s.dim; scene.setDim(s.dim); }
+  const focusChanged = state.focus !== s.focus;
   state.focus = s.focus;
   state.time = s.time;
   state.selection = s.selection ? s.selection.item : null;
   if (modeChanged) scene.setColorMode(s.mode === "sources" ? "sources" : "topics");
+  if (modeChanged || focusChanged) ui.chartCache = null;
   const trailIds = s.trail.map((m) => m.id).join(",");
   if (trailIds !== scene._trailIds) {
     scene._trailIds = trailIds;
@@ -348,12 +409,17 @@ function applyTourState(t) {
   scene.selectMarker(s.selection || null);
   scene.applyLayers();
   scene.setCamera(tour.cameraAt(t));
-  ui.buildLayers();
-  ui.refresh();
-  ui.setLower(s.lower.title, s.lower.sub);
+
+  // Only redo the panels when something they show has actually changed.
+  const key = `${s.mode}|${s.tab}|${s.dim}|${s.focus}|${state.selection ? state.selection.id : ""}|${Math.round(state.time * 400)}`;
+  if (key !== lastTourKey) {
+    lastTourKey = key;
+    ui.refresh();
+    ui.setLower(s.lower.title, s.lower.sub);
+  }
   if (s.hover) {
-    const v = new THREE.Vector3(s.hover.x, s.hover.y + s.hover.height + 4, s.hover.z).project(scene.activeCamera());
-    ui.setTip({ x: (v.x * 0.5 + 0.5) * scene.width, y: (-v.y * 0.5 + 0.5) * scene.height }, s.hover.item);
+    const p = scene.project(s.hover.x, s.hover.y + s.hover.height * scene.markerScale + 3, s.hover.z);
+    ui.setTip(p.behind ? null : p, s.hover.item);
   } else {
     ui.setTip(null, null);
   }
@@ -374,6 +440,7 @@ function frame(now) {
       const weeks = Math.max(1, atlas.weeks.length);
       state.time = Math.min(1, state.time + (dt / 1000) * state.speed * (1.6 / weeks) * 14);
       scene.setTimeFilter(state.time);
+      scene.applyLayers();
       ui.refresh();
       if (state.time >= 1) state.playing = false;
     }
@@ -384,9 +451,11 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+/* The scale bar measures the model, which is a synthetic place — so it is
+   labelled in map units, not in metres. */
 function updateReadouts() {
   const c = scene.cam;
-  ui.setZoom(`${(1480 / c.dist).toFixed(1)}×`);
+  ui.setZoom(`${(scene.frameDistance(1.06) / c.dist).toFixed(1)}×`);
   ui.setCompass(c.az);
   const vFov = (scene.camera.fov * Math.PI) / 180;
   const perPx = state.dim === "2d"
@@ -395,7 +464,7 @@ function updateReadouts() {
   const nice = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
   const want = perPx * 130;
   const pick = nice.filter((n) => n <= want).pop() || nice[0];
-  ui.setScale(Math.round(pick / perPx), `${Math.round(pick / 2)}`, `${pick} m`);
+  ui.setScale(Math.round(pick / perPx), `${Math.round(pick / 2)}`, `${pick} u`);
 }
 
 /* ── capture hooks ──────────────────────────────────────────────────────── */
@@ -404,10 +473,11 @@ function installCapture() {
     ready: false,
     sync() { scene.render(); return true; },
     duration() { return tour.duration; },
-    beats() { return tour.plan.beats.map((b) => ({ id: b.id, start: b.start, end: b.end })); },
+    beats() { return tour.plan.beats.map((b) => ({ id: b.id, start: b.start, end: b.end, label: b.label })); },
     renderAt(t) {
       state.tour.active = true;
       state.tour.t = t;
+      lastTourKey = "";
       applyTourState(t);
       scene.render();
       return t;
@@ -420,11 +490,11 @@ function installCapture() {
       if (name === "overview") {
         state.time = 1;
         state.tab = "overview";
+        state.focus = null;
         scene.setTimeFilter(1);
-        ui.setLower(null);
-        // The hero framing looks down into the atlas rather than out to the
-        // horizon, so the viewport is terrain and data, not sky.
-        scene.setCamera({ tx: 0, ty: scene.groundAt(0, 0) + 70, tz: 0, dist: 930, pol: 1.145, az: 0.5 });
+        scene.applyLayers();
+        scene.setCamera(overviewPose(0.5));
+        ui.chartCache = null;
         ui.refresh();
       }
       if (name === "region" && opts.topic) {
@@ -434,8 +504,8 @@ function installCapture() {
           scene.buildTrail(readingTrail(layout, { regionId: r.id, count: 8 }));
           scene.rebuildTrailLabels();
           scene.applyLayers();
-          scene.setCamera({ tx: r.x, ty: scene.groundAt(r.x, r.z) + 24, tz: r.z, dist: Math.max(250, r.r * 3.0), pol: 1.15, az: Math.atan2(r.x, r.z) - 0.4 });
-          ui.buildLayers();
+          scene.setCamera({ tx: r.x, ty: scene.groundAt(r.x, r.z) + 20, tz: r.z, dist: Math.max(250, r.r * 3.2), pol: 1.08, az: Math.atan2(r.x, r.z) - 0.4 });
+          ui.chartCache = null;
           ui.refresh();
         }
       }
@@ -443,13 +513,29 @@ function installCapture() {
       updateReadouts();
       return name;
     },
+    /* Everything a frame depends on, so a determinism check can say which
+       piece of state leaked between two capture calls. */
+    debug() {
+      const c = scene.cam;
+      return {
+        cam: [c.tx, c.ty, c.tz, c.dist, c.pol, c.az].map((v) => Math.round(v * 1e4) / 1e4),
+        markerScale: Math.round(scene.markerScale * 1e4) / 1e4,
+        trail: scene._trailIds || "",
+        forest: scene.forest.children.map((t) => t.count).join(","),
+        scrub: scene.scrub.children.map((t) => t.count).join(","),
+        labels: [...document.querySelectorAll("#labels .pin")].filter((n) => n.style.display !== "none").length,
+        tints: [...scene.tints.children].map((o) => (o.material ? Math.round(o.material.opacity * 1000) : -1)).join(","),
+        tip: el("tip").hidden ? "" : el("tip").textContent,
+        charts: [...document.querySelectorAll(".chart .now")].map((n) => n.textContent).join("|"),
+      };
+    },
     state() {
       return {
         mode: state.mode, tab: state.tab, dim: state.dim, focus: state.focus,
-        time: state.time, markers: scene.shownMarkers,
+        time: state.time, markers: scene.shownMarkers, undated: scene.shownUndated,
         selection: state.selection ? state.selection.title : null,
-        label: atlas.label, total: atlas.total,
-        trees: scene.forest.count, rocks: scene.rocks.count,
+        label: atlas.label, total: atlas.total, truncated: atlas.truncated,
+        trees: atlas ? scene.forest.userData.total : 0,
         relief: scene.heightRange(),
       };
     },
@@ -459,30 +545,33 @@ function installCapture() {
 }
 
 /* ── boot ───────────────────────────────────────────────────────────────── */
-function boot() {
+async function boot() {
   try {
     atlas = loadDemo();
     layout = computeLayout(atlas);
     rebuild();
-    wireCanvas();
-    addEventListener("resize", resize);
+    wireShell();
     if (CAPTURE) el("boot").remove();
     else { el("boot").classList.add("gone"); setTimeout(() => el("boot").remove(), 600); }
     if (CAPTURE) {
       const api = installCapture();
+      el("vp-hint").hidden = true;
+      // Fonts change text metrics, which changes label collision and panel
+      // truncation — a frame taken before they land isn't the real layout.
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      resize();
       scene.render();
       updateReadouts();
       api.ready = true;
       document.documentElement.dataset.capture = "ready";
-      el("vp-hint").hidden = true;
     } else {
       requestAnimationFrame((t) => { last = t; frame(t); });
-      if (params.has("tour")) toggleTour();
+      if (params.has("tour") && !REDUCED) toggleTour();
       if (PalaceData.readSession(localStorage)) el("library-pick").title = "Signed in — switch to your own library";
     }
   } catch (err) {
     console.error(err);
-    el("boot").remove();
+    el("boot")?.remove();
     el("fallback").hidden = false;
   }
 }

@@ -25,7 +25,8 @@ vm.runInContext(`${read("docs/taxonomy.js")}\n${read("docs/palace/palace-data.js
 const { PalaceData: D } = ctx;
 const TAXONOMY = plain(ctx.TAXONOMY);
 const L = await import(`data:text/javascript;base64,${Buffer.from(read("docs/palace/atlas-layout.js")).toString("base64")}`);
-const { MAP, computeLayout, tourPlan, readingTrail, boundary, BOUND_MAX, BOUND_MIN, MARKER_IN, TOUR_BEATS } = L;
+const { MAP, computeLayout, tourPlan, readingTrail, boundary, BOUND_MAX, BOUND_MIN, MARKER_IN, TOUR_BEATS,
+  spanWords, libraryBounds } = L;
 
 const DAY = 86_400_000;
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
@@ -235,6 +236,54 @@ for (const [name, model] of Object.entries(models)) {
   if (dated.length > 1) assert.ok(dated.at(-1).height >= dated[0].height, `${name}: newer markers stand taller`);
 }
 
+/* ── Honesty: as-of dates, partial loads, undated saves ─────────────────── */
+assert.equal(demo.asOf, demo.range.end, "recency is measured against the newest save");
+assert.equal(demo.stats.asOf, demo.range.end);
+assert.equal(demo.stats.spanDays, Math.max(1, Math.round((demo.range.end - demo.range.start) / DAY)));
+assert.equal(demo.stats.spanMonths, Math.max(1, Math.round(demo.stats.spanDays / 30.44)));
+assert.equal(demo.stats.last30, demo.items.filter((i) => i.at > demo.asOf - 30 * DAY).length,
+  "\"last 30 days\" counts back from the newest save, not from today");
+assert.equal(demo.truncated, false);
+
+{
+  const mixed = plain(D.buildAtlas([
+    { id: "d1", url: "https://example.com/1", title: "Dated", category_id: TAXONOMY[0].id, subcategory: "A", saved_at: day(1) },
+    { id: "d2", url: "https://example.com/2", title: "Newer", category_id: TAXONOMY[0].id, subcategory: "A", saved_at: day(40) },
+    { id: "u1", url: "https://example.com/3", title: "Undated", category_id: TAXONOMY[0].id, subcategory: "A" },
+  ], { taxonomy: ctx.TAXONOMY }));
+  assert.equal(mixed.stats.undated, 1);
+  assert.equal(mixed.stats.dated, 2);
+  const lay = computeLayout(mixed);
+  const marks = lay.regions[0].markers;
+  const undated = marks.filter((m) => m.undated);
+  assert.equal(undated.length, 1, "an undated save is flagged, not given a middle age");
+  assert.equal(undated[0].age, 0);
+  for (const m of marks.filter((m) => !m.undated)) {
+    assert.ok(m.height > undated[0].height, "undated markers are a distinct short stub");
+  }
+}
+
+/* The stress library: long names, a custom topic, missing dates and a
+   protocol that must never reach the DOM. */
+{
+  const stress = plain(D.stressAtlas(ctx.TAXONOMY));
+  assert.equal(stress.total, demo.total);
+  assert.equal(stress.truncated, true);
+  assert.ok(stress.stats.undated > 0, "the stress library has undated saves");
+  assert.ok(stress.items.some((i) => i.title.length > 80), "and very long titles");
+  assert.ok(stress.regions.some((r) => r.id.startsWith("custom.")), "and a custom topic");
+  assert.equal(stress.items.filter((i) => !i.hasLink).length, 1, "and one unusable link");
+  assert.ok(stress.label.includes("Demo library"), "it is still labelled as demo data");
+}
+
+/* Copy that quotes a duration derives it. */
+assert.equal(spanWords({ range: null, stats: {} }), "A library with no dates");
+assert.equal(spanWords({ range: { start: 0, end: 10 * DAY }, stats: { spanDays: 10, spanMonths: 1 } }), "10 days");
+assert.equal(spanWords({ range: { start: 0, end: 35 * DAY }, stats: { spanDays: 35, spanMonths: 1 } }), "5 weeks");
+assert.equal(spanWords(demo), `${demo.stats.spanMonths} months`);
+assert.ok(!TOUR_BEATS.some((b) => /\b(sixteen|fifteen|twelve)\b/i.test(b.label)),
+  "no hard-coded duration in the captions");
+
 /* ── The scripted tour ──────────────────────────────────────────────────── */
 const layout = computeLayout(demo);
 const plan = tourPlan(demo, layout);
@@ -246,7 +295,11 @@ plan.beats.forEach((b, i) => {
   assert.ok(b.end > b.start, `${b.id} has no length`);
   if (i) assert.equal(b.start, plan.beats[i - 1].end, `${b.id} leaves a gap`);
   assert.ok(b.label && b.label.length <= 60, `${b.id} caption stays short`);
+  assert.ok(!b.label.includes("{"), `${b.id} caption still has an unfilled slot`);
 });
+assert.ok(plan.beats.some((b) => b.label.includes(String(demo.total))), "a caption quotes the real total");
+assert.ok(plan.beats.some((b) => b.label.includes(spanWords(demo))), "a caption quotes the real span");
+assert.ok(libraryBounds(layout) > 0 && libraryBounds(layout) <= MAP.OUTER + 1e-6, "framing bounds cover the atlas");
 for (const id of ["orbit-in", "timeline", "region", "detail", "sources", "trail", "map2d", "orbit-out"]) {
   assert.ok(plan.beats.some((b) => b.id === id), `tour is missing the ${id} beat`);
 }
@@ -331,8 +384,81 @@ assert.equal(D.readSession(storage({ access_token: "A1" })), null);
   assert.match(books[1].url, /offset=1000/);
   assert.match(D.bookmarksPath("a b", 2), /owner_id=eq\.a%20b&deleted_at=is\.null&.*limit=1000&offset=2000$/);
 }
+{
+  // a library of exactly MAX_PAGES full pages is reported as partial
+  const page = Array.from({ length: 1000 }, (_, i) => ({ id: `t${i}`, url: `https://example.com/${i}` }));
+  const api = server({ pages: Array.from({ length: 10 }, () => page) });
+  const out = await D.loadOwnLibrary({ storage: storage(session()), fetch: api.fetch, now });
+  assert.equal(out.truncated, true, "a full ten pages means there is more to come");
+  assert.equal(out.limit, 10_000);
+  const partial = plain(D.buildAtlas(out.rows, { taxonomy: ctx.TAXONOMY, truncated: out.truncated }));
+  assert.equal(partial.truncated, true);
+  const complete = await D.loadOwnLibrary({ storage: storage(session()), fetch: server({ pages: [page.slice(0, 5)] }).fetch, now });
+  assert.equal(complete.truncated, false);
+}
+
 await assert.rejects(D.loadOwnLibrary({ storage: storage(null), fetch: server().fetch, now }), (e) => e.status === 401);
 await assert.rejects(D.loadOwnLibrary({ storage: storage(session()), fetch: server({ status: 401 }).fetch, now }), (e) => e.status === 401);
+
+/* ── Library strings can never become markup ────────────────────────────── */
+
+/* Only http(s) survives; everything else becomes an empty string and the UI
+   shows the bookmark as having no usable link. */
+for (const bad of [
+  "javascript:alert(1)", "JavaScript:alert(1)", " javascript:alert(1)",
+  "data:text/html,<script>alert(1)</script>", "vbscript:msgbox(1)",
+  "blob:https://example.com/x", "mailto:me@example.com", "file:///etc/passwd",
+  "/relative/path", "//example.com/x", "", null, undefined, 123,
+]) assert.equal(D.safeUrl(bad), "", `safeUrl let through ${String(bad)}`);
+for (const good of ["https://example.com/a?b=c#d", "http://example.com/", "HTTPS://Example.com/A"]) {
+  assert.ok(D.safeUrl(good).startsWith("http"), `safeUrl rejected ${good}`);
+}
+
+{
+  const hostile = plain(D.buildAtlas([
+    { id: "x1", url: "javascript:alert(document.cookie)", title: '<img src=x onerror="alert(1)">',
+      platform: "web", category_id: "custom.<script>bad</script>", subcategory: '"><svg onload=alert(1)>', saved_at: day(1) },
+    { id: "x2", url: "https://example.com/ok", title: "Fine", platform: "web", category_id: TAXONOMY[0].id, subcategory: "Sub", saved_at: day(2) },
+  ], { taxonomy: ctx.TAXONOMY }));
+  const bad = hostile.items.find((i) => i.id === "x1");
+  assert.equal(bad.url, "", "a javascript: bookmark gets no link");
+  assert.equal(bad.hasLink, false);
+  // the strings themselves are preserved verbatim — they are rendered with
+  // textContent, so they never need escaping, and escaping them here would
+  // corrupt a legitimate title that happens to contain angle brackets
+  assert.equal(bad.title, '<img src=x onerror="alert(1)">');
+  assert.equal(bad.district, '"><svg onload=alert(1)>');
+  const ok = hostile.items.find((i) => i.id === "x2");
+  assert.equal(ok.hasLink, true);
+  assert.equal(ok.url, "https://example.com/ok");
+}
+
+/* No library string may reach the DOM as markup. The rule the renderer has
+   to keep is mechanical: an innerHTML assignment may never interpolate, and
+   the other markup sinks are not used at all. */
+{
+  const files = fs.readdirSync("docs/palace").filter((f) => f.endsWith(".js"));
+  for (const file of files) {
+    const body = read(`docs/palace/${file}`);
+    const code = body.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    for (const sink of ["outerHTML", "insertAdjacentHTML", "document.write", "createContextualFragment"]) {
+      assert.ok(!code.includes(sink), `${file} uses ${sink}`);
+    }
+    for (const m of code.matchAll(/\.innerHTML\s*=\s*([^;]+);/g)) {
+      assert.ok(!m[1].includes("${") && !m[1].includes("+"),
+        `${file} builds innerHTML from a value: ${m[1].slice(0, 60)}`);
+    }
+  }
+  // the two files that render library data build elements only
+  for (const file of ["atlas-ui.js", "atlas-scene.js"]) {
+    const code = read(`docs/palace/${file}`).replace(/\/\*[\s\S]*?\*\//g, "");
+    assert.ok(!/\.innerHTML/.test(code), `${file} touches innerHTML`);
+  }
+  // and no inline handlers in the page itself
+  const html = read("docs/palace/index.html");
+  assert.ok(!/\son[a-z]+\s*=\s*"/i.test(html), "index.html has an inline event handler");
+  assert.ok(!/javascript:/i.test(html), "index.html has a javascript: URL");
+}
 
 /* The whole page is static, and the only write anywhere is the refresh
    write-back above. Nothing in docs/palace/ may POST, PATCH or DELETE. */
@@ -346,9 +472,15 @@ for (const [file, body] of sources) {
   if (file !== "palace-data.js") assert.ok(!/\bfetch\s*\(/.test(body) || file === "atlas.js", `${file} talks to the network directly`);
   assert.ok(!/rest\/v1\/[a-z_]+\?[^"'`]*\b(upsert|on_conflict)/.test(body), `${file} looks like it writes`);
 }
-/* The demo library has to announce itself wherever a visitor can see it. */
+/* The demo library has to announce itself wherever a visitor can see it:
+   the model carries the label, the shell prints it in the title bar and over
+   the viewport, and the Notes pane spells out what it is. */
+assert.equal(demo.label, "Demo library");
 assert.match(read("docs/palace/index.html"), /Demo library/);
-assert.match(read("docs/palace/atlas-ui.js"), /Demo library/);
+const uiSrc = read("docs/palace/atlas-ui.js");
+assert.match(uiSrc, /library-name"\)\.textContent = a\.label/);
+assert.match(uiSrc, /vp-status-text"\)\.textContent/);
+assert.ok(demo.demo && uiSrc.includes("a.demo"), "the Notes pane calls out demo data");
 
 console.log("Library Atlas: all checks passed");
 console.log(`  demo: ${demo.total} bookmarks, ${demo.regions.length} regions, ${demo.stats.subtopics} districts,`

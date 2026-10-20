@@ -12,7 +12,7 @@ export const MAP = {
   FILL: 0.42,        // share of the disc the regions cover
   R_MIN: 50,
   R_MAX: 210,
-  PLATE: 2100,       // half-size of the terrain plate
+  PLATE: 1500,       // half-size of the terrain plate
   WATER: -34,        // water level, in height units
   SHORE: 1620,       // ground starts dropping to the sea past this radius
 };
@@ -175,12 +175,15 @@ export function computeLayout(atlas) {
       };
       const pts = spiral(district.items.length, dr * MARKER_IN, `m:${region.id}:${district.name}`);
       district.items.forEach((item, k) => {
-        const age = item.at == null ? 0.5 : (item.at - oldest) / span;
+        const undated = item.at == null;
+        const age = undated ? 0 : (item.at - oldest) / span;
         const marker = {
           id: item.id, x: dx + pts[k][0], z: dz + pts[k][1],
           regionId: region.id, district: district.name, color: region.color,
-          source: item.source, at: item.at, age,
-          height: 4.2 + 11 * Math.pow(age, 1.3),    // newer saves stand taller
+          source: item.source, at: item.at, age, undated,
+          // Height is recency. A bookmark with no save date gets a short flat
+          // stub instead of a made-up age.
+          height: undated ? 2.4 : 4.2 + 11 * Math.pow(age, 1.3),
           item,
         };
         dNode.markers.push(marker);
@@ -215,10 +218,12 @@ export function readingTrail(layout, { regionId = null, count = 8 } = {}) {
 
 /* The scripted tour. Beats are contiguous and cover [0, duration]; the
    renderer reads `id` to know what the UI and camera should be doing. */
+/* Captions are templates: the numbers in them come out of the model, so a
+   four-week library never claims sixteen months. */
 export const TOUR_BEATS = [
-  { id: "orbit-in", name: "Overview orbit", label: "Your whole library, as one place", length: 8 },
-  { id: "timeline", name: "Timeline plays", label: "Sixteen months of saves, in order", length: 9 },
-  { id: "region", name: "Into a region", label: "Every topic is a region", length: 8 },
+  { id: "orbit-in", name: "Overview orbit", label: "{total} bookmarks, as one place", length: 8 },
+  { id: "timeline", name: "Timeline plays", label: "{span} of saves, in order", length: 9 },
+  { id: "region", name: "Into a region", label: "Every topic is a region — {regions} of them", length: 8 },
   { id: "detail", name: "One bookmark", label: "Every save is a marker you can open", length: 7 },
   { id: "sources", name: "Sources re-skin", label: "Re-colour the map by where it came from", length: 7 },
   { id: "trail", name: "Reading trail", label: "Follow the order you saved things", length: 8 },
@@ -226,15 +231,35 @@ export const TOUR_BEATS = [
   { id: "orbit-out", name: "Closing orbit", label: "bookmarker.lol", length: 5 },
 ];
 
+/* "3 weeks" / "16 months", derived, never written down. */
+export function spanWords(atlas) {
+  if (!atlas.range) return "A library with no dates";
+  const days = atlas.stats.spanDays || 0;
+  if (days < 21) return `${Math.max(1, days)} day${days === 1 ? "" : "s"}`;
+  if (days < 75) return `${Math.round(days / 7)} weeks`;
+  const months = atlas.stats.spanMonths || 1;
+  return months < 24 ? `${months} months` : `${(months / 12).toFixed(1)} years`;
+}
+
+/* The circle the atlas actually occupies, so the camera can frame the
+   library rather than the scenery behind it. */
+export function libraryBounds(layout) {
+  let r = 0;
+  for (const region of layout.regions) r = Math.max(r, Math.hypot(region.x, region.z) + region.rMax);
+  return Math.max(120, r);
+}
+
 export function tourPlan(atlas, layout) {
   const focus = regionById(layout, "recipes")
     || layout.regions.slice().sort((a, b) => b.total - a.total)[0]
     || null;
   const markers = focus ? focus.markers.filter((m) => m.at != null) : [];
   const pick = markers.length ? markers[Math.floor(markers.length * 0.62)] : (layout.regions[0]?.markers[0] || null);
+  const words = { total: String(atlas.total), span: spanWords(atlas), regions: String(atlas.regions.length) };
   let t = 0;
   const beats = TOUR_BEATS.map((b) => {
-    const beat = { ...b, start: t, end: t + b.length };
+    const label = b.label.replace(/\{(\w+)\}/g, (m, k) => (words[k] != null ? words[k] : m));
+    const beat = { ...b, label, start: t, end: t + b.length };
     t += b.length;
     return beat;
   });

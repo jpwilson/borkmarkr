@@ -2,6 +2,7 @@
    deterministic function of time: given t, there is exactly one camera pose
    and one UI state, so renderAt(t) in a headless browser and the live
    playback agree frame for frame. */
+import * as THREE from "three";
 import { readingTrail, regionById, tourPlan } from "./atlas-layout.js";
 import { easeInOut } from "./atlas-scene.js";
 
@@ -9,66 +10,75 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const lerpAngle = (a, b, t) => a + ((((b - a) % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2) - Math.PI) * t;
 
 export class Tour {
-  constructor({ atlas, layout, ground }) {
+  constructor({ atlas, layout, ground, frameDist }) {
     this.atlas = atlas;
     this.layout = layout;
     this.ground = ground;
+    this.frameDist = frameDist || (() => 1000);
     this.plan = tourPlan(atlas, layout);
     this.region = this.plan.focusRegion ? regionById(layout, this.plan.focusRegion) : layout.regions[0];
     this.marker = this.region ? (this.region.markers.find((m) => m.id === this.plan.marker) || this.region.markers[0]) : null;
     this.trailPins = readingTrail(layout, { regionId: this.region ? this.region.id : null, count: 8 });
     this.globalTrail = readingTrail(layout, { count: 10 });
     this.duration = this.plan.duration;
-    this.keys = this.buildKeys();
+    // One smooth curve through the trail pins: the chase camera reads its
+    // position and its heading from the tangent, so it never snaps at a pin.
+    const pins = this.trailPins.length >= 2 ? this.trailPins : this.globalTrail;
+    this.chaseCurve = pins.length >= 2
+      ? new THREE.CatmullRomCurve3(pins.map((p) => new THREE.Vector3(p.x, 0, p.z)), false, "catmullrom", 0.35)
+      : null;
+    this.keyCache = null;
   }
 
-  orbit(az, dist, pol) { return { tx: 0, ty: this.ground(0, 0) + 95, tz: 0, az, dist, pol }; }
+  orbit(az, scale, pol) {
+    return { tx: 0, ty: this.ground(0, 0) + 55, tz: 0, az, dist: this.frameDist(1.06) * scale, pol };
+  }
   atRegion(az, dist, pol) {
     const r = this.region || { x: 0, z: 0 };
-    return { tx: r.x, ty: this.ground(r.x, r.z) + 24, tz: r.z, az, dist, pol };
+    return { tx: r.x, ty: this.ground(r.x, r.z) + 20, tz: r.z, az, dist, pol };
   }
   atMarker(az, dist, pol) {
     const m = this.marker || { x: 0, z: 0, y: 0 };
-    return { tx: m.x, ty: this.ground(m.x, m.z) + 9, tz: m.z, az, dist, pol };
+    return { tx: m.x, ty: this.ground(m.x, m.z) + 8, tz: m.z, az, dist, pol };
   }
 
-  /* Chase camera: sits behind the point travelling along the trail. */
+  /* Chase camera: sits behind a point travelling along the smoothed route. */
   chase(u) {
-    const pins = this.trailPins.length >= 2 ? this.trailPins : this.globalTrail;
-    if (pins.length < 2) return this.atRegion(0.6, 420, 1.18);
-    const f = u * (pins.length - 1);
-    const i = Math.min(pins.length - 2, Math.floor(f));
-    const t = f - i;
-    const a = pins[i], b = pins[i + 1];
-    const x = lerp(a.x, b.x, t), z = lerp(a.z, b.z, t);
-    const heading = Math.atan2(b.x - a.x, b.z - a.z);
-    return { tx: x, ty: this.ground(x, z) + 70, tz: z, az: heading + Math.PI, dist: 430, pol: 1.16 };
+    if (!this.chaseCurve) return this.atRegion(0.6, 420, 1.1);
+    const t = Math.min(0.999, Math.max(0, u));
+    const p = this.chaseCurve.getPointAt(t);
+    const tan = this.chaseCurve.getTangentAt(t);
+    const heading = Math.atan2(tan.x, tan.z);
+    return { tx: p.x, ty: this.ground(p.x, p.z) + 55, tz: p.z, az: heading + Math.PI, dist: 400, pol: 1.08 };
   }
 
-  buildKeys() {
+  keys() {
+    const frame = Math.round(this.frameDist(1.06));
+    if (this.keyCache && this.keyCache.frame === frame) return this.keyCache.keys;
     const ra = this.region ? Math.atan2(this.region.x, this.region.z) : 0;
     const keys = [
-      [0, this.orbit(-0.58, 1280, 1.235)],
-      [8, this.orbit(-0.10, 1110, 1.215)],
-      [17, this.orbit(0.48, 960, 1.19)],
-      [21.5, this.atRegion(ra - 0.75, 640, 1.19)],
-      [25, this.atRegion(ra - 0.35, 420, 1.16)],
-      [28.5, this.atMarker(ra - 0.05, 300, 1.12)],
-      [32, this.atMarker(ra + 0.28, 235, 1.07)],
-      [35.5, this.atRegion(ra + 0.55, 470, 1.14)],
+      [0, this.orbit(-0.58, 1.18, 1.085)],
+      [8, this.orbit(-0.10, 1.03, 1.055)],
+      [17, this.orbit(0.48, 0.88, 1.03)],
+      [21.5, this.atRegion(ra - 0.75, 620, 1.12)],
+      [25, this.atRegion(ra - 0.35, 400, 1.09)],
+      [28.5, this.atMarker(ra - 0.05, 310, 1.07)],
+      [32, this.atMarker(ra + 0.28, 230, 1.03)],
+      [35.5, this.atRegion(ra + 0.55, 460, 1.09)],
       [39, this.chase(0)],
       [47, this.chase(1)],
-      [50, this.orbit(1.45, 1040, 1.20)],
-      [53, this.orbit(1.72, 1120, 1.215)],
-      [this.duration, this.orbit(2.30, 1300, 1.235)],
+      [50, this.orbit(1.45, 1.0, 1.06)],
+      [53, this.orbit(1.72, 1.06, 1.07)],
+      [this.duration, this.orbit(2.30, 1.2, 1.09)],
     ];
+    this.keyCache = { frame, keys };
     return keys;
   }
 
   cameraAt(time) {
     const t = Math.min(Math.max(time, 0), this.duration);
     if (t >= 39 && t <= 47) return this.chase(easeInOut((t - 39) / 8));
-    const keys = this.keys;
+    const keys = this.keys();
     let i = 0;
     while (i < keys.length - 2 && t > keys[i + 1][0]) i++;
     const [t0, a] = keys[i], [t1, b] = keys[i + 1];
@@ -115,13 +125,11 @@ export class Tour {
         break;
       case "trail":
         s.focus = this.region ? this.region.id : null;
-        s.trail = this.trailPins;
         s.tab = "layers";
         break;
       case "map2d":
         s.dim = "2d";
         s.tab = "overview";
-        s.trail = this.globalTrail;
         break;
       default:
         s.tab = "overview";

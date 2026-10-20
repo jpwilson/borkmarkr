@@ -139,6 +139,19 @@ const PalaceData = (() => {
     return rows;
   }
 
+  /* The only URL shapes a bookmark may ever hand to the DOM. Anything else
+     (javascript:, data:, blob:, a relative path that would resolve against
+     this origin) becomes an empty string and the UI shows the link as
+     unavailable rather than making it clickable. */
+  function safeUrl(url) {
+    const raw = String(url || "").trim();
+    if (!/^https?:\/\//i.test(raw)) return "";
+    try {
+      const u = new URL(raw);
+      return u.protocol === "http:" || u.protocol === "https:" ? u.href : "";
+    } catch { return ""; }
+  }
+
   function hostOf(url) {
     try { return new URL(url).hostname.toLowerCase().replace(/^(www|m|mobile|old)\./, ""); } catch { return ""; }
   }
@@ -234,10 +247,12 @@ const PalaceData = (() => {
 
   function toItem(row, region, district) {
     const source = sourceOf(row);
+    const url = safeUrl(row.url);
     return {
       id: String(row.id),
       title: titleOf(row),
-      url: row.url || "",
+      url,
+      hasLink: !!url,
       source,
       sourceLabel: SOURCES[source]?.label || "Web",
       meta: metaOf(row, source),
@@ -335,7 +350,8 @@ const PalaceData = (() => {
      MAX_DISTRICTS a region's smallest subtopics share "Everything else".
      Every count, date and series on the page comes out of here. */
   function buildAtlas(rows, opts = {}) {
-    const { taxonomy = [], customTopics = [], order = null, demo = false, label = demo ? "Demo library" : "My library" } = opts;
+    const { taxonomy = [], customTopics = [], order = null, demo = false, truncated = false,
+      label = demo ? "Demo library" : "My library" } = opts;
     const resolve = topicResolver(taxonomy, customTopics);
     const groups = new Map();
     let total = 0;
@@ -400,9 +416,17 @@ const PalaceData = (() => {
     const districtNames = new Set();
     for (const r of regions) for (const d of r.districts) districtNames.add(`${r.id}/${d.name}`);
 
+    /* Everything "recent" is measured against the newest save in the library,
+       not against today, and the UI prints that date so a library that has
+       been idle for two years can't read as busy. */
+    const asOf = range ? range.end : null;
     const last30 = range ? datedItems.filter((i) => i.at > range.end - 30 * DAY).length : 0;
     const spanWeeks = weeks.length || 1;
+    const spanDays = range ? Math.max(1, Math.round((range.end - range.start) / DAY)) : 0;
     const stats = {
+      asOf,
+      spanDays,
+      spanMonths: range ? Math.max(1, Math.round(spanDays / 30.44)) : 0,
       subtopics: districtNames.size,
       topSource: sources[0] || null,
       topRegion: regions.reduce((best, r) => (!best || r.total > best.total ? r : best), null),
@@ -414,11 +438,39 @@ const PalaceData = (() => {
       newest: datedItems[datedItems.length - 1] || null,
     };
 
-    return { demo: !!demo, label, total, regions, items, sources, range, weeks, moments, stats, colors: DATA_COLORS.slice() };
+    return {
+      demo: !!demo, label, total, truncated: !!truncated, asOf,
+      regions, items, sources, range, weeks, moments, stats,
+      colors: DATA_COLORS.slice(),
+    };
   }
 
   function demoAtlas(taxonomy) {
     return buildAtlas(demoRows(), { taxonomy, order: DEMO.map((r) => r.topic), demo: true });
+  }
+
+  /* The awkward library: very long names, a custom topic, bookmarks with no
+     save date, and a link whose protocol must never reach the DOM. Used by
+     ?stress to prove the shell truncates and the timeline stays honest. */
+  function stressRows() {
+    const long = "Everything I have ever wanted to read about sourdough hydration and oven spring";
+    return demoRows().map((row, i) => {
+      const next = { ...row };
+      if (i % 11 === 0) next.title = `${row.title} — ${long}`;
+      if (i % 17 === 0) next.subcategory = `${row.subcategory} and other very long subtopic names`;
+      if (i % 13 === 0) delete next.saved_at;
+      if (i % 29 === 0) next.category_id = "custom.a-deliberately-long-custom-topic-name";
+      if (i === 5) next.url = "javascript:alert(document.cookie)";
+      if (i === 6) next.title = '<img src=x onerror="alert(1)">';
+      return next;
+    });
+  }
+
+  function stressAtlas(taxonomy) {
+    return buildAtlas(stressRows(), {
+      taxonomy, demo: true, truncated: true,
+      label: "Demo library · stress",
+    });
   }
 
   /* ── Signed-in visitors: read-only, same session contract as docs/index.html ── */
@@ -486,22 +538,26 @@ const PalaceData = (() => {
       throw err;
     }
     const rows = [];
+    let truncated = false;
     for (let page = 0; page < MAX_PAGES; page++) {
       const batch = await getJSON(fetch, bookmarksPath(session.user_id, page), session);
       rows.push(...batch);
       if (batch.length < PAGE) break;
+      // MAX_PAGES full pages means there is more than we asked for; say so
+      // rather than presenting a clipped library as the whole thing.
+      if (page === MAX_PAGES - 1) truncated = true;
     }
     let customTopics = [];
     try {
       customTopics = await getJSON(fetch, `/rest/v1/custom_topics?select=id,name,hue,deleted_at&owner_id=eq.${encodeURIComponent(session.user_id)}&limit=1000`, session);
     } catch { /* names fall back to the id, as in the app */ }
-    return { rows, customTopics, email: session.email || "" };
+    return { rows, customTopics, truncated, limit: PAGE * MAX_PAGES, email: session.email || "" };
   }
 
   return {
     SOURCES, DEMO, SESSION_KEY,
     DATA_COLORS, DEMO_END, DEMO_DAYS,
-    demoRows, demoAtlas, buildAtlas, sourceOf, weekStart, dayStart,
+    demoRows, demoAtlas, stressRows, stressAtlas, buildAtlas, sourceOf, safeUrl, weekStart, dayStart,
     readSession, validSession, loadOwnLibrary, bookmarksPath,
   };
 })();

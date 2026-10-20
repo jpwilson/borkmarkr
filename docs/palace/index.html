@@ -43,10 +43,10 @@
       <svg viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="2.5" width="11" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 5.5h11M4.5 1.5v2M9.5 1.5v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
       <span id="range-text">—</span>
     </span>
-    <nav class="t-tabs" id="mode-tabs" aria-label="View mode">
-      <button type="button" data-mode="topics" class="on">Topics <i class="badge" id="badge-topics">0</i></button>
-      <button type="button" data-mode="sources">Sources <i class="badge" id="badge-sources">0</i></button>
-      <button type="button" data-mode="timeline">Timeline <i class="badge" id="badge-timeline">0</i></button>
+    <nav class="t-tabs" id="mode-tabs" role="tablist" aria-label="View mode">
+      <button type="button" role="tab" aria-selected="true" data-mode="topics" class="on">Topics <i class="badge" id="badge-topics">0</i></button>
+      <button type="button" role="tab" aria-selected="false" data-mode="sources">Sources <i class="badge" id="badge-sources">0</i></button>
+      <button type="button" role="tab" aria-selected="false" data-mode="timeline">Timeline <i class="badge" id="badge-timeline">0</i></button>
     </nav>
     <span class="t-spacer"></span>
     <button class="t-menu" type="button" id="menu-view">View <svg class="caret" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 8l3-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -64,6 +64,7 @@
     </div>
 
     <div class="vp-status" id="vp-status"><i class="dot"></i><span id="vp-status-text">Demo library</span></div>
+    <p class="vp-warn" id="truncated" hidden></p>
 
     <div class="vp-tools">
       <div class="scalebar" aria-hidden="true">
@@ -71,8 +72,8 @@
         <div class="sb-rule"><i></i><i></i><i></i></div>
       </div>
       <div class="seg" id="dim-toggle" role="group" aria-label="Map dimension">
-        <button type="button" data-dim="2d">2D</button>
-        <button type="button" data-dim="3d" class="on">3D</button>
+        <button type="button" data-dim="2d" aria-pressed="false">2D</button>
+        <button type="button" data-dim="3d" aria-pressed="true" class="on">3D</button>
       </div>
       <div class="zoom" id="zoom-read">1.0×</div>
       <button class="icon-btn" id="btn-reset" type="button" title="Reset view" aria-label="Reset view">
@@ -87,27 +88,39 @@
 
   <!-- ── Inspector ────────────────────────────────────────────────────── -->
   <aside id="inspector" aria-label="Inspector">
-    <div class="tabs" id="inspector-tabs" role="tablist">
-      <button type="button" role="tab" data-tab="layers" class="on">Layers</button>
-      <button type="button" role="tab" data-tab="overview">Overview</button>
-      <button type="button" role="tab" data-tab="notes">Notes</button>
+    <div class="tabs" id="inspector-tabs" role="tablist" aria-label="Inspector">
+      <button type="button" role="tab" id="tab-layers" aria-controls="pane-layers" aria-selected="true" data-tab="layers" class="on">Layers</button>
+      <button type="button" role="tab" id="tab-overview" aria-controls="pane-overview" aria-selected="false" tabindex="-1" data-tab="overview">Overview</button>
+      <button type="button" role="tab" id="tab-find" aria-controls="pane-find" aria-selected="false" tabindex="-1" data-tab="find">Find</button>
+      <button type="button" role="tab" id="tab-notes" aria-controls="pane-notes" aria-selected="false" tabindex="-1" data-tab="notes">Notes</button>
     </div>
     <div class="ins-body" id="ins-body">
-      <section class="pane" data-pane="layers">
+      <section class="pane" id="pane-layers" role="tabpanel" aria-labelledby="tab-layers" data-pane="layers">
         <div class="pane-head"><h2>Base</h2></div>
         <div class="layer-list" id="layers-base"></div>
         <div class="pane-head"><h2 id="layers-data-title">Topics</h2><span class="pane-meta" id="layers-data-meta"></span></div>
         <div class="layer-list" id="layers-data"></div>
+        <div class="pane-head"><h2 id="layers-alt-title">Sources</h2><span class="pane-meta" id="layers-alt-meta"></span></div>
+        <div class="layer-list" id="layers-alt"></div>
       </section>
-      <section class="pane" data-pane="overview" hidden>
+      <section class="pane" id="pane-overview" role="tabpanel" aria-labelledby="tab-overview" data-pane="overview" hidden>
         <div class="pane-head"><h2 id="ov-title">Library overview</h2><button class="link-btn" id="ov-clear" type="button" hidden>Clear</button></div>
         <dl class="kv" id="ov-kv"></dl>
         <div class="pane-head"><h2>Activity</h2></div>
         <div class="stat-grid" id="ov-stats"></div>
-        <div class="pane-head"><h2 id="ov-list-title">Top subtopics</h2></div>
+        <div class="pane-head"><h2 id="ov-list-title">Topics</h2></div>
         <div class="bar-list" id="ov-list"></div>
+        <div class="pane-head"><h2 id="ov-extra-title">Sources</h2><span class="pane-meta" id="ov-extra-meta"></span></div>
+        <div class="bar-list" id="ov-extra"></div>
       </section>
-      <section class="pane" data-pane="notes" hidden>
+      <section class="pane" id="pane-find" role="tabpanel" aria-labelledby="tab-find" data-pane="find" hidden>
+        <div class="pane-head"><h2>Find a bookmark</h2><span class="pane-meta" id="find-count">0</span></div>
+        <div class="find-box">
+          <input type="search" id="find-input" placeholder="Search titles, topics, sources" aria-label="Search bookmarks" autocomplete="off">
+        </div>
+        <div class="find-list" id="find-list"></div>
+      </section>
+      <section class="pane" id="pane-notes" role="tabpanel" aria-labelledby="tab-notes" data-pane="notes" hidden>
         <div class="pane-head"><h2>Notes</h2><span class="pane-meta">computed</span></div>
         <div class="notes" id="ov-notes"></div>
       </section>
@@ -149,9 +162,11 @@
           </div>
           <span class="tl-cursor" id="tl-cursor">—</span>
           <span class="tl-spacer"></span>
+          <span class="tl-undated" id="tl-undated" hidden></span>
           <span class="tl-range" id="tl-range">—</span>
         </div>
-        <div class="tl-track" id="tl-track">
+        <div class="tl-track" id="tl-track" role="slider" tabindex="0" aria-label="Timeline position"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
           <div class="tl-fill" id="tl-fill"></div>
           <div class="tl-events" id="tl-events"></div>
           <div class="tl-knob" id="tl-knob"></div>
