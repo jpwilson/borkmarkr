@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Library Island — bookmarker</title>
+<meta name="description" content="Your saved links as an island. Every topic is its own zone — volcano ridge, temple terraces, mangrove marsh, turquoise lagoon — and every bookmark is a camp you can fly down to.">
+<meta name="theme-color" content="#0c1412">
+<link rel="icon" href="/favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="bookmarker">
+<meta property="og:url" content="https://bookmarker.lol/palace">
+<meta property="og:title" content="Library Island — bookmarker">
+<meta property="og:description" content="Your saved links as an island: every topic its own zone, every bookmark a camp on the ground.">
+<meta property="og:image" content="https://bookmarker.lol/img/share-v2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/palace/island.css">
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="scene"></canvas>
+  <div id="labels" class="labels" aria-hidden="true"></div>
+  <div id="grade" class="grade" aria-hidden="true"><i id="sunbloom"></i></div>
+</div>
+
+<header id="topbar" class="hud">
+  <div class="brand">
+    <a class="wordmark" href="/" aria-label="bookmarker home">
+      <svg width="15" height="19" viewBox="0 0 15 19" aria-hidden="true"><path d="M1 1h13v16.2l-6.5-4.6L1 17.2Z" fill="currentColor"/></svg>
+      <span>bookmarker</span>
+    </a>
+    <h1>Library Island</h1>
+    <p id="subtitle" class="sub"></p>
+  </div>
+  <div class="top-right">
+    <button id="mine" class="btn ghost" type="button">View my library</button>
+    <a id="open-app" class="btn solid" href="/">Open bookmarker <span aria-hidden="true">↗</span></a>
+  </div>
+</header>
+
+<aside id="log" class="hud panel">
+  <button id="log-toggle" class="log-head" type="button" aria-expanded="true" aria-controls="log-list">
+    <span class="eyebrow">Expedition log</span>
+    <span id="log-sum" class="log-sum"></span>
+    <span class="chev" aria-hidden="true"></span>
+  </button>
+  <ul id="log-list" class="zones"></ul>
+</aside>
+
+<section id="card" class="hud panel" hidden aria-live="polite">
+  <button id="card-close" class="card-close" type="button" aria-label="Close">×</button>
+  <p id="card-zone" class="eyebrow"></p>
+  <h2 id="card-title"></h2>
+  <p id="card-meta" class="card-meta"></p>
+  <dl class="card-rows">
+    <div><dt>Topic</dt><dd id="card-topic"></dd></div>
+    <div><dt>Subtopic</dt><dd id="card-sub"></dd></div>
+    <div><dt>Saved</dt><dd id="card-date"></dd></div>
+  </dl>
+  <a id="card-link" class="btn solid wide" href="#" target="_blank" rel="noopener noreferrer">Open link <span aria-hidden="true">↗</span></a>
+</section>
+
+<div id="tip" class="tip" hidden></div>
+
+<footer id="transport" class="hud">
+  <button id="tour" class="tour-btn" type="button" aria-label="Play the tour">
+    <svg class="ico-play" width="13" height="15" viewBox="0 0 13 15" aria-hidden="true"><path d="M1 1l11 6.5L1 14Z" fill="currentColor"/></svg>
+    <svg class="ico-pause" width="12" height="14" viewBox="0 0 12 14" aria-hidden="true"><path d="M1 1h3.2v12H1zM7.8 1H11v12H7.8z" fill="currentColor"/></svg>
+    <span id="tour-label">Fly the tour</span>
+  </button>
+  <div class="track" id="track"><i id="track-fill"></i></div>
+  <p class="beat"><span id="beat-label"></span><small id="beat-detail"></small></p>
+</footer>
+
+<div id="inset" class="hud">
+  <canvas id="minimap" width="150" height="150"></canvas>
+  <i id="mm-cam" class="mm-cam" aria-hidden="true"></i>
+  <svg id="compass" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+    <circle cx="17" cy="17" r="15.4" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+    <g id="needle"><path d="M17 4.6 20 17h-6Z" fill="#e8a24c"/><path d="M17 29.4 14 17h6Z" fill="currentColor" fill-opacity=".45"/></g>
+    <text x="17" y="3.4" text-anchor="middle" font-size="5.4" fill="currentColor" fill-opacity=".72">N</text>
+  </svg>
+</div>
+
+<div id="boot" class="boot"><span class="boot-mark">Library Island</span><span class="boot-sub">charting your library…</span></div>
+
+<div id="fallback" class="fallback" hidden>
+  <h2>Library Island needs WebGL</h2>
+  <p>This page draws your library as a 3D island, which your browser can't render here. Everything it shows lives in your library at <a href="/">bookmarker.lol</a>.</p>
+</div>
+
+<div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+<script src="/taxonomy.js"></script>
+<script src="/palace/palace-data.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="/palace/island.js"></script>
+</body>
+</html>
