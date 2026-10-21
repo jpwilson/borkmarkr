@@ -92,45 +92,63 @@ const mixc = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2
 /* Undercut at the waterline, fluted sides, mossy shelves, a rounded crown —
    the profile of a Ha Long Bay stack rather than a cone. */
 function tower(b, cx, cz, R, H, baseY, field, seed) {
-  const RINGS = 24, SEG = 26;
+  const RINGS = 30, SEG = 28;
   const rows = [];
   const shadeBase = field ? clamp(sampleGrid(field, field.shade, cx, cz) * 0.5 + 0.5, 0, 1) : 0.95;
   // each tower has its own plan shape and lean, so a cluster never repeats
-  const ex = 1 + 0.34 * noise2(seed, 1.3), ez = 1 - 0.28 * noise2(seed + 4.4, 2.9);
-  const twist = noise2(seed * 2.2, 0.7) * 1.1;
-  const leanX = noise2(seed, 7.7) * 0.10, leanZ = noise2(seed + 2, 5.1) * 0.10;
-  // some towers taper like a blade, others stand almost straight
-  const taper = 0.03 + 0.17 * Math.abs(noise2(seed * 1.7, 3.3));
-  const breakAt = 0.86 + 0.1 * Math.abs(noise2(seed + 9, 1.1));
+  const ex = 1 + 0.42 * noise2(seed, 1.3), ez = 1 - 0.36 * noise2(seed + 4.4, 2.9);
+  const twist = noise2(seed * 2.2, 0.7) * 0.8;
+  const leanX = noise2(seed, 7.7) * 0.085, leanZ = noise2(seed + 2, 5.1) * 0.085;
+  // limestone stands almost vertical: the taper is a few per cent, not a cone
+  const taper = 0.015 + 0.085 * Math.abs(noise2(seed * 1.7, 3.3));
+  // and it does not round off at the top — it breaks into crags
+  const breakAt = 0.80 + 0.11 * Math.abs(noise2(seed + 9, 1.1));
+  // per-column crown height, so the summit is a jagged ridge in plan
+  const crownOf = (a) => 0.42 + 0.58 * clamp(0.5 + 1.25 * noise2(Math.cos(a) * 2.2 + seed * 3.1, Math.sin(a) * 2.2 - seed), 0, 1);
   for (let r = 0; r <= RINGS; r++) {
     const t = r / RINGS;
-    // sheer to about three-quarters height, then break into a crown
-    const prof = 1 - taper * t - 0.9 * Math.pow(Math.max(0, (t - breakAt) / (1 - breakAt)), 1.7);
-    const ledgeWave = Math.sin(t * 19 + seed * 3.1);
-    const ledge = 1 + 0.06 * ledgeWave + 0.035 * Math.sin(t * 7.3 - seed);
+    // sheer the whole way, with the sea notching a visible undercut in the
+    // bottom few metres — the overhang every Ha Long photograph has
+    let prof = 1 - taper * t;
+    prof *= 1 - 0.19 * Math.exp(-Math.pow((t - 0.045) / 0.05, 2));
+    const ledgeWave = Math.sin(t * 23 + seed * 3.1);
+    const ledge = 1 + 0.045 * ledgeWave + 0.028 * Math.sin(t * 8.7 - seed);
     const row = [];
     const y = baseY + t * H;
     for (let i = 0; i < SEG; i++) {
       const a = (i / SEG) * Math.PI * 2 + twist * t;
-      const fl = Math.sin(a * 8 + seed * 2.1), fn = noise2(Math.cos(a) * 2.6 + seed, Math.sin(a) * 2.6 + t * 1.6);
-      // the crown breaks into separate crags rather than rounding off
-      const crag = t > breakAt ? 0.7 * noise2(Math.cos(a) * 3.4 + seed * 2, Math.sin(a) * 3.4) * ((t - breakAt) / (1 - breakAt)) : 0;
-      const flute = 1 + 0.13 * fl + 0.11 * fn + 0.05 * Math.sin(a * 21 + t * 4.0) + crag;
-      const rad = R * Math.max(0.02, prof) * ledge * flute;
+      // deep vertical fissures, constant up the tower, plus finer flutes
+      const fl = Math.sin(a * 7 + seed * 2.1);
+      const fissure = Math.pow(Math.abs(Math.sin(a * 4.5 + seed * 5.3)), 7) * 0.9;
+      const fn = noise2(Math.cos(a) * 2.6 + seed, Math.sin(a) * 2.6 + t * 0.7);
+      // above the break the crown falls away by a different amount each way
+      // round, which is what turns one rounded cap into a cluster of crags
+      const up = t > breakAt ? (t - breakAt) / (1 - breakAt) : 0;
+      const crag = up > 0 ? Math.pow(up, 1.5) * (1.3 * (crownOf(a) - 0.72)) : 0;
+      const flute = 1 + 0.10 * fl + 0.09 * fn + 0.045 * Math.sin(a * 19 + t * 2.0) - fissure * 0.16 + crag;
+      const rad = R * Math.max(0.02, prof) * ledge * Math.max(0.05, flute);
       const x = cx + Math.cos(a) * rad * ex + leanX * t * H;
       const z = cz + Math.sin(a) * rad * ez + leanZ * t * H;
-      // pale limestone; narrow wet streaks; moss in the gullies and the crown
-      const streak = clamp(0.5 + 0.8 * noise2(a * 5.1 + seed, t * 0.9), 0, 1);
-      let c = mixc(PAL.limestone, PAL.rockPale, 0.3 + 0.4 * noise2(a * 2.3, t * 2.1));
-      c = mixc(c, PAL.rockWet, Math.pow(clamp((streak - 0.62) * 2.8, 0, 1), 1.7) * 0.28);
-      const moss = clamp(0.5 * Math.pow(t, 1.5) + 0.3 * (1 - t) + 0.8 * noise2(a * 1.9 - seed, t * 3.3) - 0.1, 0, 1);
-      c = mixc(c, moss > 0.6 ? PAL.jungleDeep : PAL.moss, clamp((moss - 0.40) * 1.7, 0, 0.88));
+      // and the summit is a ridge of crags, not a flat cap: each column of
+      // the crown stops at its own height
+      const yy = y + (up > 0 ? Math.pow(up, 1.3) * H * 0.11 * (crownOf(a) * 2 - 1) : 0);
+      // pale dry limestone, with long dark rain streaks running straight down
+      const streak = clamp(0.5 + 0.85 * noise2(a * 6.3 + seed, t * 0.45), 0, 1);
+      let c = mixc(PAL.limestone, PAL.rockPale, 0.08 + 0.3 * noise2(a * 2.3, t * 1.2));
+      c = mixc(c, PAL.rockWet, Math.pow(clamp((streak - 0.56) * 3.0, 0, 1), 1.3) * 0.46);
+      c = mixc(c, PAL.rockDark, fissure * 0.30);
+      // vegetation drapes over the crown and catches on the wider ledges,
+      // thinning to bare rock on the sheer middle of the tower
+      const shelf = clamp(0.5 + 0.5 * ledgeWave, 0, 1);
+      const moss = clamp(1.25 * Math.pow(t, 2.6) + 0.34 * shelf * sstep(0.1, 0.55, t)
+        + 0.55 * noise2(a * 1.9 - seed, t * 2.6) - 0.26, 0, 1);
+      c = mixc(c, moss > 0.58 ? PAL.jungleDeep : PAL.moss, clamp((moss - 0.30) * 1.9, 0, 0.9));
       // the grooves are drawn with shading, not geometry: cheap and legible
-      const groove = clamp(0.5 + 0.56 * (fl * 0.62 + fn * 0.55) + 0.14 * Math.sin(a * 21 + t * 4.0)
-        + 0.16 * ledgeWave, 0.26, 1.3);
-      const up = (0.82 + 0.4 * t) * groove;
-      row.push(b.vert(x, y, z, Math.cos(a) * ex, 0.12 + t * 0.35, Math.sin(a) * ez,
-        [c[0] * up, c[1] * up, c[2] * up], shadeBase * (0.62 + 0.38 * t), 0.5 + 0.5 * t, 0.2));
+      const groove = clamp(0.5 + 0.5 * (fl * 0.6 + fn * 0.5) + 0.12 * Math.sin(a * 19 + t * 2.0)
+        + 0.14 * ledgeWave - fissure * 0.5, 0.42, 1.25);
+      const upTone = (0.92 + 0.26 * t) * groove;
+      row.push(b.vert(x, yy, z, Math.cos(a) * ex, 0.07 + t * 0.2, Math.sin(a) * ez,
+        [c[0] * upTone, c[1] * upTone, c[2] * upTone], shadeBase * (0.58 + 0.42 * t), 0.45 + 0.55 * t, 0.2));
     }
     rows.push(row);
   }
@@ -138,8 +156,8 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
     const j = (i + 1) % SEG;
     b.quad(rows[r][i], rows[r + 1][i], rows[r + 1][j], rows[r][j]);
   }
-  const topC = b.vert(cx + leanX * H, baseY + H + R * 0.05, cz + leanZ * H, 0, 1, 0,
-    mixc(PAL.limestone, PAL.moss, 0.45), shadeBase, 1, 0.3);
+  const topC = b.vert(cx + leanX * H, baseY + H + R * 0.02, cz + leanZ * H, 0, 1, 0,
+    mixc(PAL.limestone, PAL.moss, 0.6), shadeBase, 1, 0.3);
   for (let i = 0; i < SEG; i++) b.tri(topC, rows[RINGS][(i + 1) % SEG], rows[RINGS][i]);
 }
 

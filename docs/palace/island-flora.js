@@ -417,19 +417,24 @@ export function buildFlora(field, layout, uniforms, stacks) {
   // crowns clinging to the limestone towers
   for (const st of (stacks || [])) {
     const topY = st.sea ? -26 + st.h : st.h;
-    const n = 14 + Math.floor(r() * 10);
+    // a crown of scrub spilling over the summit, sized to the tower it is on
+    // the crags reach above the nominal top, so the crown sits above it too
+    const crest = topY + st.h * 0.055;
+    const n = Math.max(9, Math.round(st.r * 0.62));
     for (let k = 0; k < n; k++) {
       const a = r() * 6.283, rr = st.r * 0.8 * Math.sqrt(r());
-      canopy.push({ x: st.x + Math.cos(a) * rr, z: st.z + Math.sin(a) * rr, y: topY + 2,
-        s: 5 + 8 * r(), yaw: r() * 6.28, tint: [0.8 + 0.2 * r(), 1.0, 0.72 + 0.2 * r()], shade: 1, ao: 0.95, moist: 0.5 });
+      canopy.push({ x: st.x + Math.cos(a) * rr, z: st.z + Math.sin(a) * rr, y: crest - st.h * 0.05 * r(),
+        s: st.r * (0.17 + 0.2 * r()), yaw: r() * 6.28,
+        tint: [0.74 + 0.3 * r(), 1.0, 0.66 + 0.26 * r()], shade: 1, ao: 0.95, moist: 0.5, variant: (r() * 3) | 0 });
     }
-    // growth clinging to the ledges, all the way down the flanks
-    for (let k = 0; k < 20; k++) {
-      const a = r() * 6.283, t = 0.12 + 0.78 * r();
-      const rr = st.r * (0.84 - 0.12 * t) * (0.9 + 0.2 * r());
+    // growth catching on the ledges, thinning down the sheer flanks
+    const ledges = Math.max(10, Math.round(st.h * 0.085));
+    for (let k = 0; k < ledges; k++) {
+      const a = r() * 6.283, t = 0.14 + 0.76 * r();
+      const rr = st.r * (0.88 - 0.1 * t) * (0.9 + 0.2 * r());
       canopy.push({ x: st.x + Math.cos(a) * rr, z: st.z + Math.sin(a) * rr, y: topY - st.h * (1 - t),
-        s: 4 + 9 * r(), yaw: r() * 6.28,
-        tint: [0.55 + 0.3 * r(), 0.8 + 0.25 * r(), 0.45 + 0.25 * r()], shade: 0.75 + 0.25 * r(), ao: 0.7, moist: 0.65 });
+        s: st.r * (0.1 + 0.2 * r() * t), yaw: r() * 6.28,
+        tint: [0.5 + 0.3 * r(), 0.78 + 0.25 * r(), 0.42 + 0.25 * r()], shade: 0.7 + 0.3 * r(), ao: 0.7, moist: 0.65, variant: (r() * 3) | 0 });
     }
   }
 

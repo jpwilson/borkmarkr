@@ -99,6 +99,11 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
       ${WATER_PARS}
       uniform vec3 uDeep, uShallow, uFoam;
       void main() {
+        #if !INNER
+          // the near sheet covers everything inside this; drawing both wasted
+          // a full-screen pass and left a visible step where they met
+          if (max(abs(vWorld.x), abs(vWorld.z)) < 3420.0) discard;
+        #endif
         vec3 viewDir = normalize(cameraPosition - vWorld);
         float dist = length(vWorld - cameraPosition);
         // flatten the ripples with distance or the horizon turns to static
@@ -132,6 +137,11 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
         }
 
         color = applyAtmos(color, vWorld, -viewDir);
+        // At the horizon the sea has to become the sky exactly, or the two
+        // meet in a band. Aerial perspective alone does not get there: it
+        // converges on the fog colour, which is not what the dome is drawing
+        // a pixel above the waterline.
+        color = mix(color, skyAt(normalize(-viewDir)), smoothstep(7000.0, 30000.0, dist));
         gl_FragColor = vec4(color * uExposure, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -140,7 +150,7 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = inner ? "ocean-near" : "ocean-far";
-  mesh.position.y = inner ? 0 : -0.6;
+  mesh.position.y = 0;
   mesh.renderOrder = inner ? 1 : 0;
   mesh.frustumCulled = false;
   return mesh;

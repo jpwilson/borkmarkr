@@ -104,17 +104,23 @@ export const RIVER = [
   [-690, 455, 36], [-840, 580, 9], [-985, 690, -14], [-1120, 790, -40],
 ];
 
-/* Offshore limestone stacks, the Skull Island signature. [x, z, radius, height] */
+/* Offshore limestone stacks, the Skull Island signature. [x, z, radius, height]
+   Ha Long Bay proportions: a tower is three to five times as tall as it is
+   wide. Several sit close enough to their neighbours to merge into one
+   massif, which is how a karst bay actually looks. */
 export const STACKS = [
-  [1480, -300, 64, 300], [1760, -110, 40, 185], [1390,  140, 78, 360],
-  [1700,  430, 46, 215], [1255, -660, 50, 265], [1960, -430, 32, 150],
-  [1180,  430, 38, 175], [1020, -860, 46, 230], [1560, -720, 30, 130],
-  [ 880,  820, 42, 185], [1240,  760, 34, 150],
+  [1480, -300, 38, 340], [1420, -255, 24, 268], [1760, -110, 26, 218],
+  [1800, -150, 17, 152], [1390,  140, 46, 425], [1352,  196, 30, 330],
+  [1700,  430, 30, 250], [1690,  470, 20, 182], [1255, -660, 32, 302],
+  [1960, -430, 20, 170], [1180,  430, 24, 202], [1020, -860, 30, 276],
+  [1012, -805, 19, 192], [1560, -720, 19, 158], [ 880,  820, 26, 216],
+  [1240,  760, 21, 176],
 ];
 /* A few on land, in the karst zone, so the biome reads from the air too. */
 export const LAND_STACKS = [
-  [700, -300, 58, 300], [865, -45, 68, 355], [640, -60, 46, 225],
-  [920, -315, 40, 205], [748, 118, 50, 255], [812, -200, 34, 165],
+  [700, -300, 34, 332], [688, -272, 20, 238], [865, -45, 40, 424],
+  [836,  -72, 26, 330], [640,  -60, 26, 252], [920, -315, 24, 232],
+  [748,  118, 29, 288], [812, -200, 20, 192],
 ];
 
 const VOLCANO = { x: -150, z: -330, R: 780, H: 880, crater: 150, depth: 260 };
