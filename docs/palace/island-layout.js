@@ -343,35 +343,40 @@ export function placeMarkers(region, site, sites, index) {
   const districts = region.districts;
   const total = Math.min(region.items.length, MARKER_CAP);
   const camps = candidates(site, sites, index, Math.max(districts.length, 3) * 3);
+  const fallback = { x: site.x, z: site.z, y: heightAt(site.x, site.z) };
+  const campOf = new Map();
+  districts.forEach((d, di) => campOf.set(d.name, {
+    camp: camps[(di * 2) % Math.max(1, camps.length)] || fallback,
+    kind: KINDS[di % KINDS.length],
+    index: di,
+    n: 0,
+  }));
   const markers = [];
-  let placed = 0;
-  districts.forEach((district, di) => {
-    const camp = camps[(di * 2) % Math.max(1, camps.length)] || { x: site.x, z: site.z, y: heightAt(site.x, site.z) };
-    const kind = KINDS[di % KINDS.length];
-    const take = Math.min(district.items.length, Math.max(1, Math.round((total * district.items.length) / Math.max(1, region.items.length))));
-    for (let i = 0; i < take && placed < total; i++) {
-      const a = (i * 2.3999632) + di * 1.7;
-      const rad = 22 + 17 * Math.sqrt(i + 0.6);
-      let x = camp.x + Math.cos(a) * rad;
-      let z = camp.z + Math.sin(a) * rad;
-      let zf = zoneField(x, z, sites);
-      let h = heightAt(x, z);
-      // Walk back toward the camp until the spot is legal; the camp itself
-      // is known good, so this always terminates somewhere valid.
-      for (let s = 0; s < 6 && (zf.zone !== index || h < 6 || slopeAt(x, z) > 0.62); s++) {
-        x = mix(x, camp.x, 0.45); z = mix(z, camp.z, 0.45);
-        zf = zoneField(x, z, sites); h = heightAt(x, z);
-      }
-      if (zf.zone !== index || h < 6) { x = camp.x; z = camp.z; h = camp.y; }
-      markers.push({
-        id: district.items[i].id, item: district.items[i], zone: index, zoneId: site.id,
-        district: district.name, kind, x, z, y: h,
-        yaw: (noise2(x * 0.03, z * 0.03) + 1) * Math.PI,
-        camp: di,
-      });
-      placed++;
+  // one marker per bookmark, in save order, clustered at its district's camp
+  for (const item of region.items.slice(0, total)) {
+    const spot = campOf.get(item.district) || { camp: fallback, kind: KINDS[0], index: 0, n: 0 };
+    const i = spot.n++;
+    const camp = spot.camp;
+    const a = i * 2.3999632 + spot.index * 1.7;
+    const rad = 22 + 17 * Math.sqrt(i + 0.6);
+    let x = camp.x + Math.cos(a) * rad;
+    let z = camp.z + Math.sin(a) * rad;
+    let zf = zoneField(x, z, sites);
+    let h = heightAt(x, z);
+    // walk back toward the camp until the spot is legal; the camp itself is
+    // known good, so this always terminates somewhere valid
+    for (let s = 0; s < 6 && (zf.zone !== index || h < 6 || slopeAt(x, z) > 0.62); s++) {
+      x = mix(x, camp.x, 0.45); z = mix(z, camp.z, 0.45);
+      zf = zoneField(x, z, sites); h = heightAt(x, z);
     }
-  });
+    if (zf.zone !== index || h < 6) { x = camp.x; z = camp.z; h = camp.y; }
+    markers.push({
+      id: item.id, item, zone: index, zoneId: site.id,
+      district: item.district, kind: spot.kind, x, z, y: h,
+      yaw: (noise2(x * 0.03, z * 0.03) + 1) * Math.PI,
+      camp: spot.index,
+    });
+  }
   return markers;
 }
 

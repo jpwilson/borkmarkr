@@ -17,6 +17,7 @@ jobs:
       - run: node Scripts/test_taxonomy_sync.mjs
       - run: node Scripts/test_open_signals.mjs
       - run: node Scripts/test_library_layout.mjs
+      - run: node Scripts/test_palace.mjs
       - run: node Scripts/test_quest_presentation.mjs
       - run: node Scripts/test_grounded_briefs.mjs
       - run: node Scripts/test_enrichment.mjs
