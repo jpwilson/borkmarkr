@@ -47,6 +47,7 @@
       <button type="button" role="tab" aria-selected="true" data-mode="topics" class="on">Topics <i class="badge" id="badge-topics">0</i></button>
       <button type="button" role="tab" aria-selected="false" data-mode="sources">Sources <i class="badge" id="badge-sources">0</i></button>
       <button type="button" role="tab" aria-selected="false" data-mode="timeline">Timeline <i class="badge" id="badge-timeline">0</i></button>
+      <button type="button" role="tab" aria-selected="false" data-mode="follow">Follow <i class="badge" id="badge-follow">0</i></button>
     </nav>
     <span class="t-spacer"></span>
     <button class="t-menu" type="button" id="menu-view">View <svg class="caret" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 8l3-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -84,6 +85,27 @@
     <div class="vp-hint" id="vp-hint">Drag to orbit · scroll to zoom · click a marker</div>
     <div class="vp-lower" id="vp-lower" hidden><b id="lower-title"></b><span id="lower-sub"></span></div>
     <div class="tip" id="tip" role="tooltip" hidden></div>
+
+    <!-- Reader cam: a second render of the same world from the trail, with a
+         monospace HUD. Every readout is computed from the route. -->
+    <div id="pip" hidden>
+      <div class="pip-frame">
+        <i class="br tl"></i><i class="br tr"></i><i class="br bl"></i><i class="br rb"></i>
+        <div class="pip-tl"><span class="rec"><i></i>REC <b id="pip-rec">0:00</b></span><b id="pip-name">READER CAM</b><span id="pip-mode">MAP · DAY</span></div>
+        <div class="pip-tr"><b id="pip-date">—</b><span>TRAIL</span></div>
+        <div class="pip-tape"><div id="pip-ticks"></div><i class="caret"></i></div>
+        <div class="pip-cross"><i></i><i></i></div>
+        <div class="pip-pitch"><b id="pip-pitch">-12°</b><span>GMB</span></div>
+        <div class="pip-bl"><span>ALT <b id="pip-alt">0</b> U</span><span>GS <b id="pip-gs">0</b> U/S</span><span>HDG <b id="pip-hdg">000°</b></span></div>
+        <div class="pip-bc"><span id="pip-pos">POS 0 E · 0 N</span><span id="pip-rng">STOP 0 OF 0 · ELEV 0 U</span></div>
+        <div class="pip-brr"><span>SRC <b id="pip-src">—</b></span><span>ZOOM <b id="pip-zoom">1.0×</b> · 34° FOV</span></div>
+      </div>
+      <div class="pip-bar">
+        <b id="pip-title">—</b>
+        <span class="seg sm" id="pip-view"><button type="button" data-view="eye" class="on">EYE</button><button type="button" data-view="plan">PLAN</button></span>
+        <span id="pip-stop">1 / 1</span>
+      </div>
+    </div>
   </main>
 
   <!-- ── Inspector ────────────────────────────────────────────────────── -->
@@ -91,6 +113,7 @@
     <div class="tabs" id="inspector-tabs" role="tablist" aria-label="Inspector">
       <button type="button" role="tab" id="tab-layers" aria-controls="pane-layers" aria-selected="true" data-tab="layers" class="on">Layers</button>
       <button type="button" role="tab" id="tab-overview" aria-controls="pane-overview" aria-selected="false" tabindex="-1" data-tab="overview">Overview</button>
+      <button type="button" role="tab" id="tab-follow" aria-controls="pane-follow" aria-selected="false" tabindex="-1" data-tab="follow" hidden>Reader</button>
       <button type="button" role="tab" id="tab-find" aria-controls="pane-find" aria-selected="false" tabindex="-1" data-tab="find">Find</button>
       <button type="button" role="tab" id="tab-notes" aria-controls="pane-notes" aria-selected="false" tabindex="-1" data-tab="notes">Notes</button>
     </div>
@@ -112,6 +135,14 @@
         <div class="bar-list" id="ov-list"></div>
         <div class="pane-head"><h2 id="ov-extra-title">Sources</h2><span class="pane-meta" id="ov-extra-meta"></span></div>
         <div class="bar-list" id="ov-extra"></div>
+      </section>
+      <section class="pane" id="pane-follow" role="tabpanel" aria-labelledby="tab-follow" data-pane="follow" hidden>
+        <div class="pane-head"><h2>Reader cam</h2><span class="pane-meta live"><i></i>LIVE</span></div>
+        <div class="stat-grid" id="fl-stats"></div>
+        <div class="pane-head"><h2>Route</h2></div>
+        <dl class="kv" id="fl-kv"></dl>
+        <div class="pane-head"><h2>Trail stops</h2><span class="pane-meta" id="fl-count">0</span></div>
+        <div class="stop-list" id="fl-stops"></div>
       </section>
       <section class="pane" id="pane-find" role="tabpanel" aria-labelledby="tab-find" data-pane="find" hidden>
         <div class="pane-head"><h2>Find a bookmark</h2><span class="pane-meta" id="find-count">0</span></div>

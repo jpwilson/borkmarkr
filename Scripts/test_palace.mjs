@@ -300,9 +300,13 @@ plan.beats.forEach((b, i) => {
 assert.ok(plan.beats.some((b) => b.label.includes(String(demo.total))), "a caption quotes the real total");
 assert.ok(plan.beats.some((b) => b.label.includes(spanWords(demo))), "a caption quotes the real span");
 assert.ok(libraryBounds(layout) > 0 && libraryBounds(layout) <= MAP.OUTER + 1e-6, "framing bounds cover the atlas");
-for (const id of ["orbit-in", "timeline", "region", "detail", "sources", "trail", "map2d", "orbit-out"]) {
+for (const id of ["orbit-in", "timeline", "region", "detail", "trail", "follow", "sources", "map2d", "orbit-out"]) {
   assert.ok(plan.beats.some((b) => b.id === id), `tour is missing the ${id} beat`);
 }
+// the spread beat has to be long enough to read as growth, and the ride long
+// enough to pass several stops
+assert.ok(plan.beats.find((b) => b.id === "timeline").length >= 6, "the spread beat is too short to read");
+assert.ok(plan.beats.find((b) => b.id === "follow").length >= 6, "the reader-cam beat is too short");
 for (const t of [0, 0.5, 7.9, 8, 23, 41, 49, plan.duration - 0.01, plan.duration, plan.duration + 5]) {
   const at = plan.at(t);
   assert.ok(at.beat, `no beat at ${t}`);
@@ -318,6 +322,52 @@ assert.ok(trail.every((m, i, a) => !i || a[i - 1].at <= m.at), "the reading trai
 assert.ok(trail.every((m) => m.regionId === plan.focusRegion));
 assert.ok(readingTrail(layout, { count: 10 }).length >= 2, "there is a whole-library trail too");
 assert.deepEqual(readingTrail(computeLayout(undated), { count: 8 }), [], "no dates, no trail");
+
+/* ── The spreading front ────────────────────────────────────────────────── */
+
+/* The tint on a region is clipped to how much of it had been saved by the
+   date on the cursor. The share is counted from the region's own save times
+   and the radius is its square root, so the band grows by area. */
+function frontAt(region, cut) {
+  const times = region.markers.map((m) => m.at).filter((t) => t != null).sort((a, b) => a - b);
+  let n = 0;
+  while (n < times.length && times[n] <= cut) n++;
+  const share = times.length ? n / times.length : 1;
+  return { share, radius: share <= 0 ? 0 : Math.max(0.16, Math.sqrt(share)) };
+}
+{
+  const region = layout.regions.find((r) => r.id === "ai");
+  const span = demo.range.end - demo.range.start;
+  let last = -1;
+  for (const f of [0, 0.25, 0.5, 0.75, 1]) {
+    const front = frontAt(region, demo.range.start + span * f);
+    assert.ok(front.radius >= last, "the front never retreats as the timeline runs");
+    assert.ok(front.radius <= 1 + 1e-9);
+    last = front.radius;
+  }
+  assert.equal(frontAt(region, demo.range.end).share, 1, "by the last save a region is complete");
+  assert.ok(frontAt(region, demo.range.start - 1).share === 0, "before the first save it has not started");
+  const mid = frontAt(region, region.markers[0].at);
+  assert.ok(mid.share > 0 && mid.share < 1);
+  // area, not radius: half the saves cover about half the region
+  assert.ok(Math.abs(Math.pow(frontAt(region, demo.range.start + span).radius, 2) - 1) < 1e-9);
+}
+
+/* ── The reader cam rides the same route the trail draws ─────────────────── */
+{
+  const stops = readingTrail(layout, { regionId: "recipes", count: 8 });
+  assert.ok(stops.length >= 2);
+  assert.ok(stops.every((m, i, a) => !i || a[i - 1].at <= m.at), "stops are in save order");
+  // the stop index the HUD prints is the nearest stop to the ride position
+  const stopAt = (u) => Math.min(stops.length - 1, Math.max(0, Math.round(u * (stops.length - 1))));
+  assert.equal(stopAt(0), 0);
+  assert.equal(stopAt(1), stops.length - 1);
+  assert.equal(stopAt(0.5), Math.round((stops.length - 1) / 2));
+  for (const m of stops) {
+    assert.ok(m.item && m.item.title && m.item.sourceLabel, "every stop can fill the HUD");
+    assert.ok(m.item.regionName === "Recipes");
+  }
+}
 
 /* ── Signed-in visitors: bm.session, refresh write-back, read-only loading ─ */
 const NOW = 1_800_000_000_000;
@@ -449,7 +499,8 @@ for (const good of ["https://example.com/a?b=c#d", "http://example.com/", "HTTPS
         `${file} builds innerHTML from a value: ${m[1].slice(0, 60)}`);
     }
   }
-  // the two files that render library data build elements only
+  // the two files that render library data — including the reader-cam HUD,
+  // which prints bookmark titles and source names — build elements only
   for (const file of ["atlas-ui.js", "atlas-scene.js"]) {
     const code = read(`docs/palace/${file}`).replace(/\/\*[\s\S]*?\*\//g, "");
     assert.ok(!/\.innerHTML/.test(code), `${file} touches innerHTML`);
@@ -481,6 +532,14 @@ const uiSrc = read("docs/palace/atlas-ui.js");
 assert.match(uiSrc, /library-name"\)\.textContent = a\.label/);
 assert.match(uiSrc, /vp-status-text"\)\.textContent/);
 assert.ok(demo.demo && uiSrc.includes("a.demo"), "the Notes pane calls out demo data");
+
+/* ── No glow anywhere ───────────────────────────────────────────────────── */
+for (const file of fs.readdirSync("docs/palace").filter((f) => f.endsWith(".js"))) {
+  const code = read(`docs/palace/${file}`).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  for (const banned of ["UnrealBloomPass", "AdditiveBlending", "emissiveIntensity", "Lensflare", "toneMappingExposure = 2"]) {
+    assert.ok(!code.includes(banned), `${file} uses ${banned} — the atlas has no glow`);
+  }
+}
 
 console.log("Library Atlas: all checks passed");
 console.log(`  demo: ${demo.total} bookmarks, ${demo.regions.length} regions, ${demo.stats.subtopics} districts,`

@@ -169,13 +169,29 @@ function terrainColor(h, s, m, out) {
   return out;
 }
 
-/* How much forest wants to grow at a point: the same field scatterTrees()
-   samples, so the ground under a wood is tinted and darkened and the canopy
-   reads as one mass rather than as scattered cones. */
+/* How much forest wants to grow at a point: broad connected masses with a
+   soft fringe, so a wood covers a whole hillside instead of speckling it. */
 export function canopyAt(x, z) {
-  const d1 = 0.5 + 0.5 * fbm(x * F * 2.6, z * F * 2.6, 8111, 4);
-  const d2 = 0.5 + 0.5 * fbm(x * F * 7.5, z * F * 7.5, 2287, 3);
-  return Math.max(0, Math.min(1, Math.pow(Math.max(0, d1 * 1.25 - 0.22), 1.5) * (0.6 + 0.7 * d2) * 2.1));
+  const broad = 0.5 + 0.5 * fbm(x * F * 1.75, z * F * 1.75, 8111, 4);
+  const grain = 0.5 + 0.5 * fbm(x * F * 5.5, z * F * 5.5, 2287, 3);
+  // The field is narrow around 0.5, so it is stretched about its own mean:
+  // a chunk of the country is full canopy, a chunk is bare ridge and scree,
+  // and the rest is the fringe in between.
+  const v = (broad * 0.72 + grain * 0.28 - 0.5) / 0.105;
+  return clamp01(v * 0.85 + 0.34);
+}
+
+/* Trees need the canopy field, a height band between the shore and the
+   treeline, and ground they can hold on to. Ridges and screes stay bare,
+   which is what gives the dark masses their edges. */
+export function treeFitness(field, x, z) {
+  const h = field.sample(x, z);
+  if (h < 8 || h > 252) return 0;
+  const band = h < 30 ? (h - 8) / 22 : h > 196 ? Math.max(0, (252 - h) / 56) : 1;
+  const sl = field.slope(x, z);
+  if (sl > 1.32) return 0;
+  const hold = sl > 0.92 ? 1 - (sl - 0.92) * 1.6 : 1;
+  return canopyAt(x, z) * band * Math.max(0, hold);
 }
 
 export function buildTerrain(field) {
@@ -200,12 +216,15 @@ export function buildTerrain(field) {
       // that in is what turns a smooth hillside into readable gullies.
       const curve = h - (H(i - 1, j) + H(i + 1, j) + H(i, j - 1) + H(i, j + 1)) / 4;
       const ao = Math.max(0.52, Math.min(1.16, 1 + curve * 0.06));
-      // woodland floor: darker, greener, and it holds the canopy's shape
-      const wood = h > 6 && h < 250 ? canopyAt(x, z) : 0;
+      // Woodland floor. The canopy is painted into the ground as well as
+      // instanced, so a hillside stays a dark mass when distance thins the
+      // trees out, and the two always agree on where the wood is.
+      const wood = treeFitness(field, x, z);
       const r = tmp.r * ao, g = tmp.g * ao, b = tmp.b * ao;
-      colors[k * 3] = r * (1 - wood * 0.34) + 0.21 * wood * 0.34;
-      colors[k * 3 + 1] = g * (1 - wood * 0.25) + 0.27 * wood * 0.25;
-      colors[k * 3 + 2] = b * (1 - wood * 0.38) + 0.17 * wood * 0.38;
+      const k1 = wood * 0.56, k2 = wood * 0.46, k3 = wood * 0.62;
+      colors[k * 3] = r * (1 - k1) + 0.175 * k1;
+      colors[k * 3 + 1] = g * (1 - k2) + 0.238 * k2;
+      colors[k * 3 + 2] = b * (1 - k3) + 0.135 * k3;
     }
   }
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -276,62 +295,53 @@ function rng(seed) {
   };
 }
 
-/* Two conifer silhouettes so a wood isn't one shape repeated: a narrow
-   spire and a broader fir. Both are small — a tree is a texture here, not a
-   landmark. */
+/* Three conifer silhouettes so a wood isn't one shape repeated: a narrow
+   spire, a broader fir and a squat one. All small — a tree is texture here,
+   not a landmark. */
 function treeGeometries() {
-  const spire = new THREE.ConeGeometry(2.4, 12.5, 5, 2);
-  spire.translate(0, 6.25, 0);
-  const fir = new THREE.ConeGeometry(3.5, 9, 6, 2);
-  fir.translate(0, 4.5, 0);
-  return [spire, fir];
+  const spire = new THREE.ConeGeometry(2.5, 9.4, 5, 2);
+  spire.translate(0, 4.7, 0);
+  const fir = new THREE.ConeGeometry(3.3, 7.2, 6, 2);
+  fir.translate(0, 3.6, 0);
+  const squat = new THREE.ConeGeometry(3.6, 5.2, 5, 1);
+  squat.translate(0, 2.6, 0);
+  return [spire, fir, squat];
 }
 
-/* Forests, tiled. Each tile is its own InstancedMesh with a real bounding
-   sphere, so the renderer culls the woods behind the camera instead of
-   submitting every tree every frame, and distance thins them instead of the
-   old all-or-nothing cut. */
-export function scatterTrees(field, { count = 120000, seed = 17, tiles = 8 } = {}) {
+/* Forests on a jittered grid rather than by rejection sampling: inside a
+   canopy mass every cell gets a tree, so the crowns close up into a
+   continuous dark surface, and the mass has a soft fringe where the field
+   falls away. Tiled into cullable instanced meshes with distance LOD. */
+export function scatterTrees(field, { spacing = 5.2, seed = 17, tiles = 10, max = 190000 } = {}) {
   const reach = MAP.PLATE - 40;
   const span = (reach * 2) / tiles;
   const geos = treeGeometries();
-  const mats = geos.map(() => new THREE.MeshStandardMaterial({ roughness: 0.94, metalness: 0, flatShading: true }));
-  const dark = new THREE.Color("#32432a"), mid = new THREE.Color("#4a5e38"), dusty = new THREE.Color("#73825a");
+  const mats = geos.map(() => new THREE.MeshStandardMaterial({ roughness: 0.93, metalness: 0, flatShading: true }));
+  const deep = new THREE.Color("#30432a"), mid = new THREE.Color("#44593a"), dusty = new THREE.Color("#67764e");
 
   const buckets = [];
-  for (let ty = 0; ty < tiles; ty++) {
-    for (let tx = 0; tx < tiles; tx++) buckets.push({ tx, ty, list: [[], []] });
-  }
+  for (let ty = 0; ty < tiles; ty++) for (let tx = 0; tx < tiles; tx++) buckets.push({ tx, ty, list: [[], [], []] });
   const r = rng(seed);
   const col = new THREE.Color();
-  let placed = 0, tries = 0;
-  while (placed < count && tries < count * 26) {
-    tries++;
-    // clustered: pick a clump centre, then sprinkle around it
-    const cx = (r() * 2 - 1) * reach, cz = (r() * 2 - 1) * reach;
-    const clump = 6 + Math.floor(r() * 9);
-    for (let c = 0; c < clump && placed < count; c++) {
-      const a = r() * Math.PI * 2, rad = Math.sqrt(r()) * (9 + r() * 20);
-      const x = cx + Math.cos(a) * rad, z = cz + Math.sin(a) * rad;
-      if (Math.abs(x) > reach || Math.abs(z) > reach) continue;
+  const steps = Math.floor((reach * 2) / spacing);
+  let placed = 0;
+  for (let gz = 0; gz < steps && placed < max; gz++) {
+    for (let gx = 0; gx < steps && placed < max; gx++) {
+      const x = -reach + (gx + 0.5) * spacing + (r() - 0.5) * spacing * 0.92;
+      const z = -reach + (gz + 0.5) * spacing + (r() - 0.5) * spacing * 0.92;
+      const fit = treeFitness(field, x, z);
+      // hard core, soft fringe: almost every cell inside a wood is taken
+      if (fit < 0.04) continue;
+      if (fit < 0.5 && r() > fit * 1.9) continue;
       const h = field.sample(x, z);
-      if (h < 4 || h > 250) continue;
-      const sl = field.slope(x, z);
-      if (sl > 1.3) continue;
-      const density = canopyAt(x, z);
-      const altitude = h < 20 ? 0.55 : h > 220 ? 0.3 : h > 175 ? 0.66 : 1;
-      const exposure = 1 - Math.min(0.5, Math.max(0, sl - 0.8) * 0.7);
-      // groves where the canopy field is strong, plus the occasional lone
-      // tree on open ground — a forest with a hard edge looks painted on
-      if (density * altitude * exposure < 0.14 + 0.4 * r() && r() > 0.025) continue;
-      const kind = r() < 0.62 ? 0 : 1;
-      const tall = 0.55 + 1.15 * Math.pow(r(), 1.5);
-      const wide = tall * (0.78 + 0.4 * r());
+      const kind = r() < 0.5 ? 0 : r() < 0.78 ? 1 : 2;
+      const tall = 0.72 + 0.62 * Math.pow(r(), 1.3) * (h > 170 ? 0.8 : 1);
+      const wide = tall * (0.82 + 0.34 * r());
       const tx = Math.min(tiles - 1, Math.floor((x + reach) / span));
       const ty = Math.min(tiles - 1, Math.floor((z + reach) / span));
       const t = r();
-      col.copy(dark).lerp(t > 0.84 ? dusty : mid, t * (h > 120 ? 0.9 : 0.55));
-      buckets[ty * tiles + tx].list[kind].push([x, h - 0.8, z, wide, tall, r() * Math.PI * 2, col.r, col.g, col.b]);
+      col.copy(deep).lerp(t > 0.88 ? dusty : mid, t * (h > 130 ? 0.92 : 0.62));
+      buckets[ty * tiles + tx].list[kind].push([x, h - 0.7, z, wide, tall, r() * Math.PI * 2, col.r, col.g, col.b]);
       placed++;
     }
   }
@@ -367,9 +377,6 @@ export function scatterTrees(field, { count = 120000, seed = 17, tiles = 8 } = {
   return group;
 }
 
-/* Low scrub and loose stones, tiled and culled like the forests. This is
-   the texture a close-up actually lives on: at 5x zoom a hillside with no
-   ground cover reads as clay however good the heightfield is. */
 export function scatterScrub(field, { count = 150000, seed = 404, tiles = 8 } = {}) {
   // only over the atlas itself: this is close-up texture, and nothing ever
   // flies low over the scenery beyond it
@@ -389,7 +396,7 @@ export function scatterScrub(field, { count = 150000, seed = 404, tiles = 8 } = 
     const h = field.sample(x, z);
     if (h < 2 || h > 290) continue;
     const sl = field.slope(x, z);
-    const open = 1 - canopyAt(x, z) * 0.75;
+    const open = 1 - treeFitness(field, x, z) * 0.85;
     if (r() > 0.22 + 0.5 * open) continue;
     const scale = 1.5 + 3.4 * Math.pow(r(), 1.7);
     const t = r();
@@ -431,7 +438,7 @@ export function scatterScrub(field, { count = 150000, seed = 404, tiles = 8 } = 
 }
 
 export function scatterRocks(field, { count = 2600, seed = 91 } = {}) {
-  const geo = new THREE.IcosahedronGeometry(2.4, 1);
+  const geo = new THREE.IcosahedronGeometry(1.9, 1);
   const mat = new THREE.MeshStandardMaterial({ color: "#8c8478", roughness: 1, metalness: 0, flatShading: true });
   const mesh = new THREE.InstancedMesh(geo, mat, count);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
@@ -466,7 +473,7 @@ export function scatterRocks(field, { count = 2600, seed = 91 } = {}) {
    on a polar grid so it fits the outline exactly without any clipping. */
 export function drapeDisc(cx, cz, boundaryPts, field, { lift = 1.4, rings = 16 } = {}) {
   const spokes = boundaryPts.length;
-  const verts = [], idx = [], rgba = [];
+  const verts = [], idx = [], rgba = [], radial = [];
   for (let r = 0; r <= rings; r++) {
     const t = r / rings;
     // faint over the middle of a region, firmer towards its edge
@@ -476,6 +483,7 @@ export function drapeDisc(cx, cz, boundaryPts, field, { lift = 1.4, rings = 16 }
       const x = cx + (bx - cx) * t, z = cz + (bz - cz) * t;
       verts.push(x, field.sample(x, z) + lift, z);
       rgba.push(1, 1, 1, a);
+      radial.push(t);
     }
   }
   for (let r = 0; r < rings; r++) {
@@ -489,6 +497,7 @@ export function drapeDisc(cx, cz, boundaryPts, field, { lift = 1.4, rings = 16 }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
   geo.setAttribute("color", new THREE.Float32BufferAttribute(rgba, 4));
+  geo.setAttribute("aT", new THREE.Float32BufferAttribute(radial, 1));
   geo.setIndex(idx);
   geo.computeVertexNormals();
   return geo;
@@ -538,3 +547,87 @@ export function ribbon(points, field, { width = 2.6, lift = 2.0, closed = false,
 }
 
 export { fbm, ridged, perlin };
+
+/* ── Surface detail without geometry ────────────────────────────────────── */
+
+/* The heightfield can only carry detail down to its cell size; below that a
+   close-up turns to clay. This perturbs the shading normal with a procedural
+   noise in world space, which is what makes a hillside read as ground rather
+   than as a smooth plate — no extra triangles, and it costs one texture-free
+   noise in the fragment shader. */
+export function applyDetailNormals(material, { scale = 1 / 5.0, strength = 0.55 } = {}) {
+  material.userData.detail = { strength: { value: strength }, scale: { value: scale } };
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uDetailStrength = material.userData.detail.strength;
+    shader.uniforms.uDetailScale = material.userData.detail.scale;
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec2 vDetailXZ;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvDetailXZ = (modelMatrix * vec4(transformed, 1.0)).xz;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>
+varying vec2 vDetailXZ;
+uniform float uDetailStrength;
+uniform float uDetailScale;
+float bmHash(vec2 p){ p = fract(p * vec2(127.1, 311.7)); p += dot(p, p + 42.17); return fract(p.x * p.y); }
+float bmNoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(bmHash(i), bmHash(i + vec2(1.0, 0.0)), u.x),
+             mix(bmHash(i + vec2(0.0, 1.0)), bmHash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+float bmField(vec2 p){ return bmNoise(p) + 0.52 * bmNoise(p * 2.13) + 0.26 * bmNoise(p * 4.41); }`)
+      .replace("#include <normal_fragment_begin>", `#include <normal_fragment_begin>
+if (uDetailStrength > 0.001) {
+  vec2 q = vDetailXZ * uDetailScale;
+  float e = 0.6;
+  float n0 = bmField(q);
+  float nx = bmField(q + vec2(e, 0.0));
+  float nz = bmField(q + vec2(0.0, e));
+  normal = normalize(normal + vec3(-(nx - n0), 0.0, -(nz - n0)) * uDetailStrength);
+}`);
+  };
+  material.customProgramCacheKey = () => "atlas-detail-normals";
+  return material;
+}
+
+export function setDetailStrength(material, strength) {
+  if (material.userData.detail) material.userData.detail.strength.value = strength;
+}
+
+/* ── The spreading front ────────────────────────────────────────────────── */
+
+/* A region's tint, clipped to how much of it has filled up by the current
+   timeline date. `front` is the square root of the share of that region's
+   bookmarks saved so far, so the band grows by area as saves accumulate —
+   the same idea as a fire perimeter drawn at a given hour. The leading edge
+   is a brighter band, never a glow. */
+export function spreadMaterial(color) {
+  const mat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.FrontSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
+    uniforms: {
+      uColor: { value: new THREE.Color(color) },
+      uOpacity: { value: 0.3 },
+      uFront: { value: 1 },
+      uEdge: { value: 0.07 },
+    },
+    vertexShader: `attribute float aT; varying float vT;
+      void main(){ vT = aT; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `varying float vT;
+      uniform vec3 uColor; uniform float uOpacity; uniform float uFront; uniform float uEdge;
+      void main(){
+        if (vT > uFront) discard;
+        float band = smoothstep(uFront - uEdge, uFront, vT);
+        vec3 c = mix(uColor, clamp(uColor * 1.45 + 0.08, 0.0, 1.0), band);
+        float a = uOpacity * (0.42 + 0.58 * pow(vT, 1.3)) + band * uOpacity * 1.25;
+        gl_FragColor = vec4(c, clamp(a, 0.0, 0.92));
+      }`,
+  });
+  mat.userData.baseOpacity = 1;
+  mat.userData.baseTransparent = true;
+  return mat;
+}

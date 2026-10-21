@@ -6,7 +6,9 @@ import { MAP, libraryBounds } from "./atlas-layout.js";
 import {
   buildHeightField, buildTerrain, buildWater, buildSky,
   scatterTrees, scatterRocks, scatterScrub, drapeDisc, ribbon,
+  applyDetailNormals, setDetailStrength, spreadMaterial,
 } from "./atlas-terrain.js";
+import { boundary } from "./atlas-layout.js";
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -34,6 +36,12 @@ function setOpacity(root, value) {
   if (root.isMaterial) apply(root);
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function stamp(ms) {
+  const d = new Date(ms);
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+}
+
 function disposeTree(root) {
   root.traverse((o) => {
     if (o.geometry) o.geometry.dispose();
@@ -54,12 +62,18 @@ export class AtlasScene {
     this.markers = layout.regions.flatMap((r) => r.markers);
     this.bounds = libraryBounds(layout);
     this.cam = { tx: 0, ty: 150, tz: 0, dist: 1000, az: 0.6, pol: 1.15 };
-    this.quality = { pixelRatio: Math.min(capture ? 1 : 1.6, window.devicePixelRatio || 1), shadows: true, forest: 1 };
+    this.quality = { tier: 0, pixelRatio: Math.min(capture ? 1 : 1.6, window.devicePixelRatio || 1), shadows: true, forest: 1, scrub: 1 };
     this.frameTimes = [];
     this.hovered = null;
     this.markerScale = 1;
     this.width = 1;
     this.height = 1;
+    this.follow = { on: false, u: 0, view: "eye", heading: 0, alt: 0, pitch: -12, elev: 0, point: new THREE.Vector3(), stop: 0 };
+    // save times per region, sorted, so the spreading front can be found by
+    // binary search every frame instead of a scan
+    this.regionTimes = new Map(layout.regions.map((r) => [
+      r.id, r.markers.map((m) => m.at).filter((t) => t != null).sort((a, b) => a - b),
+    ]));
   }
 
   /* ── build ──────────────────────────────────────────────────────────── */
@@ -81,6 +95,10 @@ export class AtlasScene {
 
     this.camera = new THREE.PerspectiveCamera(42, 16 / 9, 2, 26000);
     this.ortho = new THREE.OrthographicCamera(-600, 600, 400, -400, -4000, 8000);
+    // the reader cam: a narrower lens riding the reading trail, plus a plan
+    // view straight down over the same point
+    this.followCam = new THREE.PerspectiveCamera(34, 1.6, 1, 26000);
+    this.followPlan = new THREE.OrthographicCamera(-120, 120, 80, -80, 1, 4000);
 
     // A low fill and one strong warm sun: the reference's value range comes
     // from real shadow, not from lifting everything into the midtones.
@@ -104,6 +122,7 @@ export class AtlasScene {
     this.sky = buildSky();
     scene.add(this.sky);
     this.terrain = buildTerrain(this.field);
+    applyDetailNormals(this.terrain.material, { scale: 1 / 4.6, strength: 0.6 });
     trackMaterial(this.terrain.material);
     this.water = buildWater();
     trackMaterial(this.water.material);
@@ -137,12 +156,12 @@ export class AtlasScene {
 
     for (const region of this.layout.regions) {
       const color = new THREE.Color(region.color);
+      // the tint is a spreading front: clipped to how much of this region had
+      // been saved by the date on the timeline cursor
+      const spread = spreadMaterial(color);
       const fill = new THREE.Mesh(
-        drapeDisc(region.x, region.z, region.boundary, this.field, { lift: 0.9, rings: 22 }),
-        trackMaterial(new THREE.MeshBasicMaterial({
-          color, vertexColors: true, transparent: true, opacity: 0.24, depthWrite: false, side: THREE.FrontSide,
-          polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
-        })),
+        drapeDisc(region.x, region.z, region.boundary, this.field, { lift: 0.9, rings: 26 }),
+        spread,
       );
       fill.renderOrder = 2;
       const line = new THREE.Mesh(
@@ -168,7 +187,37 @@ export class AtlasScene {
         dgroup.add(dash);
       }
       this.edges.add(dgroup);
-      this.regionNodes.set(region.id, { fill, line, dgroup, region });
+      this.regionNodes.set(region.id, { fill, line, dgroup, region, spread });
+    }
+    this.frontRings = new THREE.Group();
+    this.world.add(this.frontRings);
+  }
+
+  /* Dashed perimeters for the dates this region was a third and two thirds
+     full, with the date on a pin — the atlas equivalent of the reference's
+     fire perimeter by hour. Only ever drawn for the region in focus. */
+  buildFrontRings(regionId) {
+    this.frontRings.clear();
+    this.frontMarks = [];
+    const node = regionId ? this.regionNodes.get(regionId) : null;
+    if (!node) return;
+    const region = node.region;
+    const times = this.regionTimes.get(regionId) || [];
+    if (times.length < 6) return;
+    const color = new THREE.Color(region.color);
+    for (const share of [1 / 3, 2 / 3]) {
+      const at = times[Math.max(0, Math.floor(times.length * share) - 1)];
+      const ring = boundary(region.x, region.z, region.r * Math.sqrt(share), `front:${regionId}:${share}`, 56);
+      const mesh = new THREE.Mesh(
+        ribbon(ring, this.field, { width: 1.1, lift: 1.9, closed: true, dash: 5, gap: 5 }),
+        trackMaterial(new THREE.MeshBasicMaterial({
+          color: color.clone().multiplyScalar(1.1), transparent: true, opacity: 0.85, depthWrite: false,
+          side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -10, polygonOffsetUnits: -10,
+        })),
+      );
+      mesh.renderOrder = 4;
+      this.frontRings.add(mesh);
+      this.frontMarks.push({ at, x: ring[14][0], z: ring[14][1], color: region.color });
     }
   }
 
@@ -264,75 +313,100 @@ export class AtlasScene {
     if (this.dots) this.dots.instanceMatrix.needsUpdate = true;
     this.shownMarkers = shown;
     this.shownUndated = undated;
+    this.advanceFronts(cut);
   }
 
-  /* Dashed reading trail with arrowheads and dated pins, drawn with a pale
-     halo underneath so it stays readable on sand and on forest alike. */
+  /* How far each region has filled up by `cut`: the share of its saves that
+     have happened, as a radius, so the tint grows by area. */
+  advanceFronts(cut) {
+    for (const [id, node] of this.regionNodes) {
+      const times = this.regionTimes.get(id) || [];
+      let lo = 0, hi = times.length;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (times[mid] <= cut) lo = mid + 1; else hi = mid; }
+      const share = times.length ? lo / times.length : 1;
+      node.spread.uniforms.uFront.value = share <= 0 ? 0 : Math.max(0.16, Math.sqrt(share));
+    }
+  }
+
+  /* The reading trail: a hairline dashed polyline that follows the ground,
+     with an arrowhead only where the route starts and ends and a small
+     marker ring at each dated stop. Thin on purpose — at overview scale it
+     should read as a drawn line, not as a ribbon of tape. */
   buildTrail(pins) {
     if (this.trail) { this.world.remove(this.trail); disposeTree(this.trail); }
     if (this.flatTrail) { this.map2d.remove(this.flatTrail); disposeTree(this.flatTrail); this.flatTrail = null; }
     this.trail = new THREE.Group();
     this.trailPins = pins || [];
     this.world.add(this.trail);
-    if (!pins || pins.length < 2) { this.trailPath = []; return; }
+    if (!pins || pins.length < 2) { this.trailPath = []; this.trailCurve = null; return; }
 
     // Catmull-Rom through the pins: a smooth path reads as a route, and the
-    // chase camera that follows it stops snapping at every corner.
+    // cameras that follow it stop snapping at every corner.
     const curve = new THREE.CatmullRomCurve3(pins.map((p) => new THREE.Vector3(p.x, 0, p.z)), false, "catmullrom", 0.35);
-    const path = curve.getPoints(Math.max(32, pins.length * 14)).map((v) => [v.x, v.z]);
+    const path = curve.getPoints(Math.max(48, pins.length * 18)).map((v) => [v.x, v.z]);
     this.trailPath = path;
     this.trailCurve = curve;
 
     const halo = new THREE.Mesh(
-      ribbon(path, this.field, { width: 4.2, lift: 1.5, dash: 9, gap: 7 }),
-      trackMaterial(new THREE.MeshBasicMaterial({ color: "#F3EEE2", depthWrite: false, transparent: true, opacity: 0.75, side: THREE.DoubleSide })),
+      ribbon(path, this.field, { width: 2.4, lift: 1.4, dash: 6, gap: 4.5 }),
+      trackMaterial(new THREE.MeshBasicMaterial({ color: "#F7F2E7", depthWrite: false, transparent: true, opacity: 0.8, side: THREE.DoubleSide })),
     );
     halo.renderOrder = 5;
     const line = new THREE.Mesh(
-      ribbon(path, this.field, { width: 2.4, lift: 1.8, dash: 9, gap: 7 }),
-      trackMaterial(new THREE.MeshBasicMaterial({ color: "#D9482B", depthWrite: false, transparent: true, opacity: 0.98, side: THREE.DoubleSide })),
+      ribbon(path, this.field, { width: 1.55, lift: 1.7, dash: 6, gap: 4.5 }),
+      trackMaterial(new THREE.MeshBasicMaterial({ color: "#C9861B", depthWrite: false, transparent: true, opacity: 1, side: THREE.DoubleSide })),
     );
     line.renderOrder = 6;
     this.trail.add(halo, line);
 
-    const head = new THREE.ConeGeometry(2.1, 5.8, 4).rotateX(Math.PI / 2);
-    const mat = trackMaterial(new THREE.MeshBasicMaterial({ color: "#D9482B", depthWrite: false, transparent: true, opacity: 0.98 }));
-    for (let i = 3; i < path.length - 1; i += 12) {
+    // arrowheads only at the two ends of the route
+    const head = new THREE.ConeGeometry(1.5, 4.2, 4).rotateX(Math.PI / 2);
+    const headMat = trackMaterial(new THREE.MeshBasicMaterial({ color: "#C9861B", depthWrite: false, transparent: true, opacity: 1 }));
+    for (const i of [2, path.length - 2]) {
       const [x0, z0] = path[i], [x1, z1] = path[Math.min(path.length - 1, i + 1)];
-      const arrow = new THREE.Mesh(head, mat);
-      arrow.position.set(x0, this.field.sample(x0, z0) + 3.4, z0);
+      const arrow = new THREE.Mesh(head, headMat);
+      arrow.position.set(x0, this.field.sample(x0, z0) + 2.6, z0);
       arrow.rotation.y = Math.atan2(x1 - x0, z1 - z0);
       arrow.renderOrder = 7;
       this.trail.add(arrow);
     }
-    const postGeo = new THREE.CylinderGeometry(0.4, 0.4, 1, 5);
+
+    // a small ring on the ground at each dated stop, under its pin
+    const ringGeo = new THREE.TorusGeometry(2.1, 0.32, 5, 18).rotateX(-Math.PI / 2);
+    const ringMat = trackMaterial(new THREE.MeshBasicMaterial({ color: "#C9861B", depthWrite: false, transparent: true, opacity: 1 }));
+    const postGeo = new THREE.CylinderGeometry(0.22, 0.22, 1, 4);
     postGeo.translate(0, 0.5, 0);
-    const postMat = trackMaterial(new THREE.MeshBasicMaterial({ color: "#1E1C19" }));
+    const postMat = trackMaterial(new THREE.MeshBasicMaterial({ color: "#6E685E", depthWrite: false, transparent: true, opacity: 0.85 }));
     for (const pin of pins) {
+      const y = this.field.sample(pin.x, pin.z);
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.set(pin.x, y + 1.9, pin.z);
+      ring.renderOrder = 7;
       const post = new THREE.Mesh(postGeo, postMat);
-      post.position.set(pin.x, this.field.sample(pin.x, pin.z), pin.z);
-      post.scale.y = 15;
-      this.trail.add(post);
+      post.position.set(pin.x, y, pin.z);
+      post.scale.y = 13;
+      this.trail.add(ring, post);
     }
 
     // the same route, flat, for the 2D map
     const flat = { sample: () => 0, slope: () => 0 };
     this.flatTrail = new THREE.Group();
     this.flatTrail.add(
-      new THREE.Mesh(ribbon(path, flat, { width: 3.2, lift: 0.5, dash: 8, gap: 6 }),
+      new THREE.Mesh(ribbon(path, flat, { width: 2.4, lift: 0.5, dash: 6, gap: 4.5 }),
         trackMaterial(new THREE.MeshBasicMaterial({ color: "#F6F2E7", transparent: true, opacity: 0.9 }))),
-      new THREE.Mesh(ribbon(path, flat, { width: 1.6, lift: 0.7, dash: 8, gap: 6 }),
-        trackMaterial(new THREE.MeshBasicMaterial({ color: "#D9482B" }))),
+      new THREE.Mesh(ribbon(path, flat, { width: 1.3, lift: 0.7, dash: 6, gap: 4.5 }),
+        trackMaterial(new THREE.MeshBasicMaterial({ color: "#A8660D" }))),
     );
-    for (let i = 3; i < path.length - 1; i += 12) {
+    for (const i of [2, path.length - 2]) {
       const [ax, az] = path[i], [bx, bz] = path[Math.min(path.length - 1, i + 1)];
-      const a2 = new THREE.Mesh(new THREE.ConeGeometry(2.2, 6, 4).rotateX(Math.PI / 2),
-        trackMaterial(new THREE.MeshBasicMaterial({ color: "#D9482B" })));
+      const a2 = new THREE.Mesh(new THREE.ConeGeometry(1.8, 5, 4).rotateX(Math.PI / 2),
+        trackMaterial(new THREE.MeshBasicMaterial({ color: "#A8660D" })));
       a2.position.set(ax, 0.9, az);
       a2.rotation.y = Math.atan2(bx - ax, bz - az);
       this.flatTrail.add(a2);
     }
     this.map2d.add(this.flatTrail);
+    this.setFollow(this.follow.u);
   }
 
   /* ── flat map ───────────────────────────────────────────────────────── */
@@ -506,21 +580,27 @@ export class AtlasScene {
   rebuildTrailLabels() {
     for (const l of this.labels.filter((l) => l.kind.includes("date"))) l.node.remove();
     this.labels = this.labels.filter((l) => !l.kind.includes("date"));
-    const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const datePill = (txt, color) => (node) => {
+      const span = document.createElement("span");
+      span.className = "pill";
+      const dot = document.createElement("i");
+      dot.style.background = color;
+      span.append(dot, document.createTextNode(txt));
+      node.appendChild(span);
+      const stem = document.createElement("span");
+      stem.className = "stem";
+      node.appendChild(stem);
+    };
     (this.trailPins || []).forEach((pin, i) => {
       if (pin.at == null) return;
-      const d = new Date(pin.at);
-      const txt = `${MONTH[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
-      this.addLabel("date", pin.x, this.field.sample(pin.x, pin.z) + 21, pin.z, (node) => {
-        const span = document.createElement("span");
-        span.className = "pill";
-        span.textContent = txt;
-        node.appendChild(span);
-        const stem = document.createElement("span");
-        stem.className = "stem";
-        node.appendChild(stem);
-      }, { trailIndex: i, at: pin.at });
+      this.addLabel("date", pin.x, this.field.sample(pin.x, pin.z) + 19, pin.z,
+        datePill(stamp(pin.at), "#C9861B"), { trailIndex: i, at: pin.at });
     });
+    // and the dated perimeters of the region in focus
+    for (const mark of this.frontMarks || []) {
+      this.addLabel("date front", mark.x, this.field.sample(mark.x, mark.z) + 15, mark.z,
+        datePill(stamp(mark.at), mark.color), { at: mark.at });
+    }
   }
 
   /* ── layers / focus ─────────────────────────────────────────────────── */
@@ -563,26 +643,33 @@ export class AtlasScene {
     }
     this.labelHost.style.display = on("labels") ? "" : "none";
     this.labelHost.style.opacity = String(op("labels"));
+    this.frontRings.visible = on("tints") && !flat && !!this.state.focus;
 
     for (const [id, node] of this.regionNodes) {
       const key = `reg:${id}`;
       const hidden = this.state.hidden.has(key);
       const groupOp = this.state.groupOpacity.get(key) ?? 1;
-      const modeDim = this.state.mode === "sources" ? 0.5 : 1;
-      const focusDim = this.state.focus && this.state.focus !== id ? 0.42 : 1;
+      const modeDim = this.state.mode === "sources" ? 0.55 : 1;
+      // One region at a time carries the frame. The region in focus is drawn
+      // saturated with a crisp leading edge; the rest drop right back so it
+      // reads, exactly as the reference does with its active fire.
+      const focused = this.state.focus === id;
+      const quiet = this.state.focus && !focused;
       node.fill.visible = !hidden;
       node.line.visible = !hidden;
-      node.dgroup.visible = !hidden && on("edges");
-      setOpacity(node.fill, op("tints") * groupOp * modeDim * focusDim);
-      setOpacity(node.line, op("tints") * groupOp * (this.state.focus && this.state.focus !== id ? 0.45 : 1));
-      setOpacity(node.dgroup, op("edges") * groupOp * focusDim);
+      node.dgroup.visible = !hidden && on("edges") && !quiet;
+      node.spread.uniforms.uOpacity.value = op("tints") * groupOp * modeDim * (focused ? 0.52 : quiet ? 0.1 : 0.26);
+      node.spread.uniforms.uEdge.value = focused ? 0.055 : 0.1;
+      setOpacity(node.line, op("tints") * groupOp * (focused ? 1 : quiet ? 0.3 : 0.85));
+      node.line.scale.setScalar(1);
+      setOpacity(node.dgroup, op("edges") * groupOp * (focused ? 1 : 0.5));
       const m2 = this.map2dRegions.get(id);
       if (m2) {
         m2.node.visible = !hidden;
-        setOpacity(m2.fill, op("tints") * groupOp * focusDim);
+        setOpacity(m2.fill, op("tints") * groupOp * (focused ? 1.3 : quiet ? 0.4 : 1));
         setOpacity(m2.line, op("tints") * groupOp);
         m2.dgroup.visible = on("edges");
-        setOpacity(m2.dgroup, op("edges") * groupOp * focusDim);
+        setOpacity(m2.dgroup, op("edges") * groupOp * (quiet ? 0.45 : 1));
       }
     }
     for (const l of this.labels) {
@@ -685,15 +772,81 @@ export class AtlasScene {
     }
     // ground cover only matters close up; past a few hundred metres it is
     // sub-pixel and costs a draw call for nothing
+    const qs = this.quality.scrub;
     for (const tile of this.scrub.children) {
       const c = tile.userData.centre;
       const d = Math.hypot(cam.x - c.x, cam.z - c.y);
       const keep = d < 460 ? 1 : d < 820 ? 0.7 : d < 1400 ? 0.3 : 0.08;
-      tile.count = Math.max(1, Math.round(tile.userData.full * keep * q));
+      tile.count = Math.max(1, Math.round(tile.userData.full * keep * qs));
     }
   }
 
   activeCamera() { return this.state.dim === "2d" ? this.ortho : this.camera; }
+
+  /* ── reader cam ─────────────────────────────────────────────────────── */
+
+  /* Where the picture-in-picture sits, in CSS pixels inside the viewport.
+     The HUD overlay is positioned from the same numbers. */
+  pipRect() {
+    const w = Math.round(clamp(this.width * 0.42, 300, 620));
+    const h = Math.round(w * 0.605);
+    return { x: Math.round(this.width - w - 18), y: 18, w, h };
+  }
+
+  /* Ride the reading trail: the camera sits behind and above the current
+     point and looks along the route, so the PiP shows what a reader walking
+     their own library would see. */
+  setFollow(u) {
+    const c = this.trailCurve;
+    this.follow.u = clamp(u, 0, 1);
+    if (!c) return;
+    const t = clamp(u, 0, 0.9995);
+    const p = c.getPointAt(t);
+    const tan = c.getTangentAt(t).normalize();
+    const gy = this.groundAt(p.x, p.z);
+    const eye = new THREE.Vector3(p.x - tan.x * 30, gy + 32, p.z - tan.z * 30);
+    const floor = this.groundAt(eye.x, eye.z) + 12;
+    if (eye.y < floor) eye.y = floor;
+    const ax = p.x + tan.x * 86, az = p.z + tan.z * 86;
+    this.followCam.position.copy(eye);
+    this.followCam.lookAt(ax, this.groundAt(ax, az) + 10, az);
+    this.followCam.updateMatrixWorld();
+    this.follow.heading = (Math.atan2(tan.x, tan.z) + Math.PI * 2) % (Math.PI * 2);
+    this.follow.alt = eye.y - gy;
+    this.follow.point.copy(p);
+    this.follow.pitch = -(Math.atan2(eye.y - (this.groundAt(ax, az) + 10), 86) * 180) / Math.PI;
+    this.follow.elev = gy;
+    const span = 115;
+    this.followPlan.left = -span; this.followPlan.right = span;
+    this.followPlan.top = span * 0.605; this.followPlan.bottom = -span * 0.605;
+    this.followPlan.position.set(p.x, gy + 900, p.z + 0.001);
+    this.followPlan.up.set(Math.sin(this.follow.heading), 0, Math.cos(this.follow.heading));
+    this.followPlan.lookAt(p.x, gy, p.z);
+    this.followPlan.updateProjectionMatrix();
+    this.followPlan.updateMatrixWorld();
+    const pins = this.trailPins || [];
+    this.follow.stop = pins.length ? clamp(Math.round(t * (pins.length - 1)), 0, pins.length - 1) : 0;
+  }
+
+  /* A third-person shot of the reader: used for the main view while the PiP
+     carries the reader's own eye line. */
+  followPose(u) {
+    const c = this.trailCurve;
+    if (!c) return { tx: 0, ty: this.groundAt(0, 0) + 55, tz: 0, dist: 500, pol: 1.1, az: 0.4 };
+    const t = clamp(u, 0, 0.9995);
+    const p = c.getPointAt(t);
+    const tan = c.getTangentAt(t).normalize();
+    return {
+      tx: p.x, ty: this.groundAt(p.x, p.z) + 26, tz: p.z,
+      az: Math.atan2(tan.x, tan.z) + Math.PI * 0.78,
+      dist: 300, pol: 1.02,
+    };
+  }
+
+  setFollowOn(on) {
+    this.follow.on = !!on;
+    this.applyLayers();
+  }
 
   /* ── picking ────────────────────────────────────────────────────────── */
   pick(px, py) {
@@ -740,6 +893,7 @@ export class AtlasScene {
     const camPos = cam.position;
     const placed = [];
     const flat = this.state.dim === "2d";
+    const pip = this.follow.on && !flat ? this.pipRect() : null;
     const order = { region: 0, date: 1 };
     const sorted = this.labels.slice().sort((a, b) => (order[a.kind] ?? 2) - (order[b.kind] ?? 2));
     // Hidden labels keep their box: measuring offsetWidth on a display:none
@@ -757,6 +911,7 @@ export class AtlasScene {
       if (l.kind.includes("district")) show = show && (flat ? this.ortho.top < 520 : dist < 760);
       if (l.kind === "region") show = show && (flat || dist < 2600);
       if (l.kind.includes("date")) show = show && this.trail.visible && (l.at == null || l.at <= (this.timeCut ?? Infinity));
+      if (show && pip && x > pip.x - half - 8 && x < pip.x + pip.w + 8 && y > pip.y - 26 && y < pip.y + pip.h + 8) show = false;
       if (show) {
         const h2 = l.node.offsetHeight || 20;
         const box = [x - half, y - h2, x + half, y];
@@ -773,30 +928,75 @@ export class AtlasScene {
 
   render() {
     this.applyCamera();
-    this.renderer.render(this.scene, this.activeCamera());
+    const r = this.renderer;
+    r.setViewport(0, 0, this.width, this.height);
+    r.setScissorTest(false);
+    r.render(this.scene, this.activeCamera());
+
+    // second pass into the picture-in-picture: the same world, the reader's
+    // own camera, scissored to the HUD frame
+    if (this.follow.on && this.state.dim !== "2d" && this.trailCurve) {
+      const p = this.pipRect();
+      const y = this.height - p.y - p.h;
+      const pipCam = this.follow.view === "plan" ? this.followPlan : this.followCam;
+      this.followCam.aspect = p.w / Math.max(1, p.h);
+      this.followCam.updateProjectionMatrix();
+      r.autoClear = false;
+      r.setViewport(p.x, y, p.w, p.h);
+      r.setScissor(p.x, y, p.w, p.h);
+      r.setScissorTest(true);
+      r.clear(true, true, false);
+      r.render(this.scene, pipCam);
+      r.setScissorTest(false);
+      r.setViewport(0, 0, this.width, this.height);
+      r.autoClear = true;
+    }
     this.updateLabels();
   }
 
-  /* Drop pixel ratio, then shadows, then forest density, if the page can't
-     hold ~48fps. Never in capture mode, where frames must be identical. */
+  /* Four quality tiers. Each one drops real work — resolution, the shadow
+     pass, instance counts and the detail-normal noise — so the low tier is
+     meaningfully cheaper rather than cosmetically smaller. */
+  setQuality(tier) {
+    const t = Math.round(clamp(tier, 0, 3));
+    const dpr = window.devicePixelRatio || 1;
+    const tiers = [
+      { pr: Math.min(this.capture ? 1 : 1.6, dpr), shadows: true, forest: 1, scrub: 1, detail: 0.6 },
+      { pr: 1, shadows: true, forest: 0.7, scrub: 0.5, detail: 0.5 },
+      { pr: 1, shadows: false, forest: 0.45, scrub: 0.18, detail: 0.3 },
+      { pr: 0.75, shadows: false, forest: 0.24, scrub: 0.05, detail: 0 },
+    ];
+    const q = tiers[t];
+    this.quality.tier = t;
+    this.quality.forest = q.forest;
+    this.quality.scrub = q.scrub;
+    if (this.quality.pixelRatio !== q.pr) {
+      this.quality.pixelRatio = q.pr;
+      this.renderer.setPixelRatio(q.pr);
+      this.resize(this.width, this.height);
+    }
+    if (this.quality.shadows !== q.shadows) {
+      this.quality.shadows = q.shadows;
+      this.renderer.shadowMap.enabled = q.shadows;
+      this.renderer.shadowMap.needsUpdate = true;
+      for (const tile of this.forest.children) tile.castShadow = q.shadows;
+    }
+    setDetailStrength(this.terrain.material, q.detail);
+    this.rocks.visible = this.rocks.visible && t < 3;
+    this.updateForestLOD();
+    return this.quality;
+  }
+
+  /* Step down a tier when the page can't hold ~48fps. Never in capture mode,
+     where frames must be identical every run. */
   measure(dt) {
     if (this.capture) return;
     this.frameTimes.push(dt);
     if (this.frameTimes.length < 60) return;
     const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
     this.frameTimes = [];
-    if (avg < 1000 / 48) return;
-    if (this.quality.pixelRatio > 1) {
-      this.quality.pixelRatio = 1;
-      this.renderer.setPixelRatio(1);
-      this.resize(this.width, this.height);
-    } else if (this.quality.shadows) {
-      this.quality.shadows = false;
-      this.renderer.shadowMap.enabled = false;
-      this.renderer.shadowMap.needsUpdate = true;
-    } else if (this.quality.forest > 0.3) {
-      this.quality.forest = Math.max(0.3, this.quality.forest - 0.25);
-    }
+    if (avg < 1000 / 48 || this.quality.tier >= 3) return;
+    this.setQuality(this.quality.tier + 1);
   }
 
   dispose() {

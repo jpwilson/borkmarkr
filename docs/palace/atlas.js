@@ -37,6 +37,7 @@ const state = {
     labels: { on: true, opacity: 1 },
   },
   tour: { active: false, t: 0 },
+  follow: { on: false, u: 0, view: "eye" },
 };
 
 let atlas, layout, scene, ui, tour;
@@ -107,7 +108,21 @@ function toast(text) {
 const actions = {
   setMode(mode) {
     state.mode = mode;
+    const follow = mode === "follow";
+    if (state.follow.on !== follow) {
+      state.follow.on = follow;
+      scene.setFollowOn(follow);
+      if (follow) {
+        if (!state.focus) actions.focusRegion(tour.region ? tour.region.id : layout.regions[0].id);
+        scene.setFollow(state.follow.u);
+        flyTo(scene.followPose(state.follow.u), 1400);
+      } else {
+        flyTo(overviewPose());
+      }
+    }
     if (mode === "timeline") state.tab = "overview";
+    if (follow) state.tab = "follow";
+    else if (state.tab === "follow") state.tab = "layers";
     scene.setColorMode(mode === "sources" ? "sources" : "topics");
     scene.setTimeFilter(state.time);
     scene.applyLayers();
@@ -175,11 +190,13 @@ const actions = {
     if (id) {
       const r = regionById(layout, id);
       scene.buildTrail(readingTrail(layout, { regionId: id, count: 8 }));
+      scene.buildFrontRings(id);
       scene.rebuildTrailLabels();
       scene.applyLayers();
       if (r) flyTo({ tx: r.x, ty: scene.groundAt(r.x, r.z) + 20, tz: r.z, dist: Math.max(230, r.r * 3.1), pol: 1.1, az: Math.atan2(r.x, r.z) - 0.35 });
     } else {
       scene.buildTrail(readingTrail(layout, { count: 7 }));
+      scene.buildFrontRings(null);
       scene.rebuildTrailLabels();
       scene.applyLayers();
       flyTo(overviewPose());
@@ -206,6 +223,49 @@ const actions = {
     const m = scene.markerById(sel.id);
     if (m) flyTo({ tx: m.x, ty: scene.groundAt(m.x, m.z) + 8, tz: m.z, dist: 235, pol: 1.05, az: scene.cam.az });
   },
+  stops() { return scene.trailPins || []; },
+  goToStop(i) {
+    const stops = scene.trailPins || [];
+    if (!stops.length) return;
+    const u = stops.length < 2 ? 0 : clamp(i, 0, stops.length - 1) / (stops.length - 1);
+    state.follow.u = u;
+    scene.setFollow(u);
+    actions.select(stops[Math.round(u * (stops.length - 1))]);
+    flyTo(scene.followPose(u), 1200);
+  },
+  setFollowView(view) {
+    state.follow.view = view === "plan" ? "plan" : "eye";
+    scene.follow.view = state.follow.view;
+    ui.refresh();
+  },
+  /* Everything the reader-cam HUD prints, derived from the route. */
+  followInfo() {
+    const stops = scene.trailPins || [];
+    const f = scene.follow;
+    const curve = scene.trailCurve;
+    const length = curve ? curve.getLength() : 0;
+    const dated = stops.filter((m) => m.at != null);
+    const rideSeconds = tour ? tour.beatLength("follow") : 8;
+    return {
+      on: state.follow.on,
+      u: f.u,
+      view: state.follow.view,
+      stop: f.stop,
+      stops,
+      heading: f.heading,
+      pitch: f.pitch,
+      alt: f.alt,
+      elev: f.elev,
+      x: f.point.x,
+      z: f.point.z,
+      length,
+      speed: rideSeconds ? length / rideSeconds : 0,
+      elapsed: f.u * rideSeconds,
+      zoom: state.follow.view === "plan" ? 1 : 1.4,
+      spanDays: dated.length > 1 ? Math.round((dated[dated.length - 1].at - dated[0].at) / 86_400_000) : null,
+      rect: scene.pipRect(),
+    };
+  },
   resetView() {
     state.focus = null;
     ui.chartCache = null;
@@ -217,10 +277,16 @@ const actions = {
 
 /* The pose that frames the library itself: steep enough that the viewport is
    terrain and data rather than sky, close enough that the regions fill it. */
-function overviewPose(az) {
+function overviewPose(az, focusId = state.focus) {
+  // When a region is in focus the wide shot leans towards it and comes in a
+  // little, so the active area carries the frame instead of sitting as one
+  // small blob in the middle of the scenery.
+  const r = focusId ? regionById(layout, focusId) : null;
+  const tx = r ? r.x * 0.46 : 0;
+  const tz = r ? r.z * 0.46 : 0;
   return {
-    tx: 0, ty: scene.groundAt(0, 0) + 55, tz: 0,
-    dist: scene.frameDistance(1.06), pol: 1.055,
+    tx, ty: scene.groundAt(tx, tz) + 55, tz,
+    dist: scene.frameDistance(1.06) * (r ? 0.74 : 1), pol: 1.045,
     az: az != null ? az : scene.cam.az,
   };
 }
@@ -362,8 +428,14 @@ function rebuild() {
   // The whole-library reading trail is on by default, so the overview carries
   // the same kind of dated path the reference draws over its terrain.
   scene.buildTrail(readingTrail(layout, { count: 7 }));
+  scene.buildFrontRings(null);
   scene.rebuildTrailLabels();
-  tour = new Tour({ atlas, layout, ground: (x, z) => scene.groundAt(x, z), frameDist: (m) => scene.frameDistance(m) });
+  tour = new Tour({
+    atlas, layout,
+    ground: (x, z) => scene.groundAt(x, z),
+    frameDist: (m) => scene.frameDistance(m),
+    followPose: (u) => { scene.setFollow(u); return scene.followPose(u); },
+  });
   ui = new AtlasUI({ atlas, state, actions });
   ui.build();
   wireCanvas();
@@ -391,6 +463,9 @@ function applyTourState(t) {
   const s = tour.stateAt(t);
   const modeChanged = s.mode !== state.mode;
   state.mode = s.mode;
+  const wantFollow = s.mode === "follow";
+  if (state.follow.on !== wantFollow) { state.follow.on = wantFollow; scene.setFollowOn(wantFollow); }
+  if (wantFollow) { state.follow.u = s.follow; scene.setFollow(s.follow); }
   state.tab = s.tab;
   if (state.dim !== s.dim) { state.dim = s.dim; scene.setDim(s.dim); }
   const focusChanged = state.focus !== s.focus;
@@ -400,9 +475,10 @@ function applyTourState(t) {
   if (modeChanged) scene.setColorMode(s.mode === "sources" ? "sources" : "topics");
   if (modeChanged || focusChanged) ui.chartCache = null;
   const trailIds = s.trail.map((m) => m.id).join(",");
-  if (trailIds !== scene._trailIds) {
+  if (trailIds !== scene._trailIds || focusChanged) {
     scene._trailIds = trailIds;
     scene.buildTrail(s.trail);
+    scene.buildFrontRings(s.focus);
     scene.rebuildTrailLabels();
   }
   scene.setTimeFilter(state.time);
@@ -411,7 +487,8 @@ function applyTourState(t) {
   scene.setCamera(tour.cameraAt(t));
 
   // Only redo the panels when something they show has actually changed.
-  const key = `${s.mode}|${s.tab}|${s.dim}|${s.focus}|${state.selection ? state.selection.id : ""}|${Math.round(state.time * 400)}`;
+  const key = `${s.mode}|${s.tab}|${s.dim}|${s.focus}|${state.selection ? state.selection.id : ""}`
+    + `|${Math.round(state.time * 400)}|${wantFollow ? Math.round(s.follow * 60) : ""}`;
   if (key !== lastTourKey) {
     lastTourKey = key;
     ui.refresh();
@@ -471,7 +548,14 @@ function updateReadouts() {
 function installCapture() {
   const api = {
     ready: false,
-    sync() { scene.render(); return true; },
+    /* Render and wait for the GPU to actually finish, so a screenshot taken
+       straight afterwards is the frame we just asked for — and so timing a
+       sync() measures real work rather than queue time. */
+    sync() {
+      scene.render();
+      scene.renderer.getContext().finish();
+      return true;
+    },
     duration() { return tour.duration; },
     beats() { return tour.plan.beats.map((b) => ({ id: b.id, start: b.start, end: b.end, label: b.label })); },
     renderAt(t) {
@@ -483,17 +567,33 @@ function installCapture() {
       return t;
     },
     pose(name, opts = {}) {
-      const times = { overview: 4.5, timeline: 15.5, region: 23.5, detail: 31.2, sources: 36.5, trail: 43.5, map2d: 50.5 };
-      const t = times[name] != null ? times[name] : 4.5;
+      const at = (id, f) => {
+        const beat = tour.plan.beats.find((b) => b.id === id);
+        return beat ? beat.start + beat.length * f : 4.5;
+      };
+      const times = {
+        overview: at("orbit-in", 0.6), timeline: at("timeline", 0.72), region: at("region", 0.9),
+        detail: at("detail", 0.85), trail: at("trail", 0.6), follow: at("follow", 0.55),
+        sources: at("sources", 0.6), map2d: at("map2d", 0.5),
+      };
+      const t = times[name] != null ? times[name] : at("orbit-in", 0.6);
       api.renderAt(t);
       if (name !== "trail") ui.setLower(null);
       if (name === "overview") {
         state.time = 1;
         state.tab = "overview";
-        state.focus = null;
+        // the wide shot still has a subject: the biggest region, drawn
+        // saturated while the rest drop back
+        const big = tour.big ? tour.big.id : null;
+        if (state.focus !== big) {
+          state.focus = big;
+          scene.buildTrail(readingTrail(layout, { regionId: big, count: 8 }));
+          scene.buildFrontRings(big);
+          scene.rebuildTrailLabels();
+        }
         scene.setTimeFilter(1);
         scene.applyLayers();
-        scene.setCamera(overviewPose(0.5));
+        scene.setCamera(overviewPose(big ? Math.atan2(tour.big.x, tour.big.z) - 0.62 : 0.5, big));
         ui.chartCache = null;
         ui.refresh();
       }
@@ -529,9 +629,12 @@ function installCapture() {
         charts: [...document.querySelectorAll(".chart .now")].map((n) => n.textContent).join("|"),
       };
     },
+    setQuality(tier) { return scene.setQuality(tier); },
+    quality() { return { ...scene.quality }; },
     state() {
       return {
         mode: state.mode, tab: state.tab, dim: state.dim, focus: state.focus,
+        follow: state.follow.on ? { u: Math.round(state.follow.u * 1000) / 1000, stop: scene.follow.stop, view: state.follow.view } : null,
         time: state.time, markers: scene.shownMarkers, undated: scene.shownUndated,
         selection: state.selection ? state.selection.title : null,
         label: atlas.label, total: atlas.total, truncated: atlas.truncated,

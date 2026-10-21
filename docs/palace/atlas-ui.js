@@ -138,6 +138,7 @@ export class AtlasUI {
       warn.textContent = `Showing the ${num(a.total)} most recent bookmarks — this library is larger.`;
     }
 
+    el("badge-follow").textContent = this.actions.stops().length;
     this.buildLayers();
     this.buildMoments();
     this.buildAxis();
@@ -194,6 +195,9 @@ export class AtlasUI {
 
     const find = el("find-input");
     this.on(find, "input", () => this.renderFinder(find.value));
+    document.querySelectorAll("#pip-view button").forEach((b) => {
+      this.on(b, "click", () => this.actions.setFollowView(b.dataset.view));
+    });
   }
 
   /* ── layers ─────────────────────────────────────────────────────────── */
@@ -481,6 +485,97 @@ export class AtlasUI {
       { text: `: the taller the pin, the more recently it was saved${asOf ? `, measured against ${asOf}` : ""}.` },
     ] });
     return out;
+  }
+
+  /* ── reader cam ─────────────────────────────────────────────────────── */
+
+  /* The follow pane and the HUD over the picture-in-picture. Every readout
+     is derived from the route: heading from the path tangent, altitude from
+     the ground under the camera, position in the map's own units. */
+  renderFollow() {
+    const info = this.actions.followInfo();
+    const pip = el("pip");
+    document.getElementById("tab-follow").hidden = !info.on;
+    if (!info.on) { pip.hidden = true; return; }
+
+    const stops = info.stops;
+    const stop = stops[info.stop] || null;
+    const deg = Math.round((info.heading * 180) / Math.PI) % 360;
+    const hdg = `${String((deg + 360) % 360).padStart(3, "0")}°`;
+
+    const stats = el("fl-stats");
+    stats.textContent = "";
+    for (const [b, c] of [
+      [`${info.stop + 1}/${stops.length}`, "stop on the route"],
+      [hdg, "heading"],
+      [`${Math.round(info.alt)} u`, "above ground"],
+      [stop && stop.at != null ? fmtShort(stop.at) : "—", "saved"],
+    ]) stats.appendChild(h("div", { class: "stat" }, [h("b", { text: b }), h("span", { text: c, title: c })]));
+
+    el("fl-count").textContent = String(stops.length);
+    const list = el("fl-stops");
+    list.textContent = "";
+    stops.forEach((m, i) => {
+      list.appendChild(h("button", {
+        type: "button", class: `stop-row${i === info.stop ? " on" : ""}`,
+        onclick: () => this.actions.goToStop(i),
+      }, [
+        h("span", { class: "n", text: String(i + 1).padStart(2, "0") }),
+        h("span", { class: "t" }, [
+          document.createTextNode(m.item.title),
+          h("small", { text: `${m.item.regionName} › ${m.item.district}` }),
+        ]),
+        h("span", { class: "d", text: m.at != null ? fmtShort(m.at) : "no date" }),
+      ]));
+    });
+
+    const kv = el("fl-kv");
+    kv.textContent = "";
+    for (const [k, v] of [
+      ["Route", `${stops.length} stops`],
+      ["Span", info.spanDays != null ? `${num(info.spanDays)} days` : "—"],
+      ["Length", `${num(Math.round(info.length))} map units`],
+      ["Ground speed", `${info.speed.toFixed(1)} u/s`],
+      ["Position", `${Math.round(info.x)} E · ${Math.round(-info.z)} N`],
+    ]) kv.appendChild(h("div", {}, [h("dt", { text: k }), h("dd", { text: v, title: v })]));
+
+    // ── HUD ──
+    const r = info.rect;
+    pip.hidden = false;
+    pip.style.left = `${r.x}px`;
+    pip.style.top = `${r.y}px`;
+    pip.style.width = `${r.w}px`;
+    pip.style.height = `${r.h}px`;
+    const secs = Math.floor(info.elapsed);
+    el("pip-rec").textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+    el("pip-mode").textContent = info.view === "plan" ? "PLAN · TOP" : "MAP · DAY";
+    el("pip-date").textContent = stop && stop.at != null ? fmtDate(stop.at).toUpperCase() : "NO DATE";
+    el("pip-pitch").textContent = `${info.pitch > 0 ? "" : "-"}${Math.abs(Math.round(info.pitch))}°`;
+    el("pip-alt").textContent = num(Math.round(info.alt));
+    el("pip-gs").textContent = info.speed.toFixed(0);
+    el("pip-hdg").textContent = hdg;
+    el("pip-pos").textContent = `POS ${Math.round(info.x)} E · ${Math.round(-info.z)} N`;
+    el("pip-rng").textContent = `STOP ${info.stop + 1} OF ${stops.length} · ELEV ${Math.round(info.elev)} U`;
+    el("pip-src").textContent = stop ? stop.item.sourceLabel.toUpperCase() : "—";
+    el("pip-zoom").textContent = `${info.zoom.toFixed(1)}×`;
+    el("pip-title").textContent = stop ? stop.item.title : "—";
+    el("pip-stop").textContent = `${info.stop + 1} / ${stops.length}`;
+    document.querySelectorAll("#pip-view button").forEach((b) => {
+      const on = b.dataset.view === info.view;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+
+    // heading tape: a tick every 15°, a number every 30°
+    const ticks = el("pip-ticks");
+    ticks.textContent = "";
+    const width = r.w * 0.46;
+    for (let d = -60; d <= 60; d += 15) {
+      const a = (((deg + d) % 360) + 360) % 360;
+      const left = `${50 + (d / 120) * 100}%`;
+      ticks.appendChild(h("i", { style: { left, height: a % 30 === 0 ? "7px" : "4px" } }));
+      if (a % 30 === 0) ticks.appendChild(h("span", { style: { left }, text: String(a).padStart(3, "0") }));
+    }
   }
 
   /* ── finder: keyboard access to anything on the map ─────────────────── */
@@ -840,6 +935,7 @@ export class AtlasUI {
     this.buildOverview();
     this.drawCharts();
     this.renderDetail();
+    this.renderFollow();
   }
 
   renderDetail() {

@@ -14,7 +14,7 @@ export const MAP = {
   R_MAX: 210,
   PLATE: 1500,       // half-size of the terrain plate
   WATER: -34,        // water level, in height units
-  SHORE: 1620,       // ground starts dropping to the sea past this radius
+  SHORE: 1150,       // ground starts dropping to the sea past this radius
 };
 
 const TAU = Math.PI * 2;
@@ -221,14 +221,15 @@ export function readingTrail(layout, { regionId = null, count = 8 } = {}) {
 /* Captions are templates: the numbers in them come out of the model, so a
    four-week library never claims sixteen months. */
 export const TOUR_BEATS = [
-  { id: "orbit-in", name: "Overview orbit", label: "{total} bookmarks, as one place", length: 8 },
-  { id: "timeline", name: "Timeline plays", label: "{span} of saves, in order", length: 9 },
-  { id: "region", name: "Into a region", label: "Every topic is a region — {regions} of them", length: 8 },
-  { id: "detail", name: "One bookmark", label: "Every save is a marker you can open", length: 7 },
-  { id: "sources", name: "Sources re-skin", label: "Re-colour the map by where it came from", length: 7 },
-  { id: "trail", name: "Reading trail", label: "Follow the order you saved things", length: 8 },
-  { id: "map2d", name: "Flat map", label: "Or read it flat", length: 6 },
-  { id: "orbit-out", name: "Closing orbit", label: "bookmarker.lol", length: 5 },
+  { id: "orbit-in", name: "Overview orbit", label: "{total} bookmarks, as one place", length: 7 },
+  { id: "timeline", name: "Saves spread", label: "{span} of saves, spreading in order", length: 8 },
+  { id: "region", name: "Into a region", label: "Every topic is a region — {regions} of them", length: 6 },
+  { id: "detail", name: "One bookmark", label: "Every save is a marker you can open", length: 6 },
+  { id: "trail", name: "Reading trail", label: "The order you saved things, drawn on the ground", length: 6 },
+  { id: "follow", name: "Reader cam", label: "Ride the trail, stop by stop", length: 8 },
+  { id: "sources", name: "Sources re-skin", label: "Re-colour the map by where it came from", length: 6 },
+  { id: "map2d", name: "Flat map", label: "Or read it flat", length: 5 },
+  { id: "orbit-out", name: "Closing orbit", label: "bookmarker.lol", length: 4 },
 ];
 
 /* "3 weeks" / "16 months", derived, never written down. */
