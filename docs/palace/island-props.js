@@ -163,8 +163,8 @@ export function buildTemple(field, uniforms, site) {
   const b = new Build();
   const cx = site.x, cz = site.z;
   const base = groundAt(field, cx, cz);
-  const shade = clamp(sampleGrid(field, field.shade, cx, cz) * 0.7 + 0.3, 0, 1);
-  const stone = mixc(PAL.rockPale, PAL.limestone, 0.45);
+  const shade = clamp(sampleGrid(field, field.shade, cx, cz) * 0.45 + 0.55, 0, 1);
+  const stone = mixc(PAL.limestone, PAL.rockPale, 0.25);
   const mossy = mixc(stone, PAL.moss, 0.42);
   const yaw = 0.42;
 

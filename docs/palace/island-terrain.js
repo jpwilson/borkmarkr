@@ -310,8 +310,8 @@ export function terrainMaterial(uniforms) {
         float shade = vLit.x, ao = vLit.y;
         float ndl = dot(n, uSunDir);
         // wrapped diffuse: foliage does not fall off like a billiard ball
-        float wrap = clamp((ndl + 0.35) / 1.35, 0.0, 1.0);
-        float sun = pow(wrap, 1.55) * mix(0.14, 1.0, shade);
+        float wrap = clamp(ndl * 0.56 + 0.44, 0.0, 1.0);
+        float sun = pow(wrap, 1.45) * mix(0.16, 1.0, shade);
         vec3 light = uSunColor * sun;
         light += uSkyColor * (0.30 + 0.30 * n.y) * ao;
         light += uGroundColor * (0.18 * (1.0 - n.y)) * ao;

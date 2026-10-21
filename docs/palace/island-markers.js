@@ -103,7 +103,7 @@ function geoFor(kind) {
   return b.geometry();
 }
 
-const KIND_SCALE = { camp: 7.5, totem: 6.4, banner: 7.0, torch: 6.6, cairn: 6.0 };
+const KIND_SCALE = { camp: 12.5, totem: 10.5, banner: 12.0, torch: 11.0, cairn: 9.5 };
 
 export function buildMarkers(field, layout, uniforms) {
   const group = new THREE.Group();
@@ -130,7 +130,7 @@ export function buildMarkers(field, layout, uniforms) {
       mesh.setMatrixAt(i, mtx);
       col.setRGB(1, 1, 1);
       mesh.setColorAt(i, col);
-      const shade = clamp(sampleGrid(field, field.shade, m.x, m.z) * 0.7 + 0.3, 0, 1);
+      const shade = clamp(sampleGrid(field, field.shade, m.x, m.z) * 0.55 + 0.45, 0, 1);
       lit[i * 3] = shade; lit[i * 3 + 1] = clamp(sampleGrid(field, field.ao, m.x, m.z), 0, 1); lit[i * 3 + 2] = 0;
       m.worldY = m.y + scale * 1.3;
       m.mesh = mesh; m.slot = i;

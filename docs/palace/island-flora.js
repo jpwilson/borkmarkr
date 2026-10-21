@@ -23,7 +23,11 @@ function blobGeometry({ bands = 3, segs = 9, squash = 0.74, dent = 0.3, seed = 1
     const row = [];
     for (let s = 0; s < segs; s++) {
       const th = (s / segs) * Math.PI * 2;
-      let r = 1 + dent * noise2(Math.cos(th) * 1.7 + seed * 3.1, Math.sin(th) * 1.7 + phi * 2.3);
+      // sample the lumps in the sphere's own space: smooth across the surface,
+      // so a crown reads as a billow of leaves rather than a spiky star
+      const sx = Math.sin(phi) * Math.cos(th), sy = Math.cos(phi), sz = Math.sin(phi) * Math.sin(th);
+      let r = 1 + dent * (noise2(sx * 1.15 + seed * 3.1, sz * 1.15 + sy * 1.15)
+                        + 0.5 * noise2(sx * 2.6 - seed, sz * 2.6 + sy * 2.2));
       r *= 1 - pinch * Math.pow(clamp((phi - Math.PI * 0.55) / (Math.PI * 0.45), 0, 1), 1.6);
       const x = Math.sin(phi) * Math.cos(th) * r;
       const z = Math.sin(phi) * Math.sin(th) * r;
@@ -104,7 +108,7 @@ function palmGeometry() {
 
 /* ── an emergent tree: bare trunk, flat wide crown ──────────────────────── */
 function emergentGeometry() {
-  const trunk = new THREE.CylinderGeometry(0.035, 0.07, 1.0, 5, 1, true);
+  const trunk = new THREE.CylinderGeometry(0.055, 0.105, 0.92, 6, 1, true);
   trunk.translate(0, 0.5, 0);
   const tp = trunk.getAttribute("position");
   const tc = [];
@@ -114,9 +118,9 @@ function emergentGeometry() {
     tc.push(c[0], c[1], c[2]);
   }
   trunk.setAttribute("color", new THREE.Float32BufferAttribute(tc, 3));
-  const crown = blobGeometry({ bands: 3, segs: 9, squash: 0.42, dent: 0.34, seed: 5.5, pinch: 0.3 });
-  crown.scale(0.52, 0.5, 0.52);
-  crown.translate(0, 0.96, 0);
+  const crown = blobGeometry({ bands: 4, segs: 10, squash: 0.44, dent: 0.2, seed: 5.5, pinch: 0.22 });
+  crown.scale(0.78, 0.52, 0.78);
+  crown.translate(0, 0.88, 0);
   return mergeGeos([trunk.toNonIndexed(), crown.toNonIndexed()]);
 }
 
@@ -179,7 +183,7 @@ export function floraMaterial(uniforms, { sway = 1 } = {}) {
         vec3 viewDir = normalize(cameraPosition - vWorld);
         float shade = vLit.x, ao = vLit.y;
         float ndl = dot(n, uSunDir);
-        float sun = pow(clamp((ndl + 0.4) / 1.4, 0.0, 1.0), 1.3) * mix(0.16, 1.0, shade);
+        float sun = pow(clamp(ndl * 0.56 + 0.44, 0.0, 1.0), 1.35) * mix(0.16, 1.0, shade);
         vec3 light = uSunColor * sun;
         light += uSkyColor * (0.33 + 0.26 * n.y) * ao;
         light += uGroundColor * 0.14 * ao;
@@ -218,7 +222,7 @@ const VOLCANO = { x: -150, z: -330 };
 /* How much jungle a spot can hold, 0..1. The biome differences people read
    from the air — bare ash, pale karst, open temple plaza, marsh, dunes — are
    mostly this function saying no. */
-function canopyDensity(field, x, z, h, slope, moist, zone, temple) {
+function canopyDensity(field, x, z, h, slope, moist, zone, temple, camps) {
   if (h < 3.5 || h > 820) return 0;
   if (slope > 2.0) return 0;
   let d = 0.25 + 0.95 * moist;
@@ -231,6 +235,11 @@ function canopyDensity(field, x, z, h, slope, moist, zone, temple) {
   const beach = sstep(80, 20, coastField(x, z)) * sstep(24, 8, h);
   d *= 1 - 0.9 * beach;
   if (zone.gap < 26 && slope < 1.0) d *= 0.07;                   // keep the trail open
+  // a camp stands in a clearing, the way a camp does
+  if (camps) for (const c of camps) {
+    const cd = Math.hypot(x - c.x, z - c.z);
+    if (cd < 54) { d *= sstep(16, 54, cd) * 0.95; if (d < 0.02) return 0; }
+  }
   return clamp(d, 0, 1);
 }
 
@@ -238,6 +247,17 @@ export function buildFlora(field, layout, uniforms, stacks) {
   const sites = field.sites;
   const temple = layout.zones.find((z) => z.siteId === "temple") || null;
   const canopy = [], emergent = [], palms = [], mangroves = [], scrub = [];
+  // one clearing per camp, not per marker: markers cluster tightly
+  const camps = [];
+  for (const z of layout.zones) {
+    const seen = new Set();
+    for (const m of z.markers) {
+      const key = `${z.index}/${m.camp}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      camps.push({ x: m.x, z: m.z });
+    }
+  }
   const R = ISLAND_R + 60;
   const CLUSTERS = 21000;
   const r = rng(99173);
@@ -277,7 +297,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
       continue;
     }
 
-    const d = canopyDensity(field, cx, cz, h, slope, moist, zone, temple);
+    const d = canopyDensity(field, cx, cz, h, slope, moist, zone, temple, camps);
     if (d <= 0.02) {
       // bare ground still gets dry scrub, which keeps the ash and the summits
       // from reading as empty polygons
@@ -290,21 +310,33 @@ export function buildFlora(field, layout, uniforms, stacks) {
     }
     // a clump of 1–5 crowns, so the canopy is lumpy rather than evenly dotted
     const n = 2 + Math.floor(d * 5.2 * (0.6 + 0.8 * r()));
-    const spreadR = 9 + 15 * r();
+    const spreadR = 12 + 20 * r();
     for (let k = 0; k < n; k++) {
       const ka = r() * 6.283, kr = spreadR * Math.sqrt(r());
       const x = cx + Math.cos(ka) * kr, z = cz + Math.sin(ka) * kr;
       const y = groundAt(field, x, z);
       if (y < 2.5) continue;
-      const s = (5.5 + 9.5 * r()) * (0.8 + 0.45 * d);
+      const s = (8 + 14 * r()) * (0.78 + 0.45 * d);
       const wet = clamp(moist + 0.25 * (r() - 0.5), 0, 1);
       // tint: wetter is deeper and bluer, drier is olive and yellow
       const tint = [mix(1.18, 0.78, wet) + 0.16 * (r() - 0.5), mix(0.92, 1.05, wet) + 0.14 * (r() - 0.5), mix(0.62, 0.88, wet) + 0.12 * (r() - 0.5)];
       canopy.push({ x, z, y: y - s * 0.16, s, yaw: r() * 6.28, tint, shade, ao, moist: wet });
     }
+    // understory: small dark crowns filling the gaps between the big ones
+    if (d > 0.3) {
+      const un = 1 + Math.floor(r() * 3);
+      for (let k = 0; k < un; k++) {
+        const ka = r() * 6.283, kr = spreadR * 1.3 * Math.sqrt(r());
+        const x = cx + Math.cos(ka) * kr, z = cz + Math.sin(ka) * kr;
+        const y = groundAt(field, x, z);
+        if (y < 2.5) continue;
+        scrub.push({ x, z, y, s: 3 + 5 * r(), yaw: r() * 6.28,
+          tint: [0.5 + 0.2 * r(), 0.72 + 0.2 * r(), 0.42 + 0.2 * r()], shade: shade * 0.8, ao: ao * 0.75, moist });
+      }
+    }
     // the tall ones that break the canopy line
     if (r() < 0.05 * d && h > 40 && h < 620) {
-      const s = 22 + 20 * r();
+      const s = 30 + 26 * r();
       emergent.push({ x: cx, z: cz, y: h - 1, s, yaw: r() * 6.28,
         tint: [0.82 + 0.2 * r(), 0.95 + 0.15 * r(), 0.7 + 0.2 * r()], shade, ao, moist });
     }
@@ -359,8 +391,8 @@ export function buildFlora(field, layout, uniforms, stacks) {
     made.push(mesh);
   };
 
-  const canopyGeo = blobGeometry({ bands: 3, segs: 9, squash: 0.66, dent: 0.44, seed: 1.1, pinch: 0.3 });
-  const scrubGeo = blobGeometry({ bands: 2, segs: 7, squash: 0.62, dent: 0.4, seed: 7.3, pinch: 0.5 });
+  const canopyGeo = blobGeometry({ bands: 4, segs: 10, squash: 0.62, dent: 0.2, seed: 1.1, pinch: 0.34 });
+  const scrubGeo = blobGeometry({ bands: 2, segs: 7, squash: 0.6, dent: 0.22, seed: 7.3, pinch: 0.5 });
   add("canopy", canopyGeo, canopy, 7717, 1);
   add("emergent", emergentGeometry(), emergent, 3391, 1);
   add("palm", palmGeometry(), palms, 5519, 1);
