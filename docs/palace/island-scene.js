@@ -116,10 +116,14 @@ export class IslandScene {
 
     this.stats = {
       buildMs: Math.round(performance.now() - t0),
-      tris: Math.round((this.terrain.userData.tris + this.stacks.userData.tris + this.boulders.userData.tris
-        + this.temple.userData.tris + this.flora.userData.total * 40) / 1000),
+      // filled in from renderer.info after the first frame: an estimate that
+      // guessed 40 triangles per crown while the geometry carried 120, and
+      // left out the water and the markers entirely, was not worth reporting
+      tris: 0,
       flora: this.flora.userData.counts,
       markers: this.layout.markers.length,
+      drawn: this.layout.markers.length,
+      total: this.layout.total,
     };
   }
 
@@ -184,13 +188,17 @@ export class IslandScene {
       const inside = x > 40 && x < this.width - 40 && y > 30 && y < this.height - 30;
       let show = !behind && inside && dist < 6800 && this.showLabels !== false
         && (this.onlyZone == null || this.onlyZone === l.zone.index);
+      // measure before deciding: an element hidden with display:none reports
+      // zero, so the collision test would fall back to a guess on the first
+      // frame and to the real box on the second
+      const w = Math.max(96, l.el.offsetWidth), h = Math.max(26, l.el.offsetHeight);
       if (show) {
-        const w = Math.max(96, l.el.offsetWidth), h = Math.max(26, l.el.offsetHeight);
         const box = { x0: x - w / 2, x1: x + w / 2, y0: y - h, y1: y + 4 };
         const hits = (o) => !(box.x1 < o.x0 - 6 || box.x0 > o.x1 + 6 || box.y1 < o.y0 - 4 || box.y0 > o.y1 + 4);
         if (taken.some(hits)) show = false; else taken.push(box);
       }
-      l.el.style.display = show ? "" : "none";
+      // visibility, not display: the box stays measurable
+      l.el.classList.toggle("is-off", !show);
       if (!show) continue;
       const fade = clamp(1 - (dist - 3400) / 2600, 0.15, 1) * clamp((dist - 90) / 160, 0, 1);
       l.el.style.transform = `translate(-50%, -100%) translate(${Math.round(x)}px, ${Math.round(y)}px)`;
@@ -213,6 +221,10 @@ export class IslandScene {
       : Math.min(72, 2 * Math.atan(Math.tan((view.fov * Math.PI) / 360) * Math.pow(ref / aspect, 0.55)) * (180 / Math.PI));
     if (cam.fov !== fov) cam.fov = fov;
     cam.updateProjectionMatrix();
+    // project() and sunScreen() both read matrixWorldInverse; without this
+    // they would use the pose from the previous render, so a capture overlay
+    // could belong to a different camera than the pixels under it
+    cam.updateMatrixWorld(true);
     this.view = view;
   }
 
@@ -224,13 +236,34 @@ export class IslandScene {
     return { x: (p.x * 0.5 + 0.5) * this.width, y: (-p.y * 0.5 + 0.5) * this.height, z: p.z };
   }
 
+  /* Is there a mountain between the camera and this camp? March the
+     heightfield along the ray; screen distance alone will happily select a
+     bookmark that is not on screen at all, because it is behind a ridge. */
+  visible(marker) {
+    const cam = this.camera.position;
+    const tx = marker.x, ty = marker.worldY ?? marker.y + 8, tz = marker.z;
+    const dx = tx - cam.x, dy = ty - cam.y, dz = tz - cam.z;
+    const len = Math.hypot(dx, dy, dz);
+    if (len < 1) return true;
+    const steps = Math.min(90, Math.max(12, Math.round(len / 24)));
+    for (let i = 1; i < steps; i++) {
+      const u = i / steps;
+      const y = cam.y + dy * u;
+      // a few metres of slack so standing on the ground does not self-occlude
+      if (y < groundAt(this.field, cam.x + dx * u, cam.z + dz * u) - 4) return false;
+    }
+    return true;
+  }
+
   pick(px, py, radius = 26) {
     let best = null, bestD = radius;
     for (const m of this.layout.markers) {
       const s = this.markerScreen(m);
       if (s.z > 1) continue;
       const d = Math.hypot(s.x - px, s.y - py);
-      if (d < bestD) { bestD = d; best = m; }
+      if (d >= bestD) continue;
+      if (!this.visible(m)) continue;
+      bestD = d; best = m;
     }
     return best;
   }
@@ -247,17 +280,28 @@ export class IslandScene {
 
   /* ── quality ──────────────────────────────────────────────────────────── */
   setQuality(tier) {
+    // particles are the other half of the cost: 236 large mist quads plus the
+    // smoke column and the spray are all full-screen overdraw on a slow GPU,
+    // and dropping them costs far less of the look than dropping the jungle
     const tiers = {
-      high: { pixelRatio: Math.min(window.devicePixelRatio || 1, 2), flora: 1 },
-      mid: { pixelRatio: 1, flora: 0.68 },
-      low: { pixelRatio: 0.8, flora: 0.42 },
+      high: { pixelRatio: Math.min(window.devicePixelRatio || 1, 2), flora: 1, particles: 1 },
+      mid: { pixelRatio: 1, flora: 0.68, particles: 0.5 },
+      low: { pixelRatio: 0.8, flora: 0.42, particles: 0 },
     };
     const q = tiers[tier] || tiers.high;
     this.quality = { ...q, tier };
     this.renderer.setPixelRatio(this.capture ? 1 : q.pixelRatio);
     setFloraDensity(this.flora, this.capture ? 1 : q.flora);
+    this.setParticles(this.capture ? 1 : q.particles);
     this.resize(this.width, this.height);
     return this.quality;
+  }
+
+  setParticles(level) {
+    const hi = level >= 1;
+    for (const m of this.mist?.children || []) m.visible = level > 0 && (hi || m.name !== "mist-high");
+    if (this.smoke) this.smoke.visible = level > 0;
+    if (this.spray) this.spray.visible = hi;
   }
 
   resize(w, h) {
@@ -277,6 +321,9 @@ export class IslandScene {
 
   render() {
     this.renderer.render(this.scene, this.camera);
+    const info = this.renderer.info.render;
+    this.stats.tris = Math.round(info.triangles / 1000);
+    this.stats.calls = info.calls;
     this.updateLabels();
   }
 }

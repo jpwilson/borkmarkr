@@ -47,6 +47,7 @@ export function mapPose(layout) {
 /* A close aerial on a zone: back off along the bearing from the island's
    centre, drop to a helicopter height, and tilt down into the terrain. */
 export function zonePose(layout, zone, opts = {}) {
+  if (!zone) return overviewPose(layout);
   // each place is framed from the side that shows what it is: the falls from
   // out at sea, the lagoon off the reef, the valley looking up it
   const framing = {
@@ -136,7 +137,9 @@ function zonesForTour(layout) {
 
 export function buildPlan(layout) {
   const hero = heroMarker(layout);
-  const heroZone = hero ? layout.zones[hero.zone] : layout.zones[0];
+  // an empty library still gets a flight: the island is there, it is simply
+  // uninhabited, so the beats that land on a bookmark are left out entirely
+  const heroZone = hero ? layout.zones[hero.zone] : null;
   const tourZones = zonesForTour(layout);
   const keys = [];
   const beats = [];
@@ -150,7 +153,7 @@ export function buildPlan(layout) {
   const key = (t, pose, extra = {}) => keys.push({ t, ...pose, roll: 0, ...extra });
 
   /* 1 — in off the sea, low, through the mist and the stacks */
-  const approach = push("approach", "Open sea", 8, `${layout.total} saves on one island`);
+  const approach = push("approach", "Open sea", 8, layout.total ? `${layout.total} saves on one island` : "Nothing saved here yet");
   key(at(approach, 0), { ...approachPose(layout, 0), fov: 46 }, { roll: 0.02 });
   key(at(approach, 0.55), approachPose(layout, 0.52), { roll: -0.03 });
   key(at(approach, 1), approachPose(layout, 0.92), { roll: -0.05 });
@@ -166,30 +169,35 @@ export function buildPlan(layout) {
   key(at(over, 1), overviewPose(layout, -0.02));
 
   /* 4..n — a pass over each featured zone */
-  const zoneBeats = [];
-  tourZones.forEach((zone, i) => {
+  tourZones.forEach((zone) => {
     const b = push(`zone-${zone.siteId}`, zone.place, 6, `${zone.name} · ${zone.total} saved`);
     b.zone = zone.index;
-    zoneBeats.push(b);
     key(at(b, 0.12), zonePose(layout, zone, { offset: 1.0, dist: 1.5 }));
     key(at(b, 0.62), zonePose(layout, zone, { offset: 0.62, dist: 1.05 }), { roll: 0.035 });
     key(at(b, 1), zonePose(layout, zone, { offset: 0.2, dist: 0.92 }), { roll: 0.02 });
   });
 
   /* then down into the zone the hero marker is in, and land on it */
-  const dip = push("dip", heroZone.place, 5, `${heroZone.biome}`);
-  dip.zone = heroZone.index;
-  key(at(dip, 0.1), zonePose(layout, heroZone, { offset: 0.9, dist: 1.25 }));
-  key(at(dip, 1), markerPose(layout, hero, { dist: 215, pitch: 0.72, fov: 40 }));
+  if (hero && heroZone) {
+    const dip = push("dip", heroZone.place, 5, `${heroZone.biome}`);
+    dip.zone = heroZone.index;
+    key(at(dip, 0.1), zonePose(layout, heroZone, { offset: 0.9, dist: 1.25 }));
+    key(at(dip, 1), markerPose(layout, hero, { dist: 215, pitch: 0.72, fov: 40 }));
 
-  const land = push("marker", "One bookmark", 6, hero ? hero.item.title : "");
-  land.zone = heroZone.index;
-  land.marker = hero ? hero.id : null;
-  key(at(land, 0.35), markerPose(layout, hero, { dist: 104, pitch: 0.64 }));
-  key(at(land, 1), markerPose(layout, hero, { dist: 40, pitch: 0.50 }));
+    const land = push("marker", "One bookmark", 6, hero.item.title);
+    land.zone = heroZone.index;
+    land.marker = hero.id;
+    key(at(land, 0.35), markerPose(layout, hero, { dist: 104, pitch: 0.64 }));
+    key(at(land, 1), markerPose(layout, hero, { dist: 40, pitch: 0.50 }));
+  }
 
-  const out = push("pullout", "Library Island", 6, `${layout.total} saves · ${layout.zones.length} zones`);
-  key(at(out, 0.42), { pos: v(hero.x + 520, hero.y + 560, hero.z + 620), target: v(hero.x, hero.y, hero.z), fov: 40 });
+  const out = push("pullout", "Library Island", 6,
+    layout.total ? `${layout.total} saves · ${layout.zones.length} zones` : "Save a link and it lands here");
+  if (hero) {
+    key(at(out, 0.42), { pos: v(hero.x + 520, hero.y + 560, hero.z + 620), target: v(hero.x, hero.y, hero.z), fov: 40 });
+  } else {
+    key(at(out, 0.42), overviewPose(layout, 0.55));
+  }
   key(at(out, 1), overviewPose(layout, 0.22));
 
   keys.sort((a, b) => a.t - b.t);

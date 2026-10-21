@@ -1,6 +1,7 @@
 /* island-ui.js — the overlay. Every number on screen is read off the library;
    every string a bookmark supplies goes in as text, never as markup. */
 const el = (id) => document.getElementById(id);
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 const ZONE_TINT = ["#e2703c", "#d6b25a", "#6fa88a", "#c98a5e", "#7fa8c4", "#b0894f", "#8fae5a", "#c9705f", "#8e92b8"];
 
@@ -27,10 +28,8 @@ export class IslandUI {
     this.subtitle();
     this.zones();
     this.on(el("tour"), "click", () => this.actions.toggleTour());
-    this.on(el("track"), "click", (e) => {
-      const r = el("track").getBoundingClientRect();
-      this.actions.seek(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)));
-    });
+    const seek = el("seek");
+    this.on(seek, "input", () => this.actions.seek(Number(seek.value) / Number(seek.max)));
     this.on(el("card-close"), "click", () => this.actions.select(null));
     this.on(el("mine"), "click", () => this.actions.mine());
     this.on(el("log-toggle"), "click", () => {
@@ -45,6 +44,9 @@ export class IslandUI {
     for (const [node, type, fn] of this.bound) node.removeEventListener(type, fn);
     this.bound = [];
     el("log-list").textContent = "";
+    el("subtitle").textContent = "";
+    el("log-sum").textContent = "";
+    this.rows = [];
   }
 
   subtitle() {
@@ -59,6 +61,23 @@ export class IslandUI {
     const range = r ? `${fmtMonth(r.start)} – ${fmtMonth(r.end)}` : "no dates yet";
     span.textContent = `${this.atlas.total} saves · ${this.layout.zones.length} zones · ${range}`;
     host.append(badge, span);
+    // Only MARKER_CAP bookmarks per zone become camps. Showing the library
+    // total next to a sample of it, with nothing said, is a lie by omission.
+    const drawn = this.layout.markers.length;
+    if (drawn < this.atlas.total) {
+      const note = document.createElement("span");
+      note.className = "sub-note";
+      note.textContent = `showing ${drawn} of ${this.atlas.total} camps`;
+      note.title = "Each zone draws its oldest saves; the counts are the whole library.";
+      host.append(note);
+    }
+    if (this.atlas.truncated) {
+      const note = document.createElement("span");
+      note.className = "sub-note";
+      note.textContent = `first ${this.atlas.total} saves read`;
+      note.title = "Your library is larger than one read; the oldest saves are mapped.";
+      host.append(note);
+    }
     el("log-sum").textContent = `${this.layout.zones.length} zones · ${this.atlas.total} saves`;
   }
 
@@ -141,7 +160,16 @@ export class IslandUI {
   setTour({ playing, t, duration, label, detail }) {
     document.body.classList.toggle("is-touring", !!playing);
     el("tour-label").textContent = playing ? "Pause" : "Fly the tour";
-    el("track-fill").style.width = `${((t / duration) * 100).toFixed(2)}%`;
+    const btn = el("tour");
+    // the accessible name has to track the state, or a screen reader offers
+    // "Play the tour" on a button that will pause it
+    btn.setAttribute("aria-label", playing ? "Pause the tour" : "Play the tour");
+    btn.setAttribute("aria-pressed", playing ? "true" : "false");
+    const frac = duration > 0 ? clamp01(t / duration) : 0;
+    el("track-fill").style.width = `${(frac * 100).toFixed(2)}%`;
+    const seek = el("seek");
+    if (seek && document.activeElement !== seek) seek.value = String(Math.round(frac * Number(seek.max)));
+    if (seek) seek.setAttribute("aria-valuetext", label ? `${label}, ${Math.round(t)} of ${Math.round(duration)} seconds` : `${Math.round(t)} seconds`);
     el("beat-label").textContent = label || "";
     el("beat-detail").textContent = detail || "";
   }

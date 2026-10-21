@@ -25,7 +25,9 @@ body {
 }
 button { font: inherit; color: inherit; }
 
-#stage { position: fixed; inset: 0; }
+/* the canvas owns every gesture over it: without this the browser can claim
+   a touch for a pan or a zoom and never deliver the pointerup that ends a drag */
+#stage { position: fixed; inset: 0; touch-action: none; }
 #scene { display: block; width: 100%; height: 100%; }
 
 /* ── grade: a cheap, tasteful film pass over the frame ──────────────────── */
@@ -49,7 +51,7 @@ button { font: inherit; color: inherit; }
 .labels { position: absolute; inset: 0; pointer-events: none; }
 .zone-label {
   position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer;
-  display: flex; align-items: baseline; gap: 7px; white-space: nowrap;
+  display: flex; align-items: baseline; gap: 7px; white-space: nowrap; max-width: min(62vw, 420px);
   padding: 3px 11px 4px; border-radius: 999px;
   background: rgba(10, 15, 14, .42); border: 1px solid var(--hair);
   backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
@@ -57,7 +59,8 @@ button { font: inherit; color: inherit; }
   transition: background .18s, border-color .18s;
 }
 .zone-label:hover, .zone-label.is-focus { background: rgba(22, 30, 27, .66); border-color: var(--hair-strong); }
-.zl-name { font-family: var(--serif); font-size: 17px; letter-spacing: .01em; }
+.zl-name { font-family: var(--serif); font-size: 17px; letter-spacing: .01em;
+  max-width: 44vw; overflow: hidden; text-overflow: ellipsis; }
 .zl-count { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ember); }
 .zone-label small { display: block; font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--faint); }
 .zone-label.is-focus .zl-name { color: #fff; }
@@ -117,18 +120,27 @@ button { font: inherit; color: inherit; }
 .zone-row { display: flex; align-items: center; gap: 9px; width: 100%; padding: 6px 8px; border-radius: 9px;
   background: none; border: 0; cursor: pointer; text-align: left; transition: background .14s; }
 .zone-row:hover, .zone-row.is-focus { background: rgba(255, 228, 190, .09); }
+.sub-note { color: var(--faint); font-size: 10.5px; letter-spacing: .04em;
+  padding: 1px 7px 2px; border-radius: 999px; border: 1px solid var(--hair); }
 .zone-row .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; box-shadow: 0 0 10px currentColor; }
-.zone-row b { font-family: var(--serif); font-weight: 500; font-size: 16px; line-height: 1.12; display: block; }
-.zone-row small { display: block; font-size: 10px; color: var(--faint); letter-spacing: .05em; }
+.zone-row > span { min-width: 0; }
+.zone-row b { font-family: var(--serif); font-weight: 500; font-size: 16px; line-height: 1.12; display: block;
+  overflow-wrap: anywhere; }
+.zone-row small { display: block; font-size: 10px; color: var(--faint); letter-spacing: .05em; overflow-wrap: anywhere; }
 .zone-row .n { margin-left: auto; font-size: 11.5px; color: var(--dim); font-variant-numeric: tabular-nums; }
 .zone-row .bar { display: block; height: 2px; margin-top: 4px; border-radius: 2px; background: currentColor; opacity: .5; }
 
 /* ── bookmark card ──────────────────────────────────────────────────────── */
-#card { right: 24px; bottom: 96px; width: 310px; padding: 16px 17px 17px; }
+#card { right: 24px; bottom: 96px; width: 310px; padding: 16px 17px 17px;
+  max-height: calc(100vh - 220px); overflow-y: auto; overscroll-behavior: contain; }
 .card-close { position: absolute; top: 8px; right: 9px; width: 24px; height: 24px; border: 0; border-radius: 50%;
   background: none; color: var(--faint); font-size: 17px; line-height: 1; cursor: pointer; }
 .card-close:hover { color: var(--ink); background: rgba(255, 230, 196, .1); }
-#card h2 { margin: 6px 0 0; font-family: var(--serif); font-weight: 500; font-size: 23px; line-height: 1.18; }
+#card h2 { margin: 6px 0 0; font-family: var(--serif); font-weight: 500; font-size: 23px; line-height: 1.18;
+  overflow-wrap: anywhere; }
+#card .eyebrow, .card-meta { overflow-wrap: anywhere; }
+.card-rows > div { min-width: 0; }
+.card-rows dd { min-width: 0; overflow-wrap: anywhere; }
 .card-meta { margin: 7px 0 0; font-size: 11.5px; color: var(--dim); }
 .card-rows { margin: 13px 0 0; padding: 11px 0 0; border-top: 1px solid var(--hair); display: grid; gap: 6px; }
 .card-rows > div { display: flex; justify-content: space-between; gap: 12px; }
@@ -140,7 +152,8 @@ button { font: inherit; color: inherit; }
   border-radius: 9px; background: rgba(10, 14, 13, .82); border: 1px solid var(--hair);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 11.5px;
   transform: translate(-50%, -140%); box-shadow: var(--shadow); }
-.tip b { display: block; font-weight: 500; }
+.tip b { display: block; font-weight: 500; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .tip small { color: var(--faint); font-size: 10px; letter-spacing: .06em; }
 
 /* ── transport ──────────────────────────────────────────────────────────── */
@@ -155,11 +168,21 @@ button { font: inherit; color: inherit; }
 .ico-pause { display: none; }
 body.is-touring .ico-play { display: none; }
 body.is-touring .ico-pause { display: inline; }
-.track { width: 100%; height: 2px; border-radius: 2px; background: rgba(255, 230, 196, .16); overflow: hidden; cursor: pointer; }
-#track-fill { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--ember-deep), var(--ember)); }
+/* The visible track is two pixels of decoration; the thing that takes the
+   input is a real range control laid over it, so arrow keys, Home and End
+   seek the flight the way they seek any other timeline. */
+.track { position: relative; width: 100%; height: 2px; border-radius: 2px; background: rgba(255, 230, 196, .16); }
+.seek { position: absolute; left: 0; top: -11px; width: 100%; height: 24px; margin: 0;
+  -webkit-appearance: none; appearance: none; background: none; cursor: pointer; }
+.seek::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--ember); border: 0; box-shadow: 0 0 0 3px rgba(10, 15, 14, .6); }
+.seek::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: var(--ember); border: 0; }
+.seek:focus-visible { outline: 2px solid var(--ember); outline-offset: 4px; border-radius: 4px; }
+#track-fill { display: block; height: 100%; width: 0%; border-radius: 2px; pointer-events: none; background: linear-gradient(90deg, var(--ember-deep), var(--ember)); }
 .beat { margin: 0; text-align: center; min-height: 28px; }
-.beat span { font-family: var(--serif); font-size: 17px; display: block; line-height: 1.1; }
-.beat small { font-size: 10.5px; color: var(--faint); letter-spacing: .06em; }
+.beat span { font-family: var(--serif); font-size: 17px; display: block; line-height: 1.1; overflow-wrap: anywhere; }
+.beat small { font-size: 10.5px; color: var(--faint); letter-spacing: .06em; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* ── inset map + compass ────────────────────────────────────────────────── */
 #inset { right: 24px; top: 92px; width: 150px; }
@@ -208,3 +231,16 @@ body.is-touring .ico-pause { display: inline; }
 @media (prefers-reduced-motion: reduce) {
   #sunbloom, .btn, .zone-label { transition: none; }
 }
+
+/* A capture is a still of a deterministic state. Anything easing toward its
+   target makes the pixel depend on when the screenshot was taken. */
+html[data-capture-mode] *,
+html[data-capture-mode] *::before,
+html[data-capture-mode] *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* A hidden label still has to measure: the collision test reads its box, and
+   a box of zero puts every label in the same place on the first frame. */
+.zone-label.is-off { visibility: hidden; pointer-events: none; }

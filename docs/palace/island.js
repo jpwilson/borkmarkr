@@ -16,6 +16,8 @@ const CAPTURE = params.has("capture");
 const STRESS = params.has("stress");
 const REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 const el = (id) => document.getElementById(id);
+// set before anything is laid out: island.css keys the transition freeze off it
+if (CAPTURE) document.documentElement.dataset.captureMode = "";
 
 const state = {
   atlas: null, layout: null,
@@ -23,12 +25,24 @@ const state = {
   focus: null,
   selection: null,
   flight: null,
+  // one monotonic clock for every animated thing in the scene. Tour time is
+  // separate: pausing must not make the water jump to the wall clock.
+  clock: 0,
+  // under prefers-reduced-motion the loop renders on demand, not forever
+  dirty: true,
+  loading: false,
+  loadSeq: 0,
 };
 let scene, ui, tour;
 let orbit = null;
 
 /* ── data ───────────────────────────────────────────────────────────────── */
-const loadDemo = () => (STRESS ? PalaceData.stressAtlas(TAXONOMY) : PalaceData.demoAtlas(TAXONOMY));
+/* ?stress and ?empty exist so the two libraries nobody has — a hostile one
+   and an empty one — can be looked at without owning one. */
+const loadDemo = () => {
+  if (params.has("empty")) return PalaceData.buildAtlas([], { taxonomy: TAXONOMY, demo: true, label: "Empty library" });
+  return STRESS ? PalaceData.stressAtlas(TAXONOMY) : PalaceData.demoAtlas(TAXONOMY);
+};
 
 async function loadMine() {
   const { rows, customTopics, truncated, email } = await PalaceData.loadOwnLibrary({
@@ -67,6 +81,7 @@ const lerpView = (a, b, u) => ({
 });
 
 function applyView(view) {
+  state.dirty = true;
   scene.setView(view);
   const s = scene.sunScreen();
   const bloom = el("sunbloom");
@@ -87,16 +102,33 @@ function flyTo(view, ms = 1500) {
 /* ── actions ────────────────────────────────────────────────────────────── */
 const actions = {
   toggleTour() {
-    state.tour.playing = !state.tour.playing;
-    if (state.tour.playing) {
-      state.flight = null;
-      if (state.tour.t >= tour.duration - 0.05) state.tour.t = 0;
-    } else {
-      orbit = orbitFromView(scene.view);
-      ui.setTour({ playing: false, t: state.tour.t, duration: tour.duration, label: "", detail: "" });
+    if (state.tour.playing) { actions.exitTour(); return; }
+    state.tour.playing = true;
+    state.flight = null;
+    if (state.tour.t >= tour.duration - 0.05) state.tour.t = 0;
+    ui.setTour({ playing: true, t: state.tour.t, duration: tour.duration,
+      label: tour.beatAt(state.tour.t).label, detail: "" });
+  },
+  /* Everything that has to be true once the camera is the visitor's again.
+     Leaving the tour used to be open-coded in four places, each of which
+     forgot a different part of it: the zone filter stayed on, the card the
+     tour opened stayed open over a zone it was no longer looking at, and a
+     drag read the orbit angles from before the handover. */
+  exitTour() {
+    if (!state.tour.playing) return;
+    state.tour.playing = false;
+    state.flight = null;
+    orbit = orbitFromView(scene.view);
+    scene.onlyZone = null;                       // show every label again
+    if (state.selection) {
+      // the card belongs to the tour; keep the zone it put us in, drop the card
+      state.focus = state.selection.zone;
+      actions.select(null);
+      scene.focusZone = state.focus;
+      ui.setFocus(state.focus ?? -1);
     }
-    ui.setTour({ playing: state.tour.playing, t: state.tour.t, duration: tour.duration,
-      label: state.tour.playing ? tour.beatAt(state.tour.t).label : "", detail: "" });
+    ui.showTip(null);
+    ui.setTour({ playing: false, t: state.tour.t, duration: tour.duration, label: "", detail: "" });
   },
   seek(frac) {
     state.tour.t = clamp(frac, 0, 1) * tour.duration;
@@ -104,6 +136,7 @@ const actions = {
     applyTour(state.tour.t);
   },
   select(marker) {
+    state.dirty = true;
     state.selection = marker || null;
     scene.setSelected(marker);
     ui.showCard(marker);
@@ -114,33 +147,43 @@ const actions = {
     }
   },
   flyToZone(zone) {
-    if (state.tour.playing) actions.toggleTour();
+    actions.exitTour();
     state.focus = zone.index;
     scene.focusZone = zone.index;
     ui.setFocus(zone.index);
     flyTo(zonePose(state.layout, zone, { offset: 0.55 }), 1700);
   },
   async mine() {
+    // one load at a time, and the result of a superseded one is thrown away
+    if (state.loading) return;
+    state.loading = true;
+    const seq = ++state.loadSeq;
     try {
       ui.toast("Reading your library…");
-      swapLibrary(await loadMine());
+      const atlas = await loadMine();
+      if (seq !== state.loadSeq) return;
+      swapLibrary(atlas);
       ui.toast("Your island is built. Nothing was written — this page only reads.");
     } catch (err) {
+      if (seq !== state.loadSeq) return;
       ui.toast(err && err.status === 401
         ? "Sign in at bookmarker.lol first — Library Island only reads your saves."
         : (err && err.message) || "Couldn't read your library.");
+    } finally {
+      state.loading = false;
     }
   },
 };
 
 /* ── tour playback ──────────────────────────────────────────────────────── */
-function applyTour(t) {
+function applyTour(t, time = state.clock) {
   const s = tour.stateAt(t);
+  scene.setTime(time);
   applyView(s);
-  scene.setTime(t);
   scene.focusZone = s.zone;
   scene.onlyZone = s.beat === "overview" || s.beat === "pullout" || s.beat === "approach" || s.beat === "rise" ? null : s.zone;
-  if (s.zone != null) ui.setFocus(s.zone);
+  // set it every frame, both ways: a stale highlight is a determinism leak
+  ui.setFocus(s.zone ?? -1);
   const marker = s.marker ? state.layout.byId.get(s.marker) : null;
   if ((state.selection?.id || null) !== (marker?.id || null)) {
     state.selection = marker || null;
@@ -184,6 +227,7 @@ function swapLibrary(next) {
   state.atlas = next;
   state.selection = null; state.focus = null;
   state.tour.playing = false; state.tour.t = 0; state.flight = null;
+  resetPresentation();
   scene?.destroy();
   ui?.destroy();
   const fresh = document.createElement("canvas");
@@ -192,24 +236,50 @@ function swapLibrary(next) {
   build();
 }
 
+/* Every piece of chrome the old library put on screen. Rebuilding the zone
+   list is not enough: the card, the tooltip, the caption, the progress bar
+   and the touring class all outlive a destroy(). */
+function resetPresentation() {
+  document.body.classList.remove("is-touring");
+  const card = el("card"); if (card) card.hidden = true;
+  const tip = el("tip"); if (tip) { tip.hidden = true; tip.textContent = ""; }
+  const fill = el("track-fill"); if (fill) fill.style.width = "0%";
+  const seek = el("seek"); if (seek) seek.value = "0";
+  for (const id of ["beat-label", "beat-detail"]) { const n = el(id); if (n) n.textContent = ""; }
+}
+
 function resize() {
+  state.dirty = true;
   scene.resize(window.innerWidth, window.innerHeight);
 }
 
-/* ── input ──────────────────────────────────────────────────────────────── */
 function wire() {
   window.addEventListener("resize", () => { resize(); if (scene.view) applyView(scene.view); });
-  const canvas = () => el("scene");
   let drag = null, moved = 0;
   const stage = el("stage");
+
+  /* Pointer capture can be taken away from us — the browser claims a touch
+     for its own gesture, the window loses focus — and when it is, no
+     pointerup arrives. Track the pointer we are following and end the drag
+     on every way it can end, or the next move keeps orbiting the camera. */
+  const endDrag = () => { drag = null; stage.style.cursor = "grab"; };
   stage.addEventListener("pointerdown", (e) => {
-    drag = { x: e.clientX, y: e.clientY, az: orbit.az, pol: orbit.pol };
+    if (drag) return;
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, az: orbit.az, pol: orbit.pol };
     moved = 0;
-    stage.setPointerCapture(e.pointerId);
+    try { stage.setPointerCapture(e.pointerId); } catch { /* already gone */ }
   });
+  stage.addEventListener("pointercancel", (e) => { if (drag && e.pointerId === drag.id) endDrag(); });
+  stage.addEventListener("lostpointercapture", (e) => { if (drag && e.pointerId === drag.id) endDrag(); });
   stage.addEventListener("pointermove", (e) => {
-    if (drag) {
-      if (state.tour.playing) actions.toggleTour();
+    if (drag && e.pointerId === drag.id) {
+      if (state.tour.playing) {
+        // hand the camera over first, then measure the drag from where the
+        // tour actually left it — otherwise the view jumps a beat backwards
+        actions.exitTour();
+        drag = { id: drag.id, x: e.clientX, y: e.clientY, az: orbit.az, pol: orbit.pol };
+        return;
+      }
       moved += Math.abs(e.movementX) + Math.abs(e.movementY);
       orbit.az = drag.az - (e.clientX - drag.x) * 0.0042;
       orbit.pol = clamp(drag.pol - (e.clientY - drag.y) * 0.003, 0.12, 1.42);
@@ -217,25 +287,27 @@ function wire() {
       applyView(viewFromOrbit(orbit));
       return;
     }
+    if (drag) return;
     const hit = scene.pick(e.clientX, e.clientY);
     stage.style.cursor = hit ? "pointer" : "grab";
     if (hit && hit !== state.selection) ui.showTip(hit, e.clientX, e.clientY - 6);
     else if (!hit) ui.showTip(state.selection && state.tour.playing ? state.selection : null);
   });
   stage.addEventListener("pointerup", (e) => {
+    if (drag && e.pointerId !== drag.id) return;
     const wasDrag = moved > 6;
-    drag = null;
+    endDrag();
     if (wasDrag) return;
     const hit = scene.pick(e.clientX, e.clientY);
     if (hit) {
-      if (state.tour.playing) actions.toggleTour();
+      actions.exitTour();
       actions.select(hit);
       flyTo(markerPose(state.layout, hit, { dist: 46 }), 1200);
     } else actions.select(null);
   });
   stage.addEventListener("wheel", (e) => {
     e.preventDefault();
-    if (state.tour.playing) actions.toggleTour();
+    actions.exitTour();
     orbit.dist = clamp(orbit.dist * (1 + Math.sign(e.deltaY) * 0.12), 42, 7200);
     state.flight = null;
     applyView(viewFromOrbit(orbit));
@@ -252,23 +324,30 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  scene.setTime(now / 1000);
+  // the scene clock only runs when something is meant to be moving, so under
+  // prefers-reduced-motion the water, mist and smoke hold still
+  if (!REDUCED || state.tour.playing) state.clock += dt;
+  scene.setTime(state.clock);
 
   if (state.tour.playing) {
     state.tour.t += dt;
-    if (state.tour.t >= tour.duration) { state.tour.t = tour.duration; state.tour.playing = false; orbit = orbitFromView(scene.view); }
-    applyTour(state.tour.t);
+    if (state.tour.t >= tour.duration) { state.tour.t = tour.duration; applyTour(state.tour.t); actions.exitTour(); }
+    else applyTour(state.tour.t);
   } else if (state.flight) {
     const u = clamp((now - state.flight.start) / state.flight.ms, 0, 1);
     const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
     applyView(lerpView(state.flight.from, state.flight.to, e));
     if (u >= 1) { orbit = orbitFromView(state.flight.to); state.flight = null; }
+  } else if (REDUCED) {
+    // nothing is moving and nothing was asked to move: do not redraw
+    if (!state.dirty) return;
   } else if (scene.view) {
     applyView(scene.view);
   }
+  state.dirty = false;
   scene.render();
 
-  // quality ladder: give up resolution and foliage before frame rate
+  // quality ladder: give up resolution, foliage and particles before frame rate
   const fps = 1 / Math.max(dt, 1e-4);
   if (fps < 44) { slow++; fast = 0; } else if (fps > 56) { fast++; slow = 0; }
   if (slow > 24) {
@@ -293,7 +372,8 @@ function installCapture() {
     renderAt(t) {
       state.tour.playing = true;
       state.tour.t = t;
-      applyTour(t);
+      state.clock = t;
+      applyTour(t, t);
       scene.render();
       return t;
     },
@@ -306,11 +386,12 @@ function installCapture() {
       state.tour.playing = false;
       let caption = { label: "Library Island", detail: `${state.atlas.total} saves · ${L.zones.length} zones` };
       const show = (view, time, { zone = null, marker = null, labels = true, only = null } = {}) => {
+        state.clock = time;
         scene.setTime(time);
         scene.showLabels = labels;
         scene.onlyZone = only;
         scene.focusZone = zone;
-        if (zone != null) ui.setFocus(zone); else ui.setFocus(-1);
+        ui.setFocus(zone == null ? -1 : zone);
         state.selection = marker;
         scene.setSelected(marker);
         ui.showCard(marker);
@@ -349,9 +430,10 @@ function installCapture() {
         selection: state.selection ? state.selection.id : "",
         focus: scene.focusZone,
         tip: el("tip").hidden ? "" : el("tip").textContent,
+        seek: el("seek") ? el("seek").value : "",
         beat: el("beat-label").textContent + "|" + el("beat-detail").textContent,
         track: el("track-fill").style.width,
-        labels: [...document.querySelectorAll("#labels .zone-label")].filter((n) => n.style.display !== "none").length,
+        labels: [...document.querySelectorAll("#labels .zone-label")].filter((n) => !n.classList.contains("is-off")).length,
         bloom: `${el("sunbloom").style.left}|${el("sunbloom").style.top}|${el("sunbloom").style.opacity}`,
       };
     },

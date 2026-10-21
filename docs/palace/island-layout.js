@@ -387,6 +387,8 @@ export function liftOverCanopy(pos, target, clearings, margin = 16, samples = 14
 /* Bigger topics get more island. Each point belongs to exactly one zone, so
    the zones tile the island with no gaps and no overlap. */
 export function zoneField(x, z, sites) {
+  // an empty library has no zones at all; say so rather than claiming zone 0
+  if (!sites || !sites.length) return { zone: -1, d: Infinity, gap: 999 };
   let bi = 0, bd = Infinity, sd = Infinity;
   for (let i = 0; i < sites.length; i++) {
     const s = sites[i];
@@ -394,7 +396,7 @@ export function zoneField(x, z, sites) {
     if (d < bd) { sd = bd; bd = d; bi = i; }
     else if (d < sd) sd = d;
   }
-  return { zone: bi, d: bd, gap: sd - bd };
+  return { zone: bi, d: bd, gap: sd === Infinity ? 999 : sd - bd };
 }
 
 export function zoneWeights(regions) {

@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Three.js is loaded from a pinned jsDelivr path; this is what keeps a
+     compromised dependency from reaching anything but that one origin.
+     The hash covers the inline import map; nothing else inline is allowed. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'sha256-5enHT6VobnD2TWOi9NwmkZkHvC7TYF06kEK3cO6GAns='; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net https://pcjuxnhqxyfvgagnblzv.supabase.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
 <title>Library Island — bookmarker</title>
 <meta name="description" content="Your saved links as an island. Every topic is its own zone — volcano ridge, temple terraces, mangrove marsh, turquoise lagoon — and every bookmark is a camp you can fly down to.">
 <meta name="theme-color" content="#0c1412">
@@ -68,12 +72,16 @@
 <div id="tip" class="tip" hidden></div>
 
 <footer id="transport" class="hud">
-  <button id="tour" class="tour-btn" type="button" aria-label="Play the tour">
+  <button id="tour" class="tour-btn" type="button" aria-label="Play the tour" aria-pressed="false">
     <svg class="ico-play" width="13" height="15" viewBox="0 0 13 15" aria-hidden="true"><path d="M1 1l11 6.5L1 14Z" fill="currentColor"/></svg>
     <svg class="ico-pause" width="12" height="14" viewBox="0 0 12 14" aria-hidden="true"><path d="M1 1h3.2v12H1zM7.8 1H11v12H7.8z" fill="currentColor"/></svg>
     <span id="tour-label">Fly the tour</span>
   </button>
-  <div class="track" id="track"><i id="track-fill"></i></div>
+  <div class="track" id="track">
+    <i id="track-fill"></i>
+    <input id="seek" class="seek" type="range" min="0" max="1000" step="1" value="0"
+           aria-label="Seek the tour" aria-describedby="beat-label">
+  </div>
   <p class="beat"><span id="beat-label"></span><small id="beat-detail"></small></p>
 </footer>
 

@@ -16,6 +16,7 @@
 import fs from "node:fs";
 import vm from "node:vm";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 
 const read = (p) => fs.readFileSync(p, "utf8");
 const plain = (x) => JSON.parse(JSON.stringify(x));
@@ -309,6 +310,127 @@ assert.ok(tour.duration >= 48 && tour.duration <= 56, `tour is ${tour.duration}s
     assert.equal(L.zoneField(x, z, isl.sites).zone, 0, "and owns all of it");
   }
   assert.ok(new T.Tour(isl).plan.beats.length >= 6);
+}
+
+/* ── an empty library ───────────────────────────────────────────────────── */
+/* Nobody's first visit should be a stack trace. With no rows there are no
+   zones, no camps and no bookmark to land on, and every one of those used to
+   be assumed: buildPlan dereferenced the hero's zone before checking it. */
+{
+  const atlas = plain(D.buildAtlas([], { taxonomy: ctx.TAXONOMY, demo: false, label: "My library" }));
+  assert.equal(atlas.total, 0);
+  assert.equal(atlas.regions.length, 0);
+  const isl = L.computeIsland(atlas);
+  assert.equal(isl.zones.length, 0);
+  assert.equal(isl.markers.length, 0);
+  assert.deepEqual(isl.clearings, []);
+  // the island itself is still an island: the heightfield does not depend on
+  // the library, and nothing it reports is NaN
+  assert.ok(L.heightAt(0, 0) > 0);
+  assert.equal(L.zoneField(0, 0, isl.sites).zone, -1, "no topics means no zone, not zone 0");
+  assert.ok(Number.isFinite(L.zoneField(0, 0, isl.sites).gap), "and a finite gap, not Infinity minus Infinity");
+  assert.equal(T.heroMarker(isl), null);
+
+  const t0 = new T.Tour(isl);
+  assert.ok(t0.duration > 0, "an empty library still gets a flight");
+  const ids = t0.plan.beats.map((b) => b.id);
+  assert.ok(ids.includes("approach") && ids.includes("overview") && ids.includes("pullout"));
+  assert.ok(!ids.includes("marker"), "but no beat lands on a bookmark that is not there");
+  assert.ok(!ids.includes("dip"));
+  for (let t = 0; t <= t0.duration; t += 0.5) {
+    const st = t0.stateAt(t);
+    assert.ok(Number.isFinite(st.pos.x) && Number.isFinite(st.pos.y) && Number.isFinite(st.pos.z), `finite camera at ${t}s`);
+    assert.equal(st.marker, null);
+    assert.ok(st.pos.y >= L.canopyTopAt(st.pos.x, st.pos.z, isl.clearings) + 4);
+  }
+  // and the poses the capture harness asks for do not throw either
+  assert.ok(T.overviewPose(isl).fov > 0);
+  assert.ok(T.mapPose(isl).top);
+  assert.ok(Number.isFinite(T.zonePose(isl, undefined).pos.y), "a zone pose with no zone falls back to the overview");
+  assert.ok(Number.isFinite(T.markerPose(isl, null).pos.y));
+}
+
+/* ── more topics than the island has places ─────────────────────────────── */
+/* Nine landforms, fifty possible topics. The overflow is folded into one
+   "More topics" region whose districts are the topics it swallowed, so no
+   save is dropped and every count still adds up to the library. */
+{
+  const rows = [];
+  ctx.TAXONOMY.slice(0, 14).forEach((t, i) => {
+    for (let k = 0; k <= i; k++) {
+      rows.push({
+        id: `x${i}-${k}`, url: `https://example.com/${i}/${k}`, title: `Item ${i}-${k}`,
+        category_id: t.id, subcategory: t.subs[0],
+        saved_at: new Date(Date.UTC(2026, 1, 1 + i, k)).toISOString(),
+      });
+    }
+  });
+  const atlas = plain(D.buildAtlas(rows, { taxonomy: ctx.TAXONOMY, demo: true }));
+  assert.equal(atlas.total, rows.length);
+  assert.equal(atlas.regions.length, L.MAX_ZONES, "fourteen topics still fit nine places");
+  assert.equal(sum(atlas.regions.map((r) => r.total)), atlas.total, "and nothing is dropped on the way");
+  const more = atlas.regions.find((r) => r.id === "more");
+  assert.ok(more, "the overflow has a home");
+  assert.ok(more.districts.length > 1, "and its districts are the topics it swallowed");
+
+  const isl = L.computeIsland(atlas);
+  assert.equal(isl.zones.length, L.MAX_ZONES, "the island hands out all nine places and no more");
+  assert.equal(new Set(isl.zones.map((z) => z.siteId)).size, L.MAX_ZONES, "each to a different place");
+  assert.equal(sum(isl.zones.map((z) => z.total)), atlas.total);
+  for (const m of isl.markers) {
+    assert.ok(isl.zones[m.zone], "a marker's zone is a real zone");
+    assert.equal(L.zoneField(m.x, m.z, isl.sites).zone, m.zone, "and it stands inside it");
+  }
+  const t3 = new T.Tour(isl);
+  assert.ok(t3.plan.beats.some((b) => b.id === "marker"), "and the flight still lands on a bookmark");
+  for (let t = 0; t <= t3.duration; t += 0.5) {
+    const st = t3.stateAt(t);
+    assert.ok(st.pos.y >= L.canopyTopAt(st.pos.x, st.pos.z, isl.clearings) + 4, `clears the canopy at ${t}s`);
+  }
+}
+
+/* ── a single topic owns the whole island, and still gets a landing ─────── */
+{
+  const rows = plain(D.demoRows()).filter((r) => r.category_id === "ai");
+  const atlas = plain(D.buildAtlas(rows, { taxonomy: ctx.TAXONOMY, demo: true }));
+  const isl = L.computeIsland(atlas);
+  assert.equal(isl.zones.length, 1);
+  assert.equal(isl.markers.length, atlas.total);
+  const t4 = new T.Tour(isl);
+  const ids = t4.plan.beats.map((b) => b.id);
+  assert.equal(ids.filter((id) => id.startsWith("zone-")).length, 1, "one topic means one zone beat, not three");
+  assert.ok(ids.includes("marker"), "and the landing still happens");
+  const hero = T.heroMarker(isl);
+  assert.equal(hero.zone, 0);
+  for (let t = 0; t <= t4.duration; t += 0.5) {
+    const st = t4.stateAt(t);
+    assert.ok(st.pos.y >= L.canopyTopAt(st.pos.x, st.pos.z, isl.clearings) + 4, `clears the canopy at ${t}s`);
+  }
+}
+
+/* ── the page's own guarantees ──────────────────────────────────────────── */
+{
+  const html = read("docs/palace/index.html");
+  // a CSP that actually covers the one inline script on the page
+  const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html);
+  assert.ok(csp, "the page ships a Content-Security-Policy");
+  const policy = csp[1];
+  for (const d of ["default-src 'none'", "script-src", "connect-src", "frame-ancestors 'none'", "base-uri 'none'"]) {
+    assert.ok(policy.includes(d), `CSP declares ${d}`);
+  }
+  assert.ok(!/unsafe-eval/.test(policy), "and allows no eval");
+  assert.ok(!/script-src[^;]*'unsafe-inline'/.test(policy), "and no blanket inline script");
+  const map = /<script type="importmap">\n([\s\S]*?)\n<\/script>/.exec(html);
+  assert.ok(map, "the import map is inline");
+  const hash = createHash("sha256").update(map[1]).digest("base64");
+  assert.ok(policy.includes(`'sha256-${hash}'`), "and the CSP carries its hash, so editing it without the hash fails loudly");
+  const supabase = /SUPABASE_URL = "([^"]+)"/.exec(read("docs/palace/palace-data.js"))[1];
+  assert.ok(policy.includes(supabase), "connect-src names the library's own origin");
+  assert.ok(policy.includes("https://cdn.jsdelivr.net"), "script-src names the pinned CDN");
+
+  // seeking is a control, not a two-pixel div
+  assert.match(html, /<input id="seek"[^>]*type="range"/, "the tour can be seeked from the keyboard");
+  assert.match(html, /id="seek"[^>]*aria-label=/, "and the control says what it is");
 }
 
 console.log("test_palace: ok");
