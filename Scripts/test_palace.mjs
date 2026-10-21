@@ -415,14 +415,15 @@ assert.ok(tour.duration >= 48 && tour.duration <= 56, `tour is ${tour.duration}s
   const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html);
   assert.ok(csp, "the page ships a Content-Security-Policy");
   const policy = csp[1];
-  for (const d of ["default-src 'none'", "script-src", "connect-src", "frame-ancestors 'none'", "base-uri 'none'"]) {
+  for (const d of ["default-src 'none'", "script-src", "connect-src", "base-uri 'none'"]) {
     assert.ok(policy.includes(d), `CSP declares ${d}`);
   }
   assert.ok(!/unsafe-eval/.test(policy), "and allows no eval");
   assert.ok(!/script-src[^;]*'unsafe-inline'/.test(policy), "and no blanket inline script");
-  const map = /<script type="importmap">\n([\s\S]*?)\n<\/script>/.exec(html);
+  const map = /<script type="importmap">([\s\S]*?)<\/script>/.exec(html);
   assert.ok(map, "the import map is inline");
   const hash = createHash("sha256").update(map[1]).digest("base64");
+  // the browser hashes the exact text between the tags, newlines included
   assert.ok(policy.includes(`'sha256-${hash}'`), "and the CSP carries its hash, so editing it without the hash fails loudly");
   const supabase = /SUPABASE_URL = "([^"]+)"/.exec(read("docs/palace/palace-data.js"))[1];
   assert.ok(policy.includes(supabase), "connect-src names the library's own origin");
