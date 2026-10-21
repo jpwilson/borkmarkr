@@ -132,11 +132,11 @@ export const REEF = { x: 560, z: 520, r: 760, from: -0.35, to: 1.5 };
 
 /* The three waterfalls, on the seaward rim of the mesa. */
 export const FALLS = [
-  { a: -0.30, w: 34 }, { a: -0.03, w: 52 }, { a: 0.26, w: 26 },
+  { a: -0.30, w: 17 }, { a: -0.02, w: 26 }, { a: 0.26, w: 13 },
 ].map((f) => ({
   ...f,
-  x: MESA.x + Math.sin(f.a + Math.PI) * (MESA.R - 6),
-  z: MESA.z + Math.cos(f.a + Math.PI) * (MESA.R - 6) * -1,
+  x: MESA.x + Math.sin(f.a) * (MESA.R - 55),
+  z: MESA.z - Math.cos(f.a) * (MESA.R - 55) / 1.12,
 }));
 
 /* ── the coastline ──────────────────────────────────────────────────────── */
@@ -373,6 +373,7 @@ export function placeMarkers(region, site, sites, index) {
     markers.push({
       id: item.id, item, zone: index, zoneId: site.id,
       district: item.district, kind: spot.kind, x, z, y: h,
+      campX: camp.x, campZ: camp.z,
       yaw: (noise2(x * 0.03, z * 0.03) + 1) * Math.PI,
       camp: spot.index,
     });

@@ -9,7 +9,7 @@ import { ATMOS_PARS, sampleGrid } from "./island-terrain.js";
 import { Build } from "./island-props.js";
 import { clamp, mix } from "./island-layout.js";
 
-const CANVAS = [0.74, 0.63, 0.44], CANVAS_LIT = [0.96, 0.88, 0.68];
+const CANVAS = [0.52, 0.44, 0.30], CANVAS_LIT = [0.72, 0.64, 0.47];
 const WOOD = [0.16, 0.115, 0.075], WOOD_LIT = [0.3, 0.22, 0.14];
 const CLOTH = [0.72, 0.26, 0.13];
 const STONE = [0.42, 0.4, 0.36];

@@ -139,6 +139,7 @@ function applyTour(t) {
   applyView(s);
   scene.setTime(t);
   scene.focusZone = s.zone;
+  scene.onlyZone = s.beat === "overview" || s.beat === "pullout" || s.beat === "approach" || s.beat === "rise" ? null : s.zone;
   if (s.zone != null) ui.setFocus(s.zone);
   const marker = s.marker ? state.layout.byId.get(s.marker) : null;
   if ((state.selection?.id || null) !== (marker?.id || null)) {
@@ -304,9 +305,10 @@ function installCapture() {
       };
       state.tour.playing = false;
       let caption = { label: "Library Island", detail: `${state.atlas.total} saves · ${L.zones.length} zones` };
-      const show = (view, time, { zone = null, marker = null, labels = true } = {}) => {
+      const show = (view, time, { zone = null, marker = null, labels = true, only = null } = {}) => {
         scene.setTime(time);
         scene.showLabels = labels;
+        scene.onlyZone = only;
         scene.focusZone = zone;
         if (zone != null) ui.setFocus(zone); else ui.setFocus(-1);
         state.selection = marker;
@@ -329,11 +331,11 @@ function installCapture() {
       } else if (name === "zone") {
         const zone = (opts.topic && zoneById(L, opts.topic)) || L.zones[0];
         caption = { label: zone.place, detail: `${zone.name} · ${zone.total} saved · ${zone.biome}` };
-        show(zonePose(L, zone, opts), at(`zone-${zone.siteId}`, 0.75), { zone: zone.index });
+        show(zonePose(L, zone, opts), at(`zone-${zone.siteId}`, 0.75), { zone: zone.index, only: zone.index });
       } else if (name === "marker") {
         const marker = (opts.id && L.byId.get(opts.id)) || heroMarker(L);
         caption = { label: L.zones[marker.zone].place, detail: marker.item.title };
-        show(markerPose(L, marker, opts), at("marker", 0.9), { zone: marker.zone, marker });
+        show(markerPose(L, marker, opts), at("marker", 0.9), { zone: marker.zone, marker, only: marker.zone });
       } else show(overviewPose(L, opts.spin || 0), at("overview", 0.8));
       return name;
     },

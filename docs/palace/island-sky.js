@@ -100,7 +100,7 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
           // smoke: a column that recycles, growing and thinning as it climbs
           float age = fract(uTime * 0.035 * speed + seed);
           c.y += age * rise;
-          c.x += age * age * 95.0 + sin(seed * 9.1 + age * 3.0) * 34.0 * age;
+          c.x += age * age * 230.0 + sin(seed * 9.1 + age * 3.0) * 34.0 * age;
           c.z += age * 26.0 + cos(seed * 5.5 + age * 2.4) * 30.0 * age;
           size *= 0.35 + age * 2.6;
           fade = smoothstep(0.0, 0.12, age) * (1.0 - smoothstep(0.45, 1.0, age));
@@ -188,7 +188,7 @@ export function buildMist(field, layout, uniforms, groundAt) {
   }
   const group = new THREE.Group();
   group.name = "mist";
-  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.97, 0.92], opacity: 0.16, flat: 2.3, name: "mist-low", order: 6 }));
+  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.97, 0.92], opacity: 0.13, flat: 2.3, name: "mist-low", order: 6 }));
   group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.1, flat: 2.6, name: "mist-high", order: 7 }));
   return group;
 }
@@ -197,13 +197,13 @@ export function buildSmoke(uniforms, site) {
   const r = rnd(1717);
   const list = [];
   const base = heightAt(site.x, site.z);
-  for (let i = 0; i < 44; i++) {
+  for (let i = 0; i < 26; i++) {
     list.push({
       x: site.x + (r() - 0.5) * 70, y: base + 10, z: site.z + (r() - 0.5) * 70,
-      s: 64 + 46 * r(), seed: r(), speed: 0.6 + 0.8 * r(), rise: 480 + 360 * r(),
+      s: 42 + 40 * r(), seed: r(), speed: 0.6 + 0.8 * r(), rise: 520 + 420 * r(),
     });
   }
-  return puffSystem(uniforms, list, { kind: 1, color: [0.82, 0.78, 0.76], opacity: 0.4, flat: 1.25, name: "smoke", order: 8 });
+  return puffSystem(uniforms, list, { kind: 1, color: [0.84, 0.8, 0.78], opacity: 0.22, flat: 1.25, name: "smoke", order: 8 });
 }
 
 export function buildSpray(uniforms) {

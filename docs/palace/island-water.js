@@ -25,8 +25,8 @@ export function depthTexture(field, stacks) {
         const dx = (-half + i * step) - x, dz = (-half + j * step) - z;
         const d = Math.hypot(dx, dz);
         if (d > r + 26) continue;
-        const ring = Math.max(0, 1 - Math.abs(d - r + 4) / 22);
-        land[j * res + i] = Math.max(land[j * res + i], 7 * ring);
+        const ring = Math.max(0, 1 - Math.abs(d - r + 2) / 26);
+        land[j * res + i] = Math.max(land[j * res + i], 4.5 * ring * ring);
       }
     }
   }
@@ -231,11 +231,12 @@ export function buildFalls(field, uniforms) {
     const dx = Math.cos(ang), dz = Math.sin(ang);
     const px = -dz, pz = dx;
     const drop = top + 6;
-    const x0 = f.x + dx * 10, z0 = f.z + dz * 10;
+    const x0 = f.x + dx * 18, z0 = f.z + dz * 18;
+    const run = 62;
     const a = push(x0 + px * f.w, top + 3, z0 + pz * f.w, 0, 1);
     const b2 = push(x0 - px * f.w, top + 3, z0 - pz * f.w, 1, 1);
-    const c = push(x0 - px * f.w * 1.45 + dx * 16, top - drop, z0 - pz * f.w * 1.45 + dz * 16, 1, 0);
-    const d = push(x0 + px * f.w * 1.45 + dx * 16, top - drop, z0 + pz * f.w * 1.45 + dz * 16, 0, 0);
+    const c = push(x0 - px * f.w * 1.5 + dx * run, top - drop, z0 - pz * f.w * 1.5 + dz * run, 1, 0);
+    const d = push(x0 + px * f.w * 1.5 + dx * run, top - drop, z0 + pz * f.w * 1.5 + dz * run, 0, 0);
     idx.push(a, c, b2, a, d, c);
   }
   const g = new THREE.BufferGeometry();
@@ -256,13 +257,15 @@ export function buildFalls(field, uniforms) {
       varying vec2 vUv;
       void main() {
         float v = vUv.y;
-        vec2 p = vec2(vUv.x * 2.0, v * 1.6 + uTime * 0.55);
-        float streak = texture2D(uDetail, p).r * 0.6 + texture2D(uDetail, p * vec2(3.0, 2.0) + 0.3).g * 0.5;
-        float body = smoothstep(0.08, 0.3, streak + (1.0 - v) * 0.35);
-        float sides = smoothstep(0.0, 0.16, vUv.x) * smoothstep(1.0, 0.84, vUv.x);
-        float lip = smoothstep(0.86, 1.0, v);
-        float alpha = clamp(body * sides * (0.55 + 0.45 * v) + lip * 0.8, 0.0, 1.0);
-        alpha *= mix(0.95, 0.35, smoothstep(0.35, 0.0, v));   // breaks into spray
+        // fine vertical threads scrolling down, thinning as the fall breaks up
+        vec2 p = vec2(vUv.x * 3.0, v * 2.2 + uTime * 0.6);
+        float streak = texture2D(uDetail, p).r * 0.7 + texture2D(uDetail, p * vec2(4.0, 2.6) + 0.3).g * 0.6;
+        float threads = 0.55 + 0.45 * sin(vUv.x * 46.0 + streak * 7.0);
+        float body = smoothstep(0.30, 0.62, streak * 0.8 + threads * 0.35 + (1.0 - v) * 0.12);
+        float sides = smoothstep(0.0, 0.22, vUv.x) * smoothstep(1.0, 0.78, vUv.x);
+        float lip = smoothstep(0.93, 1.0, v);
+        float alpha = clamp(body * sides * (0.42 + 0.5 * v) + lip * 0.75, 0.0, 1.0);
+        alpha *= mix(0.9, 0.22, smoothstep(0.45, 0.0, v));   // breaks into spray
         vec3 color = mix(vec3(0.72, 0.82, 0.86), vec3(1.0), lip * 0.8 + 0.2);
         color *= 0.45 + 0.75 * uSunColor;
         vec3 viewDir = normalize(cameraPosition - vWorld);

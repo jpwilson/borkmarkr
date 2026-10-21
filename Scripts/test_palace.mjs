@@ -198,7 +198,10 @@ assert.ok(tour.duration >= 48 && tour.duration <= 56, `tour is ${tour.duration}s
   for (const zone of island.zones) {
     const p = T.zonePose(island, zone);
     assert.ok(p.pos.y > L.heightAt(p.pos.x, p.pos.z), `${zone.place} is framed from the air`);
-    assert.ok(Math.hypot(p.target.x - zone.x, p.target.z - zone.z) < 1, "and framed on its own site");
+    // the subject is the site, or a landform just off it (the falls' cliff)
+    assert.ok(Math.hypot(p.target.x - zone.x, p.target.z - zone.z) < 500, "and framed on its own ground");
+    assert.ok(L.zoneField(p.target.x, p.target.z, island.sites).zone === zone.index
+      || L.heightAt(p.target.x, p.target.z) < 60, `${zone.place} is framed inside its own zone`);
   }
   const over = T.overviewPose(island);
   assert.ok(Math.hypot(over.pos.x, over.pos.z) > L.ISLAND_R * 2, "the overview stands off the island");

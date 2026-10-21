@@ -34,7 +34,7 @@ function blobGeometry({ bands = 3, segs = 9, squash = 0.74, dent = 0.3, seed = 1
       const y = Math.cos(phi) * r * squash;
       const up = clamp(y * 0.5 + 0.55, 0, 1.2);
       // dark underside, sunlit crown, a touch of yellow in the highlights
-      const c = mixc(mixc([0.014, 0.026, 0.009], [0.085, 0.175, 0.035], Math.pow(up, 1.7)), [0.22, 0.30, 0.065], Math.pow(up, 5.0) * 0.6);
+      const c = mixc(mixc([0.013, 0.024, 0.009], [0.075, 0.155, 0.032], Math.pow(up, 1.8)), [0.18, 0.25, 0.058], Math.pow(up, 5.5) * 0.5);
       const l = Math.hypot(x, y, z) || 1;
       row.push(pos.length / 3);
       pos.push(x, y + 0.26, z); nrm.push(x / l, y / l, z / l); col.push(c[0], c[1], c[2]);
@@ -231,7 +231,7 @@ function canopyDensity(field, x, z, h, slope, moist, zone, temple, camps) {
   d *= sstep(3.5, 16, h);
   d *= 1 - 0.8 * sstep(560, 760, h);
   const vd = Math.hypot(x - VOLCANO.x, z - VOLCANO.z);
-  d *= clamp(sstep(110, 340, vd), 0.0, 1);                       // ash cone is bare
+  d *= clamp(sstep(250, 560, vd), 0.0, 1);                       // ash cone is bare
   if (temple) d *= clamp(sstep(110, 250, Math.hypot(x - temple.x, z - temple.z)), 0.06, 1);
   const beach = sstep(80, 20, coastField(x, z)) * sstep(24, 8, h);
   d *= 1 - 0.9 * beach;
@@ -244,7 +244,7 @@ function canopyDensity(field, x, z, h, slope, moist, zone, temple, camps) {
   // a camp stands in a clearing, the way a camp does
   if (camps) for (const c of camps) {
     const cd = Math.hypot(x - c.x, z - c.z);
-    if (cd < 54) { d *= sstep(16, 54, cd) * 0.95; if (d < 0.02) return 0; }
+    if (cd < 86) { d *= sstep(22, 86, cd) * 0.95; if (d < 0.02) return 0; }
   }
   return clamp(d, 0, 1);
 }
@@ -322,7 +322,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
       const x = cx + Math.cos(ka) * kr, z = cz + Math.sin(ka) * kr;
       const y = groundAt(field, x, z);
       if (y < 2.5) continue;
-      const s = (8 + 26 * Math.pow(r(), 1.7)) * (0.78 + 0.45 * d);
+      const s = (7 + 32 * Math.pow(r(), 2.0)) * (0.78 + 0.45 * d);
       const wet = clamp(moist + 0.25 * (r() - 0.5), 0, 1);
       // tint: wetter is deeper and bluer, drier is olive and yellow
       // large-scale mottling: whole stands of canopy go dark or bright,
@@ -384,7 +384,8 @@ export function buildFlora(field, layout, uniforms, stacks) {
     list.forEach((it, i) => {
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), it.yaw);
       p.set(it.x, it.y, it.z);
-      s.set(it.s, it.s * flatten * (0.85 + 0.3 * ((i * 37) % 100) / 100), it.s);
+      const sq = 0.7 + 0.6 * ((i * 37) % 100) / 100;
+      s.set(it.s * (0.86 + 0.28 * ((i * 53) % 100) / 100), it.s * flatten * sq, it.s * (0.86 + 0.28 * ((i * 71) % 100) / 100));
       m.compose(p, q, s);
       mesh.setMatrixAt(i, m);
       col.setRGB(it.tint[0], it.tint[1], it.tint[2]);

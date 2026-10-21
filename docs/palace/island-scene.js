@@ -40,7 +40,7 @@ export class IslandScene {
     renderer.setPixelRatio(this.capture ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.94;
+    renderer.toneMappingExposure = 1.0;
     renderer.setClearColor(0x9fb0b4, 1);
     this.renderer = renderer;
 
@@ -59,7 +59,7 @@ export class IslandScene {
       uSkyColor: { value: lin("#8ab6dc", 0.56) },
       uSkyMid: { value: lin("#86aec6", 1.0) },
       uZenith: { value: lin("#0e3860", 1.0) },
-      uGroundColor: { value: lin("#35402a", 0.24) },
+      uGroundColor: { value: lin("#35402a", 0.2) },
       uFogColor: { value: lin("#93a8ad", 1.0) },
       uHazeColor: { value: lin("#e4e0d2", 1.0) },
       uSunHaze: { value: lin("#ffd6a2", 1.0) },
@@ -183,7 +183,8 @@ export class IslandScene {
       const y = (-p.y * 0.5 + 0.5) * this.height;
       const dist = l.pos.distanceTo(cam.position);
       const inside = x > 40 && x < this.width - 40 && y > 30 && y < this.height - 30;
-      let show = !behind && inside && dist < 6800 && this.showLabels !== false;
+      let show = !behind && inside && dist < 6800 && this.showLabels !== false
+        && (this.onlyZone == null || this.onlyZone === l.zone.index);
       if (show) {
         const w = Math.max(96, l.el.offsetWidth), h = Math.max(26, l.el.offsetHeight);
         const box = { x0: x - w / 2, x1: x + w / 2, y0: y - h, y1: y + 4 };
@@ -206,7 +207,12 @@ export class IslandScene {
     cam.up.set(0, 1, 0);
     cam.lookAt(view.target.x, view.target.y, view.target.z);
     if (view.roll) cam.rotateZ(view.roll);
-    if (cam.fov !== view.fov) { cam.fov = view.fov; }
+    // framings are authored for a wide frame; on a narrow one, widen the
+    // vertical angle so the same island still fits across the screen
+    const ref = 16 / 9, aspect = this.width / Math.max(1, this.height);
+    const fov = aspect >= ref ? view.fov
+      : Math.min(72, 2 * Math.atan(Math.tan((view.fov * Math.PI) / 360) * Math.pow(ref / aspect, 0.55)) * (180 / Math.PI));
+    if (cam.fov !== fov) cam.fov = fov;
     cam.updateProjectionMatrix();
     this.view = view;
   }

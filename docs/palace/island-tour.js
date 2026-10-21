@@ -22,10 +22,10 @@ function catmull(p0, p1, p2, p3, u, key) {
 /* ── reusable framings, shared by the tour and by ?capture poses ────────── */
 export function overviewPose(layout, spin = 0) {
   const a = 0.88 + spin;
-  const d = 3700;
+  const d = 3380;
   return {
-    pos: v(Math.cos(a) * d, 1340, Math.sin(a) * d),
-    target: v(-30, 250, -70),
+    pos: v(Math.cos(a) * d, 1280, Math.sin(a) * d),
+    target: v(10, 330, -40),
     fov: 36,
   };
 }
@@ -47,39 +47,47 @@ export function mapPose(layout) {
 /* A close aerial on a zone: back off along the bearing from the island's
    centre, drop to a helicopter height, and tilt down into the terrain. */
 export function zonePose(layout, zone, opts = {}) {
+  // each place is framed from the side that shows what it is: the falls from
+  // out at sea, the lagoon off the reef, the valley looking up it
   const framing = {
-    volcano:  { dist: 1120, height: 880, lift: 220, fov: 40 },
-    karst:    { dist: 860,  height: 560, lift: 90,  fov: 42 },
-    temple:   { dist: 640,  height: 520, lift: 40,  fov: 40 },
-    river:    { dist: 760,  height: 520, lift: 40,  fov: 42 },
-    falls:    { dist: 980,  height: 680, lift: 90,  fov: 42 },
-    swamp:    { dist: 720,  height: 430, lift: 20,  fov: 44 },
-    lagoon:   { dist: 880,  height: 480, lift: 20,  fov: 42 },
-    highland: { dist: 900,  height: 700, lift: 150, fov: 40 },
-    crater:   { dist: 700,  height: 600, lift: 100, fov: 40 },
-  }[zone.siteId] || { dist: 800, height: 520, lift: 60, fov: 42 };
+    volcano:  { dist: 1180, height: 760, lift: 300, fov: 40, az: 1.45 },
+    karst:    { dist: 900,  height: 430, lift: 120, fov: 42, az: 0.15 },
+    temple:   { dist: 660,  height: 470, lift: 40,  fov: 40, az: 1.50 },
+    river:    { dist: 780,  height: 430, lift: 40,  fov: 42, az: 1.95 },
+    falls:    { dist: 980,  height: 330, lift: 150, fov: 40, az: -1.47, abs: true, aim: [0, -430] },
+    swamp:    { dist: 740,  height: 380, lift: 20,  fov: 44, az: 2.35 },
+    lagoon:   { dist: 900,  height: 430, lift: 20,  fov: 42, az: 0.75 },
+    highland: { dist: 940,  height: 660, lift: 180, fov: 40, az: 2.55 },
+    crater:   { dist: 720,  height: 540, lift: 110, fov: 40, az: 1.85 },
+  }[zone.siteId] || { dist: 820, height: 500, lift: 60, fov: 42, az: 1.35 };
   // look into the sun side so the slope is rim-lit and the mist glows
-  const bearing = Math.atan2(zone.z, zone.x) + (opts.spin || 0);
-  const a = bearing * 0.35 + 1.35 + (opts.offset ?? 0) * 0.6;
+  const a = framing.az + (opts.spin || 0) + (opts.offset ?? 0) * 0.6;
   const d = framing.dist * (opts.dist || 1);
-  const pos = v(zone.x + Math.cos(a) * d, zone.y + framing.height, zone.z + Math.sin(a) * d);
-  return { pos, target: v(zone.x, zone.y + framing.lift, zone.z), fov: framing.fov };
+  // `aim` nudges the subject off the site itself — the falls want the cliff
+  const [ax, az2] = framing.aim || [0, 0];
+  const tx = zone.x + ax, tz = zone.z + az2;
+  const base = framing.abs ? 0 : zone.y;
+  const pos = v(tx + Math.cos(a) * d, base + framing.height, tz + Math.sin(a) * d);
+  return { pos, target: v(tx, base + framing.lift, tz), fov: framing.fov };
 }
 
 export function markerPose(layout, marker, opts = {}) {
-  const a = (opts.angle ?? 2.25);
-  const d = opts.dist ?? 34;
-  return {
-    pos: v(marker.x + Math.cos(a) * d, marker.y + 16, marker.z + Math.sin(a) * d),
-    target: v(marker.x, marker.y + 6.5, marker.z),
-    fov: 36,
-  };
+  // stand outside the camp, looking in: anywhere else and the camera ends up
+  // inside one of the other tents in the cluster
+  const out = Math.atan2(marker.z - (marker.campZ ?? marker.z - 1), marker.x - (marker.campX ?? marker.x));
+  const a = opts.angle != null ? opts.angle : out;
+  const d = opts.dist ?? 92;
+  const x = marker.x + Math.cos(a) * d, z = marker.z + Math.sin(a) * d;
+  // the ground where the camera ends up may be higher than the marker's own
+  const y = Math.max(marker.y + 58, heightAt(x, z) + 40);
+  return { pos: v(x, y, z), target: v(marker.x, marker.y + 6, marker.z), fov: 36 };
 }
 
-/* The bookmark the tour lands on: the oldest save in the biggest district of
-   the temple zone, falling back to whatever the island actually has. */
+/* The bookmark the tour lands on: the oldest save in the biggest camp of the
+   river valley — open ground, with the river behind it — falling back to
+   whatever zones the library actually has. */
 export function heroMarker(layout) {
-  const prefer = ["temple", "river", "lagoon"];
+  const prefer = ["river", "lagoon", "highland", "temple"];
   for (const siteId of prefer) {
     const zone = zoneBySite(layout, siteId);
     if (zone && zone.markers.length) {
@@ -148,16 +156,13 @@ export function buildPlan(layout) {
   const dip = push("dip", heroZone.place, 5, `${heroZone.biome}`);
   dip.zone = heroZone.index;
   key(at(dip, 0.1), zonePose(layout, heroZone, { offset: 0.9, dist: 1.25 }));
-  key(at(dip, 1), {
-    pos: v(hero.x + Math.cos(2.25) * 150, hero.y + 78, hero.z + Math.sin(2.25) * 150),
-    target: v(hero.x, hero.y + 10, hero.z), fov: 38,
-  });
+  key(at(dip, 1), markerPose(layout, hero, { dist: 290 }));
 
   const land = push("marker", "One bookmark", 6, hero ? hero.item.title : "");
   land.zone = heroZone.index;
   land.marker = hero ? hero.id : null;
-  key(at(land, 0.35), markerPose(layout, hero, { dist: 58, angle: 2.25 }));
-  key(at(land, 1), markerPose(layout, hero, { dist: 33, angle: 2.05 }));
+  key(at(land, 0.35), markerPose(layout, hero, { dist: 180 }));
+  key(at(land, 1), markerPose(layout, hero, { dist: 90 }));
 
   const out = push("pullout", "Library Island", 6, `${layout.total} saves · ${layout.zones.length} zones`);
   key(at(out, 0.42), { pos: v(hero.x + 520, hero.y + 560, hero.z + 620), target: v(hero.x, hero.y, hero.z), fov: 40 });
