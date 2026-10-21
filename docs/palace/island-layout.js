@@ -328,8 +328,8 @@ export function sunAt(x, z) {
    camera has to clear this, not just the ground, or a flight beat ends up
    inside a tree and the frame goes flat green. */
 export const CANOPY_TOP = 74;
-export const CAMP_CLEAR = 78;   // bare ground around a camp, wide enough to frame it in
-export const CAMP_FADE = 158;  // and the scrubby edge of the clearing
+export const CAMP_CLEAR = 70;   // bare ground around a camp, wide enough to frame it in
+export const CAMP_FADE = 146;  // and the scrubby edge of the clearing
 
 /* A deliberately conservative upper bound on the canopy at (x, z): the
    pure-number twin of island-flora's canopyDensity, with the terms that only

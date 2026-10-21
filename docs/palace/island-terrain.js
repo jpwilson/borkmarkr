@@ -206,7 +206,7 @@ function groundColor(x, z, y, slope, moist, zoneGap, camp, out) {
   // the landing beat from being a black floor under a shadowed canopy
   if (camp > 0 && y > 6) {
     const earth = lerp3(PAL.jungleDry, PAL.trail, 0.25 + 0.4 * fbm(x * 0.03, z * 0.03, 2), tmpB);
-    lerp3(out, earth, camp * 0.44, out);
+    lerp3(out, earth, camp * 0.34, out);
   }
 
   // under water: pale sand in the shallows, dark basalt as it drops away
@@ -345,9 +345,13 @@ export function terrainMaterial(uniforms) {
         // for the texture a real surface would have at this distance
         vec3 d1 = texture2D(uDetail, vWorld.xz * 0.0022).rgb;
         vec3 d2 = texture2D(uDetail, vWorld.xz * 0.0135).rgb;
-        float grain = (d1.r - 0.5) * 0.7 + (d2.g - 0.5) * 0.45;
+        // a third octave that only exists close up, so standing in a clearing
+        // is not standing on a flat wash of one colour
+        float close = 1.0 - smoothstep(90.0, 700.0, length(vWorld - cameraPosition));
+        vec3 d3 = texture2D(uDetail, vWorld.xz * 0.11).rgb;
+        float grain = (d1.r - 0.5) * 0.7 + (d2.g - 0.5) * 0.45 + (d3.r - 0.5) * 0.5 * close;
         vec3 base = vColor * (1.0 + grain * 0.42);
-        base *= 1.0 + (d2.b - 0.5) * 0.25;
+        base *= 1.0 + (d2.b - 0.5) * 0.25 + (d3.b - 0.5) * 0.3 * close;
 
         float shade = vLit.x, ao = vLit.y;
         float ndl = dot(n, uSunDir);
