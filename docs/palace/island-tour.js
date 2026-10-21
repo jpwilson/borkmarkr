@@ -70,33 +70,73 @@ export function zonePose(layout, zone, opts = {}) {
   const base = framing.abs ? 0 : zone.y;
   const pos = v(tx + Math.cos(a) * d, base + framing.height, tz + Math.sin(a) * d);
   const target = v(tx, base + framing.lift, tz);
-  // a low beat over a dense zone would otherwise sit inside the crowns
-  pos.y = Math.max(pos.y, clearanceAt(pos.x, pos.z, layout.clearings, 46));
+  // a low beat over a dense zone would otherwise sit inside the crowns — and
+  // even eighty metres clear of them, a crown that close fills a third of the
+  // frame with one green blob. Hold the lens well off the canopy.
+  pos.y = Math.max(pos.y, clearanceAt(pos.x, pos.z, layout.clearings, 78));
   return { pos, target, fov: framing.fov };
 }
 
 export function markerPose(layout, marker, opts = {}) {
   if (!marker) return overviewPose(layout);
   // stand outside the camp, looking in: anywhere else and the camera ends up
-  // inside one of the other tents in the cluster
+  // over the middle of the cluster and the clearing reads as a hole
   const out = Math.atan2(marker.z - (marker.campZ ?? marker.z - 1), marker.x - (marker.campX ?? marker.x));
   // out along the camp's own radius, so the marker stands nearest the lens and
   // the rest of its camp falls away behind it; tilted off that line toward
   // whichever side of the clearing lies lower, so the camera looks downhill
   const side = heightAt(marker.x + Math.cos(out + 1.0) * 46, marker.z + Math.sin(out + 1.0) * 46)
     <= heightAt(marker.x + Math.cos(out - 1.0) * 46, marker.z + Math.sin(out - 1.0) * 46) ? 1 : -1;
-  const a = opts.angle != null ? opts.angle : out + side * 0.55;
-  // `dist` is how far the camera stands from the marker, along the ground;
-  // `pitch` tips it down onto the camp so the tents read against the clearing
-  const d = opts.dist ?? 40;
-  const pitch = opts.pitch ?? 0.50;
-  const x = marker.x + Math.cos(a) * d, z = marker.z + Math.sin(a) * d;
-  // frame the marker a little below centre: the camp, not the sky above it
+  /* A helicopter hover, not a tripod. The near geometry of this island is a
+     scatter of blobs: at eye level it reads as toy, and no amount of lighting
+     fixes that. So the close-up is flown — a hundred and fifty metres up,
+     tipped forty degrees down, the camp small and marked, the canopy around
+     it doing the work. `alt` is metres above the camp and `pitch` is the
+     tilt; the ground distance follows from them, never the other way round,
+     because a camera lifted over a crown must not turn into a plan view. */
   const target = v(marker.x, marker.y + 8, marker.z);
-  const raw = v(x, target.y + d * Math.tan(pitch), z);
+  const alt = opts.alt ?? 170;
+  const pitch = opts.pitch ?? 0.72;
+  const tan = Math.tan(pitch);
+  /* Where to hover. The near geometry of this island is a scatter of blobs
+     and the emergents among them are fifty metres across: one standing on a
+     ridge a hundred and fifty metres off the lens is a third of the frame,
+     and that single blob is what makes a close-up read as a tabletop. So the
+     framing is chosen, not assumed — every bearing round the camp is scored
+     by how badly the canopy would crowd the lens there, at three heights,
+     and the cheapest clear frame wins. */
+  const crowd = (px, pz, py) => {
+    let worst = 0;
+    for (let i = 0; i < 12; i++) {
+      const ang = (i / 12) * Math.PI * 2 + 0.3;
+      for (const rad of [110, 190, 300]) {
+        const top = canopyTopAt(px + Math.cos(ang) * rad, pz + Math.sin(ang) * rad, layout.clearings);
+        const size = (52 + Math.max(0, top - py)) / Math.hypot(rad, Math.max(24, py - top));
+        if (size > worst) worst = size;
+      }
+    }
+    return worst;
+  };
+  const nominal = out + side * 0.55;
+  const bearings = opts.angle != null ? [opts.angle]
+    : Array.from({ length: 12 }, (_, i) => nominal + (i / 12) * Math.PI * 2);
+  let best = null;
+  for (const a of bearings) {
+    for (const k of [1, 1.3, 1.6, 1.9]) {
+      const y0 = target.y + alt * k;
+      const d = (y0 - target.y) / tan;
+      const x = marker.x + Math.cos(a) * d, z = marker.z + Math.sin(a) * d;
+      const y = Math.max(y0, clearanceAt(x, z, layout.clearings, 72));
+      // nudged back toward the camp's open side, and toward staying low:
+      // height is bought only where it actually buys a clear frame
+      const off = Math.abs(((a - nominal + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+      const score = crowd(x, z, y) + off * 0.012 + (k - 1) * 0.05;
+      if (!best || score < best.score) best = { score, a, pos: v(x, y, z) };
+    }
+  }
   // and climb until nothing — ground or crown — stands in the line of sight
-  const pos = liftOverCanopy(raw, target, layout.clearings, 18);
-  return { pos, target, fov: opts.fov ?? 45 };
+  const pos = liftOverCanopy(best.pos, target, layout.clearings, 18);
+  return { pos, target, fov: opts.fov ?? 34, angle: best.a };
 }
 
 /* The bookmark the tour lands on. The beat is the one close-up in the film,
@@ -179,22 +219,29 @@ export function buildPlan(layout) {
 
   /* then down into the zone the hero marker is in, and land on it */
   if (hero && heroZone) {
+    // the landing is a descent along one bearing: pick the bearing the final
+    // hover chose and fly the whole approach down it, or the three keys each
+    // solve for their own best side and the camera crabs between them
+    const hover = markerPose(layout, hero);
+    const angle = hover.angle;
     const dip = push("dip", heroZone.place, 5, `${heroZone.biome}`);
     dip.zone = heroZone.index;
     key(at(dip, 0.1), zonePose(layout, heroZone, { offset: 0.9, dist: 1.25 }));
-    key(at(dip, 1), markerPose(layout, hero, { dist: 215, pitch: 0.72, fov: 40 }));
+    key(at(dip, 1), markerPose(layout, hero, { alt: 330, pitch: 0.62, fov: 40, angle }));
 
     const land = push("marker", "One bookmark", 6, hero.item.title);
     land.zone = heroZone.index;
     land.marker = hero.id;
-    key(at(land, 0.35), markerPose(layout, hero, { dist: 104, pitch: 0.64 }));
-    key(at(land, 1), markerPose(layout, hero, { dist: 40, pitch: 0.50 }));
+    key(at(land, 0.35), markerPose(layout, hero, { alt: 235, pitch: 0.68, angle }));
+    key(at(land, 1), hover);
   }
 
   const out = push("pullout", "Library Island", 6,
     layout.total ? `${layout.total} saves · ${layout.zones.length} zones` : "Save a link and it lands here");
   if (hero) {
-    key(at(out, 0.42), { pos: v(hero.x + 520, hero.y + 560, hero.z + 620), target: v(hero.x, hero.y, hero.z), fov: 40 });
+    // the pull-out has to actually pull out: half a kilometre up and a
+    // kilometre back, or the beat is another low skim over the crowns
+    key(at(out, 0.42), { pos: v(hero.x + 900, hero.y + 1020, hero.z + 1080), target: v(hero.x, hero.y + 60, hero.z), fov: 40 });
   } else {
     key(at(out, 0.42), overviewPose(layout, 0.55));
   }
@@ -238,7 +285,7 @@ export class Tour {
     };
     // never fly through the island — or through the canopy standing on it
     const clearings = this.layout.clearings;
-    const floor = clearanceAt(pos.x, pos.z, clearings, 26);
+    const floor = clearanceAt(pos.x, pos.z, clearings, 68);
     if (pos.y < floor) pos.y = floor;
     const beat = this.beatAt(t);
     const local = clamp((t - beat.start) / beat.length, 0, 1);

@@ -419,16 +419,18 @@ export function buildFlora(field, layout, uniforms, stacks) {
     const topY = st.sea ? -26 + st.h : st.h;
     // a crown of scrub spilling over the summit, sized to the tower it is on
     // the crags reach above the nominal top, so the crown sits above it too
-    const crest = topY + st.h * 0.055;
-    const n = Math.max(9, Math.round(st.r * 0.62));
+    const crest = topY + st.h * 0.14;
+    const n = Math.max(14, Math.round(st.r * 1.1));
     for (let k = 0; k < n; k++) {
-      const a = r() * 6.283, rr = st.r * 0.8 * Math.sqrt(r());
-      canopy.push({ x: st.x + Math.cos(a) * rr, z: st.z + Math.sin(a) * rr, y: crest - st.h * 0.05 * r(),
-        s: st.r * (0.17 + 0.2 * r()), yaw: r() * 6.28,
+      const a = r() * 6.283, rr = st.r * 0.92 * Math.sqrt(r());
+      // scrub drapes down the notches between the pinnacles rather than
+      // sitting in a ring on a rim: spread the depth, keep the clumps small
+      canopy.push({ x: st.x + Math.cos(a) * rr, z: st.z + Math.sin(a) * rr, y: crest - st.h * (0.02 + 0.26 * r() * r()),
+        s: st.r * (0.13 + 0.19 * r()), yaw: r() * 6.28,
         tint: [0.74 + 0.3 * r(), 1.0, 0.66 + 0.26 * r()], shade: 1, ao: 0.95, moist: 0.5, variant: (r() * 3) | 0 });
     }
     // growth catching on the ledges, thinning down the sheer flanks
-    const ledges = Math.max(10, Math.round(st.h * 0.085));
+    const ledges = Math.max(14, Math.round(st.h * 0.13));
     for (let k = 0; k < ledges; k++) {
       const a = r() * 6.283, t = 0.14 + 0.76 * r();
       const rr = st.r * (0.88 - 0.1 * t) * (0.9 + 0.2 * r());

@@ -302,7 +302,7 @@ function wire() {
     if (hit) {
       actions.exitTour();
       actions.select(hit);
-      flyTo(markerPose(state.layout, hit, { dist: 46 }), 1200);
+      flyTo(markerPose(state.layout, hit, { alt: 125, pitch: 0.72 }), 1200);
     } else actions.select(null);
   });
   stage.addEventListener("wheel", (e) => {

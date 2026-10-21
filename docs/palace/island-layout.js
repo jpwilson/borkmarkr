@@ -328,8 +328,8 @@ export function sunAt(x, z) {
    camera has to clear this, not just the ground, or a flight beat ends up
    inside a tree and the frame goes flat green. */
 export const CANOPY_TOP = 74;
-export const CAMP_CLEAR = 70;   // bare ground around a camp, wide enough to frame it in
-export const CAMP_FADE = 146;  // and the scrubby edge of the clearing
+export const CAMP_CLEAR = 44;   // bare ground around a camp, wide enough to frame it in
+export const CAMP_FADE = 102;  // and the scrubby edge of the clearing
 
 /* A deliberately conservative upper bound on the canopy at (x, z): the
    pure-number twin of island-flora's canopyDensity, with the terms that only
@@ -359,9 +359,16 @@ export function canopyTopAt(x, z, clearings) {
    disc around it, so skimming a ridge line does not clip a crown. */
 export function clearanceAt(x, z, clearings, pad = 26) {
   let top = canopyTopAt(x, z, clearings);
+  // two rings, not one: a crown standing on rising ground seventy metres to
+  // the side is what fills the near corner of an aerial frame, and a disc of
+  // 34 m never saw it coming
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2 + 0.4;
     top = Math.max(top, canopyTopAt(x + Math.cos(a) * 34, z + Math.sin(a) * 34, clearings));
+  }
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + 1.1;
+    top = Math.max(top, canopyTopAt(x + Math.cos(a) * 74, z + Math.sin(a) * 74, clearings) - 10);
   }
   return top + pad;
 }
@@ -372,7 +379,7 @@ export function clearanceAt(x, z, clearings, pad = 26) {
    grows with u: right next to the subject the only thing to clear is the
    subject's own ground, and demanding full clearance there would tip every
    close-up into a steep plan view. */
-export function liftOverCanopy(pos, target, clearings, margin = 16, samples = 14) {
+export function liftOverCanopy(pos, target, clearings, margin = 16, samples = 32) {
   let rise = pos.y - target.y;
   for (let i = 1; i <= samples; i++) {
     const u = i / samples;

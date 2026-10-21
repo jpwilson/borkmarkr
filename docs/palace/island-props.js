@@ -101,10 +101,20 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
   const leanX = noise2(seed, 7.7) * 0.085, leanZ = noise2(seed + 2, 5.1) * 0.085;
   // limestone stands almost vertical: the taper is a few per cent, not a cone
   const taper = 0.015 + 0.085 * Math.abs(noise2(seed * 1.7, 3.3));
-  // and it does not round off at the top — it breaks into crags
-  const breakAt = 0.80 + 0.11 * Math.abs(noise2(seed + 9, 1.1));
-  // per-column crown height, so the summit is a jagged ridge in plan
-  const crownOf = (a) => 0.42 + 0.58 * clamp(0.5 + 1.25 * noise2(Math.cos(a) * 2.2 + seed * 3.1, Math.sin(a) * 2.2 - seed), 0, 1);
+  // and it does not round off at the top — it breaks into spires
+  const breakAt = 0.62 + 0.10 * Math.abs(noise2(seed + 9, 1.1));
+  /* The summit is two to four separate pinnacles, not a cap. `spireOf` is a
+     few sharp lobes round the compass plus noise, so each tower has its own
+     count and spacing: where it peaks the rock keeps its width and runs on
+     up, and between the peaks it falls away into notches. A single apex over
+     a raised rim is what made these read as sawn-off stumps. */
+  const lobes = 2 + (Math.abs(noise2(seed + 3.3, 0.9)) * 3.4 | 0);
+  const phase = noise2(seed, 2.2) * Math.PI * 2;
+  const spireOf = (a) => clamp(
+    0.52 * Math.pow(0.5 + 0.5 * Math.cos(a * lobes + phase), 2.4)
+    + 0.40 * Math.pow(0.5 + 0.5 * Math.cos(a * (lobes + 2) - phase * 1.7 + seed), 3.2)
+    + 0.34 * clamp(0.5 + 0.9 * noise2(Math.cos(a) * 2.2 + seed * 3.1, Math.sin(a) * 2.2 - seed), 0, 1)
+    - 0.06, 0, 1);
   for (let r = 0; r <= RINGS; r++) {
     const t = r / RINGS;
     // sheer the whole way, with the sea notching a visible undercut in the
@@ -121,17 +131,20 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
       const fl = Math.sin(a * 7 + seed * 2.1);
       const fissure = Math.pow(Math.abs(Math.sin(a * 4.5 + seed * 5.3)), 7) * 0.9;
       const fn = noise2(Math.cos(a) * 2.6 + seed, Math.sin(a) * 2.6 + t * 0.7);
-      // above the break the crown falls away by a different amount each way
-      // round, which is what turns one rounded cap into a cluster of crags
+      // above the break the rock between the spires is eaten away, so the
+      // plan narrows to a handful of fingers instead of staying a disc
       const up = t > breakAt ? (t - breakAt) / (1 - breakAt) : 0;
-      const crag = up > 0 ? Math.pow(up, 1.5) * (1.3 * (crownOf(a) - 0.72)) : 0;
+      const sp = spireOf(a);
+      // the notches cut in, but not to nothing: pared to a needle a tower
+      // stops being limestone and starts being a tooth
+      const crag = up > 0 ? Math.pow(up, 1.25) * (0.95 * sp - 0.50) : 0;
       const flute = 1 + 0.10 * fl + 0.09 * fn + 0.045 * Math.sin(a * 19 + t * 2.0) - fissure * 0.16 + crag;
       const rad = R * Math.max(0.02, prof) * ledge * Math.max(0.05, flute);
       const x = cx + Math.cos(a) * rad * ex + leanX * t * H;
       const z = cz + Math.sin(a) * rad * ez + leanZ * t * H;
-      // and the summit is a ridge of crags, not a flat cap: each column of
-      // the crown stops at its own height
-      const yy = y + (up > 0 ? Math.pow(up, 1.3) * H * 0.11 * (crownOf(a) * 2 - 1) : 0);
+      // and each finger runs on past the nominal top to its own height, so
+      // the silhouette is a comb of pinnacles with deep notches between them
+      const yy = y + (up > 0 ? Math.pow(up, 1.2) * H * 0.26 * (sp - 0.30) : 0);
       // pale dry limestone, with long dark rain streaks running straight down
       const streak = clamp(0.5 + 0.85 * noise2(a * 6.3 + seed, t * 0.45), 0, 1);
       let c = mixc(PAL.limestone, PAL.rockPale, 0.08 + 0.3 * noise2(a * 2.3, t * 1.2));
@@ -156,7 +169,12 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
     const j = (i + 1) % SEG;
     b.quad(rows[r][i], rows[r + 1][i], rows[r + 1][j], rows[r][j]);
   }
-  const topC = b.vert(cx + leanX * H, baseY + H + R * 0.02, cz + leanZ * H, 0, 1, 0,
+  /* Close the fingers off against a hub sunk below the lowest of them: fan
+     to a single high apex and the notches fill back in, which is the flat cap
+     all over again. Sunk, the cap is invisible and the comb stays a comb. */
+  let lowest = Infinity;
+  for (let i = 0; i < SEG; i++) lowest = Math.min(lowest, b.pos[rows[RINGS][i] * 3 + 1]);
+  const topC = b.vert(cx + leanX * H, lowest - H * 0.02, cz + leanZ * H, 0, 1, 0,
     mixc(PAL.limestone, PAL.moss, 0.6), shadeBase, 1, 0.3);
   for (let i = 0; i < SEG; i++) b.tri(topC, rows[RINGS][(i + 1) % SEG], rows[RINGS][i]);
 }

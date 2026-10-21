@@ -198,12 +198,19 @@ assert.ok(tour.duration >= 48 && tour.duration <= 56, `tour is ${tour.duration}s
      of the flight has to be above the trees, and on the beats that hold a
      bookmark open the camp itself has to be visible: a frame of leaves is a
      broken frame, however legal the camera position is. */
+  const MIN_AIR = 60;
   let checkedSight = 0;
   for (let t = 0; t <= tour.duration; t += 0.2) {
     const s = tour.stateAt(t);
     const canopy = L.canopyTopAt(s.pos.x, s.pos.z, island.clearings);
     assert.ok(s.pos.y >= canopy + 4,
       `camera clears the canopy at ${t.toFixed(1)}s (y ${s.pos.y.toFixed(1)} vs ${canopy.toFixed(1)})`);
+    // and over land it clears it by a wide margin, not by a metre: a crown
+    // the lens can nearly touch is one green blob across a third of the frame
+    if (L.heightAt(s.pos.x, s.pos.z) > 8) {
+      assert.ok(s.pos.y >= canopy + MIN_AIR,
+        `camera holds ${MIN_AIR} m of air over the canopy at ${t.toFixed(1)}s (y ${s.pos.y.toFixed(1)} vs ${canopy.toFixed(1)})`);
+    }
     if (!s.marker) continue;
     const m = island.byId.get(s.marker);
     // march the sight line and make sure nothing stands in front of the camp
@@ -220,12 +227,27 @@ assert.ok(tour.duration >= 48 && tour.duration <= 56, `tour is ${tour.duration}s
   }
   assert.ok(checkedSight > 20, "the landing holds long enough to be worth checking");
 
-  // and the close-up itself: 30-60 m out, tipped down onto the camp
+  // and the close-up itself: an aerial hover, 120-300 m off the camp, tipped
+  // 30-55 degrees down onto it — low enough to read the camp, high enough
+  // that the near crowns are specks and not blobs filling the frame
   const hero = T.heroMarker(island);
   const close = T.markerPose(island, hero);
   const range = Math.hypot(close.pos.x - close.target.x, close.pos.y - close.target.y, close.pos.z - close.target.z);
-  assert.ok(range > 30 && range < 62, `the marker close-up stands ${range.toFixed(0)} m off its subject`);
-  assert.ok(close.pos.y > close.target.y + 12, "and looks down at it, not up");
+  assert.ok(range > 150 && range < 620, `the marker close-up stands ${range.toFixed(0)} m off its subject`);
+  const ground = Math.hypot(close.pos.x - close.target.x, close.pos.z - close.target.z);
+  const down = Math.atan2(close.pos.y - close.target.y, ground) * 180 / Math.PI;
+  assert.ok(down > 30 && down < 60, `the hover is pitched ${down.toFixed(0)} degrees down`);
+  assert.ok(close.pos.y > close.target.y + 120, "and hovers well above the canopy it is looking over");
+  assert.ok(close.fov < 40, "on a long lens, so the frame crops the crowns at its edges");
+  // the whole point of the hover: no crown anywhere near the lens
+  for (let i = 0; i < 16; i++) {
+    const ang = (i / 16) * Math.PI * 2;
+    for (const rad of [110, 190]) {
+      const top = L.canopyTopAt(close.pos.x + Math.cos(ang) * rad, close.pos.z + Math.sin(ang) * rad, island.clearings);
+      assert.ok(close.pos.y - top > 120,
+        `a crown ${rad} m from the hover reaches within ${(close.pos.y - top).toFixed(0)} m of the lens`);
+    }
+  }
   assert.ok(close.pos.y >= L.canopyTopAt(close.pos.x, close.pos.z, island.clearings),
     "the close-up camera is not inside a tree");
   // the camp really is a clearing, both in the scatter and in the bound

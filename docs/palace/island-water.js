@@ -7,7 +7,7 @@
    whenever it is asked for. */
 import * as THREE from "three";
 import { ATMOS_PARS, PAL } from "./island-terrain.js";
-import { clamp, mix, noise2, fbm, RIVER, FALLS, riverSample, heightAt, coastField } from "./island-layout.js";
+import { clamp, mix, sstep, noise2, fbm, RIVER, FALLS, riverSample, heightAt, coastField } from "./island-layout.js";
 import { Build } from "./island-props.js";
 
 /* R: depth below the waterline (0..120 → 0..1). G: land height (0..60 → 0..1). */
@@ -157,24 +157,64 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
 }
 
 /* ── inland water: the river, the crater lake, the marsh ────────────────── */
-const MARSH_FLAG = 1;   // lit.z, read by the shader to switch water type
+const MARSH_FLAG = 1;     // lit.z: still, tea-dark, lily pads
+const RIVER_FLAG = 0.5;   // lit.z: moving, tea-dark, no pads
+/* 0 is the crater lake, which is the one body of water here that really is a
+   mirror; everything draining the jungle carries peat and reflects almost
+   nothing. A river rendered as sky was a pale blue ribbon laid over the
+   canopy — the one thing in frame that did not belong to the island. */
 
 export function buildInland(field, uniforms) {
   const b = new Build();
-  const col = [0.055, 0.1, 0.085];
-  // river ribbon
-  for (let i = 0; i < RIVER.length - 1; i++) {
-    const [ax, az, ay] = RIVER[i], [bx, bz, by] = RIVER[i + 1];
-    const dx = bx - ax, dz = bz - az, len = Math.hypot(dx, dz);
+  /* The river ribbon. Eight control points drawn as eight long quads gave
+     eight straight edges and a blunt rectangle where the last one stopped in
+     the sea. Resampled fine, wobbled at the banks, tapered to nothing at the
+     spring and faded out as the bed drops to the waterline, it reads as a
+     river instead of as a strip of card. */
+  const centre = (u) => {
+    const f = clamp(u, 0, 1) * (RIVER.length - 1);
+    const i = Math.min(RIVER.length - 2, Math.floor(f)), t = f - i;
+    const P = (k) => RIVER[clamp(k, 0, RIVER.length - 1)];
+    const h = (k) => {
+      const p0 = P(i - 1)[k], p1 = P(i)[k], p2 = P(i + 1)[k], p3 = P(i + 2)[k];
+      const m1 = (p2 - p0) * 0.5, m2 = (p3 - p1) * 0.5, t2 = t * t, t3 = t2 * t;
+      return (2 * t3 - 3 * t2 + 1) * p1 + (t3 - 2 * t2 + t) * m1 + (-2 * t3 + 3 * t2) * p2 + (t3 - t2) * m2;
+    };
+    return [h(0), h(1), h(2)];
+  };
+  const STEPS = 96;
+  let prev = null;
+  for (let k = 0; k <= STEPS; k++) {
+    const u = k / STEPS;
+    const [cx, cz, cy] = centre(u);
+    const [nx, nz] = centre(Math.min(1, u + 1 / STEPS));
+    const [bx, bz] = centre(Math.max(0, u - 1 / STEPS));
+    const dx = nx - bx, dz = nz - bz, len = Math.max(1e-4, Math.hypot(dx, dz));
     const px = -dz / len, pz = dx / len;
-    const w0 = 15 + 30 * (i / (RIVER.length - 1)), w1 = 15 + 30 * ((i + 1) / (RIVER.length - 1));
-    const y0 = ay + 2.2, y1 = by + 2.2;
-    const c0 = [0.05, 0.1, 0.1], c1 = [0.07, 0.13, 0.12];
-    const v0 = b.vert(ax + px * w0, y0, az + pz * w0, 0, 1, 0, c0, 1, 1, 0);
-    const v1 = b.vert(ax - px * w0, y0, az - pz * w0, 0, 1, 0, c0, 1, 1, 0);
-    const v2 = b.vert(bx - px * w1, y1, bz - pz * w1, 0, 1, 0, c1, 1, 1, 0);
-    const v3 = b.vert(bx + px * w1, y1, bz + pz * w1, 0, 1, 0, c1, 1, 1, 0);
-    b.quad(v0, v3, v2, v1);
+    // the spring is a trickle, and the bed sinks under the waterline in the
+    // delta: both ends taper away rather than stopping on a square edge
+    // and it stops in the mangroves rather than running out across the sand:
+    // below the pool line the marsh is the water, and a ribbon carried on to
+    // the beach only ever drew a dark wedge lying on top of it
+    const mouth = clamp((cy - 5.0) / 9, 0, 1);
+    const w = (9 + 31 * u) * sstep(0, 0.1, u) * Math.pow(mouth, 0.7);
+    if (w < 0.8) { prev = null; continue; }
+    // banks wander: without this the two edges stay exactly parallel and the
+    // whole thing reads as a ruled line across the jungle
+    const wl = w * (0.76 + 0.44 * clamp(0.5 + noise2(cx * 0.013, cz * 0.013 + 4.1), 0, 1));
+    const wr = w * (0.76 + 0.44 * clamp(0.5 + noise2(cx * 0.013 - 7.7, cz * 0.013), 0, 1));
+    const y = cy + 2.2;
+    const deep = clamp(u * 0.8 + 0.2, 0, 1);
+    const mid = [mix(0.040, 0.030, deep), mix(0.062, 0.052, deep), mix(0.046, 0.038, deep)];
+    const edge = [mid[0] * 1.5 + 0.012, mid[1] * 1.4 + 0.014, mid[2] * 1.3 + 0.008];
+    const L = b.vert(cx + px * wl, y, cz + pz * wl, 0, 1, 0, edge, 1, 1, RIVER_FLAG);
+    const R = b.vert(cx - px * wr, y, cz - pz * wr, 0, 1, 0, edge, 1, 1, RIVER_FLAG);
+    const C = b.vert(cx, y, cz, 0, 1, 0, mid, 1, 1, RIVER_FLAG);
+    if (prev) {
+      b.quad(prev.L, L, C, prev.C);
+      b.quad(prev.C, C, R, prev.R);
+    }
+    prev = { L, C, R };
   }
   // crater lake
   const lake = { x: -130, z: -830, r: 118, y: 290 };
@@ -192,12 +232,17 @@ export function buildInland(field, uniforms) {
   const M = { x: -740, z: 520, r: 420, y: 6.8 };
   const STEP = 11;
   const N = Math.ceil((M.r * 2) / STEP);
-  const under = (x, z) => heightAt(x, z) < M.y - 0.35 && coastField(x, z) > 24;
+  // held back off the sand: a pool that reached the beach drew a hard-edged
+  // polygon across it, and a grid edge on open ground is a straight line
+  const under = (x, z) => heightAt(x, z) < M.y - 0.5 && coastField(x, z) > 72;
   const idxOf = new Map();
   const vertAt = (i, j) => {
     const key = j * (N + 1) + i;
     if (idxOf.has(key)) return idxOf.get(key);
-    const x = M.x - M.r + i * STEP, z = M.z - M.r + j * STEP;
+    // the lattice is a grid; the water is not. Shifting each node off it by
+    // a few metres of noise keeps every pool edge from reading as a stair
+    const gx = M.x - M.r + i * STEP, gz = M.z - M.r + j * STEP;
+    const x = gx + 4.0 * noise2(gx * 0.07, gz * 0.07), z = gz + 4.0 * noise2(gz * 0.07 - 5.2, gx * 0.07);
     const depth = clamp((M.y - heightAt(x, z)) / 7, 0, 1);
     // peat-stained water: almost black where it is deep, warm tannin at the
     // mud line, a green algal film in the stillest corners
@@ -243,11 +288,14 @@ export function buildInland(field, uniforms) {
         vec3 sky = skyAt(normalize(vec3(refl.x, abs(refl.y) + 0.02, refl.z))) * 0.8;
         // Tea-dark water reflects the canopy standing over it, not the sky:
         // cap the mirror hard, or the marsh renders as a slab of grey cloud.
-        float mirror = mix(clamp(fres * 0.85 + 0.1, 0.0, 1.0), clamp(fres * 0.26, 0.0, 0.17), vMarsh);
-        vec3 overhead = mix(sky, sky * vec3(0.22, 0.30, 0.18) + vec3(0.012, 0.018, 0.007), vMarsh);
+        // anything draining the jungle is tea-dark, river or marsh alike; only
+        // the crater lake (vMarsh 0) is allowed to behave like a mirror
+        float stain = smoothstep(0.08, 0.5, vMarsh);
+        float mirror = mix(clamp(fres * 0.85 + 0.1, 0.0, 1.0), clamp(fres * 0.26, 0.0, 0.17), stain);
+        vec3 overhead = mix(sky, sky * vec3(0.22, 0.30, 0.18) + vec3(0.012, 0.018, 0.007), stain);
         vec3 color = mix(vColor, overhead, mirror);
 
-        if (vMarsh > 0.5) {
+        if (vMarsh > 0.75) {
           // peat glow: a low sun goes through the top inch and comes back warm
           float toSun = max(0.0, dot(normalize(-viewDir), uSunDir));
           color += vec3(0.16, 0.10, 0.035) * pow(toSun, 2.4) * 0.5;
@@ -264,7 +312,7 @@ export function buildInland(field, uniforms) {
           color += uSunColor * pow(glint, 220.0) * 0.8 * (1.0 - leaf);
         } else {
           float toSun = max(0.0, dot(reflect(-viewDir, n), uSunDir));
-          color += uSunColor * pow(toSun, 48.0) * 0.9;
+          color += uSunColor * pow(toSun, 48.0) * mix(0.9, 0.22, stain);
         }
         color = applyAtmos(color, vWorld, -viewDir);
         gl_FragColor = vec4(color * uExposure, 1.0);
