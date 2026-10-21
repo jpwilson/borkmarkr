@@ -138,7 +138,8 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
         // mist is lit from behind by a low sun: that is the whole effect
         vec3 color = uTint * (uSkyColor * 0.85 + uSunColor * (0.10 + pow(toSun, 3.0) * 0.55));
         float dist = length(vWorld - cameraPosition);
-        alpha *= smoothstep(30.0, 220.0, dist);
+        // a bank only reads as a bank from outside it
+        alpha *= smoothstep(60.0, 520.0, dist);
         color = applyAtmos(color, vWorld, -viewDir);
         gl_FragColor = vec4(color * uExposure, alpha);
         #include <tonemapping_fragment>
@@ -188,8 +189,10 @@ export function buildMist(field, layout, uniforms, groundAt) {
   }
   const group = new THREE.Group();
   group.name = "mist";
-  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.97, 0.92], opacity: 0.13, flat: 2.3, name: "mist-low", order: 6 }));
-  group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.1, flat: 2.6, name: "mist-high", order: 7 }));
+  // opacity is deliberately low: these are layers that separate the ridges,
+  // not weather. Stacked three or four deep they still read as a bank.
+  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.97, 0.92], opacity: 0.075, flat: 2.3, name: "mist-low", order: 6 }));
+  group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.042, flat: 2.6, name: "mist-high", order: 7 }));
   return group;
 }
 

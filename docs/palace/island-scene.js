@@ -62,7 +62,7 @@ export class IslandScene {
       uFogColor: { value: lin("#93a8ad", 1.0) },
       uHazeColor: { value: lin("#e4e0d2", 1.0) },
       uSunHaze: { value: lin("#ffd6a2", 1.0) },
-      uFogDensity: { value: 0.000072 },
+      uFogDensity: { value: 0.000058 },
       uFogHeight: { value: 390 },
       uTime: { value: 0 },
       uExposure: { value: 0.70 },

@@ -7,7 +7,7 @@
    whenever it is asked for. */
 import * as THREE from "three";
 import { ATMOS_PARS, PAL } from "./island-terrain.js";
-import { clamp, mix, RIVER, FALLS, riverSample, heightAt } from "./island-layout.js";
+import { clamp, mix, noise2, fbm, RIVER, FALLS, riverSample, heightAt, coastField } from "./island-layout.js";
 import { Build } from "./island-props.js";
 
 /* R: depth below the waterline (0..120 → 0..1). G: land height (0..60 → 0..1). */
@@ -147,6 +147,8 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
 }
 
 /* ── inland water: the river, the crater lake, the marsh ────────────────── */
+const MARSH_FLAG = 1;   // lit.z, read by the shader to switch water type
+
 export function buildInland(field, uniforms) {
   const b = new Build();
   const col = [0.055, 0.1, 0.085];
@@ -158,55 +160,102 @@ export function buildInland(field, uniforms) {
     const w0 = 15 + 30 * (i / (RIVER.length - 1)), w1 = 15 + 30 * ((i + 1) / (RIVER.length - 1));
     const y0 = ay + 2.2, y1 = by + 2.2;
     const c0 = [0.05, 0.1, 0.1], c1 = [0.07, 0.13, 0.12];
-    const v0 = b.vert(ax + px * w0, y0, az + pz * w0, 0, 1, 0, c0, 1, 1, 1);
-    const v1 = b.vert(ax - px * w0, y0, az - pz * w0, 0, 1, 0, c0, 1, 1, 1);
-    const v2 = b.vert(bx - px * w1, y1, bz - pz * w1, 0, 1, 0, c1, 1, 1, 1);
-    const v3 = b.vert(bx + px * w1, y1, bz + pz * w1, 0, 1, 0, c1, 1, 1, 1);
+    const v0 = b.vert(ax + px * w0, y0, az + pz * w0, 0, 1, 0, c0, 1, 1, 0);
+    const v1 = b.vert(ax - px * w0, y0, az - pz * w0, 0, 1, 0, c0, 1, 1, 0);
+    const v2 = b.vert(bx - px * w1, y1, bz - pz * w1, 0, 1, 0, c1, 1, 1, 0);
+    const v3 = b.vert(bx + px * w1, y1, bz + pz * w1, 0, 1, 0, c1, 1, 1, 0);
     b.quad(v0, v3, v2, v1);
   }
   // crater lake
   const lake = { x: -130, z: -830, r: 118, y: 290 };
-  const c = b.vert(lake.x, lake.y, lake.z, 0, 1, 0, [0.04, 0.09, 0.1], 1, 1, 1);
+  const c = b.vert(lake.x, lake.y, lake.z, 0, 1, 0, [0.04, 0.09, 0.1], 1, 1, 0);
   const ring = [];
   for (let i = 0; i < 28; i++) {
     const a = (i / 28) * Math.PI * 2;
-    ring.push(b.vert(lake.x + Math.cos(a) * lake.r, lake.y, lake.z + Math.sin(a) * lake.r, 0, 1, 0, [0.05, 0.1, 0.11], 1, 1, 1));
+    ring.push(b.vert(lake.x + Math.cos(a) * lake.r, lake.y, lake.z + Math.sin(a) * lake.r, 0, 1, 0, [0.05, 0.1, 0.11], 1, 1, 0));
   }
   for (let i = 0; i < 28; i++) b.tri(c, ring[(i + 1) % 28], ring[i]);
-  // marsh pools: one low sheet, the mud shows through wherever it is higher
-  const M = { x: -740, z: 520, r: 360, y: 6.5 };
-  const mc = b.vert(M.x, M.y, M.z, 0, 1, 0, [0.07, 0.085, 0.05], 1, 1, 1);
-  const mring = [];
-  for (let i = 0; i < 34; i++) {
-    const a = (i / 34) * Math.PI * 2;
-    const rr = M.r * (0.8 + 0.3 * Math.sin(a * 3.1 + 1.2));
-    mring.push(b.vert(M.x + Math.cos(a) * rr, M.y, M.z + Math.sin(a) * rr, 0, 1, 0, [0.06, 0.08, 0.05], 1, 1, 1));
+  /* Marsh: not one sheet but the water that is actually there. A grid over
+     the basin keeps only the cells whose ground lies under the pool line, so
+     the mangrove flats read as a lace of still pools and mud banks instead of
+     a slab of grey hanging out over the beach. */
+  const M = { x: -740, z: 520, r: 420, y: 6.8 };
+  const STEP = 11;
+  const N = Math.ceil((M.r * 2) / STEP);
+  const under = (x, z) => heightAt(x, z) < M.y - 0.35 && coastField(x, z) > 24;
+  const idxOf = new Map();
+  const vertAt = (i, j) => {
+    const key = j * (N + 1) + i;
+    if (idxOf.has(key)) return idxOf.get(key);
+    const x = M.x - M.r + i * STEP, z = M.z - M.r + j * STEP;
+    const depth = clamp((M.y - heightAt(x, z)) / 7, 0, 1);
+    // peat-stained water: almost black where it is deep, warm tannin at the
+    // mud line, a green algal film in the stillest corners
+    const algae = clamp(0.5 + 0.9 * fbm(x * 0.021 + 3.3, z * 0.021 - 7.1, 2), 0, 1);
+    const col = [
+      mix(0.085, 0.016, depth) + algae * 0.012,
+      mix(0.082, 0.030, depth) + algae * 0.030,
+      mix(0.046, 0.024, depth) + algae * 0.006,
+    ];
+    const id = b.vert(x, M.y + 0.22 * noise2(x * 0.05, z * 0.05), z, 0, 1, 0, col, 1, 1, MARSH_FLAG);
+    idxOf.set(key, id);
+    return id;
+  };
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const x0 = M.x - M.r + i * STEP, z0 = M.z - M.r + j * STEP;
+    if (Math.hypot(x0 + STEP / 2 - M.x, z0 + STEP / 2 - M.z) > M.r) continue;
+    if (!under(x0, z0) || !under(x0 + STEP, z0) || !under(x0 + STEP, z0 + STEP) || !under(x0, z0 + STEP)) continue;
+    b.quad(vertAt(i, j), vertAt(i, j + 1), vertAt(i + 1, j + 1), vertAt(i + 1, j));
   }
-  for (let i = 0; i < 34; i++) b.tri(mc, mring[(i + 1) % 34], mring[i]);
 
   const mat = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: /* glsl */`
-      varying vec3 vWorld; varying vec3 vColor;
+      attribute vec3 lit;
+      varying vec3 vWorld; varying vec3 vColor; varying float vMarsh;
       void main() {
         vec4 wp = modelMatrix * vec4(position, 1.0);
-        vWorld = wp.xyz; vColor = color;
+        vWorld = wp.xyz; vColor = color; vMarsh = lit.z;
         gl_Position = projectionMatrix * viewMatrix * wp;
       }
     `,
     fragmentShader: /* glsl */`
       ${ATMOS_PARS}
       ${WATER_PARS}
-      varying vec3 vColor;
+      varying vec3 vColor; varying float vMarsh;
       void main() {
         vec3 viewDir = normalize(cameraPosition - vWorld);
-        vec3 n = waterNormal(vWorld.xz, uTime * 1.6, 0.09, 0.02);
+        // a swamp is barely moving: fine wrinkles, not a river's chop
+        float ripple = mix(0.02, 0.006, vMarsh);
+        vec3 n = waterNormal(vWorld.xz, uTime * mix(1.6, 0.42, vMarsh), mix(0.09, 0.21, vMarsh), ripple);
         float fres = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 4.0);
         vec3 refl = reflect(-viewDir, n);
         vec3 sky = skyAt(normalize(vec3(refl.x, abs(refl.y) + 0.02, refl.z))) * 0.8;
-        vec3 color = mix(vColor, sky, clamp(fres * 0.85 + 0.1, 0.0, 1.0));
-        float toSun = max(0.0, dot(reflect(-viewDir, n), uSunDir));
-        color += uSunColor * pow(toSun, 48.0) * 0.9;
+        // Tea-dark water reflects the canopy standing over it, not the sky:
+        // cap the mirror hard, or the marsh renders as a slab of grey cloud.
+        float mirror = mix(clamp(fres * 0.85 + 0.1, 0.0, 1.0), clamp(fres * 0.26, 0.0, 0.17), vMarsh);
+        vec3 overhead = mix(sky, sky * vec3(0.22, 0.30, 0.18) + vec3(0.012, 0.018, 0.007), vMarsh);
+        vec3 color = mix(vColor, overhead, mirror);
+
+        if (vMarsh > 0.5) {
+          // peat glow: a low sun goes through the top inch and comes back warm
+          float toSun = max(0.0, dot(normalize(-viewDir), uSunDir));
+          color += vec3(0.16, 0.10, 0.035) * pow(toSun, 2.4) * 0.5;
+          // lily pads, duckweed and reed stubble, scattered in clumps
+          vec2 q = vWorld.xz * 0.055;
+          float pads = texture2D(uDetail, q).g * texture2D(uDetail, q * 0.31 + 0.17).r;
+          float clump = smoothstep(0.30, 0.52, texture2D(uDetail, vWorld.xz * 0.0045).b);
+          float leaf = smoothstep(0.17, 0.30, pads) * clump;
+          vec3 pad = mix(vec3(0.055, 0.105, 0.030), vec3(0.14, 0.20, 0.055), texture2D(uDetail, q * 2.3).r);
+          color = mix(color, pad, leaf * 0.88);
+          // the duckweed catches the sun where the water does not
+          color += uSunColor * leaf * clamp(dot(vec3(0.0, 1.0, 0.0), uSunDir), 0.0, 1.0) * 0.10;
+          float glint = max(0.0, dot(reflect(-viewDir, n), uSunDir));
+          color += uSunColor * pow(glint, 220.0) * 0.8 * (1.0 - leaf);
+        } else {
+          float toSun = max(0.0, dot(reflect(-viewDir, n), uSunDir));
+          color += uSunColor * pow(toSun, 48.0) * 0.9;
+        }
         color = applyAtmos(color, vWorld, -viewDir);
         gl_FragColor = vec4(color * uExposure, 1.0);
         #include <tonemapping_fragment>
