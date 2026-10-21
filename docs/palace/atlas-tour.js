@@ -4,18 +4,17 @@
    playback agree frame for frame. */
 import * as THREE from "three";
 import { readingTrail, regionById, tourPlan } from "./atlas-layout.js";
-import { easeInOut } from "./atlas-scene.js";
+import { easeInOut, routeStops, stopAtU } from "./atlas-scene.js";
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const lerpAngle = (a, b, t) => a + ((((b - a) % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2) - Math.PI) * t;
 
 export class Tour {
-  constructor({ atlas, layout, ground, frameDist, followPose }) {
+  constructor({ atlas, layout, ground, frameDist }) {
     this.atlas = atlas;
     this.layout = layout;
     this.ground = ground;
     this.frameDist = frameDist || (() => 1000);
-    this.followPose = followPose || null;
     this.plan = tourPlan(atlas, layout);
     this.region = this.plan.focusRegion ? regionById(layout, this.plan.focusRegion) : layout.regions[0];
     this.marker = this.region ? (this.region.markers.find((m) => m.id === this.plan.marker) || this.region.markers[0]) : null;
@@ -25,9 +24,15 @@ export class Tour {
     // One smooth curve through the trail pins: the chase camera reads its
     // position and its heading from the tangent, so it never snaps at a pin.
     const pins = this.trailPins.length >= 2 ? this.trailPins : this.globalTrail;
+    this.ridePins = pins;
     this.chaseCurve = pins.length >= 2
       ? new THREE.CatmullRomCurve3(pins.map((p) => new THREE.Vector3(p.x, 0, p.z)), false, "catmullrom", 0.35)
       : null;
+    // The tour owns its route, so renderAt(t) never depends on what the
+    // scene was last asked to draw — which is what lets eight headless pages
+    // render interleaved frames of the same video.
+    this.stopU = routeStops(this.chaseCurve, pins);
+    this.routeId = pins.map((p) => p.id).join(",");
     this.keyCache = null;
     // The largest region is the one the wide shots put in focus, so every
     // frame has a subject instead of eight equally quiet tints.
@@ -52,13 +57,6 @@ export class Tour {
     return { tx: m.x, ty: this.ground(m.x, m.z) + 8, tz: m.z, az, dist, pol };
   }
 
-  /* The stop the reader is passing at this point along the route. */
-  stopAt(u) {
-    const pins = this.trailPins.length >= 2 ? this.trailPins : this.globalTrail;
-    if (!pins.length) return null;
-    return pins[Math.min(pins.length - 1, Math.max(0, Math.round(u * (pins.length - 1))))];
-  }
-
   /* Chase camera: sits behind a point travelling along the smoothed route. */
   chase(u) {
     if (!this.chaseCurve) return this.atRegion(0.6, 420, 1.1);
@@ -78,7 +76,8 @@ export class Tour {
 
   keys() {
     const frame = Math.round(this.frameDist(1.06));
-    if (this.keyCache && this.keyCache.frame === frame) return this.keyCache.keys;
+    const id = `${frame}|${this.routeId}`;
+    if (this.keyCache && this.keyCache.id === id) return this.keyCache.keys;
     const ra = this.region ? Math.atan2(this.region.x, this.region.z) : 0;
     const M = (id, f) => this.mark(id, f);
     const keys = [
@@ -97,20 +96,35 @@ export class Tour {
       [M("orbit-out"), this.orbit(1.86, 1.08, 1.07)],
       [this.duration, this.orbit(2.36, 1.2, 1.09)],
     ];
-    this.keyCache = { frame, keys };
+    this.keyCache = { id, keys };
     return keys;
   }
 
-  /* Third-person shot of the reader while the PiP carries their eye line. */
+  /* Third-person shot of the reader while the PiP carries their eye line.
+     Computed from the tour's own route — never by asking the scene where its
+     camera happens to be, which made the pose depend on call history. */
   rider(u) {
-    if (this.followPose) return this.followPose(u);
-    return this.chase(u);
+    const c = this.chaseCurve;
+    if (!c) return this.atRegion(0.6, 440, 1.08);
+    const t = Math.min(0.9995, Math.max(0, u));
+    const p = c.getPointAt(t);
+    const tan = c.getTangentAt(t).normalize();
+    return {
+      tx: p.x, ty: this.ground(p.x, p.z) + 26, tz: p.z,
+      az: Math.atan2(tan.x, tan.z) + Math.PI * 0.78,
+      dist: 420, pol: 1.0,
+    };
   }
+
+  /* The one ride position for a beat-local time, and the stop it belongs to
+     by arc length. Camera, HUD and selection all read these. */
+  rideU(local) { return easeInOut(Math.min(1, Math.max(0, local))); }
+  stopFor(u) { return stopAtU(this.stopU, u); }
 
   cameraAt(time) {
     const t = Math.min(Math.max(time, 0), this.duration);
     const f0 = this.mark("follow"), f1 = f0 + this.beatLength("follow");
-    if (t >= f0 && t <= f1) return this.rider(easeInOut((t - f0) / (f1 - f0)));
+    if (t >= f0 && t <= f1) return this.rider(this.rideU((t - f0) / (f1 - f0)));
     const keys = this.keys();
     let i = 0;
     while (i < keys.length - 2 && t > keys[i + 1][0]) i++;
@@ -171,8 +185,8 @@ export class Tour {
         s.mode = "follow";
         s.tab = "follow";
         s.focus = this.region ? this.region.id : null;
-        s.follow = local;
-        s.selection = this.stopAt(local);
+        s.follow = this.rideU(local);
+        s.selection = this.ridePins[this.stopFor(s.follow)] || null;
         break;
       case "map2d":
         s.dim = "2d";

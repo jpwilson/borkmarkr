@@ -369,6 +369,39 @@ function frontAt(region, cut) {
   }
 }
 
+/* ── The capture contract ───────────────────────────────────────────────── */
+
+/* The X video is rendered by several headless pages at once, each taking an
+   interleaved subset of frames from a fresh load, so renderAt(t) has to be a
+   pure function of t. The pixel-level proof is Scripts/../atlas-shots/
+   determinism.py; what can be checked here is that the tour never reaches
+   into the renderer for its camera maths. */
+{
+  const tourSrc = read("docs/palace/atlas-tour.js")
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/^import .*$/gm, "");
+  assert.ok(!/\bscene\b/.test(tourSrc), "atlas-tour.js must not read the scene");
+  assert.ok(!/followPose/.test(tourSrc), "the tour owns its route; no callback into the renderer");
+  assert.ok(/routeId/.test(tourSrc), "the camera key cache is keyed by route identity");
+  const appSrc = read("docs/palace/atlas.js");
+  assert.match(appSrc, /renderAt\(t\)[\s\S]{0,420}updateReadouts\(\)/,
+    "renderAt must refresh the compass, zoom and scale bar — they are part of the frame");
+  assert.match(appSrc, /name === "region"[\s\S]{0,420}buildFrontRings/,
+    "a region pose rebuilds its historical perimeters with its trail");
+  // both cameras and the HUD read one ride position, by arc length
+  const sceneSrc = read("docs/palace/atlas-scene.js");
+  assert.match(sceneSrc, /export function routeStops/);
+  assert.match(sceneSrc, /export function stopAtU/);
+  assert.ok(!/Math\.round\(.*\* \(pins\.length - 1\)\)/.test(sceneSrc),
+    "stops are found by arc length, not by assuming even spacing");
+  assert.match(sceneSrc, /placeSelectRing/, "the selection ring is placed with the camera pass");
+  // a historical perimeter is the fill's own iso-line, gated by its date
+  assert.match(sceneSrc, /frontRing\(region\.x, region\.z, region\.boundary, share\)/);
+  assert.match(sceneSrc, /ring\.visible = live && ring\.userData\.at <= cut/);
+  assert.match(read("docs/palace/atlas-terrain.js"), /export function frontRing/);
+  // the forest is shuffled so that lowering an instance count thins it
+  assert.match(read("docs/palace/atlas-terrain.js"), /shuffle\(list, 0x9e37 \+ kind\)/);
+}
+
 /* ── Signed-in visitors: bm.session, refresh write-back, read-only loading ─ */
 const NOW = 1_800_000_000_000;
 const now = () => NOW;

@@ -227,10 +227,11 @@ const actions = {
   goToStop(i) {
     const stops = scene.trailPins || [];
     if (!stops.length) return;
-    const u = stops.length < 2 ? 0 : clamp(i, 0, stops.length - 1) / (stops.length - 1);
+    // arc length, not even spacing: stops are where the bookmarks are
+    const u = scene.uForStop(clamp(i, 0, stops.length - 1));
     state.follow.u = u;
     scene.setFollow(u);
-    actions.select(stops[Math.round(u * (stops.length - 1))]);
+    actions.select(stops[scene.follow.stop]);
     flyTo(scene.followPose(u), 1200);
   },
   setFollowView(view) {
@@ -247,7 +248,7 @@ const actions = {
     const dated = stops.filter((m) => m.at != null);
     const rideSeconds = tour ? tour.beatLength("follow") : 8;
     return {
-      on: state.follow.on,
+      on: scene.pipLive(),
       u: f.u,
       view: state.follow.view,
       stop: f.stop,
@@ -410,6 +411,11 @@ function swapLibrary(next) {
   layout = computeLayout(atlas);
   state.focus = null; state.selection = null; state.time = 1; state.moment = null;
   state.playing = false; state.tour.active = false; state.tour.t = 0;
+  // a new scene starts with the reader cam parked and off; the shell has to
+  // agree, or the HUD outlives the render that feeds it
+  state.follow.on = false; state.follow.u = 0; state.follow.view = "eye";
+  if (state.mode === "follow") state.mode = "topics";
+  if (state.tab === "follow") state.tab = "layers";
   state.hidden.clear(); state.groupOpacity.clear();
   flight = null;
   rebuild();
@@ -434,7 +440,6 @@ function rebuild() {
     atlas, layout,
     ground: (x, z) => scene.groundAt(x, z),
     frameDist: (m) => scene.frameDistance(m),
-    followPose: (u) => { scene.setFollow(u); return scene.followPose(u); },
   });
   ui = new AtlasUI({ atlas, state, actions });
   ui.build();
@@ -449,6 +454,8 @@ function resize() {
   scene.resize(stage.clientWidth, stage.clientHeight);
   ui.chartCache = null;
   ui.drawCharts();
+  // the inset moves with the viewport; its HUD has to move with it
+  if (state.follow.on) ui.renderFollow();
 }
 
 /* ── tour playback ──────────────────────────────────────────────────────── */
@@ -465,7 +472,11 @@ function applyTourState(t) {
   state.mode = s.mode;
   const wantFollow = s.mode === "follow";
   if (state.follow.on !== wantFollow) { state.follow.on = wantFollow; scene.setFollowOn(wantFollow); }
-  if (wantFollow) { state.follow.u = s.follow; scene.setFollow(s.follow); }
+  if (wantFollow) {
+    state.follow.u = s.follow;
+    scene.follow.view = state.follow.view;
+    scene.setFollow(s.follow);
+  }
   state.tab = s.tab;
   if (state.dim !== s.dim) { state.dim = s.dim; scene.setDim(s.dim); }
   const focusChanged = state.focus !== s.focus;
@@ -564,6 +575,10 @@ function installCapture() {
       lastTourKey = "";
       applyTourState(t);
       scene.render();
+      // the compass, zoom and scale bar are part of the frame too; without
+      // this they kept whatever the previous call left behind, and the same
+      // timestamp rendered differently on a fresh page
+      updateReadouts();
       return t;
     },
     pose(name, opts = {}) {
@@ -601,7 +616,9 @@ function installCapture() {
         const r = regionById(layout, opts.topic);
         if (r) {
           state.focus = r.id;
+          scene._trailIds = null;
           scene.buildTrail(readingTrail(layout, { regionId: r.id, count: 8 }));
+          scene.buildFrontRings(r.id);
           scene.rebuildTrailLabels();
           scene.applyLayers();
           scene.setCamera({ tx: r.x, ty: scene.groundAt(r.x, r.z) + 20, tz: r.z, dist: Math.max(250, r.r * 3.2), pol: 1.08, az: Math.atan2(r.x, r.z) - 0.4 });
@@ -620,12 +637,17 @@ function installCapture() {
       return {
         cam: [c.tx, c.ty, c.tz, c.dist, c.pol, c.az].map((v) => Math.round(v * 1e4) / 1e4),
         markerScale: Math.round(scene.markerScale * 1e4) / 1e4,
+        ring: scene.selectRing.visible
+          ? [scene.selectRing.position.x, scene.selectRing.position.z, scene.selectRing.scale.x].map((v) => Math.round(v * 100) / 100).join(",")
+          : "",
         trail: scene._trailIds || "",
         forest: scene.forest.children.map((t) => t.count).join(","),
         scrub: scene.scrub.children.map((t) => t.count).join(","),
         labels: [...document.querySelectorAll("#labels .pin")].filter((n) => n.style.display !== "none").length,
         tints: [...scene.tints.children].map((o) => (o.material ? Math.round(o.material.opacity * 1000) : -1)).join(","),
         tip: el("tip").hidden ? "" : el("tip").textContent,
+        readouts: `${el("zoom-read").textContent}|${el("sb-max").textContent}|${document.getElementById("needle")?.getAttribute("transform") || ""}`,
+        pip: el("pip").hidden ? "" : `${el("pip").style.left}|${el("pip").style.width}|${el("pip-stop").textContent}|${el("pip-hdg").textContent}`,
         charts: [...document.querySelectorAll(".chart .now")].map((n) => n.textContent).join("|"),
       };
     },

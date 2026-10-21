@@ -221,10 +221,10 @@ export function buildTerrain(field) {
       // trees out, and the two always agree on where the wood is.
       const wood = treeFitness(field, x, z);
       const r = tmp.r * ao, g = tmp.g * ao, b = tmp.b * ao;
-      const k1 = wood * 0.56, k2 = wood * 0.46, k3 = wood * 0.62;
-      colors[k * 3] = r * (1 - k1) + 0.175 * k1;
-      colors[k * 3 + 1] = g * (1 - k2) + 0.238 * k2;
-      colors[k * 3 + 2] = b * (1 - k3) + 0.135 * k3;
+      const k1 = wood * 0.48, k2 = wood * 0.4, k3 = wood * 0.54;
+      colors[k * 3] = r * (1 - k1) + 0.2 * k1;
+      colors[k * 3 + 1] = g * (1 - k2) + 0.262 * k2;
+      colors[k * 3 + 2] = b * (1 - k3) + 0.158 * k3;
     }
   }
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -284,6 +284,16 @@ function coneGeometry(r, h, seg) {
 /* Thousands of conifers on the slopes that would actually hold trees: above
    the beach, below the scree line, off the cliffs, and clumped by a density
    noise so the forest has edges and clearings. */
+/* Fisher-Yates with a seeded stream: same input, same order, every run. */
+function shuffle(list, seed) {
+  const r = rng(seed);
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    const t = list[i]; list[i] = list[j]; list[j] = t;
+  }
+  return list;
+}
+
 /* A deterministic 0..1 stream — the forests must look identical on every
    run so captured frames match. */
 function rng(seed) {
@@ -299,13 +309,16 @@ function rng(seed) {
    spire, a broader fir and a squat one. All small — a tree is texture here,
    not a landmark. */
 function treeGeometries() {
-  const spire = new THREE.ConeGeometry(2.5, 9.4, 5, 2);
-  spire.translate(0, 4.7, 0);
-  const fir = new THREE.ConeGeometry(3.3, 7.2, 6, 2);
-  fir.translate(0, 3.6, 0);
-  const squat = new THREE.ConeGeometry(3.6, 5.2, 5, 1);
-  squat.translate(0, 2.6, 0);
-  return [spire, fir, squat];
+  // More radial segments and a rounded crown for one in five: at close range
+  // a field of five-sided cones is the thing that reads as low-poly.
+  const spire = new THREE.ConeGeometry(2.4, 9.0, 7, 2);
+  spire.translate(0, 4.5, 0);
+  const fir = new THREE.ConeGeometry(3.1, 6.8, 8, 2);
+  fir.translate(0, 3.4, 0);
+  const round = new THREE.IcosahedronGeometry(2.8, 1);
+  round.scale(1, 1.35, 1);
+  round.translate(0, 3.4, 0);
+  return [spire, fir, round];
 }
 
 /* Forests on a jittered grid rather than by rejection sampling: inside a
@@ -317,7 +330,9 @@ export function scatterTrees(field, { spacing = 5.2, seed = 17, tiles = 10, max 
   const span = (reach * 2) / tiles;
   const geos = treeGeometries();
   const mats = geos.map(() => new THREE.MeshStandardMaterial({ roughness: 0.93, metalness: 0, flatShading: true }));
-  const deep = new THREE.Color("#30432a"), mid = new THREE.Color("#44593a"), dusty = new THREE.Color("#67764e");
+  // lighter than before: crowns have to separate from each other, not merge
+  // into one black mass
+  const deep = new THREE.Color("#3a4e31"), mid = new THREE.Color("#516840"), dusty = new THREE.Color("#73825a");
 
   const buckets = [];
   for (let ty = 0; ty < tiles; ty++) for (let tx = 0; tx < tiles; tx++) buckets.push({ tx, ty, list: [[], [], []] });
@@ -334,7 +349,7 @@ export function scatterTrees(field, { spacing = 5.2, seed = 17, tiles = 10, max 
       if (fit < 0.04) continue;
       if (fit < 0.5 && r() > fit * 1.9) continue;
       const h = field.sample(x, z);
-      const kind = r() < 0.5 ? 0 : r() < 0.78 ? 1 : 2;
+      const kind = r() < 0.46 ? 0 : r() < 0.8 ? 1 : 2;
       const tall = 0.72 + 0.62 * Math.pow(r(), 1.3) * (h > 170 ? 0.8 : 1);
       const wide = tall * (0.82 + 0.34 * r());
       const tx = Math.min(tiles - 1, Math.floor((x + reach) / span));
@@ -352,6 +367,11 @@ export function scatterTrees(field, { spacing = 5.2, seed = 17, tiles = 10, max 
   const axis = new THREE.Vector3(0, 1, 0);
   for (const bucket of buckets) {
     bucket.list.forEach((list, kind) => {
+      // Trees arrive in grid-row order; lowering an instance count keeps the
+      // buffer's prefix, which would carve a strip out of the wood. A
+      // deterministic shuffle makes every prefix a spread-out subset, so
+      // distance and quality thin the canopy instead of clearing it.
+      shuffle(list, 0x9e37 + kind);
       if (!list.length) return;
       const mesh = new THREE.InstancedMesh(geos[kind], mats[kind], list.length);
       mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(list.length * 3), 3);
@@ -398,7 +418,7 @@ export function scatterScrub(field, { count = 150000, seed = 404, tiles = 8 } = 
     const sl = field.slope(x, z);
     const open = 1 - treeFitness(field, x, z) * 0.85;
     if (r() > 0.22 + 0.5 * open) continue;
-    const scale = 1.5 + 3.4 * Math.pow(r(), 1.7);
+    const scale = 1.0 + 2.2 * Math.pow(r(), 1.8);
     const t = r();
     if (t < 0.62 && sl < 1.0) col.copy(shrub).lerp(dry, r() * 0.7);
     else col.copy(stone).lerp(dry, r() * 0.6);
@@ -583,7 +603,11 @@ if (uDetailStrength > 0.001) {
   float n0 = bmField(q);
   float nx = bmField(q + vec2(e, 0.0));
   float nz = bmField(q + vec2(0.0, e));
-  normal = normalize(normal + vec3(-(nx - n0), 0.0, -(nz - n0)) * uDetailStrength);
+  // the gradient is in world space; three shades in view space, so rotate it
+  // and drop the component along the surface normal before adding it
+  vec3 bump = mat3(viewMatrix) * vec3(-(nx - n0), 0.0, -(nz - n0));
+  bump -= normal * dot(bump, normal);
+  normal = normalize(normal + bump * uDetailStrength);
 }`);
   };
   material.customProgramCacheKey = () => "atlas-detail-normals";
@@ -622,12 +646,20 @@ export function spreadMaterial(color) {
       void main(){
         if (vT > uFront) discard;
         float band = smoothstep(uFront - uEdge, uFront, vT);
-        vec3 c = mix(uColor, clamp(uColor * 1.45 + 0.08, 0.0, 1.0), band);
-        float a = uOpacity * (0.42 + 0.58 * pow(vT, 1.3)) + band * uOpacity * 1.25;
+        vec3 c = mix(uColor * 0.92, clamp(uColor * 1.5 + 0.1, 0.0, 1.0), band);
+        float a = uOpacity * (0.3 + 0.44 * pow(vT, 1.3)) + band * uOpacity * 1.9;
         gl_FragColor = vec4(c, clamp(a, 0.0, 0.92));
       }`,
   });
   mat.userData.baseOpacity = 1;
   mat.userData.baseTransparent = true;
   return mat;
+}
+
+/* An iso-line of the fill: the same boundary, pulled towards the centre by
+   the square root of a share. The shader clips the drape at exactly this
+   radius, so a ring drawn here sits on the front it claims to mark. */
+export function frontRing(cx, cz, boundaryPts, share) {
+  const k = Math.sqrt(Math.max(0, Math.min(1, share)));
+  return boundaryPts.map(([x, z]) => [cx + (x - cx) * k, cz + (z - cz) * k]);
 }
