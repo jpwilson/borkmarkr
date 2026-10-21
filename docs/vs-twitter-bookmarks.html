@@ -3,203 +3,293 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>bookmarker vs Twitter/X Built-in Bookmarks: What's the Difference?</title>
-<meta name="description" content="Why use bookmarker instead of X's native bookmarks? Learn about searchability, organization, and cross-platform bookmark management.">
+<meta name="apple-itunes-app" content="app-id=6799805479">
+<title>bookmarker vs X (Twitter) bookmarks: what a library adds</title>
+<meta name="description" content="X's built-in bookmarks are free and instant but stay inside X. Here is what a separate library adds — topics, notes, cross-app saves, revisit counts — and when X's own are enough.">
 <link rel="canonical" href="https://bookmarker.lol/vs-twitter-bookmarks">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="bookmarker">
 <meta property="og:url" content="https://bookmarker.lol/vs-twitter-bookmarks">
-<meta property="og:title" content="bookmarker vs Twitter/X Built-in Bookmarks: What's the Difference?">
-<meta property="og:description" content="Why use bookmarker instead of X's native bookmarks? Learn about searchability, organization, and cross-platform bookmark management.">
+<meta property="og:title" content="bookmarker vs X (Twitter) bookmarks: what a library adds">
+<meta property="og:description" content="X's built-in bookmarks are free and instant but stay inside X. Here is what a separate library adds — topics, notes, cross-app saves, revisit counts — and when X's own are enough.">
 <meta property="og:image" content="https://bookmarker.lol/img/share-v2.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A coral clay bookmark with the Instagram, X, TikTok and YouTube app icons set into it. Every save. One library.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="bookmarker vs X (Twitter) bookmarks: what a library adds">
+<meta name="twitter:description" content="X's built-in bookmarks are free and instant but stay inside X. Here is what a separate library adds — topics, notes, cross-app saves, revisit counts — and when X's own are enough.">
+<meta name="twitter:image" content="https://bookmarker.lol/img/share-v2.jpg">
 <link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
 <meta name="theme-color" content="#F6F3EE">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --paper: #F6F3EE; --surface: #FFFFFF; --ink: #191510; --ink-2: #5B554D;
-  --meta: #8A8378; --hairline: #EAE4DA; --coral: #FF5A2D; --accent-text: #C93A12;
-  --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+<link rel="stylesheet" href="/content.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "bookmarker",
+      "item": "https://bookmarker.lol/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "bookmarker vs X bookmarks",
+      "item": "https://bookmarker.lol/vs-twitter-bookmarks"
+    }
+  ]
 }
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
-h1, h2, h3 { font-family: var(--font-head); letter-spacing: -.02em; }
-a { color: var(--accent-text); text-decoration: none; }
-a:hover { text-decoration: underline; }
-header { background: var(--surface); border-bottom: 1px solid var(--hairline); padding: 20px; }
-.brand { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-head);
-  font-weight: 800; font-size: 19px; color: var(--ink); }
-.brand img { width: 28px; height: 28px; border-radius: 8px; }
-main { max-width: 740px; margin: 0 auto; padding: 40px 20px 80px; }
-h1 { font-size: 36px; line-height: 1.2; margin: 0 0 12px; }
-.meta { color: var(--meta); font-size: 14px; margin-bottom: 32px; }
-.intro { font-size: 18px; line-height: 1.7; margin-bottom: 32px; color: var(--ink-2); }
-h2 { font-size: 26px; margin: 48px 0 16px; }
-h3 { font-size: 20px; margin: 32px 0 12px; }
-.comparison-table { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px;
-  overflow: hidden; margin: 32px 0; }
-.comparison-table table { width: 100%; border-collapse: collapse; }
-.comparison-table th { background: var(--paper); padding: 14px 16px; text-align: left; font-weight: 700;
-  border-bottom: 1px solid var(--hairline); }
-.comparison-table td { padding: 12px 16px; border-bottom: 1px solid var(--hairline); }
-.comparison-table tr:last-child td { border-bottom: none; }
-.yes { color: #27AE60; font-weight: 600; }
-.no { color: #E74C3C; font-weight: 600; }
-.cta { background: var(--coral); color: white; padding: 14px 28px; border-radius: 999px;
-  display: inline-block; font-weight: 700; margin: 32px 0; }
-.cta:hover { text-decoration: none; opacity: 0.9; }
-footer { border-top: 1px solid var(--hairline); padding: 32px 20px; text-align: center;
-  color: var(--meta); font-size: 14px; }
-footer a { color: var(--ink-2); font-weight: 600; }
-</style>
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "bookmarker vs Twitter/X Built-in Bookmarks: What's the Difference?",
-  "description": "Why use bookmarker instead of X's native bookmarks? Learn about searchability, organization, and cross-platform bookmark management.",
+  "headline": "bookmarker vs X (Twitter) built-in bookmarks",
+  "description": "What bookmarker adds over the bookmark feature built into X, and when X's own bookmarks are enough.",
   "url": "https://bookmarker.lol/vs-twitter-bookmarks",
+  "datePublished": "2026-10-19",
+  "dateModified": "2026-10-21",
+  "inLanguage": "en",
   "author": {
-    "@type": "Organization",
-    "name": "bookmarker"
+    "@type": "Person",
+    "name": "Jean-Paul Wilson",
+    "url": "https://bookmarker.lol/press/"
   },
   "publisher": {
     "@type": "Organization",
     "name": "bookmarker",
+    "url": "https://bookmarker.lol/",
     "logo": {
       "@type": "ImageObject",
       "url": "https://bookmarker.lol/img/apple-touch-icon.png"
     }
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "bookmarker",
+    "url": "https://bookmarker.lol/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MobileApplication",
+  "name": "Bookmarker: Save Links & Reels",
+  "alternateName": "bookmarker",
+  "url": "https://bookmarker.lol/app/",
+  "sameAs": "https://apps.apple.com/us/app/bookmarker-save-links-reels/id6799805479",
+  "installUrl": "https://apps.apple.com/us/app/bookmarker-save-links-reels/id6799805479",
+  "applicationCategory": "ProductivityApplication",
+  "applicationSubCategory": "Bookmark manager",
+  "operatingSystem": "iOS 17.0 or later",
+  "image": "https://bookmarker.lol/img/share-v2.jpg",
+  "screenshot": [
+    "https://bookmarker.lol/img/library.png",
+    "https://bookmarker.lol/img/browse.png",
+    "https://bookmarker.lol/img/search.png"
+  ],
+  "description": "bookmarker is a bookmark manager for iPhone and the web that collects what you save on Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a topic and subtopic automatically, and lets you search it again later.",
+  "featureList": [
+    "Save any link from any app through the iOS share sheet",
+    "Automatic filing into 50 topics and 612 subtopics, always overridable",
+    "Browse by topic or by the app a save came from",
+    "Search titles, accounts, tags, notes, topics and links",
+    "Dated notes on any save",
+    "Counts how often you reopen something",
+    "Import browser bookmarks and X, Instagram, TikTok and YouTube data exports",
+    "Share a collection of saves as a link",
+    "Works offline; the first 20 saves need no account"
+  ],
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock",
+    "url": "https://apps.apple.com/us/app/bookmarker-save-links-reels/id6799805479"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Jean-Paul Wilson"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "bookmarker",
+    "url": "https://bookmarker.lol/"
   }
 }
 </script>
 </head>
 <body>
-<header>
-  <a class="brand" href="/"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
+<header class="site-head">
+  <div class="head-in">
+    <a class="brand" href="/"><img src="/img/mark-192.png" width="28" height="28" alt=""><span>bookmarker</span></a>
+    <nav class="head-nav" aria-label="Main">
+      <a href="/what-is-bookmarker">What it is</a>
+      <a href="/app/">iPhone app</a>
+      <a href="/faq">FAQ</a>
+      <a href="/alternatives">Alternatives</a>
+      <a href="/vs-twitter-bookmarks">vs X bookmarks</a>
+      <a href="/vs-raindrop">vs Raindrop</a>
+      <a href="/vs-twillot">vs Twillot</a>
+      <a href="/vs-mymind">vs mymind</a>
+    </nav>
+    <a class="head-cta" href="/get/">Get the app</a>
+  </div>
 </header>
 <main>
-  <h1>bookmarker vs Twitter/X Built-in Bookmarks: What's the Difference?</h1>
-  <p class="meta">Last updated: October 19, 2026</p>
-  
-  <p class="intro">X (formerly Twitter) has a built-in bookmark feature. So why would you use bookmarker instead? Here's the honest answer about what bookmarker adds and when X's native bookmarks are good enough.</p>
-  
-  <h2>What X's Built-in Bookmarks Do Well</h2>
-  <p>X's native bookmarks are simple and fast. You tap the bookmark icon on any tweet and it's saved. No extra app, no setup, no friction. If you only save a handful of tweets occasionally, the built-in feature works fine.</p>
-  
-  <h2>The Problems with X's Built-in Bookmarks</h2>
-  
-  <h3>1. No Search</h3>
-  <p>X's bookmark list is chronological only. There's no search. If you've saved hundreds or thousands of tweets, finding a specific one means scrolling endlessly. You saved it because it was useful, but you can't find it when you need it.</p>
-  
-  <h3>2. No Organization</h3>
-  <p>X bookmarks have no folders, no tags, no categories. Everything goes into one giant list. There's no way to browse "just the coding threads" or "just the recipe posts."</p>
-  
-  <h3>3. Single Platform</h3>
-  <p>X bookmarks only work for X. Your Instagram saves, TikTok favorites, and YouTube playlists are all separate. You end up with bookmarks scattered across four different apps.</p>
-  
-  <h3>4. Limited Access</h3>
-  <p>X bookmarks are private and tied to the X app. You can't view them on another device without the X app, and you can't share a collection of bookmarks with someone else.</p>
-  
-  <h2>What bookmarker Adds</h2>
-  
-  <h3>Full-Text Search</h3>
-  <p>bookmarker fetches the actual content of every tweet you save and makes it searchable. Search by keywords, topics, or authors. Find anything you've saved, even if you can't remember when you saved it.</p>
-  
-  <h3>Automatic Organization</h3>
-  <p>Every save is automatically categorized by topic when you save it: Technology, Food & Drink, Fitness, etc. Browse your coding threads separately from your recipe posts. No manual filing required.</p>
-  
-  <h3>Cross-Platform Library</h3>
-  <p>bookmarker works with X, Instagram, TikTok, and YouTube. Save a tweet, a reel, and a YouTube video, and they all go into the same searchable library. One place for everything.</p>
-  
-  <h3>Share Collections</h3>
-  <p>Create public collections and share them as links. If you've saved 50 great tweets about a topic, you can share the whole collection with one URL.</p>
-  
-  <div class="comparison-table">
-    <table>
-      <thead>
-        <tr>
-          <th>Feature</th>
-          <th>bookmarker</th>
-          <th>X Built-in Bookmarks</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Save tweets</td>
-          <td class="yes">✓</td>
-          <td class="yes">✓</td>
-        </tr>
-        <tr>
-          <td>Full-text search</td>
-          <td class="yes">✓</td>
-          <td class="no">✗</td>
-        </tr>
-        <tr>
-          <td>Automatic categorization</td>
-          <td class="yes">✓</td>
-          <td class="no">✗</td>
-        </tr>
-        <tr>
-          <td>Manual tags and folders</td>
-          <td class="yes">✓</td>
-          <td class="no">✗</td>
-        </tr>
-        <tr>
-          <td>Works with Instagram, TikTok, YouTube</td>
-          <td class="yes">✓</td>
-          <td class="no">✗</td>
-        </tr>
-        <tr>
-          <td>Share collections publicly</td>
-          <td class="yes">✓</td>
-          <td class="no">✗</td>
-        </tr>
-        <tr>
-          <td>No setup required</td>
-          <td>Requires app install</td>
-          <td class="yes">✓</td>
-        </tr>
-        <tr>
-          <td>Built into X app</td>
-          <td class="no">✗</td>
-          <td class="yes">✓</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  
-  <h2>When to Use X's Built-in Bookmarks</h2>
-  <p>X's native bookmarks are fine if you:</p>
-  <ul>
-    <li>Save fewer than 20-30 tweets total</li>
-    <li>Only use X (not Instagram, TikTok, or YouTube)</li>
-    <li>Don't need to search or organize your saves</li>
-    <li>Remember roughly when you saved something so you can scroll to find it</li>
-  </ul>
-  
-  <h2>When to Use bookmarker</h2>
-  <p>bookmarker solves the problems X's bookmarks don't:</p>
-  <ul>
-    <li>You've saved hundreds or thousands of tweets and can't find anything</li>
-    <li>You save content from Instagram, TikTok, and YouTube too</li>
-    <li>You want to search your saves by keyword or topic</li>
-    <li>You want automatic organization without manual filing</li>
-    <li>You want to share curated collections</li>
-  </ul>
-  
-  <a class="cta" href="/">Try bookmarker free</a>
-  
-  <h2>The Bottom Line</h2>
-  <p>X's built-in bookmarks work for casual, low-volume bookmarking. bookmarker is designed for people who save a lot of content and actually want to find it again later. It's the difference between a pile of bookmarks and a searchable library.</p>
-  
-  <p>You don't have to choose one or the other. Some people use both: X bookmarks for temporary saves, bookmarker for anything they want to keep and organize long-term.</p>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">bookmarker</a> &rsaquo; bookmarker vs X bookmarks</nav>
+<h1>bookmarker vs X (Twitter) built-in bookmarks</h1>
+<p class="meta">Last updated: 21 October 2026</p>
+
+<p class="intro">X has a bookmark button, it is free, and it is one tap. So why add anything? The short answer:
+X's bookmarks only ever hold X, and they tell you nothing about what you saved or whether you ever went back to
+it. bookmarker is a free iPhone and web library that holds your X saves <em>and</em> your Instagram, TikTok and
+YouTube saves, files each one into a topic, and lets you search and annotate the lot.</p>
+
+<div class="callout"><p>X's bookmark features change, and some of them depend on a paid X Premium tier — bookmark
+folders, for instance, have been a subscriber feature. Check X's current help pages rather than trusting any
+comparison, including this one, on the detail. Everything below is about what a separate library adds, which does
+not change.</p></div>
+
+<h2>What X's built-in bookmarks are good at</h2>
+<p>Zero friction. You are already in X, you tap the bookmark icon, it is saved, there is nothing to install and
+nothing to pay. For something you intend to read tomorrow, nothing is better. If you save a handful of posts a
+month and only use X, you do not need anything else — and this page is not going to pretend otherwise.</p>
+
+<h2>What they cannot do</h2>
+<h3>1. They only hold X</h3>
+<p>This is the big one. Your Instagram saves, TikTok favourites and YouTube "Watch later" are three more separate
+lists in three more apps. Nothing in X's bookmarks can see them, so the recipe you saved on Instagram and the
+recipe thread you saved on X never sit next to each other.</p>
+
+<h3>2. There is no topic to browse by</h3>
+<p>X's bookmarks are a reverse-chronological list. You cannot ask for "just the coding threads" or "just the
+recipes" unless you have manually filed things into folders — and folders are a paid-tier feature and still
+manual. You remember what something was <em>about</em>, not when you saved it.</p>
+
+<h3>3. They do not tell you what you actually use</h3>
+<p>No dates to sort by, no note about why you kept it, and no record of how many times you have gone back to
+something. The platform has no reason to build that: its business is your next scroll, not your last one.</p>
+
+<h3>4. They stay inside X</h3>
+<p>You cannot send someone a curated set of twenty saved posts as one link, and you cannot keep a copy anywhere
+you control.</p>
+
+<h2>What bookmarker adds</h2>
+<ul>
+  <li><strong>One library across apps.</strong> X, Instagram, TikTok, YouTube, YouTube Shorts, Threads, Pinterest
+    and ordinary web pages, each labelled with where it came from. Browse by topic or by source app; each view
+    filters the other.</li>
+  <li><strong>Automatic filing.</strong> Every save lands in a topic and subtopic — 50 topics, 612 subtopics,
+    always overridable, and you can add your own subtopics.</li>
+  <li><strong>Search.</strong> Over titles, the account that posted it, your tags, your notes, the topic and
+    subtopic, the source app and the link, narrowable to topics, subtopics or tags.</li>
+  <li><strong>Dated notes.</strong> Why you kept it, written down, with a date.</li>
+  <li><strong>Revisit counts.</strong> bookmarker counts how often you reopen a save, so the things you actually
+    use rise to the top.</li>
+  <li><strong>Shareable collections.</strong> Turn a set of saves into a page at bookmarker.lol/c/&hellip; with an
+    expiry of never, one day or ten days, and switch it off whenever.</li>
+  <li><strong>Your old saves.</strong> Import X's data export, plus Instagram, TikTok, YouTube and browser
+    bookmarks.</li>
+  <li><strong>It is free.</strong> First 20 saves with no account; a free email sign-in makes it unlimited and
+    backed up.</li>
+</ul>
+<p>One thing to be clear about, because it is easy to oversell: bookmarker does not index the
+inside of the posts you save. A search matches the title, the account that posted it, your tags, your notes, the
+topic and subtopic, the source app, the link, and any description text the page published. You can narrow it to
+topics, subtopics or tags. Several words mean "all of these must appear"; there is no quoted-phrase operator.</p>
+<p>bookmarker also stores links rather than copies, so it does not rescue a deleted post — if that is what you
+need, look at <a href="/vs-twillot">Twillot</a>, which archives X posts.</p>
+
+<h2>Side by side</h2>
+<div class="comparison-table">
+  <table>
+    <thead><tr><th>&nbsp;</th><th>bookmarker</th><th>X built-in bookmarks</th></tr></thead>
+    <tbody>
+      <tr><td>Saving a post from X</td><td class="yes">Share &rarr; "Share via&hellip;" &rarr; bookmarker</td><td class="yes">One tap, in the app</td></tr>
+      <tr><td>Nothing to install</td><td class="no">Needs the app or the web app</td><td class="yes">Already there</td></tr>
+      <tr><td>Holds Instagram, TikTok, YouTube saves too</td><td class="yes">Yes</td><td class="no">X only</td></tr>
+      <tr><td>Automatic topic filing</td><td class="yes">Yes, on every save</td><td class="no">No</td></tr>
+      <tr><td>Folders</td><td class="yes">Topics, subtopics and tags, free</td><td>Manual folders, a paid X Premium feature</td></tr>
+      <tr><td>Your own notes on a save</td><td class="yes">Dated notes</td><td class="no">No</td></tr>
+      <tr><td>Tracks what you revisit</td><td class="yes">Yes</td><td class="no">No</td></tr>
+      <tr><td>Share a curated set as one link</td><td class="yes">Yes, with an optional expiry</td><td class="no">No</td></tr>
+      <tr><td>Keeps a copy if the post is deleted</td><td class="no">No — links only</td><td class="no">No</td></tr>
+      <tr><td>Price</td><td class="yes">Free</td><td class="yes">Free (some bookmark features need X Premium)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>When X's bookmarks are enough</h2>
+<ul>
+  <li>You save a handful of posts and clear them out regularly.</li>
+  <li>X is the only app you save from.</li>
+  <li>You do not need to search or group what you saved.</li>
+</ul>
+
+<h2>When a separate library is worth it</h2>
+<ul>
+  <li>You have hundreds or thousands of saves and find nothing.</li>
+  <li>You save from Instagram, TikTok and YouTube as well.</li>
+  <li>You want to browse by subject rather than scroll by date.</li>
+  <li>You want to know what you keep coming back to, or to send someone a set.</li>
+</ul>
+<p>Plenty of people use both: X's bookmarks as a quick inbox, bookmarker for anything they want to keep.</p>
+
+<p><a class="cta" href="/get/">Try bookmarker — free</a></p>
+<span class="cta-sub">See also <a href="/how-to-organize-twitter-bookmarks">how to organise your X bookmarks</a>,
+<a href="/how-to-search-twitter-bookmarks">how to search them</a> and
+<a href="/alternatives">the alternatives</a>.</span>
 </main>
-<footer>
-  <p>© 2026 bookmarker · <a href="/">Home</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+<footer class="site-foot">
+  <div class="foot-in">
+    <div>
+      <h2>bookmarker</h2>
+      <ul>
+        <li><a href="/">Web app</a></li>
+        <li><a href="/app/">iPhone app</a></li>
+        <li><a href="/what-is-bookmarker">What is bookmarker?</a></li>
+        <li><a href="/faq">FAQ</a></li>
+        <li><a href="/palace/">Library Island</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Compare</h2>
+      <ul>
+        <li><a href="/alternatives">Best bookmark managers for saved posts</a></li>
+        <li><a href="/vs-twitter-bookmarks">vs X (Twitter) bookmarks</a></li>
+        <li><a href="/vs-raindrop">vs Raindrop.io</a></li>
+        <li><a href="/vs-twillot">vs Twillot</a></li>
+        <li><a href="/vs-mymind">vs mymind</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="/how-to-organize-twitter-bookmarks">Organise your X bookmarks</a></li>
+        <li><a href="/how-to-search-twitter-bookmarks">Search your X bookmarks</a></li>
+        <li><a href="/llms.txt">llms.txt</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Company</h2>
+      <ul>
+        <li><a href="/press/">Press kit</a></li>
+        <li><a href="/privacy">Privacy policy</a></li>
+        <li><a href="/terms">Terms of use</a></li>
+        <li><a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="foot-copy">&copy; 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.</p>
 </footer>
 </body>
 </html>
