@@ -295,6 +295,67 @@ export function moistureAt(x, z, h) {
   return clamp(w, 0, 1);
 }
 
+/* ── how high the jungle stands ─────────────────────────────────────────── */
+/* The tallest crown island-flora can place, measured in the same units the
+   scatter uses: (7 + 32)·1.23 of blob radius, plus the squash headroom. The
+   camera has to clear this, not just the ground, or a flight beat ends up
+   inside a tree and the frame goes flat green. */
+export const CANOPY_TOP = 74;
+export const CAMP_CLEAR = 78;   // bare ground around a camp, wide enough to frame it in
+export const CAMP_FADE = 158;  // and the scrubby edge of the clearing
+
+/* A deliberately conservative upper bound on the canopy at (x, z): the
+   pure-number twin of island-flora's canopyDensity, with the terms that only
+   thin the forest left out so the bound never reads lower than the trees.
+   `clearings` are the camp sites, which really are cut back to bare ground —
+   see canopyDensity — so a marker close-up can sit inside one. */
+export function canopyTopAt(x, z, clearings) {
+  const h = heightAt(x, z);
+  if (h < 3.5 || h > 820) return Math.max(h, SEA_LEVEL);
+  const slope = slopeAt(x, z);
+  if (slope > 2.0) return h;
+  let d = 0.25 + 0.95 * moistureAt(x, z, h);
+  d *= clamp(1.4 - slope * 0.42, 0.22, 1);
+  d *= sstep(3.5, 16, h);
+  d *= 1 - 0.8 * sstep(560, 760, h);
+  d *= clamp(sstep(250, 560, Math.hypot(x + 150, z + 330)), 0, 1);   // bare ash cone
+  d *= 1 - 0.9 * sstep(80, 20, coastField(x, z)) * sstep(24, 8, h);  // the sand
+  if (clearings) for (const c of clearings) {
+    const cd = Math.hypot(x - c.x, z - c.z);
+    if (cd < CAMP_CLEAR) return h;
+    if (cd < CAMP_FADE) d *= sstep(CAMP_CLEAR, CAMP_FADE, cd);
+  }
+  return h + CANOPY_TOP * clamp(d, 0, 1);
+}
+
+/* The lowest a camera may fly over (x, z): the worst canopy top in a small
+   disc around it, so skimming a ridge line does not clip a crown. */
+export function clearanceAt(x, z, clearings, pad = 26) {
+  let top = canopyTopAt(x, z, clearings);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.4;
+    top = Math.max(top, canopyTopAt(x + Math.cos(a) * 34, z + Math.sin(a) * 34, clearings));
+  }
+  return top + pad;
+}
+
+/* Raise `pos` until nothing between it and `target` stands in the way. The
+   line is y = target.y + u·(pos.y − target.y), so the smallest lift that
+   clears every sample is a max over u of (need(u) − target.y)/u. The headroom
+   grows with u: right next to the subject the only thing to clear is the
+   subject's own ground, and demanding full clearance there would tip every
+   close-up into a steep plan view. */
+export function liftOverCanopy(pos, target, clearings, margin = 16, samples = 14) {
+  let rise = pos.y - target.y;
+  for (let i = 1; i <= samples; i++) {
+    const u = i / samples;
+    const x = mix(target.x, pos.x, u), z = mix(target.z, pos.z, u);
+    const need = canopyTopAt(x, z, clearings) + margin * u - target.y;
+    if (need > rise * u) rise = need / u;
+  }
+  return { x: pos.x, y: target.y + Math.max(rise, 0), z: pos.z };
+}
+
 /* ── zones: a multiplicatively weighted Voronoi over the used sites ─────── */
 /* Bigger topics get more island. Each point belongs to exactly one zone, so
    the zones tile the island with no gaps and no overlap. */
@@ -402,8 +463,17 @@ export function computeIsland(atlas) {
   });
   const markers = zones.flatMap((z) => z.markers);
   const byId = new Map(markers.map((m) => [m.id, m]));
+  // one clearing per camp: the flora cuts these back, the camera trusts them
+  const seen = new Set();
+  const clearings = [];
+  for (const m of markers) {
+    const key = `${m.zone}/${m.camp}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    clearings.push({ x: m.campX, z: m.campZ });
+  }
   return {
-    sites, zones, markers, byId,
+    sites, zones, markers, byId, clearings,
     total: atlas.total, label: atlas.label, demo: atlas.demo,
     stacks: STACKS, landStacks: LAND_STACKS, river: RIVER, falls: FALLS,
     zoneAt: (x, z) => zoneField(x, z, sites),

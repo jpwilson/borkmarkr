@@ -192,6 +192,46 @@ assert.ok(tour.duration >= 48 && tour.duration <= 56, `tour is ${tour.duration}s
   assert.equal(tour.stateAt(1e6).t, tour.duration);
 }
 {
+  /* The canopy is 70-odd metres of geometry standing on the heightfield, so
+     clearing the ground is not the same as clearing the island. Every sample
+     of the flight has to be above the trees, and on the beats that hold a
+     bookmark open the camp itself has to be visible: a frame of leaves is a
+     broken frame, however legal the camera position is. */
+  let checkedSight = 0;
+  for (let t = 0; t <= tour.duration; t += 0.2) {
+    const s = tour.stateAt(t);
+    const canopy = L.canopyTopAt(s.pos.x, s.pos.z, island.clearings);
+    assert.ok(s.pos.y >= canopy + 4,
+      `camera clears the canopy at ${t.toFixed(1)}s (y ${s.pos.y.toFixed(1)} vs ${canopy.toFixed(1)})`);
+    if (!s.marker) continue;
+    const m = island.byId.get(s.marker);
+    // march the sight line and make sure nothing stands in front of the camp
+    checkedSight++;
+    const eye = { x: m.x, y: m.y + 11, z: m.z };
+    for (let i = 1; i < 24; i++) {
+      const u = i / 24;
+      const x = L.mix(eye.x, s.pos.x, u), z = L.mix(eye.z, s.pos.z, u);
+      const y = L.mix(eye.y, s.pos.y, u);
+      assert.ok(y >= L.heightAt(x, z), `terrain blocks the view of ${s.marker} at ${t.toFixed(1)}s`);
+      assert.ok(y >= L.canopyTopAt(x, z, island.clearings) - 1,
+        `the canopy blocks the view of ${s.marker} at ${t.toFixed(1)}s`);
+    }
+  }
+  assert.ok(checkedSight > 20, "the landing holds long enough to be worth checking");
+
+  // and the close-up itself: 30-60 m out, tipped down onto the camp
+  const hero = T.heroMarker(island);
+  const close = T.markerPose(island, hero);
+  const range = Math.hypot(close.pos.x - close.target.x, close.pos.y - close.target.y, close.pos.z - close.target.z);
+  assert.ok(range > 30 && range < 62, `the marker close-up stands ${range.toFixed(0)} m off its subject`);
+  assert.ok(close.pos.y > close.target.y + 12, "and looks down at it, not up");
+  assert.ok(close.pos.y >= L.canopyTopAt(close.pos.x, close.pos.z, island.clearings),
+    "the close-up camera is not inside a tree");
+  // the camp really is a clearing, both in the scatter and in the bound
+  assert.equal(L.canopyTopAt(hero.campX, hero.campZ, island.clearings),
+    L.heightAt(hero.campX, hero.campZ), "a camp site carries no canopy");
+}
+{
   // the poses the capture harness uses are framings of real places
   const hero = T.heroMarker(island);
   assert.ok(hero && island.byId.has(hero.id));

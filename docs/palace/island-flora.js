@@ -10,7 +10,7 @@
    thins the forest evenly across the island instead of deleting a stripe. */
 import * as THREE from "three";
 import { sampleGrid, groundAt, PAL, ATMOS_PARS } from "./island-terrain.js";
-import { clamp, mix, sstep, noise2, fbm, coastField, riverSample, zoneField, ISLAND_R } from "./island-layout.js";
+import { clamp, mix, sstep, noise2, fbm, coastField, riverSample, zoneField, ISLAND_R, CAMP_CLEAR, CAMP_FADE } from "./island-layout.js";
 
 const mixc = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
 
@@ -241,10 +241,12 @@ function canopyDensity(field, x, z, h, slope, moist, zone, temple, camps) {
   // natural clearings: grass shelves, slips, outcrops
   d *= clamp(0.55 + 1.1 * fbm(x * 0.0034 + 41.2, z * 0.0034 - 7.8, 2), 0, 1);
   if (zone.gap < 40 && slope < 1.15) d *= 0.05 + 0.9 * sstep(14, 40, zone.gap);                   // keep the trail open
-  // a camp stands in a clearing, the way a camp does
+  // a camp stands in a clearing, the way a camp does — and the camera relies
+  // on it: island-layout's canopyTopAt cuts the same hole, to the metre
   if (camps) for (const c of camps) {
     const cd = Math.hypot(x - c.x, z - c.z);
-    if (cd < 86) { d *= sstep(22, 86, cd) * 0.95; if (d < 0.02) return 0; }
+    if (cd < CAMP_CLEAR) return 0;
+    if (cd < CAMP_FADE) d *= sstep(CAMP_CLEAR, CAMP_FADE, cd);
   }
   return clamp(d, 0, 1);
 }
@@ -254,16 +256,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
   const temple = layout.zones.find((z) => z.siteId === "temple") || null;
   const canopy = [], emergent = [], palms = [], mangroves = [], scrub = [];
   // one clearing per camp, not per marker: markers cluster tightly
-  const camps = [];
-  for (const z of layout.zones) {
-    const seen = new Set();
-    for (const m of z.markers) {
-      const key = `${z.index}/${m.camp}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      camps.push({ x: m.x, z: m.z });
-    }
-  }
+  const camps = layout.clearings || [];
   const R = ISLAND_R + 60;
   const CLUSTERS = 23000;
   const r = rng(99173);

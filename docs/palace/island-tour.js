@@ -5,7 +5,7 @@
    calls and nothing is mutated while a frame is being computed, so renderAt(t)
    gives the same camera, the same selection and the same caption whatever ran
    before it. */
-import { heightAt, clamp, mix, zoneBySite } from "./island-layout.js";
+import { heightAt, clamp, mix, zoneBySite, clearanceAt, canopyTopAt, liftOverCanopy } from "./island-layout.js";
 
 const v = (x, y, z) => ({ x, y, z });
 const ease = (u) => u * u * (3 - 2 * u);
@@ -68,19 +68,34 @@ export function zonePose(layout, zone, opts = {}) {
   const tx = zone.x + ax, tz = zone.z + az2;
   const base = framing.abs ? 0 : zone.y;
   const pos = v(tx + Math.cos(a) * d, base + framing.height, tz + Math.sin(a) * d);
-  return { pos, target: v(tx, base + framing.lift, tz), fov: framing.fov };
+  const target = v(tx, base + framing.lift, tz);
+  // a low beat over a dense zone would otherwise sit inside the crowns
+  pos.y = Math.max(pos.y, clearanceAt(pos.x, pos.z, layout.clearings, 46));
+  return { pos, target, fov: framing.fov };
 }
 
 export function markerPose(layout, marker, opts = {}) {
+  if (!marker) return overviewPose(layout);
   // stand outside the camp, looking in: anywhere else and the camera ends up
   // inside one of the other tents in the cluster
   const out = Math.atan2(marker.z - (marker.campZ ?? marker.z - 1), marker.x - (marker.campX ?? marker.x));
-  const a = opts.angle != null ? opts.angle : out;
-  const d = opts.dist ?? 92;
+  // out along the camp's own radius, so the marker stands nearest the lens and
+  // the rest of its camp falls away behind it; tilted off that line toward
+  // whichever side of the clearing lies lower, so the camera looks downhill
+  const side = heightAt(marker.x + Math.cos(out + 1.0) * 46, marker.z + Math.sin(out + 1.0) * 46)
+    <= heightAt(marker.x + Math.cos(out - 1.0) * 46, marker.z + Math.sin(out - 1.0) * 46) ? 1 : -1;
+  const a = opts.angle != null ? opts.angle : out + side * 0.55;
+  // `dist` is how far the camera stands from the marker, along the ground;
+  // `pitch` tips it down onto the camp so the tents read against the clearing
+  const d = opts.dist ?? 40;
+  const pitch = opts.pitch ?? 0.50;
   const x = marker.x + Math.cos(a) * d, z = marker.z + Math.sin(a) * d;
-  // the ground where the camera ends up may be higher than the marker's own
-  const y = Math.max(marker.y + 58, heightAt(x, z) + 40);
-  return { pos: v(x, y, z), target: v(marker.x, marker.y + 6, marker.z), fov: 36 };
+  // frame the marker a little below centre: the camp, not the sky above it
+  const target = v(marker.x, marker.y + 11, marker.z);
+  const raw = v(x, target.y + d * Math.tan(pitch), z);
+  // and climb until nothing — ground or crown — stands in the line of sight
+  const pos = liftOverCanopy(raw, target, layout.clearings, 18);
+  return { pos, target, fov: opts.fov ?? 40 };
 }
 
 /* The bookmark the tour lands on: the oldest save in the biggest camp of the
@@ -156,13 +171,13 @@ export function buildPlan(layout) {
   const dip = push("dip", heroZone.place, 5, `${heroZone.biome}`);
   dip.zone = heroZone.index;
   key(at(dip, 0.1), zonePose(layout, heroZone, { offset: 0.9, dist: 1.25 }));
-  key(at(dip, 1), markerPose(layout, hero, { dist: 290 }));
+  key(at(dip, 1), markerPose(layout, hero, { dist: 215, pitch: 0.72, fov: 40 }));
 
   const land = push("marker", "One bookmark", 6, hero ? hero.item.title : "");
   land.zone = heroZone.index;
   land.marker = hero ? hero.id : null;
-  key(at(land, 0.35), markerPose(layout, hero, { dist: 180 }));
-  key(at(land, 1), markerPose(layout, hero, { dist: 90 }));
+  key(at(land, 0.35), markerPose(layout, hero, { dist: 104, pitch: 0.64 }));
+  key(at(land, 1), markerPose(layout, hero, { dist: 40, pitch: 0.50 }));
 
   const out = push("pullout", "Library Island", 6, `${layout.total} saves · ${layout.zones.length} zones`);
   key(at(out, 0.42), { pos: v(hero.x + 520, hero.y + 560, hero.z + 620), target: v(hero.x, hero.y, hero.z), fov: 40 });
@@ -204,11 +219,21 @@ export class Tour {
       y: catmull(p0.target, a.target, b.target, p3.target, u, "y"),
       z: catmull(p0.target, a.target, b.target, p3.target, u, "z"),
     };
-    // never fly through the island
-    const floor = heightAt(pos.x, pos.z) + 16;
+    // never fly through the island — or through the canopy standing on it
+    const clearings = this.layout.clearings;
+    const floor = clearanceAt(pos.x, pos.z, clearings, 26);
     if (pos.y < floor) pos.y = floor;
     const beat = this.beatAt(t);
     const local = clamp((t - beat.start) / beat.length, 0, 1);
+    // on a beat that holds a bookmark, the frame is only worth anything if the
+    // camp is actually visible: lift the camera until the sight line is clear
+    if (beat.marker) {
+      const m = this.layout.byId?.get(beat.marker);
+      if (m && (pos.x !== target.x || pos.z !== target.z)) {
+        const clear = liftOverCanopy(pos, { x: m.x, y: m.y + 11, z: m.z }, clearings, 18);
+        if (clear.y > pos.y) { target.y += clear.y - pos.y; pos.y = clear.y; }
+      }
+    }
     return {
       t, pos, target,
       fov: mix(a.fov, b.fov, u),

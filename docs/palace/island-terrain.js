@@ -13,9 +13,10 @@ import {
 } from "./island-layout.js";
 
 /* ── colour helpers (authored in sRGB, uploaded linear) ─────────────────── */
+/* Authored in sRGB; THREE.ColorManagement converts on the way in, so the
+   components are already linear by the time they reach a vertex buffer. */
 const srgb = (hex) => {
   const c = new THREE.Color(hex);
-  c.convertSRGBToLinear();
   return [c.r, c.g, c.b];
 };
 const lerp3 = (a, b, t, out) => {

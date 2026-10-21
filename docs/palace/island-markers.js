@@ -103,7 +103,9 @@ function geoFor(kind) {
   return b.geometry();
 }
 
-const KIND_SCALE = { camp: 15.0, totem: 12.5, banner: 14.5, torch: 13.0, cairn: 11.0 };
+/* A camp is a camp, not a circus: about a storey and a half on the ground.
+   From the air the warm glow below carries them, not their silhouettes. */
+const KIND_SCALE = { camp: 8.6, totem: 7.4, banner: 8.4, torch: 7.8, cairn: 6.6 };
 
 export function buildMarkers(field, layout, uniforms) {
   const group = new THREE.Group();

@@ -13,11 +13,10 @@ import { buildSky, buildMist, buildSmoke, buildSpray } from "./island-sky.js";
 import { buildMarkers, buildSelectRing } from "./island-markers.js";
 import { TERRAIN_HALF, STACKS, clamp, mix, zoneBySite } from "./island-layout.js";
 
-const lin = (hex, scale = 1) => {
-  const c = new THREE.Color(hex);
-  c.convertSRGBToLinear().multiplyScalar(scale);
-  return c;
-};
+/* THREE.ColorManagement is on, so `new THREE.Color(hex)` already lands in the
+   renderer's linear working space; converting again here used to darken every
+   light and every fog colour by a second gamma. */
+const lin = (hex, scale = 1) => new THREE.Color(hex).multiplyScalar(scale);
 
 export class IslandScene {
   constructor({ canvas, labelHost, layout, capture = false }) {
@@ -55,7 +54,7 @@ export class IslandScene {
     this.detail = detailTexture(256);
     this.uniforms = {
       uSunDir: { value: sun },
-      uSunColor: { value: lin("#ffeeda", 1.62) },
+      uSunColor: { value: lin("#ffeeda", 1.72) },
       uSkyColor: { value: lin("#8ab6dc", 0.56) },
       uSkyMid: { value: lin("#86aec6", 1.0) },
       uZenith: { value: lin("#0e3860", 1.0) },
@@ -63,10 +62,10 @@ export class IslandScene {
       uFogColor: { value: lin("#93a8ad", 1.0) },
       uHazeColor: { value: lin("#e4e0d2", 1.0) },
       uSunHaze: { value: lin("#ffd6a2", 1.0) },
-      uFogDensity: { value: 0.000104 },
-      uFogHeight: { value: 430 },
+      uFogDensity: { value: 0.000072 },
+      uFogHeight: { value: 390 },
       uTime: { value: 0 },
-      uExposure: { value: 1.0 },
+      uExposure: { value: 0.70 },
       uDetail: { value: this.detail },
       uHalf: { value: TERRAIN_HALF },
       uDeep: { value: lin("#04171f", 1) },
