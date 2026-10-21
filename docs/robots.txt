@@ -1,36 +1,118 @@
-# bookmarker.lol robots.txt
-# We welcome AI crawlers to help people discover bookmarker
+# bookmarker.lol — robots.txt
+#
+# Everything public is open to everyone, including the AI crawlers: being
+# quotable in an answer is how people find a small app like this one. The only
+# closed paths are other people's shared collections (/c/<slug>, user content
+# that has its own link and an expiry) and /web/, which is a redirect stub.
+#
+# Groups are listed explicitly per bot rather than relying on the wildcard,
+# because several of these crawlers only read the group that names them.
 
 User-agent: *
 Allow: /
+Disallow: /c/
+Disallow: /web/
 
-# AI crawler bots specifically allowed
-User-agent: GPTBot
+# ── OpenAI: ChatGPT search index, in-chat fetches, and model training ──
+User-agent: OAI-SearchBot
 Allow: /
+Disallow: /c/
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /c/
 
-User-agent: PerplexityBot
+User-agent: GPTBot
 Allow: /
+Disallow: /c/
+
+# ── Anthropic: Claude's search index, in-chat fetches, and model training ──
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /c/
+
+User-agent: Claude-User
+Allow: /
+Disallow: /c/
 
 User-agent: ClaudeBot
 Allow: /
-
-User-agent: Claude-Web
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
+Disallow: /c/
 
 User-agent: anthropic-ai
 Allow: /
+Disallow: /c/
+
+# ── Perplexity ──
+User-agent: PerplexityBot
+Allow: /
+Disallow: /c/
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /c/
+
+# ── Google: Search, plus the separate control for Gemini and AI features ──
+User-agent: Googlebot
+Allow: /
+Disallow: /c/
+
+User-agent: Googlebot-Image
+Allow: /
+Disallow: /c/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /c/
+
+# ── Microsoft: Bing feeds Copilot and DuckDuckGo ──
+User-agent: bingbot
+Allow: /
+Disallow: /c/
+
+# ── Apple: Siri and Spotlight, plus its training control ──
+User-agent: Applebot
+Allow: /
+Disallow: /c/
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /c/
+
+# ── DuckDuckGo's assistant ──
+User-agent: DuckAssistBot
+Allow: /
+Disallow: /c/
+
+# ── Meta AI ──
+User-agent: meta-externalagent
+Allow: /
+Disallow: /c/
+
+User-agent: meta-externalfetcher
+Allow: /
+Disallow: /c/
+
+# ── Common Crawl, which a lot of models are trained from ──
+User-agent: CCBot
+Allow: /
+Disallow: /c/
+
+# ── Other assistants and crawlers that identify themselves ──
+User-agent: Amazonbot
+Allow: /
+Disallow: /c/
 
 User-agent: Bytespider
 Allow: /
+Disallow: /c/
 
 User-agent: cohere-ai
 Allow: /
+Disallow: /c/
 
-# Sitemap
+User-agent: YouBot
+Allow: /
+Disallow: /c/
+
 Sitemap: https://bookmarker.lol/sitemap.xml

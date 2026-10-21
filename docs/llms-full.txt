@@ -1,0 +1,2447 @@
+# bookmarker — full text of every public page
+
+bookmarker is a free bookmark manager for iPhone and the web that collects everything you save on
+Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a topic
+and subtopic automatically, and lets you search it again later.
+
+Home: https://bookmarker.lol/   Short version: https://bookmarker.lol/llms.txt
+Generated from the committed HTML in docs/ by Scripts/gen_llms_full.py. Last updated: 2026-10-21.
+
+
+==============================================================================
+
+# https://bookmarker.lol/
+
+Title: bookmarker — every save, one library
+Description: Everything you save on Instagram, X, TikTok and YouTube, in one library you can actually search.
+Page type: Home and web app
+
+bookmarker
+
+## The folder your feeds never gave you.
+
+Everything you save on Instagram, X, TikTok and YouTube — reels, threads, clips, articles — in one library you can actually search. Filed by topic, automatically.
+
+- Save from any app, or paste a link
+
+- Fifty topics that file themselves
+
+- Search everything you've ever saved
+
+- Free — here on the web and on iPhone
+
+New
+Explore Library IslandYour saves as an island: every topic its own zone, every link a camp
+→
+
+© 2026 bookmarker · Get the app · Library Island · Privacy · Terms · hello@bookmarker.lol
+
+bookmarker
+
+### Every save.
+One library.
+
+Sign in and your borks follow you — phone, laptop, everywhere.
+
+Sign in to use your web library. Try your first 20 saves on iPhone without an account; sign in for unlimited saves and backup. No payment required.
+
+Continue with Google
+
+or
+
+Sign up with email
+Sign in
+Just looking? Peek inside a full library →
+
+By continuing you agree to the Terms of Use and Privacy Policy.
+
+### Create your account
+
+Email me a code
+
+Back
+
+No password to make up or lose — the code is the whole thing.
+
+By continuing you agree to the Terms of Use and Privacy Policy.
+
+### Check your email
+
+Continue
+Send a new code
+Use a different email
+
+© 2026 bookmarker · Get the app · Library Island · Privacy · Terms
+
+### What is bookmarker?
+
+bookmarker is a free bookmark manager for iPhone and the web that collects everything you
+save on Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a
+topic automatically, and lets you find it again later. It is for people who save hundreds or thousands of
+posts across several apps and can never find any of them again.
+
+Every app keeps its own saved list. None of them talk to each other, almost nothing in them has a title
+worth reading, and there is no subject to browse by — so you end up with five separate piles of things you
+meant to come back to. bookmarker is the layer above all of them. A saved item is a bork.
+
+### What it does
+
+#### Save from anywhere
+
+Tap Share in any iPhone app and pick bookmarker, or paste a link here on the web. The title, the
+account that posted it and a thumbnail come along where the platform publishes them.
+
+#### It files itself
+
+Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. Fifty
+topics, 612 subtopics, your own subtopics on top, and every suggestion is overridable.
+
+#### Browse two ways
+
+By topic, to see everything about running wherever it came from. Or by source app, to see everything
+you kept from TikTok. Each view filters the other.
+
+#### Find it again
+
+Search the title, the account, your tags, your notes, the topic and subtopic, the source app and the
+link — and narrow a search to topics, subtopics or tags when a word is too common.
+
+#### Notes, and a memory
+
+Add a dated note so you remember why you kept something. bookmarker also counts how many times you
+have gone back to it — the signal platform bookmarks throw away.
+
+#### Bring what you already saved
+
+Import your browser bookmarks, or the data export from X, Instagram, TikTok or YouTube, and thousands
+of old saves become a filed, searchable library in one step.
+
+### How it works
+
+- Share. In Instagram, TikTok or YouTube, tap Share and pick bookmarker. On X, tap Share
+and then “Share via…”. Pin bookmarker to the front of the share sheet once and it is the first icon from
+then on.
+
+- Bork. The link, the title, the account and a thumbnail are recorded on the spot.
+Saving is one tap; organising is optional and can happen later.
+
+- Filed. It lands in a topic and subtopic, ready to browse, search, annotate and open —
+straight back to the original post in the app it came from.
+
+### What it costs
+
+bookmarker is free on the App Store, for iOS 17 or later. Your first 20 saves need no account at all. Past
+20, signing up is also free — an email address and a six-digit code, no password to invent — and makes the
+library unlimited, backs it up, and makes it readable here on the web. There is no paid tier in the app and
+nothing in it costs money.
+
+### Common questions
+
+#### Which apps can I save from?
+
+Any app with an iOS share sheet. bookmarker recognises Instagram, X (Twitter), TikTok, YouTube, YouTube
+Shorts, Threads, Pinterest and ordinary web pages, and labels each save with where it came from.
+
+#### Does bookmarker copy the posts I save?
+
+No. It stores the link, the title, the account and a thumbnail where one is published, and opening a
+save sends you to the original. It is not an archive: if the original is deleted, the link dies with it.
+
+#### What exactly can I search?
+
+Titles, accounts, tags, notes, topics, subtopics, the source app, the link, and any description text the
+page published. bookmarker does not index the inside of the posts you save, and there is no
+quoted-phrase operator — several words mean “all of these must appear”.
+
+#### Will I get thumbnails for Instagram, TikTok and X?
+
+Often not. YouTube and most web pages publish the metadata bookmarker reads; Instagram, TikTok and X
+usually do not publish it to an unauthenticated request, so those saves often arrive with a plain title
+and no image. The save, the filing and the search still work.
+
+#### Is there an Android app?
+
+No. There is an iPhone app and this web app, which runs in any modern browser — including on Android and
+on a desktop — once you have signed in.
+
+Ten more answers in the full FAQ →
+
+### Read more
+
+- What is bookmarker?
+
+- The iPhone app
+
+- FAQ
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+- How to organise your X bookmarks
+
+- How to search your X bookmarks
+
+- Library Island
+
+- Press kit
+
+© 2026 bookmarker · Made by JP ·
+Get the app ·
+Privacy ·
+Terms ·
+hello@bookmarker.lol
+
+<!-- ─────────────── App
+
+
+==============================================================================
+
+# https://bookmarker.lol/what-is-bookmarker
+
+Title: What is bookmarker? A bookmark manager for your saved posts
+Description: bookmarker is a free bookmark manager for iPhone and the web that puts everything you save on Instagram, X, TikTok and YouTube into one library, filed by topic and searchable.
+Page type: What bookmarker is
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › What is bookmarker?
+
+## What is bookmarker?
+
+Last updated: 21 October 2026
+
+bookmarker is a free bookmark manager for iPhone and the web that collects everything you save on
+Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a topic
+automatically, and lets you find it again later. It is for people who save hundreds or thousands of posts
+across several apps and can never find any of them again.
+
+### The problem it solves
+
+A reel on Instagram, a thread on X, a clip on TikTok, a recipe video on YouTube — every app keeps its own
+saved list. None of those lists share anything with each other, almost none of the items have real titles, and
+there is no topic to browse by. So you end up with five separate piles of things you meant to come back to, and
+no way to answer the only question you ever actually ask: where did I see that thing about…?
+
+bookmarker is the layer above all of them. One library, every app, filed and searchable.
+
+### What it does
+
+- Saves from anywhere. Tap Share in any iPhone app and pick bookmarker, or paste a link into
+the app, or paste it into the web app at bookmarker.lol.
+
+- Files itself. Every save lands in a topic and a subtopic — Fitness › Mobility,
+Recipes › Meal prep. There are 50 topics and 612 subtopics, and you can add your own subtopics. The
+filing is a suggestion: you can change it before or after saving.
+
+- Browses two ways. By topic, to see everything about running wherever it came from; or by
+source app, to see everything you kept from TikTok. Each view filters the other.
+
+- Finds things again. Search covers the title, the account that posted it, your tags, your
+notes, the topic and subtopic, the source app and the link itself. You can narrow a search to topics,
+subtopics or tags only.
+
+- Remembers why. Add a dated note to any save, and bookmarker counts how often you have
+gone back to something — the signal platform bookmarks throw away.
+
+- Imports what you already saved. Browser bookmarks, or the data export from X, Instagram,
+TikTok or YouTube. Thousands of old saves become a filed, searchable library in one step.
+
+- Shares a set. Pick some saves and bookmarker turns them into a page at
+bookmarker.lol/c/… that you can send to anyone, with an expiry of never, one day or ten days, and a
+switch to turn it off.
+
+### Who it is for
+
+- Heavy savers — people with hundreds or thousands of likes and bookmarks across Instagram, X, TikTok and YouTube.
+
+- People who save practical things: recipes, workouts, product research, travel itineraries, tutorials.
+
+- Anyone who has thought "I definitely saved that" and then failed to find it.
+
+- People who want their library on their own phone rather than in another company's feed.
+
+### What it does not do
+
+Being specific here is more useful than overselling:
+
+- It stores links, not copies. bookmarker keeps the link, the title, the account and a
+thumbnail where one is published. Opening a save sends you to the original post in the app it came from. It
+is not an archive — if the original is deleted, the link dies with it.
+
+- Thumbnails and titles are only as good as the platform allows. YouTube and most ordinary
+web pages publish the metadata bookmarker needs. Instagram, TikTok and X usually do not publish it to an
+unauthenticated request, so saves from those apps often arrive with a plain title and no image.
+
+- Search does not index the inside of posts. It matches what bookmarker holds: titles,
+accounts, tags, notes, topics, source and link, plus any description text the page published. There is no
+quoted-phrase operator — multiple words are treated as "all of these must appear".
+
+- No Android app. There is an iPhone app and a web app that runs in any modern browser.
+
+- The filing is keyword-based, not a large language model. It does well on descriptive links
+and captions and returns nothing rather than guessing wildly when a link is opaque.
+
+### What it costs
+
+bookmarker is free on the App Store. Your first 20 saves work with no account at all. Past 20, saving asks
+you to sign up — that is also free, an email address and a six-digit code — and signing up makes the library
+unlimited, backs it up, and makes it readable on the web. There is no paid tier in the app and nothing in it
+costs money. A one-time founding-member price of $30 is being reserved for a future
+paid version; payments are not switched on, and no card is taken.
+
+### Where to go next
+
+#### The iPhone app →
+Screens, the share sheet flow, import, privacy.
+
+#### FAQ →
+Fifteen straight answers about accounts, search, privacy and limits.
+
+#### Alternatives →
+An honest look at the other tools in this category.
+
+#### vs X bookmarks →
+What a separate library adds over the one built into X.
+
+Get bookmarker — free
+
+Free on the App Store, iOS 17 or later. Or use it in a browser at bookmarker.lol.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/app/
+
+Title: bookmarker — every link you save, in one place
+Description: bookmarker is a bookmark manager for iPhone. Save any link from Instagram, X, TikTok or YouTube with one tap; it files itself into topics and stays searchable. Works offline. No ads, no tracking.
+Page type: The iPhone app
+
+bookmarker
+
+Features
+How it works
+Import
+Privacy
+FAQ
+Alternatives
+Open the app
+
+Get the app
+
+For iPhone · Free on the App Store
+
+## The folder your feeds never gave you.
+
+Everything you save on Instagram, X, TikTok and YouTube, in one library you can actually search.
+
+Download on the App Store
+
+Try it on the web
+
+Works offlineNo account needed for your first 20 savesNo ads, no tracking
+
+The problem
+
+### Saved everywhere. Findable nowhere.
+
+A reel on Instagram, a thread on X, a clip on TikTok, a video on YouTube — every app keeps its own saved list. None of them are titled, sorted or searchable, so you never find any of it again.
+
+bork noun, verb
+
+A saved item. You bork something. Then you can search it, file it, and open the original.
+
+“412 borks.” That’s the product.
+
+What it does
+
+### One library above all of them.
+
+Saving is instant. Organising is optional — bookmarker does most of it for you, and you can change anything it gets wrong.
+
+#### Save from anywhere
+
+Tap Share in any app and pick bookmarker, or paste a link. The title, the account that posted it and a thumbnail come along automatically. Pin bookmarker to the front of your share sheet once (More → Edit → add to Favorites) and it's the first icon every time.
+
+#### It files itself
+
+Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. Fifty topics, six hundred subtopics, and you can add your own.
+
+#### Browse two ways
+
+By topic, to see everything about running no matter where it came from. Or by app, to see everything you kept from TikTok. Each view filters the other.
+
+#### Find it again
+
+Search titles, tags, notes, people and links. A Related strip surfaces the near-matches — what you meant, not just the words you typed.
+
+#### Notes, and a memory
+
+Add a dated note to any bork so you remember why you kept it. bookmarker also counts how many times you’ve gone back to it.
+
+#### Side quests
+
+Running a marathon, choosing a car, planning a trip? Group the links that help with the goal, and add a daily habit if it needs one.
+
+How it works
+
+### Share. Bork. Filed.
+
+STEP 1
+
+#### Share
+
+Tap Share in Instagram, TikTok, YouTube — anywhere — and pick bookmarker (on X, tap Share, then Share via…). Pin it once — scroll the app icons to More, tap Edit, add bookmarker to Favorites and drag it to the front — and it's the first icon from then on. Or paste a link straight into the app.
+
+STEP 2
+
+#### bookmarker
+
+The title, who posted it and a thumbnail are fetched on the spot. Saving takes one tap; organising is optional and can happen later.
+
+STEP 3
+
+#### Filed
+
+It lands in a topic and subtopic, ready to browse, search and open — straight back to the original post in the app it came from.
+
+Import
+
+### Bring what you already saved.
+
+Import your browser bookmarks, or the data export from X, Instagram, TikTok or YouTube. Thousands of old saves become a sorted, searchable library in one step.
+
+From
+
+Browser bookmarks
+X
+Instagram
+TikTok
+YouTube
+
+sorted on your phone
+
+Into
+
+Fitness
+Recipes
+Cars
+Learn
+Make
++ 45 more topics
+
+Built to stay yours
+
+### On your phone. Nobody else’s business.
+
+Offline by defaultEvery feature works without an account or a connection. Your library lives on your iPhone.
+
+Optional sign-inWant backup and sync? Sign in with your email and a six-digit code. No password to create.
+
+No ads, no trackingThe app asks for zero permissions and has no ad or analytics SDKs. It stores links, not content — opening a bork sends you to the original post.
+
+Read the privacy policy
+
+Get the app
+
+### bookmarker for iPhone
+
+Free, and works without an account for your first 20 saves. After that, signing up is free too — an email and a six-digit code — and makes it unlimited, backed up, and readable on the web. On your iPhone, scan the code and tap the button.
+
+Download on the App Store
+
+Scan to open on your iPhone
+
+Stay in the loop
+
+### Hear what ships next
+
+Leave your email and we’ll write when something big ships — bulk import, new platforms. Nothing else, ever.
+
+Email address
+
+Keep me posted
+
+Website
+
+Founders price
+
+### Own it forever — $30
+
+One payment, no subscription: the iPhone app, the web app, the AI filing, and every future feature. The founders price is capped at the first hundred people.
+
+Get lifetime access
+
+Payments aren't live yet — this reserves your price. No card today.
+
+bookmarker
+
+Made by JP
+
+What is bookmarker?
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+Organise X bookmarks
+Search X bookmarks
+Library Island
+Press
+Privacy
+Terms
+hello@bookmarker.lol
+Get the app
+
+© 2026 bookmarker
+
+
+==============================================================================
+
+# https://bookmarker.lol/faq
+
+Title: bookmarker FAQ — accounts, search, privacy and limits
+Description: Answers to 15 real questions about bookmarker: what it costs, which apps you can save from, what search covers, whether it works offline, and what it deliberately does not do.
+Page type: FAQ
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › FAQ
+
+## bookmarker FAQ
+
+Last updated: 21 October 2026
+
+Straight answers about bookmarker — the free bookmark manager for iPhone and the web that puts
+everything you save on Instagram, X, TikTok and YouTube into one searchable library. If something you need is
+not here, email hello@bookmarker.lol.
+
+### What is bookmarker?
+
+bookmarker is a free bookmark manager for iPhone and the web. It collects everything you save on
+Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files each save into a topic and
+subtopic automatically, and lets you search it later. A saved item is called a bork.
+
+### Who is bookmarker for?
+
+People who save a lot and lose it: hundreds or thousands of reels, threads, clips and articles spread
+across four or five apps, none of them searchable. If you have ever thought "I definitely saved that" and
+failed to find it, that is the audience.
+
+### How much does bookmarker cost?
+
+It is free on the App Store. The first 20 saves need no account. Past 20, saving asks you to sign up,
+which is also free — an email address and a six-digit code — and makes the library unlimited, backed up and
+readable on the web. There is no paid tier in the app and nothing in it costs money. A one-time
+founding-member price of $30 is being reserved for a future paid version; payments are
+not switched on yet and no card is taken.
+
+### Which apps can I save from?
+
+Any app with an iOS share sheet. bookmarker recognises Instagram, X (Twitter), TikTok, YouTube, YouTube
+Shorts, Threads, Pinterest and ordinary web pages, and labels each save with where it came from. On X, tap
+Share and then "Share via…" to reach the share sheet. You can also paste a link straight into the app
+or into the web app.
+
+### Do I need an account?
+
+Not to start. Everything works signed out for your first 20 saves, offline, on your phone. Signing in is
+free and does three things: removes the 20-save limit, backs the library up, and lets you open it on the web.
+There is no password to invent — you get a six-digit code by email.
+
+### How does the automatic filing work?
+
+bookmarker scores the words in the link and the title or caption against its topic list, and files the
+save into the best topic and subtopic it finds. There are 50 topics and 612 subtopics, and you can add your
+own subtopics. It runs on the phone, instantly and offline. It is keyword-based, not a language model, so it
+does well on descriptive links and deliberately returns nothing rather than guessing when a link is opaque.
+Every suggestion can be overridden — saving is never blocked by filing.
+
+### What exactly can I search?
+
+By default a search looks at the title, the account that posted it, your tags, your notes, the topic and
+subtopic, the source app, the link itself, and any description text the page published. You can narrow a
+search to topics, subtopics or tags only. Several words are treated as "all of these must appear somewhere";
+there is no quoted-phrase or operator syntax. bookmarker does not index the inside of the posts you save.
+
+### Does bookmarker work offline?
+
+Yes. The iPhone library lives on your iPhone, and browsing, searching and saving a pasted link all work
+with no connection. Fetching a title or a thumbnail for a new save needs the network, so that part fills in
+when you are back online.
+
+### Does bookmarker copy the posts I save?
+
+No. It stores the link, the title, the account and a thumbnail where the platform publishes one. Opening
+a save sends you to the original post in the app it came from. That means bookmarker is not an archive: if the
+original is deleted, the link stops working.
+
+### Will I get thumbnails for Instagram, TikTok and X saves?
+
+Often not, and it is worth being straight about why. YouTube and most ordinary web pages publish the
+title, author and image that bookmarker reads. Instagram, TikTok and X generally do not publish that metadata
+to an unauthenticated request, so saves from those apps frequently arrive with a plain title taken from the
+share sheet caption or the link, and no image. The save, the filing and the search all still work.
+
+### Can I import the saves I already have?
+
+Yes. bookmarker imports browser bookmarks and the data export files from X, Instagram, TikTok and
+YouTube. Every platform is obliged to hand your data over, so a few thousand old saves can become a filed,
+searchable library in one pass instead of being re-saved one at a time.
+
+### What happens if I save the same link twice?
+
+You get one bork, not two. bookmarker normalises every URL before storing it — lowercases the host,
+strips www. and m., drops tracking parameters such as utm_*,
+igshid, si and fbclid, and removes trailing slashes — so the same post
+shared from two places, or shared once and pasted once, collides into a single save.
+
+### Can I share my saves with someone?
+
+Yes. Pick a set of saves and bookmarker turns them into a page at bookmarker.lol/c/…
+you can send to anyone, no account needed to read it. You choose whether the link lasts forever, one day or
+ten days, and you can switch it off afterwards. Everything else in your library stays private.
+
+### Is there an Android or desktop app?
+
+There is no Android app. There is a native iPhone app (iOS 17 or later) and a web app at
+bookmarker.lol that runs in any modern browser, including on Android and on a desktop, once
+you have signed in.
+
+### Does bookmarker track me?
+
+The iPhone app asks for zero permissions and ships with no ad or analytics SDKs; your library is on your
+device. This website uses PostHog for product analytics and session replay with inputs masked, which the
+privacy policy discloses. Your saves are never sold and are not visible to anyone else
+unless you deliberately share a collection.
+
+Get bookmarker — free
+
+Free on the App Store, iOS 17 or later. See also
+what bookmarker is, the
+alternatives, and how it compares to X bookmarks.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/alternatives
+
+Title: Best bookmark managers for saved posts and X bookmarks (2026)
+Description: An honest guide to the tools that organise what you save on X, Instagram, TikTok and YouTube — bookmarker, Raindrop.io, Twillot, mymind and the built-in bookmarks — and which one fits which job.
+Page type: Alternatives and competitors
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › Alternatives
+
+## Best bookmark managers for saved posts and X bookmarks
+
+Last updated: 21 October 2026 · written by the team that makes bookmarker
+
+If you save a lot on X, Instagram, TikTok and YouTube and can never find any of it again, there
+are about five serious options, and they are built for genuinely different jobs. This page says what each one is
+for, where it beats the others, and which parts of the problem it does not touch. We make
+bookmarker, so treat the summary of our own product as the one you should
+check hardest.
+
+Competitor details below are from each product's own website, checked on
+21 October 2026, and they change. Follow the links and confirm anything that matters to you. Where a rival is
+better at something, it says so.
+
+### The short version
+
+Tool
+Built for
+Where it is strongest
+
+bookmarker
+
+Saves from several phone apps at once
+
+One library across Instagram, X, TikTok and YouTube; automatic topic filing; saving from the iOS share sheet; free
+
+Raindrop.io
+
+Web pages, articles and research
+
+Runs on everything, browser extensions, full-text search of saved page content, archived copies, sharing and teamwork
+
+Twillot
+
+X (Twitter) only, in a desktop browser
+
+Pulling your whole X bookmark, like and post history down into a local archive, with export
+
+mymind
+
+Visual inspiration and notes
+
+Beautiful visual library, AI organising with no filing at all, strong privacy stance, iPhone + Android + extensions
+
+Built-in bookmarks (X, Instagram, TikTok, YouTube)
+
+Saving one thing in the app you are already in
+
+Zero friction, nothing to install, free
+
+### bookmarker
+
+What it is: a free bookmark manager for iPhone and the web that collects everything you save
+across apps into one library and files each save into a topic and subtopic automatically — 50 topics, 612
+subtopics. You save with the iOS share sheet, by pasting a link, or by importing your X, Instagram, TikTok,
+YouTube or browser-bookmark export. You can then browse by topic or by source app, search, add dated notes, and
+share a set of saves as a link.
+
+Strongest at: the cross-app problem. It is the only tool here whose whole premise is that
+your Instagram reel and your X thread about the same marathon belong in the same place. Filing is automatic, so
+a library of a few thousand saves is usable without you organising anything.
+
+Weakest at: depth per platform and depth per page. It stores links, not copies, so it cannot
+show you a post that has been deleted and it does not search the inside of what you saved. Thumbnails and titles
+are frequently missing for Instagram, TikTok and X saves because those platforms do not publish metadata to
+unauthenticated requests. There is no Android app and no browser extension. It cannot reach into X and pull your
+existing bookmark list down — for that you import X's data export.
+
+Price: free on the App Store; first 20 saves with no account, then a free email sign-in for
+an unlimited, backed-up library. Full FAQ.
+
+### Raindrop.io
+
+What it is: a mature, all-purpose bookmark manager. Per raindrop.io, it runs as a web app,
+browser extensions and apps across platforms, and organises saves into nestable collections with tags and
+filters. It also offers highlights and annotations, duplicate and broken-link detection, several view modes,
+integrations, archived copies of saved pages, and full-text search across the content of saved pages, PDFs and
+YouTube videos.
+
+Stronger than bookmarker at: almost everything to do with web pages. If what you save is
+mostly articles and research, Raindrop is the better tool — real full-text search inside saved content, a
+permanent archived copy so a dead link still has something behind it, and it runs everywhere, including Android
+and desktop browsers, which bookmarker does not.
+
+Where bookmarker differs: Raindrop is browser-first and you choose the collection; bookmarker
+is phone-share-sheet-first and files every save into a topic for you. If your saving happens inside Instagram and
+TikTok rather than in a browser, that difference matters more than the feature lists do.
+
+Full comparison: bookmarker vs Raindrop.io →
+
+### Twillot
+
+What it is: per twillot.com, a browser extension that turns your X (Twitter) bookmarks into a
+searchable library — it syncs your bookmarks, likes, posts and replies into an archive held in your browser, with
+folders, AI organising, search, media downloads and export, and it keeps posts after they are deleted.
+
+Stronger than bookmarker at: X, by a wide margin. It reaches your existing X bookmark history
+directly instead of asking you to import a data export, it keeps copies so deleted posts survive, and it exports
+your archive. If your problem is specifically "I have 4,000 X bookmarks", start there.
+
+Where bookmarker differs: Twillot is X-only and lives in a desktop browser. bookmarker covers
+Instagram, TikTok, YouTube and the open web as well, and works from the phone you were already holding.
+
+Full comparison: bookmarker vs Twillot →
+
+### mymind
+
+What it is: per mymind.com, a private visual library for notes, bookmarks, inspiration,
+articles and images — "remember everything, organize nothing". You save with a click and its AI handles the
+organising; there are no folders, labels or tags to maintain. It has iPhone and Android apps and Chrome, Edge and
+Safari extensions, and explicitly has no social features, no collaboration and no ads.
+
+Stronger than bookmarker at: visual material and craft. If you are collecting images,
+palettes, type and product shots, mymind's visual library is a nicer place to look at them than a list of links,
+and it is on Android and in desktop browsers.
+
+Where bookmarker differs: bookmarker's filing is a visible, editable topic tree you can browse
+and reassign, not an invisible model; it is built around posts from social apps and the source app they came from;
+and it is free.
+
+Full comparison: bookmarker vs mymind →
+
+### The bookmarks built into X, Instagram, TikTok and YouTube
+
+What they are: free, instant, and already on your phone. For saving one thing you will look at
+tomorrow, nothing beats them.
+
+Where they stop: each one is a separate list inside a separate app, so what you save is split
+four or five ways. Most of them show you no title worth reading, no topic to browse by, and no record of what you
+have actually gone back to. Feature availability varies and changes — X, for instance, has added bookmark folders
+for subscribers — so check the current help pages of each app rather than trusting an older comparison.
+
+Full comparison: bookmarker vs X bookmarks →
+
+### What about Pocket and Instapaper?
+
+Pocket, the best-known read-it-later app, has shut down: Mozilla's notice on getpocket.com says the Pocket web,
+Android, iOS and macOS apps and the browser extensions have been phased out, so it is no longer an option.
+Instapaper is still a good
+read-later app for long articles, but it is built for reading text, not for keeping track of reels, clips and
+threads — which is the problem this page is about.
+
+### How to choose
+
+- Most of what you save is in phone apps, across several of them → bookmarker.
+
+- Most of what you save is web articles and research → Raindrop.io.
+
+- You only care about X, and you want your existing bookmark history → Twillot.
+
+- You collect images and want it to look beautiful → mymind.
+
+- You save a handful of things a month → the built-in bookmarks are fine.
+
+Plenty of people run two: a web-first manager for articles and bookmarker for everything the phone throws at
+them. The workflows barely overlap.
+
+Try bookmarker — free
+
+Free on the App Store, iOS 17 or later, or in a browser at bookmarker.lol.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/vs-twitter-bookmarks
+
+Title: bookmarker vs X (Twitter) bookmarks: what a library adds
+Description: X's built-in bookmarks are free and instant but stay inside X. Here is what a separate library adds — topics, notes, cross-app saves, revisit counts — and when X's own are enough.
+Page type: Comparison
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › bookmarker vs X bookmarks
+
+## bookmarker vs X (Twitter) built-in bookmarks
+
+Last updated: 21 October 2026
+
+X has a bookmark button, it is free, and it is one tap. So why add anything? The short answer:
+X's bookmarks only ever hold X, and they tell you nothing about what you saved or whether you ever went back to
+it. bookmarker is a free iPhone and web library that holds your X saves and your Instagram, TikTok and
+YouTube saves, files each one into a topic, and lets you search and annotate the lot.
+
+X's bookmark features change, and some of them depend on a paid X Premium tier — bookmark
+folders, for instance, have been a subscriber feature. Check X's current help pages rather than trusting any
+comparison, including this one, on the detail. Everything below is about what a separate library adds, which does
+not change.
+
+### What X's built-in bookmarks are good at
+
+Zero friction. You are already in X, you tap the bookmark icon, it is saved, there is nothing to install and
+nothing to pay. For something you intend to read tomorrow, nothing is better. If you save a handful of posts a
+month and only use X, you do not need anything else — and this page is not going to pretend otherwise.
+
+### What they cannot do
+
+#### 1. They only hold X
+
+This is the big one. Your Instagram saves, TikTok favourites and YouTube "Watch later" are three more separate
+lists in three more apps. Nothing in X's bookmarks can see them, so the recipe you saved on Instagram and the
+recipe thread you saved on X never sit next to each other.
+
+#### 2. There is no topic to browse by
+
+X's bookmarks are a reverse-chronological list. You cannot ask for "just the coding threads" or "just the
+recipes" unless you have manually filed things into folders — and folders are a paid-tier feature and still
+manual. You remember what something was about, not when you saved it.
+
+#### 3. They do not tell you what you actually use
+
+No dates to sort by, no note about why you kept it, and no record of how many times you have gone back to
+something. The platform has no reason to build that: its business is your next scroll, not your last one.
+
+#### 4. They stay inside X
+
+You cannot send someone a curated set of twenty saved posts as one link, and you cannot keep a copy anywhere
+you control.
+
+### What bookmarker adds
+
+- One library across apps. X, Instagram, TikTok, YouTube, YouTube Shorts, Threads, Pinterest
+and ordinary web pages, each labelled with where it came from. Browse by topic or by source app; each view
+filters the other.
+
+- Automatic filing. Every save lands in a topic and subtopic — 50 topics, 612 subtopics,
+always overridable, and you can add your own subtopics.
+
+- Search. Over titles, the account that posted it, your tags, your notes, the topic and
+subtopic, the source app and the link, narrowable to topics, subtopics or tags.
+
+- Dated notes. Why you kept it, written down, with a date.
+
+- Revisit counts. bookmarker counts how often you reopen a save, so the things you actually
+use rise to the top.
+
+- Shareable collections. Turn a set of saves into a page at bookmarker.lol/c/… with an
+expiry of never, one day or ten days, and switch it off whenever.
+
+- Your old saves. Import X's data export, plus Instagram, TikTok, YouTube and browser
+bookmarks.
+
+- It is free. First 20 saves with no account; a free email sign-in makes it unlimited and
+backed up.
+
+One thing to be clear about, because it is easy to oversell: bookmarker does not index the
+inside of the posts you save. A search matches the title, the account that posted it, your tags, your notes, the
+topic and subtopic, the source app, the link, and any description text the page published. You can narrow it to
+topics, subtopics or tags. Several words mean "all of these must appear"; there is no quoted-phrase operator.
+
+bookmarker also stores links rather than copies, so it does not rescue a deleted post — if that is what you
+need, look at Twillot, which archives X posts.
+
+### Side by side
+
+bookmarker
+X built-in bookmarks
+
+Saving a post from X
+Share → "Share via…" → bookmarker
+One tap, in the app
+
+Nothing to install
+Needs the app or the web app
+Already there
+
+Holds Instagram, TikTok, YouTube saves too
+Yes
+X only
+
+Automatic topic filing
+Yes, on every save
+No
+
+Folders
+Topics, subtopics and tags, free
+Manual folders, a paid X Premium feature
+
+Your own notes on a save
+Dated notes
+No
+
+Tracks what you revisit
+Yes
+No
+
+Share a curated set as one link
+Yes, with an optional expiry
+No
+
+Keeps a copy if the post is deleted
+No — links only
+No
+
+Price
+Free
+Free (some bookmark features need X Premium)
+
+### When X's bookmarks are enough
+
+- You save a handful of posts and clear them out regularly.
+
+- X is the only app you save from.
+
+- You do not need to search or group what you saved.
+
+### When a separate library is worth it
+
+- You have hundreds or thousands of saves and find nothing.
+
+- You save from Instagram, TikTok and YouTube as well.
+
+- You want to browse by subject rather than scroll by date.
+
+- You want to know what you keep coming back to, or to send someone a set.
+
+Plenty of people use both: X's bookmarks as a quick inbox, bookmarker for anything they want to keep.
+
+Try bookmarker — free
+
+See also how to organise your X bookmarks,
+how to search them and
+the alternatives.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/vs-raindrop
+
+Title: bookmarker vs Raindrop.io: which bookmark manager to pick
+Description: Raindrop.io is the better web-article manager; bookmarker is built for posts you save in phone apps. Compared on sources, search, archiving, platforms and price. Updated October 2026.
+Page type: Comparison
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › bookmarker vs Raindrop.io
+
+## bookmarker vs Raindrop.io
+
+Last updated: 21 October 2026
+
+Both are bookmark managers, and they are built for different halves of the problem.
+Raindrop.io is a mature, cross-platform
+manager for web pages, articles and research that you save from a browser. bookmarker is a free iPhone and web
+library for the posts you save inside Instagram, X, TikTok and YouTube, filed into topics automatically. If your
+saving happens in a browser, Raindrop is probably the better answer; if it happens in phone apps, bookmarker is.
+
+Competitor details here come from the other product's own website, checked on
+21 October 2026, and they change. Follow the links and confirm anything that matters to you. Where the other
+tool is better, it says so.
+
+### What Raindrop.io does, in its own terms
+
+Per raindrop.io, Raindrop runs as a web app, browser extensions and apps across platforms, and organises saves
+into nestable collections with tags and filters. It finds duplicates and broken links, offers highlights and
+annotations, several view modes (grid, headlines, masonry, list), integrations and an API, sharing and permissions
+for collaborators, and backups to Dropbox or Google Drive. Two things stand out as genuinely strong: it keeps an
+archived copy of saved web pages, so a page that is taken down still has something behind it; and its full-text
+search covers the entire content of every saved page, PDF and YouTube video, not just titles and tags. It has a
+free plan and a paid subscription.
+
+### What bookmarker does
+
+bookmarker starts from the phone. You tap Share in any app and pick bookmarker, or paste a link, or import the
+data export from X, Instagram, TikTok or YouTube. Every save lands in a topic and subtopic automatically — 50
+topics, 612 subtopics, all overridable — and the app it came from is recorded, so you can browse by topic
+("everything about running, wherever it came from") or by source ("everything I kept from TikTok"), with each
+filtering the other. You can add a dated note to any save, bookmarker counts how often you reopen something, and
+you can turn a set of saves into a shareable page at bookmarker.lol/c/… with an optional expiry.
+
+### Where Raindrop.io is better
+
+- Search depth. Raindrop searches inside the content of what you saved. bookmarker does not —
+see the note below.
+
+- Archiving. Raindrop keeps copies of saved pages. bookmarker stores links only, so a deleted
+post is simply gone.
+
+- Platform coverage. Raindrop has browser extensions and runs on Android, Windows and macOS.
+bookmarker is an iPhone app plus a web app, with no browser extension and no Android app.
+
+- Manual structure and teamwork. Nestable collections, permissions, shared editing, an API.
+
+- Maturity. It has been around far longer and has the feature surface to show for it.
+
+One thing to be clear about, because it is easy to oversell: bookmarker does not index the
+inside of the posts you save. A search matches the title, the account that posted it, your tags, your notes, the
+topic and subtopic, the source app, the link, and any description text the page published. You can narrow it to
+topics, subtopics or tags. Several words mean "all of these must appear"; there is no quoted-phrase operator.
+
+### Where bookmarker is better
+
+- Saving from social apps. bookmarker is designed for the share sheet inside Instagram,
+TikTok, YouTube and X, and it labels every save with the app it came from.
+
+- Filing you do not have to do. Raindrop asks which collection; bookmarker picks a topic and
+subtopic and lets you correct it. With a few thousand saves, that difference is the whole product.
+
+- Two browse axes that cross. Topic and source app, each filtering the other.
+
+- Dated notes and revisit counts. Why you kept something, and whether you ever went back.
+
+- Price. bookmarker is free, including the unlimited, backed-up library after a free email
+sign-in.
+
+### Side by side
+
+bookmarker
+Raindrop.io
+
+Built for
+Posts saved inside phone apps
+Web pages, articles, research
+
+Saving from Instagram / TikTok / X / YouTube
+iOS share sheet, source app recorded
+Link saving; integrations can auto-save X and YouTube favourites
+
+Browser extension
+No
+Yes
+
+Android / Windows
+No app (web app works in any browser)
+Yes
+
+Automatic filing into topics
+Yes — 50 topics, 612 subtopics, overridable
+You choose the collection; tags and an AI assistant are offered
+
+Search inside saved page content
+No — titles, accounts, tags, notes, topics, links
+Yes — pages, PDFs and YouTube
+
+Archived copy of saved pages
+No — links only
+Yes
+
+Browse by the app a save came from
+Yes
+Not a documented feature
+
+Revisit tracking
+Counts reopens
+Not a documented feature
+
+Import your old saves
+Browser bookmarks plus X, Instagram, TikTok, YouTube exports
+Browser bookmarks and other managers
+
+Works offline
+Yes, the iPhone library is local
+Partly, depending on the app
+
+Price
+Free
+Free plan plus a paid subscription (see raindrop.io/pricing)
+
+### Can you use both?
+
+Yes, and it is a sensible setup: Raindrop for articles and research you save in a browser, bookmarker for the
+reels, clips and threads you save on your phone. The workflows barely touch — one is browser-first, the other is
+share-sheet-first.
+
+### The bottom line
+
+Choose Raindrop.io if most of what you keep is web pages, you want them searchable to the word and archived,
+and you need Android, Windows or a browser extension. Choose bookmarker if most of what you keep is posts from
+social apps, you want them filed by topic without doing it yourself, and you want it free.
+
+Try bookmarker — free
+
+See also all the alternatives,
+vs Twillot and the FAQ.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/vs-twillot
+
+Title: bookmarker vs Twillot: X bookmark manager comparison
+Description: Twillot archives your whole X bookmark history in a browser extension; bookmarker covers Instagram, TikTok and YouTube too, from your phone. An honest comparison, updated October 2026.
+Page type: Comparison
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › bookmarker vs Twillot
+
+## bookmarker vs Twillot
+
+Last updated: 21 October 2026
+
+Both tools exist because X's bookmark list becomes useless once it is long. They attack it from
+opposite ends. Twillot is a
+browser extension that reaches into X and pulls your entire bookmark, like and post history down into a local
+archive. bookmarker is a free iPhone and web library that takes new saves from any app — X, Instagram,
+TikTok, YouTube — and files them into topics. If your problem is "I already have 4,000 X bookmarks", Twillot is
+the more direct answer.
+
+Competitor details here come from the other product's own website, checked on
+21 October 2026, and they change. Follow the links and confirm anything that matters to you. Where the other
+tool is better, it says so.
+
+### What Twillot does, in its own terms
+
+Per twillot.com, Twillot turns your X bookmarks into a searchable library: it syncs your bookmarks, likes,
+posts and replies, gets you past X's scroll limit to reach your full history, keeps the data inside your browser,
+and preserves posts even after they are deleted. Its listed features include search, "folders that fill
+themselves", AI organising, export of your archive, an offline archive and media downloads. It is a browser
+extension with a web workspace, and it has a free start plus paid plans.
+
+### What bookmarker does
+
+bookmarker is a native iPhone app (iOS 17+) with a web app. You save by tapping Share in any app and picking
+bookmarker — on X, tap Share and then "Share via…" — or by pasting a link, or by importing the data export
+from X, Instagram, TikTok or YouTube. Every save is filed into one of 50 topics and 612 subtopics automatically
+and overridably, labelled with the app it came from, and browsable either way. You can add dated notes, see how
+often you have reopened something, and share a set of saves as a link with an optional expiry.
+
+### Where Twillot is better
+
+- Getting your existing X bookmarks. Twillot syncs them directly from X. bookmarker cannot
+read your X bookmark list — you import X's data export instead, which means requesting the archive and
+waiting for it.
+
+- Surviving deletion. Twillot says it preserves posts after they are deleted. bookmarker
+stores links, so a deleted post is gone.
+
+- Export and bulk operations. Exporting your archive and downloading media are headline
+Twillot features.
+
+- Desktop. It lives in a desktop browser, which is where a lot of people do their reading.
+
+- X depth generally. Likes, replies and your own posts, not just bookmarks.
+
+### Where bookmarker is better
+
+- It is not only X. Instagram, TikTok, YouTube, YouTube Shorts, Threads, Pinterest and plain
+web pages all land in the same library, with the source app recorded.
+
+- It works where you actually see the post. You are holding a phone in Instagram; a desktop
+browser extension cannot help there.
+
+- Browse by topic across sources. Your X thread and your Instagram reel about the same
+marathon end up in the same topic.
+
+- Dated notes and revisit counts.
+
+- Price. bookmarker is free, including the unlimited backed-up library after a free email
+sign-in.
+
+One thing to be clear about, because it is easy to oversell: bookmarker does not index the
+inside of the posts you save. A search matches the title, the account that posted it, your tags, your notes, the
+topic and subtopic, the source app, the link, and any description text the page published. You can narrow it to
+topics, subtopics or tags. Several words mean "all of these must appear"; there is no quoted-phrase operator.
+
+### Side by side
+
+bookmarker
+Twillot
+
+Form factor
+iPhone app + web app
+Browser extension + web workspace
+
+X (Twitter) saves
+Yes, new saves via the share sheet; old ones via X's data export
+Yes, synced directly from your X account
+
+Reaches your existing X bookmark history
+Only through X's data export
+Yes, including past X's scroll limit
+
+Instagram, TikTok, YouTube, Threads, Pinterest
+Yes
+X only
+
+Automatic organising
+Topic + subtopic on every save, overridable
+Folders that fill themselves, AI organising
+
+Keeps posts after deletion
+No — links only
+Yes
+
+Export your archive
+Share a collection as a link
+Yes, multiple formats
+
+Media downloads
+No
+Yes
+
+Save from a phone, inside the app you are in
+Yes
+Desktop browser
+
+Dated notes / revisit counts
+Yes
+Not a documented feature
+
+Price
+Free
+Free start plus paid plans (see twillot.com)
+
+### Can you use both?
+
+That is arguably the best setup if X is a big part of your life: Twillot to rescue and archive the X history you
+already have, bookmarker for everything you save from now on, across every app.
+
+### The bottom line
+
+Twillot is the specialist — the right tool if the job is "get my X bookmarks out of X and keep them". bookmarker
+is the generalist — the right tool if the job is "stop having five separate piles of saved posts on my phone".
+
+Try bookmarker — free
+
+See also vs X's built-in bookmarks,
+all the alternatives and the FAQ.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/vs-mymind
+
+Title: bookmarker vs mymind: which saves your posts better?
+Description: bookmarker and mymind both organise what you save without making you file it. Compared on sources, filing, search, platforms and price, with what each does better. Updated October 2026.
+Page type: Comparison
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › bookmarker vs mymind
+
+## bookmarker vs mymind
+
+Last updated: 21 October 2026
+
+bookmarker and mymind start from the same good idea — you should not have to file the things you
+save — and then build two different products on it. bookmarker is a free iPhone and web library for posts you
+save out of Instagram, X, TikTok and YouTube, filed into a visible topic tree. mymind is a paid, private visual
+library for notes, bookmarks, images and inspiration, organised invisibly by AI.
+
+Competitor details below are from each product's own website, checked on
+21 October 2026, and they change. Follow the links and confirm anything that matters to you. Where a rival is
+better at something, it says so.
+
+### The core difference
+
+mymind (per mymind.com) is "the extension for your mind": save anything with a click and its
+AI takes care of the rest, with no folders, labels or tags to maintain. It is deliberately private — their site
+lists no social features, no vanity metrics, no collaboration and no ads — and it leans visual, so a saved image,
+colour or product shot is something you look at rather than a row in a list.
+
+bookmarker is about the pile of posts you already have in five different apps. It files every
+save into one of 50 topics and 612 subtopics, and it keeps the source app as a first-class dimension, so you can
+ask for "everything about running" or "everything I kept from TikTok" and get a straight answer. The filing is
+visible and editable rather than implicit.
+
+### Where each one wins
+
+#### mymind is better if…
+
+- You collect visual material — images, type, palettes, products — and want a library that looks good.
+
+- You want notes, highlights and bookmarks in the same place rather than links alone.
+
+- You are on Android or work mostly in a desktop browser: mymind lists iPhone and Android apps plus Chrome,
+Edge and Safari extensions. bookmarker has no Android app and no browser extension.
+
+- You would rather never see a category at all.
+
+#### bookmarker is better if…
+
+- What you save comes out of social apps on a phone, and you want the app it came from recorded and filterable.
+
+- You want to see and correct the filing — browse a topic tree, move a save, add your own subtopic.
+
+- You already have thousands of saves to bring over: bookmarker imports browser bookmarks and the X,
+Instagram, TikTok and YouTube data exports.
+
+- You want the thing to be free.
+
+### Side by side
+
+bookmarker
+mymind
+
+Main idea
+One library for posts saved across apps, filed by topic
+A private visual library that organises itself
+
+Platforms
+iPhone app (iOS 17+) and a web app
+iPhone and Android apps, Chrome / Edge / Safari extensions (per mymind.com)
+
+How you save
+iOS share sheet from any app, paste a link, or import an export file
+Save with a click from the extension or the apps
+
+Organising
+Automatic topic + subtopic, visible and editable; your own tags and subtopics
+Automatic, by AI; no folders, labels or tags by design
+
+Source app recorded
+Yes — browse or filter by Instagram, X, TikTok, YouTube…
+Not a documented feature
+
+Notes
+Dated notes on any save
+Notes are a first-class item type
+
+Revisit tracking
+Counts how often you reopen a save
+Not a documented feature
+
+Share a set publicly
+Yes, as a link with an optional expiry
+No — their site says no social features or collaboration
+
+Works offline
+Yes, the iPhone library is local
+Not stated
+
+Price
+Free
+Paid subscription (see mymind.com for current pricing)
+
+### Can you use both?
+
+Easily, because they collect different things. mymind for the visual scrapbook, bookmarker for the stream of
+posts your phone throws at you. Neither one tries to be the other.
+
+### The bottom line
+
+Pick mymind if you are building a beautiful, private collection of things you want to look at, and you want
+zero structure. Pick bookmarker if your problem is thousands of saved posts scattered across Instagram, X, TikTok
+and YouTube, and you want them in one free library you can actually search and browse by topic.
+
+Try bookmarker — free
+
+See also all the alternatives and the
+FAQ.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/how-to-organize-twitter-bookmarks
+
+Title: How to organise your X (Twitter) bookmarks in 2026
+Description: X bookmarks are one long list with no topics. Here is a practical method for organising them by subject, including importing the X bookmarks you already have.
+Page type: Guide
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › How to organise your X bookmarks
+
+## How to organise your X (Twitter) bookmarks
+
+Last updated: 21 October 2026
+
+If you have saved hundreds of posts on X and cannot find any of them, the problem is not you —
+it is that a reverse-chronological list with no titles and no subjects is not an organisational system. This page
+covers the realistic options, and then the method we think works: let something file each save into a topic as it
+arrives, instead of trying to tidy the pile later.
+
+X's own bookmark features change, and some of them (folders, for example) have
+been limited to paid X Premium tiers. Check X's current help pages before assuming what your account can do. The
+method below does not depend on which tier you are on.
+
+### Why the bookmark list goes bad
+
+Three things compound. The list is ordered by when you saved, but you remember what something was
+about. Nothing in it has a useful title, so scanning does not work. And it only holds X, so the other
+half of what you saved on the same subject is sitting in Instagram or YouTube where this list cannot see it. A
+hundred saves is browsable. A thousand is a landfill.
+
+### Your options, honestly
+
+#### Manual folders inside X
+
+If your account has bookmark folders, they work, and for a small number of broad buckets they are the least
+effort. The catch is that they are manual, they only cover X, and every new save is a decision you have to make.
+
+#### Copy posts into a notes app
+
+Screenshotting into Apple Notes, Notion or Obsidian gives you full control and good search of your own words.
+It is also slow, and you lose the live link back to the post, the replies and the author.
+
+#### Export to a spreadsheet
+
+You can request your X archive and search the bookmarks file in a spreadsheet. It is a snapshot — it does not
+update, and it is unusable on a phone.
+
+#### A library that files saves for you
+
+The option with the least ongoing effort: save through a tool that assigns a subject at save time, so the
+organising has already happened by the time you want to find something. That is what bookmarker does, and it is
+the method below.
+
+### The method, step by step
+
+- Get bookmarker. Install bookmarker free from the App Store (iOS 17 or later), or open the web app at bookmarker.lol. Your first 20 saves work with no account.
+
+- Save a post from X. In X, tap Share on the post, then “Share via…” to reach the iOS share sheet, and pick bookmarker. Pin bookmarker to the front of the share sheet once — More → Edit → add to Favourites — and it is the first icon from then on.
+
+- Let it file the save. bookmarker scores the words in the link and the title or caption against its topic list and files the save into a topic and subtopic, such as Fitness › Mobility. Change it there and then if it guessed wrong; saving is never blocked by filing.
+
+- Bring your existing bookmarks in. Request your X data archive (X Settings → Your account → Download an archive of your data), then import the file into bookmarker so your old saves are filed too.
+
+- Browse by topic instead of scrolling. Open Browse and pick a topic to see everything on that subject from every app, or switch the axis to browse by source app. Add tags for one-off projects, and a dated note when you want to remember why you kept something.
+
+### Why topics beat folders
+
+Folders are a decision per save. Topics are a decision you never make: bookmarker picks one of 50 topics and
+612 subtopics from the words in the link and the caption, and you only intervene when it is wrong. With a couple
+of thousand saves that is the difference between a system you keep up with and one you abandon in week two.
+
+The filing is keyword-based rather than a language model, which has one honest consequence: it is good on
+descriptive links and captions, and it deliberately leaves a save unfiled rather than guessing wildly when a link
+is opaque. X links are often opaque, so expect to correct some of them — it takes one tap, and corrections stick.
+
+### Tags for the things topics cannot know
+
+Topics handle subjects. Tags handle projects: tag everything you save for a specific conference, trip or client
+and pull the set back instantly. A dated note on a save is for the other half of the problem — remembering
+why you kept it.
+
+### Organise across apps, not just X
+
+The point of all this only lands when the library holds more than X. Your Instagram recipe reel and your X
+recipe thread belong in the same place, and in bookmarker they are both in Recipes, each still labelled with the
+app it came from, so you can filter by source when you want to.
+
+### What this will not fix
+
+bookmarker stores links, not copies: if a post is deleted, the link dies. And many X saves arrive with a plain
+title and no thumbnail, because X does not publish that metadata to unauthenticated requests. The filing, the
+notes and the search all still work; the card just looks plainer than a YouTube one.
+
+Get bookmarker — free
+
+Next: how to search your X bookmarks, or
+how a library compares to X's own bookmarks.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/how-to-search-twitter-bookmarks
+
+Title: How to search your X (Twitter) bookmarks
+Description: How to get searchable X bookmarks: the export-to-spreadsheet route, and the quicker one — a library that indexes the title, account, tags, notes and topic of every save.
+Page type: Guide
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › How to search your X bookmarks
+
+## How to search your X (Twitter) bookmarks
+
+Last updated: 21 October 2026
+
+Saved a good post weeks ago and cannot find it? The reason is that X's search box searches X, not
+your saves, and scrolling a long bookmark list is not searching. This page covers the two methods that actually
+work — exporting your archive, and keeping saves in a library built to be searched — and is specific about what
+each one can and cannot match.
+
+X's own bookmark features change, and some of them (folders, for example) have
+been limited to paid X Premium tiers. Check X's current help pages before assuming what your account can do. The
+method below does not depend on which tier you are on.
+
+### Why scrolling fails
+
+A bookmark list is ordered by when you saved. You remember what something was about, who posted it, or roughly
+what it looked like — almost never the date. So the one axis the list gives you is the one axis you cannot use,
+and with a few hundred saves the only honest strategy left is luck.
+
+### Method 1: export your X archive and search the file
+
+- Open X → Settings → Your account → Download an archive of your data.
+
+- Wait for X to prepare it — this can take a day.
+
+- Download the archive and unzip it.
+
+- Open the bookmarks data file and search it in a spreadsheet or text editor.
+
+What it is good for: a one-off hunt, and it costs nothing. What it is bad for:
+it is a snapshot that never updates, it is awkward on a phone, and you have to re-export to catch anything new.
+
+### Method 2: keep your saves in a library you can search
+
+The method with no maintenance: save through something that records the useful fields at save time, so finding
+is a search rather than an excavation. bookmarker is free, works from the X share sheet, and holds your Instagram,
+TikTok and YouTube saves in the same place.
+
+- Get bookmarker. Install bookmarker free from the App Store (iOS 17 or later) or open the web app at bookmarker.lol.
+
+- Save X posts through it. In X, tap Share, then “Share via…”, then bookmarker. The link, the title where X publishes one, the account and the source app are recorded, and the save is filed into a topic.
+
+- Import the bookmarks you already have. Request your X archive under X Settings → Your account → Download an archive of your data, then import the file so your existing saves become searchable too.
+
+- Search your library. Type a word into the search field. bookmarker matches the title, the account that posted it, your tags, your notes, the topic and subtopic, the source app, the link, and any description text the page published.
+
+- Narrow it when a word is too common. Tap the Topics, Subtopics or Tags chips to restrict a search to those fields, or filter the results by source app to see only X.
+
+### Exactly what bookmarker's search matches
+
+Worth spelling out, because "full-text search" gets claimed loosely in this category. A bookmarker search looks
+at:
+
+- the title of the save;
+
+- the account or handle that posted it;
+
+- your tags;
+
+- your notes;
+
+- the topic and subtopic it was filed into;
+
+- the source app;
+
+- the link itself;
+
+- and any description text the page published — which Instagram, TikTok and X usually do not provide.
+
+It does not index the body of the posts you saved, and there is no quoted-phrase or operator
+syntax: typing several words means "every one of these must appear somewhere". If you need search that reaches
+inside saved page content, Raindrop.io does that and we say so on the comparison page.
+If you need the text of X posts specifically, Twillot archives them.
+
+### Getting more out of a search
+
+#### Search the word you would use for the subject
+
+Because every save is filed into a topic and subtopic, the subject word usually hits even when the title is
+useless — searching "mobility" finds things filed under Fitness › Mobility whose titles never said it.
+
+#### Scope the search when a word is everywhere
+
+A query like "running" matches eleven titles as loudly as the topic you actually filed things under. Tapping
+the Topics, Subtopics or Tags chips restricts the match to those fields, which is usually the fix.
+
+#### Filter by the app it came from
+
+If you know you saved it on X, filter the results by source and the list collapses to a handful.
+
+#### Give future-you something to search for
+
+A tag or a one-line dated note at save time is the single highest-leverage habit here — those are your words,
+so they are the words you will search for.
+
+### Why author search is not the answer
+
+Searching X for the person who posted it only works if you remember who they were, they have not deleted the
+post, and they have not posted a thousand times since. Most of the time you remember the content, not the author.
+X's advanced search operators have the same limit: they search all of X, not your saves.
+
+Get bookmarker — free
+
+Next: how to organise your X bookmarks, or
+read the FAQ.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/lifetime
+
+Title: bookmarker — Lifetime access
+Description: Founding-member lifetime access to bookmarker. Every save, one library.
+Page type: Founding-member reservation
+
+bookmarker
+
+## Lifetime access
+
+Pay once. Every save, every device, forever.
+
+$30one time · no subscription
+
+- iPhone app + web app, synced
+
+- AI filing, highlights and side-quest naming
+
+- Every future feature — forever
+
+- The warm feeling of funding an indie app
+
+Email
+
+Continue
+
+Payments aren't switched on yet — this reserves the founding price. No card today,
+nothing is charged. We'll email you a payment link when it goes live, and you can ignore it freely.
+
+🎟️
+
+## You're on the founders list
+
+We saved your spot at . When payments go live you'll
+get one email with a real checkout link — the price stays $30 for you even if it goes up later.
+
+← Back to your library
+
+
+==============================================================================
+
+# https://bookmarker.lol/palace/
+
+Title: Library Island — bookmarker
+Description: Your saved links as an island. Every topic is its own zone — volcano ridge, temple terraces, mangrove marsh, turquoise lagoon — and every bookmark is a camp you can fly down to.
+Page type: Library Island
+
+bookmarker
+
+## Library Island
+
+View my library
+Open bookmarker ↗
+
+Expedition log
+
+×
+
+###
+
+Topic
+
+Subtopic
+
+Saved
+
+Open link ↗
+
+Fly the tour
+
+Library Islandcharting your library…
+
+### Library Island needs WebGL
+
+This page draws your library as a 3D island, which your browser can't render here. Everything it shows lives in your library at bookmarker.lol.
+
+
+==============================================================================
+
+# https://bookmarker.lol/press/
+
+Title: bookmarker press kit
+Description: Facts, assets and contact for press covering bookmarker — the searchable library for everything you save across Instagram, TikTok, X and YouTube.
+Page type: Press kit
+
+bookmarker
+
+Open the app
+Get the app
+
+## bookmarker press kit
+
+Last updated 2 September 2026
+
+bookmarker is a bookmark manager for iPhone and web that solves the thing every social app gets wrong: saved posts that pile up with no titles, no search and no order. Save from any app's share sheet and it's filed into a topic automatically — fifty topics, over six hundred subtopics — and fully searchable by title, tag, note or the account it came from. Bulk import turns an existing pile of Instagram, TikTok, X or YouTube saves (or a browser bookmarks file) into a sorted library in one step. It syncs between iPhone and this web app, asks for zero permissions, and carries no ads, no tracking and no third-party SDKs. Built by a solo developer using AI coding agents; launched 2 September 2026.
+
+### Facts
+
+Launched
+2 September 2026
+
+Price
+Free
+
+Platforms
+iPhone (iOS 17+) and web at bookmarker.lol
+
+Size
+8 MB (iOS)
+
+Permissions requested
+Zero — no location, contacts, camera, photos, tracking or notifications
+
+Ads / tracking / third-party SDKs
+None, in the app
+
+Sign-in
+Optional — email code, no password; adds backup/sync only
+
+Developer
+JP, solo developer
+
+### Screenshots
+
+Full-resolution App Store screenshots (1320×2868, ~1.4 MB each) are in the
+product repository at Marketing/screenshots/ — the copies
+below are downsized for web use.
+
+### Downloads
+
+- App icon (192×192) Download — PNG, 3 KB
+
+- App icon (512×512) Download — PNG, 11 KB
+
+- Share card (1200×630) Download — JPG, 117 KB
+
+- Screenshot — Library Download — JPG, 46 KB
+
+- Screenshot — Browse Download — JPG, 44 KB
+
+- Screenshot — Search Download — JPG, 33 KB
+
+### Founder
+
+bookmarker is built and maintained by JP, a solo developer who builds
+every part of the product — design, code, infrastructure — with AI coding
+agents rather than a team.
+
+Press contact: hello@bookmarker.lol
+
+### Links
+
+- App Store: apps.apple.com/app/id6799805479
+
+- Web app: bookmarker.lol
+
+- Privacy policy: bookmarker.lol/privacy
+
+© 2026 bookmarker
+Open the app
+Get the app
+Privacy
+Terms of Use
+hello@bookmarker.lol
+
+
+==============================================================================
+
+# https://bookmarker.lol/privacy
+
+Title: bookmarker — Privacy Policy
+Description: bookmarker's privacy policy: what the iPhone app and the web app store, where it is kept, who can see it, and what the website's analytics collect.
+Page type: Privacy policy
+
+bookmarker
+
+Open the app
+Get the app
+
+## bookmarker — Privacy Policy
+
+Last updated 7 September 2026
+
+bookmarker saves links you choose to save. This policy describes what is stored, where, and who can see it.
+
+### What the app stores
+
+For each link you save (a “bork”), bookmarker stores the URL, a title, the name of the account or site that posted it, which platform it came from, a topic and tags, any note you write, a thumbnail image when one is available, the date you saved it, and how many times you have opened it.
+
+Some sites hand out thumbnail links that stop working after a few days. When you are signed in and a save carries one of those, our server fetches that thumbnail once and keeps a copy so your library keeps looking right. The copy is stored alongside your other data and is deleted with your account.
+
+### Where it is stored
+
+By default, on your device. If you never sign in, your library stays on your iPhone and we cannot see it.
+
+If you sign in, your saved links and your email address are stored on our servers in the United States, so your library is backed up and available on your other devices. Access is restricted so only your account can read or write your data.
+
+### Your email address
+
+Signing in is how we verify who you are. We store your email address for the sole purpose of identifying your account and sending you a one-time sign-in code. There is no password. We do not send marketing email.
+
+### What we do not do
+
+- No advertising, and no advertising identifiers.
+
+- No analytics or tracking SDKs in the iPhone app.
+
+- No selling or sharing of your data with anyone.
+
+- No tracking you across other apps or websites.
+
+- No access to your contacts, photos, location, or microphone.
+
+### Automatic filing
+
+bookmarker sorts saved links into topics. Almost all of that happens on your device, offline, by matching words in the title and address.
+
+When that is not enough to place a link and you are signed in, the app may ask a language model instead. In that case the link’s address, its title, the account that posted it, and any tags you typed are sent to our server and from there to a language model provider acting on our behalf, which returns a suggested topic. That provider does not use the request to train models. Your notes and your email address are never sent. If you are signed out, this never happens.
+
+The web app at bookmarker.lol works the same way: it files your link in your browser first, offline, and only asks a language model when that comes back with nothing and you are signed in. The same four things are sent, and nothing else.
+
+The suggestion is only a suggestion: it is shown to you and you can change it before saving.
+
+### Library highlights
+
+If you are signed in, the app can summarise what you have been saving lately. To do that, it sends the titles, topics and tags of up to 40 of your recent saves — never the links themselves, never your notes — to that same language model provider, which returns a short summary. This only runs inside the app for you; the result is not stored on our server and is not visible to anyone else. Signed out, this feature is off.
+
+### Shared collections
+
+You can group some of your saves into a collection and turn on a link for it. Until you do, a collection is private and nothing about it is visible to anyone else.
+
+While the link is on, anyone who has it can open a page showing, for each bork you put in the collection: its link, its title, the account or site that posted it, its cover image and the topic it is filed under — plus the collection’s name, the note you wrote on it, and your display name. Nothing else. The page never shows your email address, the rest of your library, or the private notes you have written on those saves. It is not listed anywhere on bookmarker and asks search engines not to index it: the link is the only way to it, and it is not guessable.
+
+People who open a shared page are not identified and are not asked to sign in. We record that the page was opened and how many items it had, so we know whether shared links are being used at all; no account, no profile and no cross-site tracking. The links on the page open the original post on the platform that hosts it, exactly as any other link would.
+
+You can also give a link a time limit when you make it — one day or ten — and the page closes itself when that passes. Turning the link off, or deleting the collection, takes the page down within about a minute. If someone has already saved a copy of those links into their own library, that copy is theirs and stays with them — as it would if you had sent them the links in a message.
+
+### Requests to other websites
+
+When you save a link, the app may request that page directly from your device to read its title and preview image. That website therefore receives an ordinary web request from your device, as it would if you opened the link in a browser. bookmarker does not tell those sites who you are.
+
+If you are signed in, our server may make the same kind of request — to read a page’s title and preview image, or to fetch a thumbnail that would otherwise expire. Those requests come from our server, identify themselves as bookmarker, and carry nothing about you.
+
+To draw a small site icon next to each save, the app may also ask Google’s public favicon service for the icon of that site’s domain — the domain only, never the full link, and nothing about you.
+
+### Deleting your data
+
+Deleting a saved link removes it from your library. Deleting the app removes everything stored on your device.
+
+To delete your account and everything stored on the server — your library, thumbnails and any feedback you sent while signed in — email hello@bookmarker.lol from your account’s email address, and it will be deleted within 30 days.
+
+### The website
+
+If you leave your email address on bookmarker.lol to hear about the beta or the launch, it is stored on our servers and used only to email you about bookmarker. No one else can see the list. To be removed, reply to any of those emails or write to hello@bookmarker.lol.
+
+The website and web app use PostHog (hosted in the United States) for product analytics and session replay, so we can see where people get stuck and fix it. Replays mask everything you type. There are no advertising trackers, and none of this data is sold or shared.
+
+If you send feedback from the Help tab, the message is stored on our servers together with what you were using at the time (web or mobile, screen size, browser) so bugs can be reproduced. If you are signed in it is tied to your account and deleted with it; if you are signed out, the email address you may leave is used only to reply to you. Feedback is read by the person who builds bookmarker and no one else.
+
+If you import an export file from Instagram, TikTok, X, YouTube, Pinterest or your browser, that file is opened and read inside your own browser. It is never uploaded to us, and nor is anything in it that you do not import — the rest of an archive (your photos, messages, watch history) is not read and never leaves your computer. Only the saved links you confirm on the review screen are sent to your library: the address, a title, an author, the date it was originally saved, and the topic we filed it under. Which topic is worked out in your browser too; no imported link is sent to a model.
+
+### Children
+
+bookmarker is not directed at children under 13 and we do not knowingly collect their data.
+
+### Changes
+
+If this policy changes materially, the updated version will be posted here with a new date above.
+
+### Contact
+
+hello@bookmarker.lol
+
+© 2026 bookmarker
+Open the app
+Get the app
+Privacy
+Terms of Use
+hello@bookmarker.lol
+
+
+==============================================================================
+
+# https://bookmarker.lol/terms
+
+Title: bookmarker — Terms of Use
+Description: The terms of use for bookmarker on iPhone and on the web — your account, your saves, shared collections, and what we each agree to.
+Page type: Terms of use
+
+bookmarker
+
+Open the app
+Get the app
+
+## bookmarker — Terms of Use
+
+Last updated 31 August 2026
+
+These terms cover the bookmarker app and the bookmarker web app at bookmarker.lol (together, "bookmarker"). By creating an account or using bookmarker, you agree to them.
+
+### What bookmarker is
+
+bookmarker lets you save links you choose to save, files them into topics, and makes them searchable. With an account, your saves are backed up and synced between your devices. bookmarker links out to the original pages; it does not host or reproduce their content.
+
+### Your account
+
+You sign in with your email address (via a one-time code) or a supported sign-in provider. Keep access to that email or provider account secure — it is how your account is protected. You must be at least 13 to use bookmarker. You can delete your account at any time from inside the app; that permanently removes your account and everything backed up on our servers.
+
+### Your content
+
+The links, notes, tags and topics you save are yours. You give us only the permission needed to store them, sync them between your devices, and show them back to you. We do not sell them, show them to anyone else, or use them for advertising — see the Privacy Policy for the details.
+
+### Acceptable use
+
+- Don't use bookmarker to store or distribute unlawful material.
+
+- Don't probe, overload, resell or interfere with the service, or try to access anyone else's data.
+
+- Don't use automated tools to bulk-fetch pages through bookmarker's preview service.
+
+We may suspend or close accounts that break these rules.
+
+### Automatic filing and summaries
+
+Topic suggestions and library highlights are generated with the help of a language model and can be wrong. They are suggestions, not statements of fact, and you can always change how a save is filed.
+
+### The service itself
+
+bookmarker is provided "as is", free of charge, without warranties of any kind. We work to keep it available and your data safe, but we cannot promise uninterrupted service, and to the maximum extent permitted by law we are not liable for indirect or consequential damages, or losses caused by third-party sites and services a saved link points to. Nothing in these terms limits liability that cannot lawfully be limited.
+
+### Changes
+
+If these terms change materially, the updated version will be posted here with a new date above. Continuing to use bookmarker after a change means you accept the updated terms. If we ever discontinue the service, we will give you a reasonable opportunity to export your saves.
+
+### Contact
+
+hello@bookmarker.lol
+
+© 2026 bookmarker
+Open the app
+Get the app
+Privacy
+Terms of Use
+hello@bookmarker.lol

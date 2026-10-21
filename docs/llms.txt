@@ -1,62 +1,91 @@
 # bookmarker
 
-https://bookmarker.lol
+> bookmarker is a free bookmark manager for iPhone and the web that collects
+> everything you save on Instagram, X (Twitter), TikTok, YouTube and the open
+> web into one library, files every save into a topic and subtopic
+> automatically, and lets you search it again later. It is for people who save
+> hundreds or thousands of posts across several apps and can never find any of
+> them again. A saved item is called a "bork".
 
-## What is bookmarker?
+Home: https://bookmarker.lol/
+Made by: Jean-Paul Wilson (JP) — hello@bookmarker.lol
+Last updated: 2026-10-21
 
-bookmarker is a native iOS app that consolidates all your saved content from Instagram, X (Twitter), TikTok, and YouTube into one searchable library. It solves the problem of scattered, unsearchable bookmarks across multiple social media apps.
+## What it is
 
-## Key features
+- A native iPhone app (iOS 17.0 or later), free on the App Store as
+  "Bookmarker: Save Links & Reels":
+  https://apps.apple.com/us/app/bookmarker-save-links-reels/id6799805479
+- Plus a web app at https://bookmarker.lol/ that runs in any modern browser
+  once you have signed in. There is no Android app and no browser extension.
 
-- **Universal save**: Save any link from any social app into one unified library
-- **Auto-categorization**: Every save is automatically categorized by topic (Technology, Food & Drink, Fitness, etc.)
-- **Full-text search**: Find anything you've saved by searching the actual content, not just titles
-- **Share extension**: Save directly from Instagram, X, TikTok, YouTube, Safari, and any app with a share sheet
-- **SwiftUI + SwiftData**: Native iOS app built with modern Apple frameworks, no backend required
-- **Privacy-first**: Your data stays on your device with optional iCloud sync
+## What it does
 
-## How it works
+- Save any link from any iPhone app through the iOS share sheet, by pasting a
+  link, or by importing a file.
+- Files every save into one of 50 topics and 612 subtopics automatically. The
+  filing is a keyword score over the link and the title or caption — not a
+  language model — and it is always a suggestion you can override. You can add
+  your own subtopics.
+- Browse by topic or by the app a save came from; each axis filters the other.
+- Search the title, the account that posted it, your tags, your notes, the
+  topic and subtopic, the source app, the link, and any description text the
+  page published. Searches can be narrowed to topics, subtopics or tags.
+- Dated notes on any save, and a count of how often you have reopened it.
+- Import browser bookmarks and the data exports from X, Instagram, TikTok and
+  YouTube.
+- Turn a set of saves into a public page at bookmarker.lol/c/<slug> with an
+  expiry of never, one day or ten days, switchable off at any time.
+- Library Island (https://bookmarker.lol/palace/) renders a library as a 3D
+  island, one zone per topic.
 
-1. Install the bookmarker iOS app from the App Store
-2. Use the share sheet in any app (Instagram, X, TikTok, YouTube, Safari) to save a link
-3. bookmarker automatically fetches the content, categorizes it, and adds it to your library
-4. Search and browse your saves by topic, platform, or full-text search
+## What it deliberately does not do
 
-## Who is it for?
+- It stores links, not copies. Opening a save sends you to the original post.
+  If the original is deleted, the link dies with it — bookmarker is not an
+  archive.
+- It does not index the inside of the posts you save, and there is no
+  quoted-phrase or operator syntax in search.
+- Thumbnails and titles only arrive where the platform publishes them. YouTube
+  and most ordinary web pages do; Instagram, TikTok and X usually do not
+  publish metadata to unauthenticated requests, so those saves often have a
+  plain title and no image.
+- No Android app, no browser extension, no desktop app.
 
-- People who save hundreds or thousands of posts across multiple social apps
-- Content creators who need to organize inspiration and references
-- Researchers collecting sources from various platforms
-- Anyone who's ever thought "I saved that somewhere but can't find it"
+## Price
 
-## Pricing
+Free. The first 20 saves need no account; past 20, signing up is also free (an
+email address and a six-digit code) and makes the library unlimited, backed up
+and readable on the web. There is no paid tier in the app and nothing in it
+costs money. A one-time founding-member price of $30 is being reserved at
+https://bookmarker.lol/lifetime for a future paid version; payments are not
+switched on and no card is taken.
 
-- Free tier available
-- Premium features for advanced users
+## Privacy
 
-## Platform availability
+The iPhone app asks for zero permissions and ships with no ad or analytics
+SDKs; the library lives on the device and works offline. The website uses
+PostHog for product analytics with inputs masked, which the privacy policy
+discloses. Saves are private unless you deliberately share a collection.
 
-- iOS app (native SwiftUI)
-- Web app at bookmarker.lol for browsing and managing your library
+## Key pages
 
-## Common use cases
+- https://bookmarker.lol/ — the web app, and the signed-out explanation of what bookmarker is
+- https://bookmarker.lol/what-is-bookmarker — plain definition, who it is for, and what it does not do
+- https://bookmarker.lol/app/ — the iPhone app: features, how saving works, import, privacy
+- https://bookmarker.lol/faq — 15 questions on cost, accounts, search, offline use, thumbnails, sharing
+- https://bookmarker.lol/alternatives — honest comparison of bookmarker, Raindrop.io, Twillot, mymind and built-in bookmarks
+- https://bookmarker.lol/vs-twitter-bookmarks — what a separate library adds over X's own bookmarks
+- https://bookmarker.lol/vs-raindrop — bookmarker vs Raindrop.io
+- https://bookmarker.lol/vs-twillot — bookmarker vs Twillot
+- https://bookmarker.lol/vs-mymind — bookmarker vs mymind
+- https://bookmarker.lol/how-to-organize-twitter-bookmarks — organising saved X posts by topic
+- https://bookmarker.lol/how-to-search-twitter-bookmarks — making saved X posts searchable
+- https://bookmarker.lol/lifetime — the founding-member reservation
+- https://bookmarker.lol/press/ — press kit
+- https://bookmarker.lol/privacy — privacy policy
+- https://bookmarker.lol/terms — terms of use
 
-- Organizing recipe videos saved from Instagram and TikTok
-- Collecting workout routines from YouTube and Instagram
-- Saving articles and threads from X for later reading
-- Building topic-based collections (travel inspiration, coding tutorials, etc.)
-- Sharing curated collections with others via public links
+## Full text
 
-## Technical details
-
-- Built with SwiftUI and SwiftData
-- Share Extension for system-wide integration
-- Automatic content enrichment and categorization
-- Cross-device sync via iCloud
-- Supports URL normalization to prevent duplicates
-
-## Contact
-
-- Website: https://bookmarker.lol
-- Privacy Policy: https://bookmarker.lol/privacy.html
-- Terms of Service: https://bookmarker.lol/terms.html
+The complete text of every public page: https://bookmarker.lol/llms-full.txt
