@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
-import sys
-sys.path.insert(0, "/tmp/gen")
+# tpl.py is the sibling module; running this file puts its own directory on
+# sys.path, so no path juggling is needed.
 from tpl import *
 
 HEDGE = ("""<div class="callout"><p>Competitor details here come from the other product's own website, checked on
 21 October 2026, and they change. Follow the links and confirm anything that matters to you. Where the other
 tool is better, it says so.</p></div>""")
 
-SEARCH_TRUTH = """<p>One thing to be clear about, because it is easy to oversell: bookmarker does not index the
-inside of the posts you save. A search matches the title, the account that posted it, your tags, your notes, the
-topic and subtopic, the source app, the link, and any description text the page published. You can narrow it to
-topics, subtopics or tags. Several words mean "all of these must appear"; there is no quoted-phrase operator.</p>"""
+SEARCH_TRUTH = """<p>One thing to be clear about, because it is easy to oversell: bookmarker searches what it
+holds, not the page behind the link. A search matches the title, the account that posted it, your tags, your
+notes, the topic and subtopic, the source app, the link, and whatever post text came with the save — the
+description a page published, or the full post body when the save arrived in an X data export. What is never
+fetched, and so never searchable, is the rest of the document: the body of an article, a PDF, a video
+transcript. You can narrow a search to topics, subtopics or tags. Several words mean "all of these must appear";
+there is no quoted-phrase operator.</p>"""
 
 # ─────────────────────── /vs-raindrop ───────────────────────
 write(
@@ -56,8 +59,8 @@ you can turn a set of saves into a shareable page at bookmarker.lol/c/&hellip; w
 
 <h2>Where Raindrop.io is better</h2>
 <ul>
-  <li><strong>Search depth.</strong> Raindrop searches inside the content of what you saved. bookmarker does not —
-    see the note below.</li>
+  <li><strong>Search depth.</strong> Raindrop indexes the whole content of a saved page, PDF or YouTube video.
+    bookmarker searches only the text that arrived with the save — see the note below.</li>
   <li><strong>Archiving.</strong> Raindrop keeps copies of saved pages. bookmarker stores links only, so a deleted
     post is simply gone.</li>
   <li><strong>Platform coverage.</strong> Raindrop has browser extensions and runs on Android, Windows and macOS.
@@ -89,7 +92,7 @@ you can turn a set of saves into a shareable page at bookmarker.lol/c/&hellip; w
       <tr><td>Browser extension</td><td class="no">No</td><td class="yes">Yes</td></tr>
       <tr><td>Android / Windows</td><td class="no">No app (web app works in any browser)</td><td class="yes">Yes</td></tr>
       <tr><td>Automatic filing into topics</td><td class="yes">Yes — 50 topics, 612 subtopics, overridable</td><td>You choose the collection; tags and an AI assistant are offered</td></tr>
-      <tr><td>Search inside saved page content</td><td class="no">No — titles, accounts, tags, notes, topics, links</td><td class="yes">Yes — pages, PDFs and YouTube</td></tr>
+      <tr><td>Search inside saved page content</td><td class="no">No — only the text that came with the save: titles, accounts, post text, tags, notes, topics, links</td><td class="yes">Yes — pages, PDFs and YouTube</td></tr>
       <tr><td>Archived copy of saved pages</td><td class="no">No — links only</td><td class="yes">Yes</td></tr>
       <tr><td>Browse by the app a save came from</td><td class="yes">Yes</td><td>Not a documented feature</td></tr>
       <tr><td>Revisit tracking</td><td class="yes">Counts reopens</td><td>Not a documented feature</td></tr>
@@ -273,8 +276,9 @@ you control.</p>
     filters the other.</li>
   <li><strong>Automatic filing.</strong> Every save lands in a topic and subtopic — 50 topics, 612 subtopics,
     always overridable, and you can add your own subtopics.</li>
-  <li><strong>Search.</strong> Over titles, the account that posted it, your tags, your notes, the topic and
-    subtopic, the source app and the link, narrowable to topics, subtopics or tags.</li>
+  <li><strong>Search.</strong> Over titles, the account that posted it, any post text that came with the save,
+    your tags, your notes, the topic and subtopic, the source app and the link, narrowable to topics, subtopics
+    or tags.</li>
   <li><strong>Dated notes.</strong> Why you kept it, written down, with a date.</li>
   <li><strong>Revisit counts.</strong> bookmarker counts how often you reopen a save, so the things you actually
     use rise to the top.</li>

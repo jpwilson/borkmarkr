@@ -217,12 +217,16 @@ no way to answer the only question you ever actually ask: <em>where did I see th
   <li><strong>Thumbnails and titles are only as good as the platform allows.</strong> YouTube and most ordinary
     web pages publish the metadata bookmarker needs. Instagram, TikTok and X usually do not publish it to an
     unauthenticated request, so saves from those apps often arrive with a plain title and no image.</li>
-  <li><strong>Search does not index the inside of posts.</strong> It matches what bookmarker holds: titles,
-    accounts, tags, notes, topics, source and link, plus any description text the page published. There is no
-    quoted-phrase operator — multiple words are treated as "all of these must appear".</li>
+  <li><strong>Search does not reach into the page behind the link.</strong> It matches what bookmarker holds:
+    titles, accounts, tags, notes, topics, source and link, plus whatever post text came with the save — the
+    description a page published, or the full post body when it arrived in an X data export. Nothing fetches the
+    body of an article, a PDF or a video transcript, so none of that is indexed. There is no quoted-phrase
+    operator — multiple words are treated as "all of these must appear".</li>
   <li><strong>No Android app.</strong> There is an iPhone app and a web app that runs in any modern browser.</li>
-  <li><strong>The filing is keyword-based, not a large language model.</strong> It does well on descriptive links
-    and captions and returns nothing rather than guessing wildly when a link is opaque.</li>
+  <li><strong>Filing is keyword-first; a language model is the backup, not the engine.</strong> The pass that
+    runs on your device is a keyword score, so it does well on descriptive links and captions and leaves an
+    opaque link unfiled rather than guessing. When you are signed in, those leftovers go to our server, which
+    asks a language model — so filing is only entirely on-device when you are signed out.</li>
 </ul>
 
 <h2>What it costs</h2>

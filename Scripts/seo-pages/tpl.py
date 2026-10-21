@@ -3,9 +3,12 @@
 nothing runs at request time. Re-run only when the shared head/nav/footer
 changes (see SEO.md)."""
 import json, os, re
+from pathlib import Path
 
 SITE = "https://bookmarker.lol"
-OUT = "/workspace/seo/borkmarkr/docs"
+# Derived from this file, not hard-coded: the generators must work in any
+# checkout, and an absolute path would quietly write into the wrong one.
+OUT = Path(__file__).resolve().parents[2] / "docs"
 UPDATED = "21 October 2026"
 LASTMOD = "2026-10-21"
 

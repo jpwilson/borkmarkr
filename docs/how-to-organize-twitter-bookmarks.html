@@ -239,9 +239,12 @@ the method below.</p>
 <p>Folders are a decision per save. Topics are a decision you never make: bookmarker picks one of 50 topics and
 612 subtopics from the words in the link and the caption, and you only intervene when it is wrong. With a couple
 of thousand saves that is the difference between a system you keep up with and one you abandon in week two.</p>
-<p>The filing is keyword-based rather than a language model, which has one honest consequence: it is good on
-descriptive links and captions, and it deliberately leaves a save unfiled rather than guessing wildly when a link
-is opaque. X links are often opaque, so expect to correct some of them — it takes one tap, and corrections stick.</p>
+<p>The pass that does the work is keyword matching against the topic list, which runs on your device, instantly
+and offline. That has one honest consequence: it is good on descriptive links and captions, and it deliberately
+leaves a save unfiled rather than guessing wildly when a link is opaque. X links are often opaque, so expect to
+correct some of them — it takes one tap, and corrections stick. When you are signed in, the links keyword
+matching could not place are sent on to bookmarker's server, which asks a language model where they belong and
+discards answers it is not confident about; signed out or offline, the keyword answer is the only answer.</p>
 
 <h2>Tags for the things topics cannot know</h2>
 <p>Topics handle subjects. Tags handle projects: tag everything you save for a specific conference, trip or client

@@ -954,7 +954,7 @@
       "name": "What exactly can I search?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "The title, the account that posted it, your tags, your notes, the topic and subtopic, the source app, the link, and any description text the page published. You can narrow a search to topics, subtopics or tags. bookmarker does not index the inside of the posts you save."
+        "text": "The title, the account that posted it, your tags, your notes, the topic and subtopic, the source app, the link, and whatever post text came with the save — the description a page published, or the full post body when the save arrived in an X data export. You can narrow a search to topics, subtopics or tags. bookmarker never fetches the page behind the link, so the body of an article, a PDF or a video transcript is not indexed."
       }
     },
     {
@@ -1070,7 +1070,9 @@
       <div>
         <h3>It files itself</h3>
         <p>Every bork lands in a topic and subtopic — Fitness &rsaquo; Mobility, Recipes &rsaquo; Meal prep. Fifty
-          topics, 612 subtopics, your own subtopics on top, and every suggestion is overridable.</p>
+          topics, 612 subtopics, your own subtopics on top, and every suggestion is overridable. Keyword matching
+          does it on the spot and offline; signed in, the links it cannot place go to our server, which asks a
+          language model.</p>
       </div>
       <div>
         <h3>Browse two ways</h3>
@@ -1079,8 +1081,9 @@
       </div>
       <div>
         <h3>Find it again</h3>
-        <p>Search the title, the account, your tags, your notes, the topic and subtopic, the source app and the
-          link — and narrow a search to topics, subtopics or tags when a word is too common.</p>
+        <p>Search the title, the account, any post text that came with the save, your tags, your notes, the topic
+          and subtopic, the source app and the link — and narrow a search to topics, subtopics or tags when a word
+          is too common.</p>
       </div>
       <div>
         <h3>Notes, and a memory</h3>
@@ -1124,9 +1127,11 @@
     </div>
     <div class="qa">
       <h3>What exactly can I search?</h3>
-      <p>Titles, accounts, tags, notes, topics, subtopics, the source app, the link, and any description text the
-        page published. bookmarker does not index the inside of the posts you save, and there is no
-        quoted-phrase operator — several words mean “all of these must appear”.</p>
+      <p>Titles, accounts, tags, notes, topics, subtopics, the source app, the link, and whatever post text came
+        with the save — the description a page published, or the full post body when the save arrived in an X data
+        export. What bookmarker never does is open the page behind the link, so the body of an article, a PDF or a
+        video transcript is not indexed. There is no quoted-phrase operator either — several words mean “all of
+        these must appear”.</p>
     </div>
     <div class="qa">
       <h3>Will I get thumbnails for Instagram, TikTok and X?</h3>

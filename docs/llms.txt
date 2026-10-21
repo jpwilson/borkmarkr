@@ -23,14 +23,22 @@ Last updated: 2026-10-21
 
 - Save any link from any iPhone app through the iOS share sheet, by pasting a
   link, or by importing a file.
-- Files every save into one of 50 topics and 612 subtopics automatically. The
-  filing is a keyword score over the link and the title or caption — not a
-  language model — and it is always a suggestion you can override. You can add
-  your own subtopics.
+- Files every save into one of 50 topics and 612 subtopics automatically, in
+  two passes. First a keyword score over the link and the title or caption,
+  which runs on the device, instantly and offline, and settles most links.
+  Then, only for the links that pass leaves unfiled or places on thin
+  evidence, and only when you are signed in, the link, title or caption,
+  account, hashtags and your tags are sent to bookmarker's own server, which
+  asks a language model; low-confidence answers are discarded. Signed out or
+  offline, the keyword answer is the only answer. Either way the topic is a
+  suggestion you can override, and saving is never blocked by filing. You can
+  add your own subtopics.
 - Browse by topic or by the app a save came from; each axis filters the other.
 - Search the title, the account that posted it, your tags, your notes, the
-  topic and subtopic, the source app, the link, and any description text the
-  page published. Searches can be narrowed to topics, subtopics or tags.
+  topic and subtopic, the source app, the link, and whatever post text came
+  with the save — the description a page published, or the full post body when
+  the save arrived in an X data export. Searches can be narrowed to topics,
+  subtopics or tags.
 - Dated notes on any save, and a count of how often you have reopened it.
 - Import browser bookmarks and the data exports from X, Instagram, TikTok and
   YouTube.
@@ -44,8 +52,9 @@ Last updated: 2026-10-21
 - It stores links, not copies. Opening a save sends you to the original post.
   If the original is deleted, the link dies with it — bookmarker is not an
   archive.
-- It does not index the inside of the posts you save, and there is no
-  quoted-phrase or operator syntax in search.
+- It never fetches the page behind the link, so search does not cover the
+  body of an article, a PDF or a video transcript. It searches only the text
+  it holds. There is no quoted-phrase or operator syntax in search.
 - Thumbnails and titles only arrive where the platform publishes them. YouTube
   and most ordinary web pages do; Instagram, TikTok and X usually do not
   publish metadata to unauthenticated requests, so those saves often have a

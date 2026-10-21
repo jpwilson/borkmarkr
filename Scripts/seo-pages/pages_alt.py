@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import sys
-sys.path.insert(0, "/tmp/gen")
+# tpl.py is the sibling module; running this file puts its own directory on
+# sys.path, so no path juggling is needed.
 from tpl import *
 
 HEDGE = ("""<div class="callout"><p>Competitor details below are from each product's own website, checked on
@@ -59,7 +59,7 @@ check hardest.</p>
       <tr>
         <td><strong><a href="https://mymind.com/" rel="nofollow noopener" target="_blank">mymind</a></strong></td>
         <td>Visual inspiration and notes</td>
-        <td>Beautiful visual library, AI organising with no filing at all, strong privacy stance, iPhone + Android + extensions</td>
+        <td>Beautiful visual library, AI organising so you need not file anything, strong privacy stance, iPhone + Android + extensions</td>
       </tr>
       <tr>
         <td><strong>Built-in bookmarks</strong> (X, Instagram, TikTok, YouTube)</td>
@@ -80,9 +80,10 @@ share a set of saves as a link.</p>
 your Instagram reel and your X thread about the same marathon belong in the same place. Filing is automatic, so
 a library of a few thousand saves is usable without you organising anything.</p>
 <p><strong>Weakest at:</strong> depth per platform and depth per page. It stores links, not copies, so it cannot
-show you a post that has been deleted and it does not search the inside of what you saved. Thumbnails and titles
-are frequently missing for Instagram, TikTok and X saves because those platforms do not publish metadata to
-unauthenticated requests. There is no Android app and no browser extension. It cannot reach into X and pull your
+show you a post that has been deleted, and search covers only the text that came with a save — never the article,
+PDF or transcript behind the link. Thumbnails and titles are frequently missing for Instagram, TikTok and X saves
+because those platforms do not publish metadata to unauthenticated requests. There is no Android app and no
+browser extension, though the web app runs in an Android or desktop browser. It cannot reach into X and pull your
 existing bookmark list down — for that you import X's data export.</p>
 <p><strong>Price:</strong> free on the App Store; first 20 saves with no account, then a free email sign-in for
 an unlimited, backed-up library. <a href="/faq">Full FAQ</a>.</p>
@@ -94,9 +95,10 @@ filters. It also offers highlights and annotations, duplicate and broken-link de
 integrations, archived copies of saved pages, and full-text search across the content of saved pages, PDFs and
 YouTube videos.</p>
 <p><strong>Stronger than bookmarker at:</strong> almost everything to do with web pages. If what you save is
-mostly articles and research, Raindrop is the better tool — real full-text search inside saved content, a
-permanent archived copy so a dead link still has something behind it, and it runs everywhere, including Android
-and desktop browsers, which bookmarker does not.</p>
+mostly articles and research, Raindrop is the better tool — real full-text search inside saved content, and a
+permanent archived copy so a dead link still has something behind it. Raindrop also offers native Android and
+desktop apps and browser extensions; bookmarker offers an iPhone app and a web app usable in desktop and Android
+browsers.</p>
 <p><strong>Where bookmarker differs:</strong> Raindrop is browser-first and you choose the collection; bookmarker
 is phone-share-sheet-first and files every save into a topic for you. If your saving happens inside Instagram and
 TikTok rather than in a browser, that difference matters more than the feature lists do.</p>
@@ -116,14 +118,16 @@ Instagram, TikTok, YouTube and the open web as well, and works from the phone yo
 <h2>mymind</h2>
 <p><strong>What it is:</strong> per mymind.com, a private visual library for notes, bookmarks, inspiration,
 articles and images — "remember everything, organize nothing". You save with a click and its AI handles the
-organising; there are no folders, labels or tags to maintain. It has iPhone and Android apps and Chrome, Edge and
-Safari extensions, and explicitly has no social features, no collaboration and no ads.</p>
+organising, so its home page says you need not file, label or even tag anything. Organising is optional rather
+than absent: mymind's own guide to Spaces describes adding your own tags, saving a search as a Smart Space that
+fills itself, and right-clicking an item to add it to a Space by hand. It has iPhone and Android apps plus
+Chrome, Edge and Safari extensions, and explicitly has no social features, no collaboration and no ads.</p>
 <p><strong>Stronger than bookmarker at:</strong> visual material and craft. If you are collecting images,
 palettes, type and product shots, mymind's visual library is a nicer place to look at them than a list of links,
-and it is on Android and in desktop browsers.</p>
-<p><strong>Where bookmarker differs:</strong> bookmarker's filing is a visible, editable topic tree you can browse
-and reassign, not an invisible model; it is built around posts from social apps and the source app they came from;
-and it is free.</p>
+and it has a native Android app and browser extensions where bookmarker has neither.</p>
+<p><strong>Where bookmarker differs:</strong> bookmarker leads with the structure — a visible topic tree you
+browse and reassign, with the source app as a dimension of its own — where mymind leads with search over a
+library that organised itself. bookmarker is built around posts from social apps, and it is free.</p>
 <p><a href="/vs-mymind">Full comparison: bookmarker vs mymind &rarr;</a></p>
 
 <h2>The bookmarks built into X, Instagram, TikTok and YouTube</h2>
@@ -147,7 +151,7 @@ threads — which is the problem this page is about.</p>
   <li><strong>Most of what you save is in phone apps, across several of them</strong> &rarr; bookmarker.</li>
   <li><strong>Most of what you save is web articles and research</strong> &rarr; Raindrop.io.</li>
   <li><strong>You only care about X, and you want your existing bookmark history</strong> &rarr; Twillot.</li>
-  <li><strong>You collect images and want it to look beautiful</strong> &rarr; mymind.</li>
+  <li><strong>You collect images, want it to look beautiful, or need Android or a browser extension</strong> &rarr; mymind.</li>
   <li><strong>You save a handful of things a month</strong> &rarr; the built-in bookmarks are fine.</li>
 </ul>
 <p>Plenty of people run two: a web-first manager for articles and bookmarker for everything the phone throws at
@@ -175,15 +179,19 @@ write(
 <p class="intro">bookmarker and mymind start from the same good idea — you should not have to file the things you
 save — and then build two different products on it. bookmarker is a free iPhone and web library for posts you
 save out of Instagram, X, TikTok and YouTube, filed into a visible topic tree. mymind is a paid, private visual
-library for notes, bookmarks, images and inspiration, organised invisibly by AI.</p>
+library for notes, bookmarks, images and inspiration, organised by AI with your own tags and Spaces available on
+top if you want them.</p>
 
 """ + HEDGE + """
 
 <h2>The core difference</h2>
 <p><strong>mymind</strong> (per mymind.com) is "the extension for your mind": save anything with a click and its
-AI takes care of the rest, with no folders, labels or tags to maintain. It is deliberately private — their site
-lists no social features, no vanity metrics, no collaboration and no ads — and it leans visual, so a saved image,
-colour or product shot is something you look at rather than a row in a list.</p>
+AI takes care of the rest, so you need not file, label or even tag it. That is a promise about effort, not a
+missing feature — mymind's guide to Spaces describes adding your own tags, turning a search into a Smart Space
+that keeps filling itself, and adding an item to a Space by hand. Its emphasis is search over structure
+("folders are dead; this is your personal search engine"). It is deliberately private — their site lists no
+social features, no vanity metrics, no collaboration and no ads — and it leans visual, so a saved image, colour
+or product shot is something you look at rather than a row in a list.</p>
 <p><strong>bookmarker</strong> is about the pile of posts you already have in five different apps. It files every
 save into one of 50 topics and 612 subtopics, and it keeps the source app as a first-class dimension, so you can
 ask for "everything about running" or "everything I kept from TikTok" and get a straight answer. The filing is
@@ -194,9 +202,10 @@ visible and editable rather than implicit.</p>
 <ul>
   <li>You collect visual material — images, type, palettes, products — and want a library that looks good.</li>
   <li>You want notes, highlights and bookmarks in the same place rather than links alone.</li>
-  <li>You are on Android or work mostly in a desktop browser: mymind lists iPhone and Android apps plus Chrome,
-    Edge and Safari extensions. bookmarker has no Android app and no browser extension.</li>
-  <li>You would rather never see a category at all.</li>
+  <li>You want a native Android app or a browser extension: mymind lists iPhone and Android apps plus Chrome,
+    Edge and Safari extensions. bookmarker has neither — its web app does run in an Android or desktop browser,
+    but there is nothing to install.</li>
+  <li>You would rather search than browse a structure, and never see a category unless you ask for one.</li>
 </ul>
 <h3>bookmarker is better if&hellip;</h3>
 <ul>
@@ -213,9 +222,9 @@ visible and editable rather than implicit.</p>
     <thead><tr><th>&nbsp;</th><th>bookmarker</th><th>mymind</th></tr></thead>
     <tbody>
       <tr><td>Main idea</td><td>One library for posts saved across apps, filed by topic</td><td>A private visual library that organises itself</td></tr>
-      <tr><td>Platforms</td><td>iPhone app (iOS 17+) and a web app</td><td>iPhone and Android apps, Chrome / Edge / Safari extensions (per mymind.com)</td></tr>
+      <tr><td>Platforms</td><td>iPhone app (iOS 17+), plus a web app that runs in any modern browser including Android and desktop</td><td>iPhone and Android apps, Chrome / Edge / Safari extensions (per mymind.com)</td></tr>
       <tr><td>How you save</td><td>iOS share sheet from any app, paste a link, or import an export file</td><td>Save with a click from the extension or the apps</td></tr>
-      <tr><td>Organising</td><td>Automatic topic + subtopic, visible and editable; your own tags and subtopics</td><td>Automatic, by AI; no folders, labels or tags by design</td></tr>
+      <tr><td>Organising</td><td>Automatic topic + subtopic, visible and editable; your own tags and subtopics</td><td>AI-assisted organisation, with optional user tags and Smart Spaces (per mymind.com)</td></tr>
       <tr><td>Source app recorded</td><td class="yes">Yes — browse or filter by Instagram, X, TikTok, YouTube&hellip;</td><td>Not a documented feature</td></tr>
       <tr><td>Notes</td><td class="yes">Dated notes on any save</td><td class="yes">Notes are a first-class item type</td></tr>
       <tr><td>Revisit tracking</td><td class="yes">Counts how often you reopen a save</td><td>Not a documented feature</td></tr>
@@ -231,9 +240,10 @@ visible and editable rather than implicit.</p>
 posts your phone throws at you. Neither one tries to be the other.</p>
 
 <h2>The bottom line</h2>
-<p>Pick mymind if you are building a beautiful, private collection of things you want to look at, and you want
-zero structure. Pick bookmarker if your problem is thousands of saved posts scattered across Instagram, X, TikTok
-and YouTube, and you want them in one free library you can actually search and browse by topic.</p>
+<p>Pick mymind if you are building a beautiful, private collection of things you want to look at, and you would
+rather search it than navigate it. Pick bookmarker if your problem is thousands of saved posts scattered across
+Instagram, X, TikTok and YouTube, and you want them in one free library with a topic tree you can browse and
+correct.</p>
 
 <p><a class="cta" href="/get/">Try bookmarker — free</a></p>
 <span class="cta-sub">See also <a href="/alternatives">all the alternatives</a> and the

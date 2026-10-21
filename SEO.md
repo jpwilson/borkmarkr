@@ -83,18 +83,43 @@ JSON-LD mirrors the visible text and nothing more:
 The earlier AI-discovery pass (PR #89) asserted things the product does not do.
 If you are editing copy, these are the traps:
 
-- bookmarker does **not** do full-text search of saved content and does **not**
-  fetch the body of posts. `Core/Bookmark.swift:rebuildSearchBlob()` builds the
-  haystack from title, author, any captured description text, note, subcategory,
-  tags, category name, platform name and URL. `Core/SearchScope.swift` adds the
-  Topics / Subtopics / Tags scoping. Terms are ANDed; there is no quoted-phrase
-  or operator syntax.
+- bookmarker does **not** do full-text search of the page behind a link — it
+  never fetches an article body, a PDF or a transcript. But it does search the
+  post text it happens to hold, so "it does not index the inside of posts" is
+  too strong and has been removed from every page.
+  `Core/Bookmark.swift:rebuildSearchBlob()` builds the haystack from title,
+  author, `text`, note, subcategory, tags, category name, platform name and
+  URL — and `text` is real post text: the `og:description` excerpt stored by
+  `App/PreviewFetcher.swift`, or the whole `full_text` of an X post imported
+  from a data export (`Core/Importers.swift:parseXArchive`, and `body_text` in
+  `docs/import.js`). `Core/SearchScope.swift` adds the Topics / Subtopics /
+  Tags scoping. Terms are ANDed; there is no quoted-phrase or operator syntax.
+- Filing is **not** purely on-device and **not** purely keyword-based, and no
+  page may say it is. `Core/Categorizer.swift` is the offline keyword pass and
+  always runs first. `Core/SmartCategorizer.swift` then posts the link, title,
+  author, post text, `og:description`, hashtags and the user's own tags to the
+  `categorize` Supabase Edge Function, which asks a language model — but only
+  when the offline pass was unconfident **and** there is a session
+  (`App/Screens/AddSheet.swift`, `App/PreviewFetcher.swift`, and
+  `suggestTopicFor()` in `docs/index.html` for the web). Notes are never sent,
+  low-confidence answers are dropped server-side, and signed out it never
+  fires. `docs/privacy.html` already described this correctly; the written
+  pages claimed "not a language model", which is the contradiction not to
+  reintroduce.
+- Competitor copy must not turn "you do not have to" into "you cannot". mymind
+  tells people they need not file, label or tag anything, but its own Spaces
+  guide documents user tags, Smart Spaces and adding an item to a Space by
+  hand — so the pages say "AI-assisted organisation, with optional user tags
+  and Smart Spaces", not "no tags by design".
 - There is **no iCloud sync**. Signing in (email + six-digit code) backs the
   library up and makes it readable on the web.
 - There is **no premium tier**. `APPSTORE.md` is explicit: "There is no paid
   tier and nothing in the app costs money."
 - bookmarker is **not iOS-only** — there is an iPhone app and a web app that
-  runs in any browser. There is no Android app and no browser extension.
+  runs in any browser, including on Android and on a desktop. "No Android app
+  and no browser extension" is true and is a different statement: a comparison
+  page may say a rival ships native Android and desktop apps and extensions,
+  but it may not imply bookmarker is unusable in those browsers.
 
 ## 3. Crawlers
 
@@ -196,8 +221,9 @@ Search Console.
    python3 Scripts/seo-pages/pages_core.py     # or whichever file you edited
    ```
 
-   The output is committed static HTML in `docs/`. (You can equally hand-write
-   a page; the generator exists so the shared furniture has one definition.)
+   The output is committed static HTML in `docs/`, resolved from `tpl.py`'s own
+   location, so this works in any checkout. (You can equally hand-write a page;
+   the generator exists so the shared furniture has one definition.)
 
 2. Add the page to the header nav and the footer in `tpl.py` and re-run every
    `pages_*.py`, so the new page is linked from all the others.

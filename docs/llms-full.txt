@@ -94,7 +94,9 @@ account that posted it and a thumbnail come along where the platform publishes t
 #### It files itself
 
 Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. Fifty
-topics, 612 subtopics, your own subtopics on top, and every suggestion is overridable.
+topics, 612 subtopics, your own subtopics on top, and every suggestion is overridable. Keyword matching
+does it on the spot and offline; signed in, the links it cannot place go to our server, which asks a
+language model.
 
 #### Browse two ways
 
@@ -103,8 +105,9 @@ you kept from TikTok. Each view filters the other.
 
 #### Find it again
 
-Search the title, the account, your tags, your notes, the topic and subtopic, the source app and the
-link — and narrow a search to topics, subtopics or tags when a word is too common.
+Search the title, the account, any post text that came with the save, your tags, your notes, the topic
+and subtopic, the source app and the link — and narrow a search to topics, subtopics or tags when a word
+is too common.
 
 #### Notes, and a memory
 
@@ -149,9 +152,11 @@ save sends you to the original. It is not an archive: if the original is deleted
 
 #### What exactly can I search?
 
-Titles, accounts, tags, notes, topics, subtopics, the source app, the link, and any description text the
-page published. bookmarker does not index the inside of the posts you save, and there is no
-quoted-phrase operator — several words mean “all of these must appear”.
+Titles, accounts, tags, notes, topics, subtopics, the source app, the link, and whatever post text came
+with the save — the description a page published, or the full post body when the save arrived in an X data
+export. What bookmarker never does is open the page behind the link, so the body of an article, a PDF or a
+video transcript is not indexed. There is no quoted-phrase operator either — several words mean “all of
+these must appear”.
 
 #### Will I get thumbnails for Instagram, TikTok and X?
 
@@ -290,14 +295,18 @@ is not an archive — if the original is deleted, the link dies with it.
 web pages publish the metadata bookmarker needs. Instagram, TikTok and X usually do not publish it to an
 unauthenticated request, so saves from those apps often arrive with a plain title and no image.
 
-- Search does not index the inside of posts. It matches what bookmarker holds: titles,
-accounts, tags, notes, topics, source and link, plus any description text the page published. There is no
-quoted-phrase operator — multiple words are treated as "all of these must appear".
+- Search does not reach into the page behind the link. It matches what bookmarker holds:
+titles, accounts, tags, notes, topics, source and link, plus whatever post text came with the save — the
+description a page published, or the full post body when it arrived in an X data export. Nothing fetches the
+body of an article, a PDF or a video transcript, so none of that is indexed. There is no quoted-phrase
+operator — multiple words are treated as "all of these must appear".
 
 - No Android app. There is an iPhone app and a web app that runs in any modern browser.
 
-- The filing is keyword-based, not a large language model. It does well on descriptive links
-and captions and returns nothing rather than guessing wildly when a link is opaque.
+- Filing is keyword-first; a language model is the backup, not the engine. The pass that
+runs on your device is a keyword score, so it does well on descriptive links and captions and leaves an
+opaque link unfiled rather than guessing. When you are signed in, those leftovers go to our server, which
+asks a language model — so filing is only entirely on-device when you are signed out.
 
 ### What it costs
 
@@ -624,24 +633,36 @@ There is no password to invent — you get a six-digit code by email.
 
 ### How does the automatic filing work?
 
-bookmarker scores the words in the link and the title or caption against its topic list, and files the
-save into the best topic and subtopic it finds. There are 50 topics and 612 subtopics, and you can add your
-own subtopics. It runs on the phone, instantly and offline. It is keyword-based, not a language model, so it
-does well on descriptive links and deliberately returns nothing rather than guessing when a link is opaque.
-Every suggestion can be overridden — saving is never blocked by filing.
+In two passes. The first scores the words in the link and the title or caption against the topic list and
+files the save into the best of 50 topics and 612 subtopics — you can add your own subtopics too. That pass
+runs on your device, instantly and offline, and it settles most links.
+
+It is keyword matching, so an opaque link ("she does this every morning and it changed my skin") comes back
+with nothing rather than a wild guess. For those leftovers — and only when you are signed in —
+bookmarker sends the link, its title or caption, the account, the hashtags and any tags you typed to its own
+server, which asks a language model where the save belongs. Answers the model is not confident about are
+thrown away rather than shown. Signed out, offline, or if that request fails, you keep the offline answer; your
+notes are never sent. The privacy policy sets this out in full.
+
+Either way the topic is a suggestion you can override, and saving is never blocked by filing.
 
 ### What exactly can I search?
 
 By default a search looks at the title, the account that posted it, your tags, your notes, the topic and
-subtopic, the source app, the link itself, and any description text the page published. You can narrow a
-search to topics, subtopics or tags only. Several words are treated as "all of these must appear somewhere";
-there is no quoted-phrase or operator syntax. bookmarker does not index the inside of the posts you save.
+subtopic, the source app, the link itself, and whatever post text bookmarker holds — the description a
+page published, or the full post body when the save came in from an X data export. You can narrow a search to
+topics, subtopics or tags only. Several words are treated as "all of these must appear somewhere"; there is no
+quoted-phrase or operator syntax.
+
+What it does not promise is the whole document behind the link. bookmarker never fetches the body of an
+article, a PDF or a video transcript, so a phrase that appears only deep inside the thing you saved will not
+be found.
 
 ### Does bookmarker work offline?
 
-Yes. The iPhone library lives on your iPhone, and browsing, searching and saving a pasted link all work
-with no connection. Fetching a title or a thumbnail for a new save needs the network, so that part fills in
-when you are back online.
+Yes. The iPhone library lives on your iPhone, and browsing, searching, saving a pasted link and the keyword
+filing all work with no connection. Fetching a title or a thumbnail needs the network, as does the model that
+files the links keyword matching cannot place, so those parts fill in when you are back online.
 
 ### Does bookmarker copy the posts I save?
 
@@ -804,7 +825,7 @@ mymind
 
 Visual inspiration and notes
 
-Beautiful visual library, AI organising with no filing at all, strong privacy stance, iPhone + Android + extensions
+Beautiful visual library, AI organising so you need not file anything, strong privacy stance, iPhone + Android + extensions
 
 Built-in bookmarks (X, Instagram, TikTok, YouTube)
 
@@ -825,9 +846,10 @@ your Instagram reel and your X thread about the same marathon belong in the same
 a library of a few thousand saves is usable without you organising anything.
 
 Weakest at: depth per platform and depth per page. It stores links, not copies, so it cannot
-show you a post that has been deleted and it does not search the inside of what you saved. Thumbnails and titles
-are frequently missing for Instagram, TikTok and X saves because those platforms do not publish metadata to
-unauthenticated requests. There is no Android app and no browser extension. It cannot reach into X and pull your
+show you a post that has been deleted, and search covers only the text that came with a save — never the article,
+PDF or transcript behind the link. Thumbnails and titles are frequently missing for Instagram, TikTok and X saves
+because those platforms do not publish metadata to unauthenticated requests. There is no Android app and no
+browser extension, though the web app runs in an Android or desktop browser. It cannot reach into X and pull your
 existing bookmark list down — for that you import X's data export.
 
 Price: free on the App Store; first 20 saves with no account, then a free email sign-in for
@@ -842,9 +864,10 @@ integrations, archived copies of saved pages, and full-text search across the co
 YouTube videos.
 
 Stronger than bookmarker at: almost everything to do with web pages. If what you save is
-mostly articles and research, Raindrop is the better tool — real full-text search inside saved content, a
-permanent archived copy so a dead link still has something behind it, and it runs everywhere, including Android
-and desktop browsers, which bookmarker does not.
+mostly articles and research, Raindrop is the better tool — real full-text search inside saved content, and a
+permanent archived copy so a dead link still has something behind it. Raindrop also offers native Android and
+desktop apps and browser extensions; bookmarker offers an iPhone app and a web app usable in desktop and Android
+browsers.
 
 Where bookmarker differs: Raindrop is browser-first and you choose the collection; bookmarker
 is phone-share-sheet-first and files every save into a topic for you. If your saving happens inside Instagram and
@@ -871,16 +894,18 @@ Full comparison: bookmarker vs Twillot →
 
 What it is: per mymind.com, a private visual library for notes, bookmarks, inspiration,
 articles and images — "remember everything, organize nothing". You save with a click and its AI handles the
-organising; there are no folders, labels or tags to maintain. It has iPhone and Android apps and Chrome, Edge and
-Safari extensions, and explicitly has no social features, no collaboration and no ads.
+organising, so its home page says you need not file, label or even tag anything. Organising is optional rather
+than absent: mymind's own guide to Spaces describes adding your own tags, saving a search as a Smart Space that
+fills itself, and right-clicking an item to add it to a Space by hand. It has iPhone and Android apps plus
+Chrome, Edge and Safari extensions, and explicitly has no social features, no collaboration and no ads.
 
 Stronger than bookmarker at: visual material and craft. If you are collecting images,
 palettes, type and product shots, mymind's visual library is a nicer place to look at them than a list of links,
-and it is on Android and in desktop browsers.
+and it has a native Android app and browser extensions where bookmarker has neither.
 
-Where bookmarker differs: bookmarker's filing is a visible, editable topic tree you can browse
-and reassign, not an invisible model; it is built around posts from social apps and the source app they came from;
-and it is free.
+Where bookmarker differs: bookmarker leads with the structure — a visible topic tree you
+browse and reassign, with the source app as a dimension of its own — where mymind leads with search over a
+library that organised itself. bookmarker is built around posts from social apps, and it is free.
 
 Full comparison: bookmarker vs mymind →
 
@@ -912,7 +937,7 @@ threads — which is the problem this page is about.
 
 - You only care about X, and you want your existing bookmark history → Twillot.
 
-- You collect images and want it to look beautiful → mymind.
+- You collect images, want it to look beautiful, or need Android or a browser extension → mymind.
 
 - You save a handful of things a month → the built-in bookmarks are fine.
 
@@ -1044,8 +1069,9 @@ filters the other.
 - Automatic filing. Every save lands in a topic and subtopic — 50 topics, 612 subtopics,
 always overridable, and you can add your own subtopics.
 
-- Search. Over titles, the account that posted it, your tags, your notes, the topic and
-subtopic, the source app and the link, narrowable to topics, subtopics or tags.
+- Search. Over titles, the account that posted it, any post text that came with the save,
+your tags, your notes, the topic and subtopic, the source app and the link, narrowable to topics, subtopics
+or tags.
 
 - Dated notes. Why you kept it, written down, with a date.
 
@@ -1061,10 +1087,13 @@ bookmarks.
 - It is free. First 20 saves with no account; a free email sign-in makes it unlimited and
 backed up.
 
-One thing to be clear about, because it is easy to oversell: bookmarker does not index the
-inside of the posts you save. A search matches the title, the account that posted it, your tags, your notes, the
-topic and subtopic, the source app, the link, and any description text the page published. You can narrow it to
-topics, subtopics or tags. Several words mean "all of these must appear"; there is no quoted-phrase operator.
+One thing to be clear about, because it is easy to oversell: bookmarker searches what it
+holds, not the page behind the link. A search matches the title, the account that posted it, your tags, your
+notes, the topic and subtopic, the source app, the link, and whatever post text came with the save — the
+description a page published, or the full post body when the save arrived in an X data export. What is never
+fetched, and so never searchable, is the rest of the document: the body of an article, a PDF, a video
+transcript. You can narrow a search to topics, subtopics or tags. Several words mean "all of these must appear";
+there is no quoted-phrase operator.
 
 bookmarker also stores links rather than copies, so it does not rescue a deleted post — if that is what you
 need, look at Twillot, which archives X posts.
@@ -1243,8 +1272,8 @@ you can turn a set of saves into a shareable page at bookmarker.lol/c/… with a
 
 ### Where Raindrop.io is better
 
-- Search depth. Raindrop searches inside the content of what you saved. bookmarker does not —
-see the note below.
+- Search depth. Raindrop indexes the whole content of a saved page, PDF or YouTube video.
+bookmarker searches only the text that arrived with the save — see the note below.
 
 - Archiving. Raindrop keeps copies of saved pages. bookmarker stores links only, so a deleted
 post is simply gone.
@@ -1256,10 +1285,13 @@ bookmarker is an iPhone app plus a web app, with no browser extension and no And
 
 - Maturity. It has been around far longer and has the feature surface to show for it.
 
-One thing to be clear about, because it is easy to oversell: bookmarker does not index the
-inside of the posts you save. A search matches the title, the account that posted it, your tags, your notes, the
-topic and subtopic, the source app, the link, and any description text the page published. You can narrow it to
-topics, subtopics or tags. Several words mean "all of these must appear"; there is no quoted-phrase operator.
+One thing to be clear about, because it is easy to oversell: bookmarker searches what it
+holds, not the page behind the link. A search matches the title, the account that posted it, your tags, your
+notes, the topic and subtopic, the source app, the link, and whatever post text came with the save — the
+description a page published, or the full post body when the save arrived in an X data export. What is never
+fetched, and so never searchable, is the rest of the document: the body of an article, a PDF, a video
+transcript. You can narrow a search to topics, subtopics or tags. Several words mean "all of these must appear";
+there is no quoted-phrase operator.
 
 ### Where bookmarker is better
 
@@ -1302,7 +1334,7 @@ Yes — 50 topics, 612 subtopics, overridable
 You choose the collection; tags and an AI assistant are offered
 
 Search inside saved page content
-No — titles, accounts, tags, notes, topics, links
+No — only the text that came with the save: titles, accounts, post text, tags, notes, topics, links
 Yes — pages, PDFs and YouTube
 
 Archived copy of saved pages
@@ -1477,10 +1509,13 @@ marathon end up in the same topic.
 - Price. bookmarker is free, including the unlimited backed-up library after a free email
 sign-in.
 
-One thing to be clear about, because it is easy to oversell: bookmarker does not index the
-inside of the posts you save. A search matches the title, the account that posted it, your tags, your notes, the
-topic and subtopic, the source app, the link, and any description text the page published. You can narrow it to
-topics, subtopics or tags. Several words mean "all of these must appear"; there is no quoted-phrase operator.
+One thing to be clear about, because it is easy to oversell: bookmarker searches what it
+holds, not the page behind the link. A search matches the title, the account that posted it, your tags, your
+notes, the topic and subtopic, the source app, the link, and whatever post text came with the save — the
+description a page published, or the full post body when the save arrived in an X data export. What is never
+fetched, and so never searchable, is the rest of the document: the body of an article, a PDF, a video
+transcript. You can narrow a search to topics, subtopics or tags. Several words mean "all of these must appear";
+there is no quoted-phrase operator.
 
 ### Side by side
 
@@ -1621,7 +1656,8 @@ Last updated: 21 October 2026
 bookmarker and mymind start from the same good idea — you should not have to file the things you
 save — and then build two different products on it. bookmarker is a free iPhone and web library for posts you
 save out of Instagram, X, TikTok and YouTube, filed into a visible topic tree. mymind is a paid, private visual
-library for notes, bookmarks, images and inspiration, organised invisibly by AI.
+library for notes, bookmarks, images and inspiration, organised by AI with your own tags and Spaces available on
+top if you want them.
 
 Competitor details below are from each product's own website, checked on
 21 October 2026, and they change. Follow the links and confirm anything that matters to you. Where a rival is
@@ -1630,9 +1666,12 @@ better at something, it says so.
 ### The core difference
 
 mymind (per mymind.com) is "the extension for your mind": save anything with a click and its
-AI takes care of the rest, with no folders, labels or tags to maintain. It is deliberately private — their site
-lists no social features, no vanity metrics, no collaboration and no ads — and it leans visual, so a saved image,
-colour or product shot is something you look at rather than a row in a list.
+AI takes care of the rest, so you need not file, label or even tag it. That is a promise about effort, not a
+missing feature — mymind's guide to Spaces describes adding your own tags, turning a search into a Smart Space
+that keeps filling itself, and adding an item to a Space by hand. Its emphasis is search over structure
+("folders are dead; this is your personal search engine"). It is deliberately private — their site lists no
+social features, no vanity metrics, no collaboration and no ads — and it leans visual, so a saved image, colour
+or product shot is something you look at rather than a row in a list.
 
 bookmarker is about the pile of posts you already have in five different apps. It files every
 save into one of 50 topics and 612 subtopics, and it keeps the source app as a first-class dimension, so you can
@@ -1647,10 +1686,11 @@ visible and editable rather than implicit.
 
 - You want notes, highlights and bookmarks in the same place rather than links alone.
 
-- You are on Android or work mostly in a desktop browser: mymind lists iPhone and Android apps plus Chrome,
-Edge and Safari extensions. bookmarker has no Android app and no browser extension.
+- You want a native Android app or a browser extension: mymind lists iPhone and Android apps plus Chrome,
+Edge and Safari extensions. bookmarker has neither — its web app does run in an Android or desktop browser,
+but there is nothing to install.
 
-- You would rather never see a category at all.
+- You would rather search than browse a structure, and never see a category unless you ask for one.
 
 #### bookmarker is better if…
 
@@ -1673,7 +1713,7 @@ One library for posts saved across apps, filed by topic
 A private visual library that organises itself
 
 Platforms
-iPhone app (iOS 17+) and a web app
+iPhone app (iOS 17+), plus a web app that runs in any modern browser including Android and desktop
 iPhone and Android apps, Chrome / Edge / Safari extensions (per mymind.com)
 
 How you save
@@ -1682,7 +1722,7 @@ Save with a click from the extension or the apps
 
 Organising
 Automatic topic + subtopic, visible and editable; your own tags and subtopics
-Automatic, by AI; no folders, labels or tags by design
+AI-assisted organisation, with optional user tags and Smart Spaces (per mymind.com)
 
 Source app recorded
 Yes — browse or filter by Instagram, X, TikTok, YouTube…
@@ -1715,9 +1755,10 @@ posts your phone throws at you. Neither one tries to be the other.
 
 ### The bottom line
 
-Pick mymind if you are building a beautiful, private collection of things you want to look at, and you want
-zero structure. Pick bookmarker if your problem is thousands of saved posts scattered across Instagram, X, TikTok
-and YouTube, and you want them in one free library you can actually search and browse by topic.
+Pick mymind if you are building a beautiful, private collection of things you want to look at, and you would
+rather search it than navigate it. Pick bookmarker if your problem is thousands of saved posts scattered across
+Instagram, X, TikTok and YouTube, and you want them in one free library with a topic tree you can browse and
+correct.
 
 Try bookmarker — free
 
@@ -1853,9 +1894,12 @@ Folders are a decision per save. Topics are a decision you never make: bookmarke
 612 subtopics from the words in the link and the caption, and you only intervene when it is wrong. With a couple
 of thousand saves that is the difference between a system you keep up with and one you abandon in week two.
 
-The filing is keyword-based rather than a language model, which has one honest consequence: it is good on
-descriptive links and captions, and it deliberately leaves a save unfiled rather than guessing wildly when a link
-is opaque. X links are often opaque, so expect to correct some of them — it takes one tap, and corrections stick.
+The pass that does the work is keyword matching against the topic list, which runs on your device, instantly
+and offline. That has one honest consequence: it is good on descriptive links and captions, and it deliberately
+leaves a save unfiled rather than guessing wildly when a link is opaque. X links are often opaque, so expect to
+correct some of them — it takes one tap, and corrections stick. When you are signed in, the links keyword
+matching could not place are sent on to bookmarker's server, which asks a language model where they belong and
+discards answers it is not confident about; signed out or offline, the keyword answer is the only answer.
 
 ### Tags for the things topics cannot know
 
@@ -2015,12 +2059,15 @@ at:
 
 - the link itself;
 
-- and any description text the page published — which Instagram, TikTok and X usually do not provide.
+- and whatever post text bookmarker holds — the description a page published, which Instagram, TikTok and X
+usually do not provide, or the full post body when the save arrived in an X data export.
 
-It does not index the body of the posts you saved, and there is no quoted-phrase or operator
-syntax: typing several words means "every one of these must appear somewhere". If you need search that reaches
-inside saved page content, Raindrop.io does that and we say so on the comparison page.
-If you need the text of X posts specifically, Twillot archives them.
+What it does not do is open the page behind the link. The body of an article, a PDF or a
+video transcript is never fetched, so none of it is searchable, and there is no quoted-phrase or operator syntax:
+typing several words means "every one of these must appear somewhere". If you need search that reaches inside
+saved page content, Raindrop.io does that and we say so on the comparison page. If you
+want a full, lasting copy of your X posts rather than the text an export happens to carry,
+Twillot archives them.
 
 ### Getting more out of a search
 

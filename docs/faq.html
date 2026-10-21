@@ -63,7 +63,7 @@
       "name": "Which apps can I save from?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Any app with an iOS share sheet. bookmarker recognises Instagram, X (Twitter), TikTok, YouTube, YouTube Shorts, Threads, Pinterest and ordinary web pages, and labels each save with where it came from. On X, tap Share and then \"Share via&hellip;\" to reach the share sheet. You can also paste a link straight into the app or into the web app."
+        "text": "Any app with an iOS share sheet. bookmarker recognises Instagram, X (Twitter), TikTok, YouTube, YouTube Shorts, Threads, Pinterest and ordinary web pages, and labels each save with where it came from. On X, tap Share and then \"Share via…\" to reach the share sheet. You can also paste a link straight into the app or into the web app."
       }
     },
     {
@@ -79,7 +79,7 @@
       "name": "How does the automatic filing work?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "bookmarker scores the words in the link and the title or caption against its topic list, and files the save into the best topic and subtopic it finds. There are 50 topics and 612 subtopics, and you can add your own subtopics. It runs on the phone, instantly and offline. It is keyword-based, not a language model, so it does well on descriptive links and deliberately returns nothing rather than guessing when a link is opaque. Every suggestion can be overridden — saving is never blocked by filing."
+        "text": "In two passes. The first scores the words in the link and the title or caption against the topic list and files the save into the best of 50 topics and 612 subtopics — you can add your own subtopics too. That pass runs on your device, instantly and offline, and it settles most links. It is keyword matching, so an opaque link (\"she does this every morning and it changed my skin\") comes back with nothing rather than a wild guess. For those leftovers — and only when you are signed in — bookmarker sends the link, its title or caption, the account, the hashtags and any tags you typed to its own server, which asks a language model where the save belongs. Answers the model is not confident about are thrown away rather than shown. Signed out, offline, or if that request fails, you keep the offline answer; your notes are never sent. The privacy policy sets this out in full. Either way the topic is a suggestion you can override, and saving is never blocked by filing."
       }
     },
     {
@@ -87,7 +87,7 @@
       "name": "What exactly can I search?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "By default a search looks at the title, the account that posted it, your tags, your notes, the topic and subtopic, the source app, the link itself, and any description text the page published. You can narrow a search to topics, subtopics or tags only. Several words are treated as \"all of these must appear somewhere\"; there is no quoted-phrase or operator syntax. bookmarker does not index the inside of the posts you save."
+        "text": "By default a search looks at the title, the account that posted it, your tags, your notes, the topic and subtopic, the source app, the link itself, and whatever post text bookmarker holds — the description a page published, or the full post body when the save came in from an X data export. You can narrow a search to topics, subtopics or tags only. Several words are treated as \"all of these must appear somewhere\"; there is no quoted-phrase or operator syntax. What it does not promise is the whole document behind the link. bookmarker never fetches the body of an article, a PDF or a video transcript, so a phrase that appears only deep inside the thing you saved will not be found."
       }
     },
     {
@@ -95,7 +95,7 @@
       "name": "Does bookmarker work offline?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. The iPhone library lives on your iPhone, and browsing, searching and saving a pasted link all work with no connection. Fetching a title or a thumbnail for a new save needs the network, so that part fills in when you are back online."
+        "text": "Yes. The iPhone library lives on your iPhone, and browsing, searching, saving a pasted link and the keyword filing all work with no connection. Fetching a title or a thumbnail needs the network, as does the model that files the links keyword matching cannot place, so those parts fill in when you are back online."
       }
     },
     {
@@ -135,7 +135,7 @@
       "name": "Can I share my saves with someone?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. Pick a set of saves and bookmarker turns them into a page at bookmarker.lol/c/&hellip; you can send to anyone, no account needed to read it. You choose whether the link lasts forever, one day or ten days, and you can switch it off afterwards. Everything else in your library stays private."
+        "text": "Yes. Pick a set of saves and bookmarker turns them into a page at bookmarker.lol/c/… you can send to anyone, no account needed to read it. You choose whether the link lasts forever, one day or ten days, and you can switch it off afterwards. Everything else in your library stays private."
       }
     },
     {
@@ -285,24 +285,33 @@ not here, email <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>.<
 </section>
 <section class="qa">
 <h2>How does the automatic filing work?</h2>
-<p>bookmarker scores the words in the link and the title or caption against its topic list, and files the
-  save into the best topic and subtopic it finds. There are 50 topics and 612 subtopics, and you can add your
-  own subtopics. It runs on the phone, instantly and offline. It is keyword-based, not a language model, so it
-  does well on descriptive links and deliberately returns nothing rather than guessing when a link is opaque.
-  Every suggestion can be overridden — saving is never blocked by filing.</p>
+<p>In two passes. The first scores the words in the link and the title or caption against the topic list and
+  files the save into the best of 50 topics and 612 subtopics — you can add your own subtopics too. That pass
+  runs on your device, instantly and offline, and it settles most links.</p>
+  <p>It is keyword matching, so an opaque link ("she does this every morning and it changed my skin") comes back
+  with nothing rather than a wild guess. For those leftovers &mdash; and only when you are signed in &mdash;
+  bookmarker sends the link, its title or caption, the account, the hashtags and any tags you typed to its own
+  server, which asks a language model where the save belongs. Answers the model is not confident about are
+  thrown away rather than shown. Signed out, offline, or if that request fails, you keep the offline answer; your
+  notes are never sent. The <a href="/privacy">privacy policy</a> sets this out in full.</p>
+  <p>Either way the topic is a suggestion you can override, and saving is never blocked by filing.</p>
 </section>
 <section class="qa">
 <h2>What exactly can I search?</h2>
 <p>By default a search looks at the title, the account that posted it, your tags, your notes, the topic and
-  subtopic, the source app, the link itself, and any description text the page published. You can narrow a
-  search to topics, subtopics or tags only. Several words are treated as "all of these must appear somewhere";
-  there is no quoted-phrase or operator syntax. bookmarker does not index the inside of the posts you save.</p>
+  subtopic, the source app, the link itself, and whatever post text bookmarker holds &mdash; the description a
+  page published, or the full post body when the save came in from an X data export. You can narrow a search to
+  topics, subtopics or tags only. Several words are treated as "all of these must appear somewhere"; there is no
+  quoted-phrase or operator syntax.</p>
+  <p>What it does not promise is the whole document behind the link. bookmarker never fetches the body of an
+  article, a PDF or a video transcript, so a phrase that appears only deep inside the thing you saved will not
+  be found.</p>
 </section>
 <section class="qa">
 <h2>Does bookmarker work offline?</h2>
-<p>Yes. The iPhone library lives on your iPhone, and browsing, searching and saving a pasted link all work
-  with no connection. Fetching a title or a thumbnail for a new save needs the network, so that part fills in
-  when you are back online.</p>
+<p>Yes. The iPhone library lives on your iPhone, and browsing, searching, saving a pasted link and the keyword
+  filing all work with no connection. Fetching a title or a thumbnail needs the network, as does the model that
+  files the links keyword matching cannot place, so those parts fill in when you are back online.</p>
 </section>
 <section class="qa">
 <h2>Does bookmarker copy the posts I save?</h2>

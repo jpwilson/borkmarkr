@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import sys
-sys.path.insert(0, "/tmp/gen")
+# tpl.py is the sibling module; running this file puts its own directory on
+# sys.path, so no path juggling is needed.
 from tpl import *
 
 def howto(name, desc, steps, path):
@@ -86,9 +86,12 @@ the method below.</p>
 <p>Folders are a decision per save. Topics are a decision you never make: bookmarker picks one of 50 topics and
 612 subtopics from the words in the link and the caption, and you only intervene when it is wrong. With a couple
 of thousand saves that is the difference between a system you keep up with and one you abandon in week two.</p>
-<p>The filing is keyword-based rather than a language model, which has one honest consequence: it is good on
-descriptive links and captions, and it deliberately leaves a save unfiled rather than guessing wildly when a link
-is opaque. X links are often opaque, so expect to correct some of them — it takes one tap, and corrections stick.</p>
+<p>The pass that does the work is keyword matching against the topic list, which runs on your device, instantly
+and offline. That has one honest consequence: it is good on descriptive links and captions, and it deliberately
+leaves a save unfiled rather than guessing wildly when a link is opaque. X links are often opaque, so expect to
+correct some of them — it takes one tap, and corrections stick. When you are signed in, the links keyword
+matching could not place are sent on to bookmarker's server, which asks a language model where they belong and
+discards answers it is not confident about; signed out or offline, the keyword answer is the only answer.</p>
 
 <h2>Tags for the things topics cannot know</h2>
 <p>Topics handle subjects. Tags handle projects: tag everything you save for a specific conference, trip or client
@@ -180,12 +183,15 @@ at:</p>
   <li>the topic and subtopic it was filed into;</li>
   <li>the source app;</li>
   <li>the link itself;</li>
-  <li>and any description text the page published — which Instagram, TikTok and X usually do not provide.</li>
+  <li>and whatever post text bookmarker holds — the description a page published, which Instagram, TikTok and X
+    usually do not provide, or the full post body when the save arrived in an X data export.</li>
 </ul>
-<p>It does <strong>not</strong> index the body of the posts you saved, and there is no quoted-phrase or operator
-syntax: typing several words means "every one of these must appear somewhere". If you need search that reaches
-inside saved page content, <a href="/vs-raindrop">Raindrop.io</a> does that and we say so on the comparison page.
-If you need the text of X posts specifically, <a href="/vs-twillot">Twillot</a> archives them.</p>
+<p>What it does <strong>not</strong> do is open the page behind the link. The body of an article, a PDF or a
+video transcript is never fetched, so none of it is searchable, and there is no quoted-phrase or operator syntax:
+typing several words means "every one of these must appear somewhere". If you need search that reaches inside
+saved page content, <a href="/vs-raindrop">Raindrop.io</a> does that and we say so on the comparison page. If you
+want a full, lasting copy of your X posts rather than the text an export happens to carry,
+<a href="/vs-twillot">Twillot</a> archives them.</p>
 
 <h2>Getting more out of a search</h2>
 <h3>Search the word you would use for the subject</h3>

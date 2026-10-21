@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import sys
-sys.path.insert(0, "/tmp/gen")
+# tpl.py is the sibling module; running this file puts its own directory on
+# sys.path, so no path juggling is needed.
 from tpl import *
 
 # ───────────────────────── /what-is-bookmarker ─────────────────────────
@@ -67,12 +67,16 @@ no way to answer the only question you ever actually ask: <em>where did I see th
   <li><strong>Thumbnails and titles are only as good as the platform allows.</strong> YouTube and most ordinary
     web pages publish the metadata bookmarker needs. Instagram, TikTok and X usually do not publish it to an
     unauthenticated request, so saves from those apps often arrive with a plain title and no image.</li>
-  <li><strong>Search does not index the inside of posts.</strong> It matches what bookmarker holds: titles,
-    accounts, tags, notes, topics, source and link, plus any description text the page published. There is no
-    quoted-phrase operator — multiple words are treated as "all of these must appear".</li>
+  <li><strong>Search does not reach into the page behind the link.</strong> It matches what bookmarker holds:
+    titles, accounts, tags, notes, topics, source and link, plus whatever post text came with the save — the
+    description a page published, or the full post body when it arrived in an X data export. Nothing fetches the
+    body of an article, a PDF or a video transcript, so none of that is indexed. There is no quoted-phrase
+    operator — multiple words are treated as "all of these must appear".</li>
   <li><strong>No Android app.</strong> There is an iPhone app and a web app that runs in any modern browser.</li>
-  <li><strong>The filing is keyword-based, not a large language model.</strong> It does well on descriptive links
-    and captions and returns nothing rather than guessing wildly when a link is opaque.</li>
+  <li><strong>Filing is keyword-first; a language model is the backup, not the engine.</strong> The pass that
+    runs on your device is a keyword score, so it does well on descriptive links and captions and leaves an
+    opaque link unfiled rather than guessing. When you are signed in, those leftovers go to our server, which
+    asks a language model — so filing is only entirely on-device when you are signed out.</li>
 </ul>
 
 <h2>What it costs</h2>
@@ -120,20 +124,29 @@ FAQ = [
   free and does three things: removes the 20-save limit, backs the library up, and lets you open it on the web.
   There is no password to invent — you get a six-digit code by email.</p>"""),
  ("How does the automatic filing work?",
-  """<p>bookmarker scores the words in the link and the title or caption against its topic list, and files the
-  save into the best topic and subtopic it finds. There are 50 topics and 612 subtopics, and you can add your
-  own subtopics. It runs on the phone, instantly and offline. It is keyword-based, not a language model, so it
-  does well on descriptive links and deliberately returns nothing rather than guessing when a link is opaque.
-  Every suggestion can be overridden — saving is never blocked by filing.</p>"""),
+  """<p>In two passes. The first scores the words in the link and the title or caption against the topic list and
+  files the save into the best of 50 topics and 612 subtopics — you can add your own subtopics too. That pass
+  runs on your device, instantly and offline, and it settles most links.</p>
+  <p>It is keyword matching, so an opaque link ("she does this every morning and it changed my skin") comes back
+  with nothing rather than a wild guess. For those leftovers &mdash; and only when you are signed in &mdash;
+  bookmarker sends the link, its title or caption, the account, the hashtags and any tags you typed to its own
+  server, which asks a language model where the save belongs. Answers the model is not confident about are
+  thrown away rather than shown. Signed out, offline, or if that request fails, you keep the offline answer; your
+  notes are never sent. The <a href="/privacy">privacy policy</a> sets this out in full.</p>
+  <p>Either way the topic is a suggestion you can override, and saving is never blocked by filing.</p>"""),
  ("What exactly can I search?",
   """<p>By default a search looks at the title, the account that posted it, your tags, your notes, the topic and
-  subtopic, the source app, the link itself, and any description text the page published. You can narrow a
-  search to topics, subtopics or tags only. Several words are treated as "all of these must appear somewhere";
-  there is no quoted-phrase or operator syntax. bookmarker does not index the inside of the posts you save.</p>"""),
+  subtopic, the source app, the link itself, and whatever post text bookmarker holds &mdash; the description a
+  page published, or the full post body when the save came in from an X data export. You can narrow a search to
+  topics, subtopics or tags only. Several words are treated as "all of these must appear somewhere"; there is no
+  quoted-phrase or operator syntax.</p>
+  <p>What it does not promise is the whole document behind the link. bookmarker never fetches the body of an
+  article, a PDF or a video transcript, so a phrase that appears only deep inside the thing you saved will not
+  be found.</p>"""),
  ("Does bookmarker work offline?",
-  """<p>Yes. The iPhone library lives on your iPhone, and browsing, searching and saving a pasted link all work
-  with no connection. Fetching a title or a thumbnail for a new save needs the network, so that part fills in
-  when you are back online.</p>"""),
+  """<p>Yes. The iPhone library lives on your iPhone, and browsing, searching, saving a pasted link and the keyword
+  filing all work with no connection. Fetching a title or a thumbnail needs the network, as does the model that
+  files the links keyword matching cannot place, so those parts fill in when you are back online.</p>"""),
  ("Does bookmarker copy the posts I save?",
   """<p>No. It stores the link, the title, the account and a thumbnail where the platform publishes one. Opening
   a save sends you to the original post in the app it came from. That means bookmarker is not an archive: if the
@@ -182,9 +195,12 @@ not here, email <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>.<
 <a href="/alternatives">alternatives</a>, and <a href="/vs-twitter-bookmarks">how it compares to X bookmarks</a>.</span>
 """
 
-import re as _re
+import html as _html, re as _re
 def _plain(h):
-    return _re.sub(r"\s+", " ", _re.sub(r"(?s)<[^>]+>", " ", h)).strip()
+    """The visible answer as plain text for the JSON-LD. Entities are unescaped
+    first: a structured answer reading "Share via&hellip;" is a raw entity in
+    the data, not an ellipsis."""
+    return _re.sub(r"\s+", " ", _html.unescape(_re.sub(r"(?s)<[^>]+>", " ", h))).strip()
 
 write("/faq",
       "bookmarker FAQ — accounts, search, privacy and limits",
