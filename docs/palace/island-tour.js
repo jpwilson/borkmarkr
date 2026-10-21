@@ -56,7 +56,7 @@ export function zonePose(layout, zone, opts = {}) {
     river:    { dist: 780,  height: 430, lift: 40,  fov: 42, az: 1.95 },
     falls:    { dist: 980,  height: 330, lift: 150, fov: 40, az: -1.47, abs: true, aim: [0, -430] },
     swamp:    { dist: 740,  height: 380, lift: 20,  fov: 44, az: 2.35 },
-    lagoon:   { dist: 900,  height: 430, lift: 20,  fov: 42, az: 0.75 },
+    lagoon:   { dist: 760,  height: 340, lift: 10,  fov: 42, az: 1.30 },
     highland: { dist: 940,  height: 660, lift: 180, fov: 40, az: 2.55 },
     crater:   { dist: 720,  height: 540, lift: 110, fov: 40, az: 1.85 },
   }[zone.siteId] || { dist: 820, height: 500, lift: 60, fov: 42, az: 1.35 };
