@@ -33,8 +33,8 @@ export const PAL = {
   moss:       srgb("#3c5c1d"),
   rockDark:   srgb("#2e2823"),
   rockWet:    srgb("#4c4840"),
-  rockPale:   srgb("#938f7e"),
-  limestone:  srgb("#d2cebb"),
+  rockPale:   srgb("#8d9088"),
+  limestone:  srgb("#c6c8c1"),
   ash:        srgb("#332d29"),
   ashLight:   srgb("#564c43"),
   lava:       srgb("#b4350f"),
@@ -98,7 +98,7 @@ export const groundAt = (field, x, z) => sampleGrid(field, field.h, x, z);
 /* Sun visibility: march the grid toward the sun and look for anything that
    rises above the ray. Soft-edged, so ridge shadows have a penumbra. */
 export const SUN_AZ = 2.63;   // from the west-north-west
-export const SUN_EL = 0.285;  // low, golden hour
+export const SUN_EL = 0.33;  // low, golden hour
 
 function bakeSun(field) {
   const { res, step, h, shade } = field;
@@ -175,6 +175,14 @@ function groundColor(x, z, y, slope, moist, zoneGap, out) {
   if (ashAmt > 0) rock = lerp3(rock, lerp3(PAL.ash, PAL.ashLight, clamp(0.3 + varia, 0, 1), [0, 0, 0]), clamp(ashAmt * 1.3, 0, 1), tmpB);
   lerp3(veg, rock, rockAmt, out);
 
+  // caldera floor: cooled basalt, with the vent still warm
+  if (vd < 230 && y < 540) {
+    const t = sstep(230, 60, vd);
+    lerp3(out, PAL.ash, t * 0.85, out);
+    const vent = sstep(96, 20, vd) * sstep(520, 440, y);
+    if (vent > 0) lerp3(out, PAL.lava, vent * 0.75, out);
+  }
+
   // marsh and riverbank
   const r = riverSample(x, z);
   if (r.d < 180) lerp3(out, PAL.marsh, Math.exp(-(r.d * r.d) / (120 * 120)) * 0.7, out);
@@ -187,9 +195,9 @@ function groundColor(x, z, y, slope, moist, zoneGap, out) {
   if (beach > 0) lerp3(out, PAL.sand, clamp(beach, 0, 1), out);
 
   // the trail that runs the zone boundary, the way the aerial reference reads
-  if (zoneGap < 46 && y > 20 && slope < 1.05) {
-    const t = sstep(46, 8, zoneGap) * clamp(1.15 - slope * 0.7, 0, 1);
-    lerp3(out, PAL.trail, t * 0.8, out);
+  if (zoneGap < 52 && y > 16 && slope < 1.15) {
+    const t = sstep(52, 10, zoneGap) * clamp(1.2 - slope * 0.6, 0, 1);
+    lerp3(out, PAL.trail, t * 0.92, out);
   }
 
   // under water: pale sand in the shallows, dark basalt as it drops away
@@ -256,9 +264,23 @@ export function buildTerrain(field, uniforms) {
 
 /* ── shared shader chunks ───────────────────────────────────────────────── */
 export const ATMOS_PARS = /* glsl */`
-  uniform vec3 uSunDir, uSunColor, uSkyColor, uGroundColor, uFogColor, uHazeColor, uSunHaze;
+  uniform vec3 uSunDir, uSunColor, uSkyColor, uSkyMid, uZenith, uGroundColor, uFogColor, uHazeColor, uSunHaze;
   uniform float uFogDensity, uFogHeight, uTime, uExposure;
   varying vec3 vWorld;
+
+  /* One sky, used by the dome and by every reflection, so the sea is the
+     colour of the sky above it instead of a guess. */
+  vec3 skyAt(vec3 d) {
+    float h = clamp(d.y, -1.0, 1.0);
+    vec3 c = mix(uSkyMid, uZenith, pow(clamp(h, 0.0, 1.0), 0.55));
+    float horizon = pow(1.0 - clamp(abs(h) * 9.5, 0.0, 1.0), 2.6);
+    c = mix(c, uHazeColor, horizon * 0.72);
+    float toSun = max(0.0, dot(d, uSunDir));
+    c = mix(c, uSunHaze, pow(toSun, 3.5) * 0.55 * (1.0 - smoothstep(0.1, 0.5, h)));
+    c += uSunHaze * pow(toSun, 12.0) * 0.35;
+    c = mix(c, uFogColor * 0.8, smoothstep(0.0, -0.09, h));
+    return c;
+  }
 
   // Warm aerial perspective: thicker low down, and brighter when you look
   // into the sun, which is what makes the mist read as light rather than haze.

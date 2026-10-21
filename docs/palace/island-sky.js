@@ -12,27 +12,20 @@ export function buildSky(uniforms) {
     uniforms,
     side: THREE.BackSide,
     depthWrite: false,
-    vertexShader: `varying vec3 vDir;
-      void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    vertexShader: `varying vec3 vDir; varying vec3 vWorld;
+      void main(){ vDir = normalize(position); vWorld = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
     fragmentShader: /* glsl */`
-      uniform vec3 uSunDir, uSunColor, uSkyColor, uSkyMid, uHazeColor, uSunHaze, uFogColor, uZenith;
-      uniform float uTime, uExposure;
+      ${ATMOS_PARS}
       uniform sampler2D uDetail;
       varying vec3 vDir;
       void main() {
         vec3 d = normalize(vDir);
-        float h = clamp(d.y, -1.0, 1.0);
-        // band the sky: zenith → sky → warm haze sitting on the horizon
-        vec3 color = mix(uSkyMid, uZenith, pow(clamp(h, 0.0, 1.0), 0.55));
-        float horizon = pow(1.0 - clamp(abs(h) * 9.5, 0.0, 1.0), 2.6);
-        color = mix(color, uHazeColor, horizon * 0.72);
+        float h = d.y;
+        vec3 color = skyAt(d);
         float toSun = max(0.0, dot(d, uSunDir));
-        color = mix(color, uSunHaze, pow(toSun, 3.5) * 0.55 * (1.0 - smoothstep(0.1, 0.5, h)));
-        color += uSunHaze * pow(toSun, 12.0) * 0.35;
-        color += uSunColor * pow(toSun, 70.0) * 1.1;
-        // the disc itself, slightly flattened by the haze
+        // the disc itself, flattened by the haze it sits in
         float disc = smoothstep(0.99955, 0.99985, toSun);
-        color = mix(color, uSunColor * 3.0, disc * clamp(h * 14.0, 0.0, 1.0));
+        color = mix(color, uSunColor * 2.6, disc * clamp(h * 14.0, 0.0, 1.0));
 
         // long low cloud banks, drifting
         vec2 p = vec2(atan(d.z, d.x) * 0.42, d.y * 2.6);
@@ -42,8 +35,6 @@ export function buildSky(uniforms) {
         vec3 cloud = mix(uHazeColor * 0.7, uSunHaze * 1.2, pow(toSun, 2.0) * 0.8 + 0.2);
         color = mix(color, cloud, band * 0.62);
 
-        // below the horizon the dome is just sea haze
-        color = mix(color, uFogColor * 0.8, smoothstep(0.0, -0.09, h));
         gl_FragColor = vec4(color * uExposure, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -183,6 +174,11 @@ export function buildMist(field, layout, uniforms, groundAt) {
     const base = Math.max(4, g) + 12 + r() * 70;
     low.push({ x, y: base, z, s: 130 + 240 * r(), seed: r(), speed: 0.5 + r() });
   }
+  // banks lying on the water out among the sea stacks
+  for (let i = 0; i < 60; i++) {
+    const x = 760 + 1500 * r(), z = -1300 + 2600 * r();
+    low.push({ x, y: 10 + 70 * r(), z, s: 180 + 300 * r(), seed: r(), speed: 0.35 + 0.8 * r() });
+  }
   for (let i = 0; i < 46; i++) {
     const a = r() * Math.PI * 2;
     const rad = 300 + 1100 * Math.sqrt(r());
@@ -192,8 +188,8 @@ export function buildMist(field, layout, uniforms, groundAt) {
   }
   const group = new THREE.Group();
   group.name = "mist";
-  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.97, 0.92], opacity: 0.115, flat: 2.3, name: "mist-low", order: 6 }));
-  group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.085, flat: 2.6, name: "mist-high", order: 7 }));
+  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.97, 0.92], opacity: 0.16, flat: 2.3, name: "mist-low", order: 6 }));
+  group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.1, flat: 2.6, name: "mist-high", order: 7 }));
   return group;
 }
 
@@ -201,13 +197,13 @@ export function buildSmoke(uniforms, site) {
   const r = rnd(1717);
   const list = [];
   const base = heightAt(site.x, site.z);
-  for (let i = 0; i < 34; i++) {
+  for (let i = 0; i < 44; i++) {
     list.push({
       x: site.x + (r() - 0.5) * 70, y: base + 10, z: site.z + (r() - 0.5) * 70,
-      s: 52 + 40 * r(), seed: r(), speed: 0.6 + 0.8 * r(), rise: 420 + 320 * r(),
+      s: 64 + 46 * r(), seed: r(), speed: 0.6 + 0.8 * r(), rise: 480 + 360 * r(),
     });
   }
-  return puffSystem(uniforms, list, { kind: 1, color: [0.8, 0.76, 0.74], opacity: 0.3, flat: 1.25, name: "smoke", order: 8 });
+  return puffSystem(uniforms, list, { kind: 1, color: [0.82, 0.78, 0.76], opacity: 0.4, flat: 1.25, name: "smoke", order: 8 });
 }
 
 export function buildSpray(uniforms) {

@@ -11,7 +11,7 @@ import { buildFlora, setFloraDensity } from "./island-flora.js";
 import { buildOcean, buildInland, buildFalls, depthTexture } from "./island-water.js";
 import { buildSky, buildMist, buildSmoke, buildSpray } from "./island-sky.js";
 import { buildMarkers, buildSelectRing } from "./island-markers.js";
-import { TERRAIN_HALF, clamp, mix, zoneBySite } from "./island-layout.js";
+import { TERRAIN_HALF, STACKS, clamp, mix, zoneBySite } from "./island-layout.js";
 
 const lin = (hex, scale = 1) => {
   const c = new THREE.Color(hex);
@@ -55,11 +55,11 @@ export class IslandScene {
     this.detail = detailTexture(256);
     this.uniforms = {
       uSunDir: { value: sun },
-      uSunColor: { value: lin("#ffe7cc", 1.95) },
-      uSkyColor: { value: lin("#95bdd4", 0.60) },
+      uSunColor: { value: lin("#ffeeda", 1.62) },
+      uSkyColor: { value: lin("#8ab6dc", 0.56) },
       uSkyMid: { value: lin("#86aec6", 1.0) },
       uZenith: { value: lin("#0e3860", 1.0) },
-      uGroundColor: { value: lin("#3c452c", 0.3) },
+      uGroundColor: { value: lin("#35402a", 0.24) },
       uFogColor: { value: lin("#93a8ad", 1.0) },
       uHazeColor: { value: lin("#e4e0d2", 1.0) },
       uSunHaze: { value: lin("#ffd6a2", 1.0) },
@@ -85,7 +85,7 @@ export class IslandScene {
     const u = this.uniforms;
     const field = buildField(this.layout, this.capture ? 449 : 449);
     this.field = field;
-    u.uDepth.value = depthTexture(field);
+    u.uDepth.value = depthTexture(field, STACKS);
     this.disposables.push(u.uDepth.value);
 
     const root = new THREE.Group();

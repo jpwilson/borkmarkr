@@ -11,11 +11,27 @@ import { clamp, mix, RIVER, FALLS, riverSample, heightAt } from "./island-layout
 import { Build } from "./island-props.js";
 
 /* R: depth below the waterline (0..120 → 0..1). G: land height (0..60 → 0..1). */
-export function depthTexture(field) {
-  const { res, h } = field;
+export function depthTexture(field, stacks) {
+  const { res, h, half, step } = field;
   const data = new Uint8Array(res * res * 4);
+  // the towers are props, not terrain: stamp them in so the water shader
+  // breaks surf around their feet like it does on the shore
+  const land = Float32Array.from(h);
+  for (const [x, z, r] of (stacks || [])) {
+    const ri = Math.ceil((r + 26) / step);
+    const ci = Math.round((x + half) / step), cj = Math.round((z + half) / step);
+    for (let j = Math.max(0, cj - ri); j < Math.min(res, cj + ri); j++) {
+      for (let i = Math.max(0, ci - ri); i < Math.min(res, ci + ri); i++) {
+        const dx = (-half + i * step) - x, dz = (-half + j * step) - z;
+        const d = Math.hypot(dx, dz);
+        if (d > r + 26) continue;
+        const ring = Math.max(0, 1 - Math.abs(d - r + 4) / 22);
+        land[j * res + i] = Math.max(land[j * res + i], 7 * ring);
+      }
+    }
+  }
   for (let i = 0; i < res * res; i++) {
-    const y = h[i];
+    const y = land[i];
     data[i * 4] = clamp(-y / 120, 0, 1) * 255;
     data[i * 4 + 1] = clamp(y / 60, 0, 1) * 255;
     data[i * 4 + 2] = clamp((y + 8) / 16, 0, 1) * 255;
@@ -81,7 +97,7 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
     fragmentShader: /* glsl */`
       ${ATMOS_PARS}
       ${WATER_PARS}
-      uniform vec3 uDeep, uShallow, uFoam, uSkyMid;
+      uniform vec3 uDeep, uShallow, uFoam;
       void main() {
         vec3 viewDir = normalize(cameraPosition - vWorld);
         float dist = length(vWorld - cameraPosition);
@@ -96,10 +112,10 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
         body = mix(body, uShallow * 1.25 + uFoam * 0.12, (1.0 - smoothstep(0.0, 9.0, depth)) * 0.65);
 
         float fres = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 4.5);
-        float toSun = max(0.0, dot(reflect(-viewDir, n), uSunDir));
-        float sunward = pow(max(0.0, dot(normalize(vec3(viewDir.x, 0.0, viewDir.z)), -uSunDir)) * 0.5 + 0.5, 4.0);
-        vec3 sky = mix(uSkyMid * 0.34, mix(uHazeColor * 0.52, uSunHaze * 0.72, sunward), 0.55);
-        vec3 color = mix(body, sky, clamp(fres * 0.82 + 0.04, 0.0, 1.0));
+        vec3 refl = reflect(-viewDir, n);
+        float toSun = max(0.0, dot(refl, uSunDir));
+        vec3 sky = skyAt(normalize(vec3(refl.x, abs(refl.y) + 0.02, refl.z))) * 0.88;
+        vec3 color = mix(body, sky, clamp(fres * 0.9 + 0.05, 0.0, 1.0));
         // the glitter path, broad then tight
         color += uSunColor * pow(toSun, 160.0) * 2.2 * detail;
         color += uSunColor * pow(toSun, 26.0) * 0.10;
@@ -146,7 +162,7 @@ export function buildInland(field, uniforms) {
     const v1 = b.vert(ax - px * w0, y0, az - pz * w0, 0, 1, 0, c0, 1, 1, 1);
     const v2 = b.vert(bx - px * w1, y1, bz - pz * w1, 0, 1, 0, c1, 1, 1, 1);
     const v3 = b.vert(bx + px * w1, y1, bz + pz * w1, 0, 1, 0, c1, 1, 1, 1);
-    b.quad(v0, v1, v2, v3);
+    b.quad(v0, v3, v2, v1);
   }
   // crater lake
   const lake = { x: -130, z: -830, r: 118, y: 290 };
@@ -156,7 +172,7 @@ export function buildInland(field, uniforms) {
     const a = (i / 28) * Math.PI * 2;
     ring.push(b.vert(lake.x + Math.cos(a) * lake.r, lake.y, lake.z + Math.sin(a) * lake.r, 0, 1, 0, [0.05, 0.1, 0.11], 1, 1, 1));
   }
-  for (let i = 0; i < 28; i++) b.tri(c, ring[i], ring[(i + 1) % 28]);
+  for (let i = 0; i < 28; i++) b.tri(c, ring[(i + 1) % 28], ring[i]);
   // marsh pools: one low sheet, the mud shows through wherever it is higher
   const M = { x: -740, z: 520, r: 360, y: 6.5 };
   const mc = b.vert(M.x, M.y, M.z, 0, 1, 0, [0.07, 0.085, 0.05], 1, 1, 1);
@@ -166,7 +182,7 @@ export function buildInland(field, uniforms) {
     const rr = M.r * (0.8 + 0.3 * Math.sin(a * 3.1 + 1.2));
     mring.push(b.vert(M.x + Math.cos(a) * rr, M.y, M.z + Math.sin(a) * rr, 0, 1, 0, [0.06, 0.08, 0.05], 1, 1, 1));
   }
-  for (let i = 0; i < 34; i++) b.tri(mc, mring[i], mring[(i + 1) % 34]);
+  for (let i = 0; i < 34; i++) b.tri(mc, mring[(i + 1) % 34], mring[i]);
 
   const mat = new THREE.ShaderMaterial({
     uniforms,
@@ -186,8 +202,9 @@ export function buildInland(field, uniforms) {
         vec3 viewDir = normalize(cameraPosition - vWorld);
         vec3 n = waterNormal(vWorld.xz, uTime * 1.6, 0.09, 0.02);
         float fres = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 4.0);
-        vec3 sky = mix(uSkyColor, uHazeColor, 0.5);
-        vec3 color = mix(vColor, sky, clamp(fres * 0.9 + 0.1, 0.0, 1.0));
+        vec3 refl = reflect(-viewDir, n);
+        vec3 sky = skyAt(normalize(vec3(refl.x, abs(refl.y) + 0.02, refl.z))) * 0.8;
+        vec3 color = mix(vColor, sky, clamp(fres * 0.85 + 0.1, 0.0, 1.0));
         float toSun = max(0.0, dot(reflect(-viewDir, n), uSunDir));
         color += uSunColor * pow(toSun, 48.0) * 0.9;
         color = applyAtmos(color, vWorld, -viewDir);

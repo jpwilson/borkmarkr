@@ -48,19 +48,19 @@ export function mapPose(layout) {
    centre, drop to a helicopter height, and tilt down into the terrain. */
 export function zonePose(layout, zone, opts = {}) {
   const framing = {
-    volcano:  { dist: 980, height: 760, lift: 180, fov: 40 },
-    karst:    { dist: 780, height: 330, lift: 60,  fov: 42 },
-    temple:   { dist: 520, height: 300, lift: 40,  fov: 40 },
-    river:    { dist: 620, height: 310, lift: 30,  fov: 42 },
-    falls:    { dist: 880, height: 420, lift: 70,  fov: 42 },
-    swamp:    { dist: 560, height: 230, lift: 18,  fov: 44 },
-    lagoon:   { dist: 700, height: 300, lift: 20,  fov: 42 },
-    highland: { dist: 820, height: 560, lift: 120, fov: 40 },
-    crater:   { dist: 620, height: 470, lift: 90,  fov: 40 },
-  }[zone.siteId] || { dist: 700, height: 340, lift: 60, fov: 42 };
+    volcano:  { dist: 1120, height: 880, lift: 220, fov: 40 },
+    karst:    { dist: 860,  height: 560, lift: 90,  fov: 42 },
+    temple:   { dist: 640,  height: 520, lift: 40,  fov: 40 },
+    river:    { dist: 760,  height: 520, lift: 40,  fov: 42 },
+    falls:    { dist: 980,  height: 680, lift: 90,  fov: 42 },
+    swamp:    { dist: 720,  height: 430, lift: 20,  fov: 44 },
+    lagoon:   { dist: 880,  height: 480, lift: 20,  fov: 42 },
+    highland: { dist: 900,  height: 700, lift: 150, fov: 40 },
+    crater:   { dist: 700,  height: 600, lift: 100, fov: 40 },
+  }[zone.siteId] || { dist: 800, height: 520, lift: 60, fov: 42 };
   // look into the sun side so the slope is rim-lit and the mist glows
   const bearing = Math.atan2(zone.z, zone.x) + (opts.spin || 0);
-  const a = bearing + (opts.offset ?? 0.55);
+  const a = bearing * 0.35 + 1.35 + (opts.offset ?? 0) * 0.6;
   const d = framing.dist * (opts.dist || 1);
   const pos = v(zone.x + Math.cos(a) * d, zone.y + framing.height, zone.z + Math.sin(a) * d);
   return { pos, target: v(zone.x, zone.y + framing.lift, zone.z), fov: framing.fov };

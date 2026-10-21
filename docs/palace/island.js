@@ -303,6 +303,7 @@ function installCapture() {
         return beat ? beat.start + beat.length * f : 2;
       };
       state.tour.playing = false;
+      let caption = { label: "Library Island", detail: `${state.atlas.total} saves · ${L.zones.length} zones` };
       const show = (view, time, { zone = null, marker = null, labels = true } = {}) => {
         scene.setTime(time);
         scene.showLabels = labels;
@@ -316,20 +317,24 @@ function installCapture() {
           const p = scene.markerScreen(marker);
           ui.showTip(marker, p.x, p.y - 14);
         } else ui.showTip(null);
-        const beat = tour.beatAt(time);
-        ui.setTour({ playing: false, t: time, duration: tour.duration, label: beat.label, detail: beat.detail });
+        ui.setTour({ playing: false, t: time, duration: tour.duration, label: caption.label, detail: caption.detail });
         scene.render();
       };
-      if (name === "overview") show(overviewPose(L, opts.spin || 0), at("overview", 0.8));
-      else if (name === "approach") show(approachPose(L, opts.u ?? 0.62), at("approach", 0.62));
-      else if (name === "map") show(mapPose(L), at("overview", 0.5), { labels: true });
-      else if (name === "zone") {
+      if (name === "approach") {
+        caption = { label: "Open sea", detail: `${state.atlas.total} saves on one island` };
+        show(approachPose(L, opts.u ?? 0.62), at("approach", 0.62));
+      } else if (name === "map") {
+        caption = { label: "Expedition map", detail: `${L.zones.length} zones · ${L.markers.length} markers` };
+        show(mapPose(L), at("overview", 0.5), { labels: true });
+      } else if (name === "zone") {
         const zone = (opts.topic && zoneById(L, opts.topic)) || L.zones[0];
+        caption = { label: zone.place, detail: `${zone.name} · ${zone.total} saved · ${zone.biome}` };
         show(zonePose(L, zone, opts), at(`zone-${zone.siteId}`, 0.75), { zone: zone.index });
       } else if (name === "marker") {
         const marker = (opts.id && L.byId.get(opts.id)) || heroMarker(L);
+        caption = { label: L.zones[marker.zone].place, detail: marker.item.title };
         show(markerPose(L, marker, opts), at("marker", 0.9), { zone: marker.zone, marker });
-      } else show(overviewPose(L, 0), at("overview", 0.8));
+      } else show(overviewPose(L, opts.spin || 0), at("overview", 0.8));
       return name;
     },
     /* Everything a frame depends on, so a determinism check can name the leak. */

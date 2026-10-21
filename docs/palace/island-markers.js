@@ -9,7 +9,7 @@ import { ATMOS_PARS, sampleGrid } from "./island-terrain.js";
 import { Build } from "./island-props.js";
 import { clamp, mix } from "./island-layout.js";
 
-const CANVAS = [0.62, 0.52, 0.36], CANVAS_LIT = [0.86, 0.76, 0.56];
+const CANVAS = [0.74, 0.63, 0.44], CANVAS_LIT = [0.96, 0.88, 0.68];
 const WOOD = [0.16, 0.115, 0.075], WOOD_LIT = [0.3, 0.22, 0.14];
 const CLOTH = [0.72, 0.26, 0.13];
 const STONE = [0.42, 0.4, 0.36];
@@ -103,7 +103,7 @@ function geoFor(kind) {
   return b.geometry();
 }
 
-const KIND_SCALE = { camp: 12.5, totem: 10.5, banner: 12.0, torch: 11.0, cairn: 9.5 };
+const KIND_SCALE = { camp: 15.0, totem: 12.5, banner: 14.5, torch: 13.0, cairn: 11.0 };
 
 export function buildMarkers(field, layout, uniforms) {
   const group = new THREE.Group();
@@ -186,7 +186,7 @@ function buildGlow(layout, uniforms) {
         vec3 c = position;
         float dist = length(c - cameraPosition);
         // a world-space ember that never drops below a readable pixel size
-        float size = max(2.6, dist * 0.0052) * params.y;
+        float size = max(3.4, dist * 0.0062) * params.y;
         vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
         vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
         vec3 world = c + right * corner.x * size + up * corner.y * size;

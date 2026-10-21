@@ -40,7 +40,8 @@ export class Build {
       const i1 = this.vert(...corners[b], ...n, cc, shade, ao);
       const i2 = this.vert(...corners[c], ...n, cc, shade, ao);
       const i3 = this.vert(...corners[d], ...n, cc, shade, ao);
-      this.quad(i0, i1, i2, i3);
+      // wound so the outward face is the front face
+      this.quad(i0, i3, i2, i1);
     }
   }
   cylinder(cx, cy, cz, r0, r1, h, seg, col, shade, tilt = 0, yaw = 0, ao = 1) {
@@ -62,7 +63,7 @@ export class Build {
     }
     for (let i = 0; i < seg; i++) {
       const j = (i + 1) % seg;
-      this.quad(base[i], base[j], top[j], top[i]);
+      this.quad(base[i], top[i], top[j], base[j]);
     }
     // cap
     const capC = this.vert(...place(0, h, 0), 0, 1, 0, [col[0] * 1.14, col[1] * 1.14, col[2] * 1.14], shade, ao);
@@ -71,7 +72,7 @@ export class Build {
       const a = (i / seg) * Math.PI * 2;
       cap.push(this.vert(...place(Math.cos(a) * r1, h, Math.sin(a) * r1), 0, 1, 0, [col[0] * 1.14, col[1] * 1.14, col[2] * 1.14], shade, ao));
     }
-    for (let i = 0; i < seg; i++) this.tri(capC, cap[i], cap[(i + 1) % seg]);
+    for (let i = 0; i < seg; i++) this.tri(capC, cap[(i + 1) % seg], cap[i]);
   }
   geometry() {
     const g = new THREE.BufferGeometry();
@@ -99,20 +100,21 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
   const twist = noise2(seed * 2.2, 0.7) * 1.1;
   const leanX = noise2(seed, 7.7) * 0.10, leanZ = noise2(seed + 2, 5.1) * 0.10;
   // some towers taper like a blade, others stand almost straight
-  const taper = 0.08 + 0.42 * Math.abs(noise2(seed * 1.7, 3.3));
-  const breakAt = 0.74 + 0.2 * Math.abs(noise2(seed + 9, 1.1));
+  const taper = 0.03 + 0.17 * Math.abs(noise2(seed * 1.7, 3.3));
+  const breakAt = 0.86 + 0.1 * Math.abs(noise2(seed + 9, 1.1));
   for (let r = 0; r <= RINGS; r++) {
     const t = r / RINGS;
     // sheer to about three-quarters height, then break into a crown
     const prof = 1 - taper * t - 0.9 * Math.pow(Math.max(0, (t - breakAt) / (1 - breakAt)), 1.7);
-    const ledge = 1 + 0.045 * Math.sin(t * 21 + seed * 3.1) + 0.03 * Math.sin(t * 7.3 - seed);
+    const ledgeWave = Math.sin(t * 19 + seed * 3.1);
+    const ledge = 1 + 0.06 * ledgeWave + 0.035 * Math.sin(t * 7.3 - seed);
     const row = [];
     const y = baseY + t * H;
     for (let i = 0; i < SEG; i++) {
       const a = (i / SEG) * Math.PI * 2 + twist * t;
       const fl = Math.sin(a * 8 + seed * 2.1), fn = noise2(Math.cos(a) * 2.6 + seed, Math.sin(a) * 2.6 + t * 1.6);
       // the crown breaks into separate crags rather than rounding off
-      const crag = t > breakAt ? 0.45 * noise2(Math.cos(a) * 3.4 + seed * 2, Math.sin(a) * 3.4) * ((t - breakAt) / (1 - breakAt)) : 0;
+      const crag = t > breakAt ? 0.7 * noise2(Math.cos(a) * 3.4 + seed * 2, Math.sin(a) * 3.4) * ((t - breakAt) / (1 - breakAt)) : 0;
       const flute = 1 + 0.13 * fl + 0.11 * fn + 0.05 * Math.sin(a * 21 + t * 4.0) + crag;
       const rad = R * Math.max(0.02, prof) * ledge * flute;
       const x = cx + Math.cos(a) * rad * ex + leanX * t * H;
@@ -121,10 +123,11 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
       const streak = clamp(0.5 + 0.8 * noise2(a * 5.1 + seed, t * 0.9), 0, 1);
       let c = mixc(PAL.limestone, PAL.rockPale, 0.3 + 0.4 * noise2(a * 2.3, t * 2.1));
       c = mixc(c, PAL.rockWet, Math.pow(clamp((streak - 0.62) * 2.8, 0, 1), 1.7) * 0.28);
-      const moss = clamp(0.55 * Math.pow(t, 2.0) + 0.75 * noise2(a * 1.9 - seed, t * 3.3) - 0.12, 0, 1);
-      c = mixc(c, moss > 0.6 ? PAL.jungleMid : PAL.moss, clamp((moss - 0.42) * 1.5, 0, 0.8));
+      const moss = clamp(0.5 * Math.pow(t, 1.5) + 0.3 * (1 - t) + 0.8 * noise2(a * 1.9 - seed, t * 3.3) - 0.1, 0, 1);
+      c = mixc(c, moss > 0.6 ? PAL.jungleDeep : PAL.moss, clamp((moss - 0.40) * 1.7, 0, 0.88));
       // the grooves are drawn with shading, not geometry: cheap and legible
-      const groove = clamp(0.58 + 0.46 * (fl * 0.6 + fn * 0.5) + 0.12 * Math.sin(a * 21 + t * 4.0), 0.3, 1.25);
+      const groove = clamp(0.5 + 0.56 * (fl * 0.62 + fn * 0.55) + 0.14 * Math.sin(a * 21 + t * 4.0)
+        + 0.16 * ledgeWave, 0.26, 1.3);
       const up = (0.82 + 0.4 * t) * groove;
       row.push(b.vert(x, y, z, Math.cos(a) * ex, 0.12 + t * 0.35, Math.sin(a) * ez,
         [c[0] * up, c[1] * up, c[2] * up], shadeBase * (0.62 + 0.38 * t), 0.5 + 0.5 * t, 0.2));
@@ -133,11 +136,11 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
   }
   for (let r = 0; r < RINGS; r++) for (let i = 0; i < SEG; i++) {
     const j = (i + 1) % SEG;
-    b.quad(rows[r][i], rows[r][j], rows[r + 1][j], rows[r + 1][i]);
+    b.quad(rows[r][i], rows[r + 1][i], rows[r + 1][j], rows[r][j]);
   }
   const topC = b.vert(cx + leanX * H, baseY + H + R * 0.05, cz + leanZ * H, 0, 1, 0,
     mixc(PAL.limestone, PAL.moss, 0.45), shadeBase, 1, 0.3);
-  for (let i = 0; i < SEG; i++) b.tri(topC, rows[RINGS][i], rows[RINGS][(i + 1) % SEG]);
+  for (let i = 0; i < SEG; i++) b.tri(topC, rows[RINGS][(i + 1) % SEG], rows[RINGS][i]);
 }
 
 export function buildStacks(field, uniforms) {
@@ -164,28 +167,28 @@ export function buildTemple(field, uniforms, site) {
   const cx = site.x, cz = site.z;
   const base = groundAt(field, cx, cz);
   const shade = clamp(sampleGrid(field, field.shade, cx, cz) * 0.45 + 0.55, 0, 1);
-  const stone = mixc(PAL.limestone, PAL.rockPale, 0.25);
+  const stone = mixc(PAL.limestone, PAL.rockPale, 0.12);
   const mossy = mixc(stone, PAL.moss, 0.42);
   const yaw = 0.42;
 
-  const tiers = 5;
+  const tiers = 4;
   for (let i = 0; i < tiers; i++) {
-    const w = 122 - i * 19, hh = 11 - i * 0.7;
-    const y = base + i * (11 - 0.7) + hh / 2 - 2;
+    const w = 164 - i * 30, hh = 22 - i * 1.5;
+    const y = base + i * 21 + hh / 2 - 2;
     const c = mixc(stone, mossy, 0.25 + 0.14 * i);
     b.box(cx, y, cz, w, hh, w, yaw, c, shade, 0.85 - i * 0.05);
   }
   // shrine on top
-  b.box(cx, base + tiers * 10.3 + 7, cz, 26, 15, 26, yaw, mixc(stone, mossy, 0.5), shade, 0.8);
-  b.box(cx, base + tiers * 10.3 + 16, cz, 30, 4, 30, yaw, mixc(stone, PAL.moss, 0.6), shade, 0.75);
+  b.box(cx, base + tiers * 21 + 9, cz, 38, 22, 38, yaw, mixc(stone, mossy, 0.5), shade, 0.8);
+  b.box(cx, base + tiers * 21 + 22, cz, 44, 6, 44, yaw, mixc(stone, PAL.moss, 0.6), shade, 0.75);
 
   // stair down the south face
   const sa = yaw;
-  for (let i = 0; i < 16; i++) {
-    const t = i / 15;
+  for (let i = 0; i < 18; i++) {
+    const t = i / 17;
     const w = 26;
-    const d = 62 - t * 34;
-    const y = base + t * (tiers * 10.3) + 1;
+    const d = 86 - t * 46;
+    const y = base + t * (tiers * 21) + 1;
     b.box(cx + Math.sin(sa) * d, y, cz + Math.cos(sa) * d, w, 3.4, 7, yaw, mixc(stone, mossy, 0.3 + t * 0.3), shade, 0.8);
   }
 
