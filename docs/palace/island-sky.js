@@ -2,7 +2,7 @@
    banks that stack the island into layers, the smoke leaving the caldera and
    the spray at the foot of the falls. All motion is a function of uTime. */
 import * as THREE from "three";
-import { ATMOS_PARS } from "./island-terrain.js";
+import { ATMOS_PARS, sampleGrid } from "./island-terrain.js";
 import { clamp, mix, noise2, FALLS, heightAt } from "./island-layout.js";
 
 /* ── sky dome ───────────────────────────────────────────────────────────── */
@@ -15,23 +15,21 @@ export function buildSky(uniforms) {
     vertexShader: `varying vec3 vDir;
       void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
     fragmentShader: /* glsl */`
-      uniform vec3 uSunDir, uSunColor, uSkyColor, uHazeColor, uFogColor, uZenith;
+      uniform vec3 uSunDir, uSunColor, uSkyColor, uSkyMid, uHazeColor, uSunHaze, uFogColor, uZenith;
       uniform float uTime, uExposure;
       uniform sampler2D uDetail;
       varying vec3 vDir;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
       void main() {
         vec3 d = normalize(vDir);
         float h = clamp(d.y, -1.0, 1.0);
         // band the sky: zenith → sky → warm haze sitting on the horizon
-        vec3 color = mix(uSkyColor, uZenith, pow(clamp(h, 0.0, 1.0), 0.65));
-        float horizon = pow(1.0 - clamp(abs(h) * 3.4, 0.0, 1.0), 2.0);
-        color = mix(color, uHazeColor, horizon * 0.92);
+        vec3 color = mix(uSkyMid, uZenith, pow(clamp(h, 0.0, 1.0), 0.55));
+        float horizon = pow(1.0 - clamp(abs(h) * 9.5, 0.0, 1.0), 2.6);
+        color = mix(color, uHazeColor, horizon * 0.72);
         float toSun = max(0.0, dot(d, uSunDir));
-        color += uSunColor * pow(toSun, 5.0) * 0.5;
-        color += uSunColor * pow(toSun, 90.0) * 2.4;
-        color += uSunColor * smoothstep(0.9995, 0.99985, 1.0 - (1.0 - toSun)) * 0.0;
+        color = mix(color, uSunHaze, pow(toSun, 3.5) * 0.55 * (1.0 - smoothstep(0.1, 0.5, h)));
+        color += uSunHaze * pow(toSun, 12.0) * 0.35;
+        color += uSunColor * pow(toSun, 70.0) * 1.1;
         // the disc itself, slightly flattened by the haze
         float disc = smoothstep(0.99955, 0.99985, toSun);
         color = mix(color, uSunColor * 3.0, disc * clamp(h * 14.0, 0.0, 1.0));
@@ -40,9 +38,9 @@ export function buildSky(uniforms) {
         vec2 p = vec2(atan(d.z, d.x) * 0.42, d.y * 2.6);
         float n = texture2D(uDetail, p * vec2(0.5, 1.2) + vec2(uTime * 0.0012, 0.0)).r
                 + texture2D(uDetail, p * vec2(1.6, 2.4) - vec2(uTime * 0.0021, 0.0)).g * 0.6;
-        float band = smoothstep(0.72, 1.25, n) * smoothstep(0.52, 0.06, abs(h - 0.075));
-        vec3 cloud = mix(uHazeColor * 0.75, uSunColor * 1.25, pow(toSun, 2.0) * 0.8 + 0.25);
-        color = mix(color, cloud, band * 0.8);
+        float band = smoothstep(0.80, 1.3, n) * smoothstep(0.42, 0.04, abs(h - 0.085));
+        vec3 cloud = mix(uHazeColor * 0.7, uSunHaze * 1.2, pow(toSun, 2.0) * 0.8 + 0.2);
+        color = mix(color, cloud, band * 0.62);
 
         // below the horizon the dome is just sea haze
         color = mix(color, uFogColor * 0.8, smoothstep(0.0, -0.09, h));
@@ -137,8 +135,6 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
       uniform sampler2D uDetail;
       uniform vec3 uTint; uniform float uOpacity, uKind;
       varying vec2 vUv; varying float vSeed; varying float vFade;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
       void main() {
         float r = length(vUv);
         float soft = smoothstep(1.0, 0.1, r);
@@ -149,7 +145,7 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
         vec3 viewDir = normalize(cameraPosition - vWorld);
         float toSun = max(0.0, dot(normalize(-viewDir), uSunDir));
         // mist is lit from behind by a low sun: that is the whole effect
-        vec3 color = uTint * (uSkyColor * 0.55 + uSunColor * (0.35 + pow(toSun, 2.5) * 1.5));
+        vec3 color = uTint * (uSkyColor * 0.85 + uSunColor * (0.10 + pow(toSun, 3.0) * 0.55));
         float dist = length(vWorld - cameraPosition);
         alpha *= smoothstep(30.0, 220.0, dist);
         color = applyAtmos(color, vWorld, -viewDir);
@@ -176,13 +172,16 @@ const rnd = (seed) => {
 export function buildMist(field, layout, uniforms, groundAt) {
   const r = rnd(4242);
   const low = [], high = [];
-  for (let i = 0; i < 150; i++) {
+  // low mist collects where the ground is concave: valleys, basins, the bay
+  for (let i = 0; i < 900 && low.length < 130; i++) {
     const a = r() * Math.PI * 2;
-    const rad = 400 + 1500 * Math.sqrt(r());
+    const rad = 300 + 1600 * Math.sqrt(r());
     const x = Math.cos(a) * rad, z = Math.sin(a) * rad;
     const g = groundAt(x, z);
-    const base = Math.max(6, g) + 18 + r() * 90;
-    low.push({ x, y: base, z, s: 150 + 260 * r(), seed: r(), speed: 0.5 + r() });
+    const hollow = field ? sampleGrid(field, field.ao, x, z) : 0.5;
+    if (g > 6 && hollow > 0.80) continue;
+    const base = Math.max(4, g) + 12 + r() * 70;
+    low.push({ x, y: base, z, s: 130 + 240 * r(), seed: r(), speed: 0.5 + r() });
   }
   for (let i = 0; i < 46; i++) {
     const a = r() * Math.PI * 2;
@@ -193,8 +192,8 @@ export function buildMist(field, layout, uniforms, groundAt) {
   }
   const group = new THREE.Group();
   group.name = "mist";
-  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.97, 0.92], opacity: 0.30, flat: 2.3, name: "mist-low", order: 6 }));
-  group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.22, flat: 2.6, name: "mist-high", order: 7 }));
+  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.97, 0.92], opacity: 0.115, flat: 2.3, name: "mist-low", order: 6 }));
+  group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.085, flat: 2.6, name: "mist-high", order: 7 }));
   return group;
 }
 
@@ -208,7 +207,7 @@ export function buildSmoke(uniforms, site) {
       s: 52 + 40 * r(), seed: r(), speed: 0.6 + 0.8 * r(), rise: 420 + 320 * r(),
     });
   }
-  return puffSystem(uniforms, list, { kind: 1, color: [0.78, 0.74, 0.72], opacity: 0.42, flat: 1.25, name: "smoke", order: 8 });
+  return puffSystem(uniforms, list, { kind: 1, color: [0.8, 0.76, 0.74], opacity: 0.3, flat: 1.25, name: "smoke", order: 8 });
 }
 
 export function buildSpray(uniforms) {
@@ -223,5 +222,5 @@ export function buildSpray(uniforms) {
       });
     }
   }
-  return puffSystem(uniforms, list, { kind: 2, color: [1, 1, 1], opacity: 0.4, flat: 1.4, name: "spray", order: 9 });
+  return puffSystem(uniforms, list, { kind: 2, color: [1, 1, 1], opacity: 0.3, flat: 1.4, name: "spray", order: 9 });
 }

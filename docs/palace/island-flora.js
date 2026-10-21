@@ -30,7 +30,7 @@ function blobGeometry({ bands = 3, segs = 9, squash = 0.74, dent = 0.3, seed = 1
       const y = Math.cos(phi) * r * squash;
       const up = clamp(y * 0.5 + 0.55, 0, 1.2);
       // dark underside, sunlit crown, a touch of yellow in the highlights
-      const c = mixc(mixc([0.08, 0.13, 0.05], [0.22, 0.4, 0.09], Math.pow(up, 1.5)), [0.46, 0.5, 0.14], Math.pow(up, 4.0) * 0.5);
+      const c = mixc(mixc([0.030, 0.052, 0.018], [0.14, 0.27, 0.052], Math.pow(up, 1.45)), [0.37, 0.42, 0.10], Math.pow(up, 4.5) * 0.55);
       const l = Math.hypot(x, y, z) || 1;
       row.push(pos.length / 3);
       pos.push(x, y + 0.26, z); nrm.push(x / l, y / l, z / l); col.push(c[0], c[1], c[2]);
@@ -174,8 +174,6 @@ export function floraMaterial(uniforms, { sway = 1 } = {}) {
     fragmentShader: /* glsl */`
       ${ATMOS_PARS}
       varying vec3 vNormal; varying vec3 vColor; varying vec3 vLit;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
       void main() {
         vec3 n = normalize(vNormal);
         vec3 viewDir = normalize(cameraPosition - vWorld);
@@ -221,14 +219,14 @@ const VOLCANO = { x: -150, z: -330 };
    from the air — bare ash, pale karst, open temple plaza, marsh, dunes — are
    mostly this function saying no. */
 function canopyDensity(field, x, z, h, slope, moist, zone, temple) {
-  if (h < 3.5 || h > 560) return 0;
-  if (slope > 1.25) return 0;
+  if (h < 3.5 || h > 820) return 0;
+  if (slope > 2.0) return 0;
   let d = 0.25 + 0.95 * moist;
-  d *= clamp(1.35 - slope * 0.75, 0.15, 1);
+  d *= clamp(1.4 - slope * 0.42, 0.22, 1);
   d *= sstep(3.5, 16, h);
-  d *= 1 - 0.85 * sstep(430, 560, h);
+  d *= 1 - 0.8 * sstep(560, 760, h);
   const vd = Math.hypot(x - VOLCANO.x, z - VOLCANO.z);
-  d *= clamp(sstep(150, 520, vd), 0.0, 1);                       // ash cone is bare
+  d *= clamp(sstep(110, 340, vd), 0.0, 1);                       // ash cone is bare
   if (temple) d *= clamp(sstep(72, 170, Math.hypot(x - temple.x, z - temple.z)), 0.08, 1);
   const beach = sstep(80, 20, coastField(x, z)) * sstep(24, 8, h);
   d *= 1 - 0.9 * beach;
@@ -241,7 +239,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
   const temple = layout.zones.find((z) => z.siteId === "temple") || null;
   const canopy = [], emergent = [], palms = [], mangroves = [], scrub = [];
   const R = ISLAND_R + 60;
-  const CLUSTERS = 15000;
+  const CLUSTERS = 21000;
   const r = rng(99173);
 
   for (let i = 0; i < CLUSTERS; i++) {
@@ -261,7 +259,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
     const coast = coastField(cx, cz);
     if (h > 2.2 && h < 26 && coast < 110 && slope < 0.33) {
       if (r() < 0.5) {
-        const s = 11 + 9 * r();
+        const s = 8 + 7 * r();
         palms.push({ x: cx, z: cz, y: h - 0.5, s, yaw: r() * 6.28, tint: [0.85 + 0.3 * r(), 0.9 + 0.25 * r(), 0.8 + 0.3 * r()], shade, ao });
       }
       if (r() < 0.25) scrub.push({ x: cx, z: cz, y: h, s: 2.2 + 2 * r(), yaw: r() * 6.28, tint: [1.0, 0.98, 0.72], shade, ao, dry: 1 });
@@ -272,7 +270,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
     if (marshD < 420 && h > 1 && h < 20) {
       const n = 1 + Math.floor(r() * 2);
       for (let k = 0; k < n; k++) {
-        const s = 9 + 7 * r();
+        const s = 7 + 6 * r();
         mangroves.push({ x: cx + (r() - 0.5) * 30, z: cz + (r() - 0.5) * 30, y: h - 1.5, s, yaw: r() * 6.28,
           tint: [0.6 + 0.25 * r(), 0.72 + 0.25 * r(), 0.5 + 0.3 * r()], shade, ao });
       }
@@ -283,7 +281,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
     if (d <= 0.02) {
       // bare ground still gets dry scrub, which keeps the ash and the summits
       // from reading as empty polygons
-      if (h > 6 && h < 620 && slope < 1.3 && r() < 0.5) {
+      if (h > 6 && h < 860 && slope < 2.2 && r() < 0.55) {
         const dry = clamp(1 - moist, 0, 1);
         scrub.push({ x: cx, z: cz, y: h, s: 2.4 + 3.4 * r(), yaw: r() * 6.28,
           tint: [0.85 + 0.5 * dry, 0.8 + 0.3 * dry, 0.45 + 0.2 * dry], shade, ao, dry });
@@ -291,22 +289,22 @@ export function buildFlora(field, layout, uniforms, stacks) {
       continue;
     }
     // a clump of 1–5 crowns, so the canopy is lumpy rather than evenly dotted
-    const n = 1 + Math.floor(d * 4.4 * (0.6 + 0.8 * r()));
-    const spreadR = 12 + 20 * r();
+    const n = 2 + Math.floor(d * 5.2 * (0.6 + 0.8 * r()));
+    const spreadR = 9 + 15 * r();
     for (let k = 0; k < n; k++) {
       const ka = r() * 6.283, kr = spreadR * Math.sqrt(r());
       const x = cx + Math.cos(ka) * kr, z = cz + Math.sin(ka) * kr;
       const y = groundAt(field, x, z);
       if (y < 2.5) continue;
-      const s = (10 + 15 * r()) * (0.75 + 0.45 * d);
+      const s = (5.5 + 9.5 * r()) * (0.8 + 0.45 * d);
       const wet = clamp(moist + 0.25 * (r() - 0.5), 0, 1);
       // tint: wetter is deeper and bluer, drier is olive and yellow
       const tint = [mix(1.18, 0.78, wet) + 0.16 * (r() - 0.5), mix(0.92, 1.05, wet) + 0.14 * (r() - 0.5), mix(0.62, 0.88, wet) + 0.12 * (r() - 0.5)];
       canopy.push({ x, z, y: y - s * 0.16, s, yaw: r() * 6.28, tint, shade, ao, moist: wet });
     }
     // the tall ones that break the canopy line
-    if (r() < 0.055 * d && h > 40 && h < 460) {
-      const s = 34 + 30 * r();
+    if (r() < 0.05 * d && h > 40 && h < 620) {
+      const s = 22 + 20 * r();
       emergent.push({ x: cx, z: cz, y: h - 1, s, yaw: r() * 6.28,
         tint: [0.82 + 0.2 * r(), 0.95 + 0.15 * r(), 0.7 + 0.2 * r()], shade, ao, moist });
     }
@@ -361,7 +359,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
     made.push(mesh);
   };
 
-  const canopyGeo = blobGeometry({ bands: 3, segs: 9, squash: 0.76, dent: 0.32, seed: 1.1, pinch: 0.58 });
+  const canopyGeo = blobGeometry({ bands: 3, segs: 9, squash: 0.66, dent: 0.44, seed: 1.1, pinch: 0.3 });
   const scrubGeo = blobGeometry({ bands: 2, segs: 7, squash: 0.62, dent: 0.4, seed: 7.3, pinch: 0.5 });
   add("canopy", canopyGeo, canopy, 7717, 1);
   add("emergent", emergentGeometry(), emergent, 3391, 1);

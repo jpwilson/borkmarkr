@@ -40,7 +40,7 @@ export class IslandScene {
     renderer.setPixelRatio(this.capture ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 0.94;
     renderer.setClearColor(0x9fb0b4, 1);
     this.renderer = renderer;
 
@@ -55,20 +55,22 @@ export class IslandScene {
     this.detail = detailTexture(256);
     this.uniforms = {
       uSunDir: { value: sun },
-      uSunColor: { value: lin("#ffc78a", 1.75) },
-      uSkyColor: { value: lin("#8ab2c8", 0.52) },
-      uZenith: { value: lin("#1d4f78", 1.0) },
-      uGroundColor: { value: lin("#43412c", 0.34) },
-      uFogColor: { value: lin("#c3bfb2", 1.0) },
-      uHazeColor: { value: lin("#f3d3a6", 1.0) },
-      uFogDensity: { value: 0.000235 },
-      uFogHeight: { value: 340 },
+      uSunColor: { value: lin("#ffead6", 1.62) },
+      uSkyColor: { value: lin("#95bdd4", 0.72) },
+      uSkyMid: { value: lin("#86aec6", 1.0) },
+      uZenith: { value: lin("#0e3860", 1.0) },
+      uGroundColor: { value: lin("#3c452c", 0.3) },
+      uFogColor: { value: lin("#93a8ad", 1.0) },
+      uHazeColor: { value: lin("#e4e0d2", 1.0) },
+      uSunHaze: { value: lin("#ffd6a2", 1.0) },
+      uFogDensity: { value: 0.000104 },
+      uFogHeight: { value: 430 },
       uTime: { value: 0 },
       uExposure: { value: 1.0 },
       uDetail: { value: this.detail },
       uHalf: { value: TERRAIN_HALF },
-      uDeep: { value: lin("#082230", 1) },
-      uShallow: { value: lin("#2f9e94", 1) },
+      uDeep: { value: lin("#04171f", 1) },
+      uShallow: { value: lin("#1f948a", 1) },
       uFoam: { value: lin("#e9efe9", 1) },
       uSway: { value: 0.9 },
       uDepth: { value: null },
@@ -171,16 +173,23 @@ export class IslandScene {
   updateLabels() {
     const cam = this.camera;
     const p = new THREE.Vector3();
-    const camDir = new THREE.Vector3();
-    cam.getWorldDirection(camDir);
-    for (const l of this.labels) {
+    // biggest zones place first; a label that would collide steps aside
+    const order = [...this.labels].sort((a, b) => b.zone.total - a.zone.total);
+    const taken = [];
+    for (const l of order) {
       p.copy(l.pos).project(cam);
       const behind = p.z > 1;
       const x = (p.x * 0.5 + 0.5) * this.width;
       const y = (-p.y * 0.5 + 0.5) * this.height;
       const dist = l.pos.distanceTo(cam.position);
       const inside = x > 40 && x < this.width - 40 && y > 30 && y < this.height - 30;
-      const show = !behind && inside && dist < 6200 && this.showLabels !== false;
+      let show = !behind && inside && dist < 6800 && this.showLabels !== false;
+      if (show) {
+        const w = Math.max(96, l.el.offsetWidth), h = Math.max(26, l.el.offsetHeight);
+        const box = { x0: x - w / 2, x1: x + w / 2, y0: y - h, y1: y + 4 };
+        const hits = (o) => !(box.x1 < o.x0 - 6 || box.x0 > o.x1 + 6 || box.y1 < o.y0 - 4 || box.y0 > o.y1 + 4);
+        if (taken.some(hits)) show = false; else taken.push(box);
+      }
       l.el.style.display = show ? "" : "none";
       if (!show) continue;
       const fade = clamp(1 - (dist - 3400) / 2600, 0.15, 1) * clamp((dist - 90) / 160, 0, 1);

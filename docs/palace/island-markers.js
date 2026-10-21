@@ -32,8 +32,6 @@ function instancedMaterial(uniforms) {
     fragmentShader: /* glsl */`
       ${ATMOS_PARS}
       varying vec3 vNormal; varying vec3 vColor; varying vec3 vLit;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
       void main() {
         vec3 n = normalize(vNormal);
         vec3 viewDir = normalize(cameraPosition - vWorld);

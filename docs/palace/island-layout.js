@@ -106,21 +106,21 @@ export const RIVER = [
 
 /* Offshore limestone stacks, the Skull Island signature. [x, z, radius, height] */
 export const STACKS = [
-  [1310, -340, 86, 250], [1520, -110, 64, 185], [1230,  60, 104, 300],
-  [1470,  330, 72, 205], [1105, -600, 70, 215], [1690, -420, 58, 150],
-  [1640,  110, 48, 120], [1015,  330, 58, 165], [1800, -140, 44, 104],
-  [ 940, -760, 62, 180], [1240, -860, 50, 140],
+  [1480, -300, 64, 300], [1760, -110, 40, 185], [1390,  140, 78, 360],
+  [1700,  430, 46, 215], [1255, -660, 50, 265], [1960, -430, 32, 150],
+  [1180,  430, 38, 175], [1020, -860, 46, 230], [1560, -720, 30, 130],
+  [ 880,  820, 42, 185], [1240,  760, 34, 150],
 ];
 /* A few on land, in the karst zone, so the biome reads from the air too. */
 export const LAND_STACKS = [
-  [700, -300, 72, 210], [855, -40, 86, 245], [640, -60, 58, 160],
-  [905, -300, 52, 150], [740, 110, 64, 180],
+  [700, -300, 58, 300], [865, -45, 68, 355], [640, -60, 46, 225],
+  [920, -315, 40, 205], [748, 118, 50, 255], [812, -200, 34, 165],
 ];
 
-const VOLCANO = { x: -150, z: -330, R: 920, H: 690, crater: 165, depth: 215 };
-const MESA = { x: 430, z: -800, R: 455, H: 235, edge: 78 };     // the falls plateau
-const CRATER = { x: -130, z: -830, R: 250, H: 300, lake: 215 };
-const HIGHLAND = { x: -820, z: -180, R: 540, H: 165 };
+const VOLCANO = { x: -150, z: -330, R: 780, H: 880, crater: 150, depth: 260 };
+const MESA = { x: 430, z: -800, R: 420, H: 250, edge: 95 };     // the falls plateau
+const CRATER = { x: -130, z: -830, R: 240, H: 380, lake: 290 };
+const HIGHLAND = { x: -820, z: -180, R: 520, H: 290 };
 const TEMPLE = { x: 150, z: 450, R: 300, H: 128 };
 const MARSH = { x: -740, z: 520, R: 330 };
 const BEACH = { x: 660, z: 620, R: 400 };
@@ -163,9 +163,11 @@ export function heightAt(x, z) {
   if (m <= 0) {
     h = -150 * Math.pow(clamp(-m / 480, 0, 1), 0.75) - 3;
   } else {
-    const rel = ridged(x * 0.00082, z * 0.00082, 5);
-    const detail = 46 * fbm(x * 0.0043, z * 0.0043, 3);
-    h = (326 * Math.pow(rel, 1.30) + detail + 16) * Math.pow(sstep(0, 1, shore), 0.72);
+    const rel = ridged(x * 0.00074, z * 0.00074, 5);
+    const spine = ridged(x * 0.0021 + 3.3, z * 0.0021 - 1.7, 3);
+    const detail = 52 * fbm(x * 0.0043, z * 0.0043, 3);
+    h = (470 * Math.pow(rel, 1.42) + 110 * Math.pow(spine, 2.2) * rel + detail + 14)
+      * Math.pow(sstep(0, 1, shore), 0.62);
   }
 
   // Reef crest around the lagoon, a few metres under the surface.
@@ -199,7 +201,8 @@ export function heightAt(x, z) {
   // The falls mesa: a flat-topped plateau whose seaward rim is a sheer cliff.
   const md = Math.hypot((x - MESA.x) * 1.0, (z - MESA.z) * 1.12);
   if (md < MESA.R + 160) {
-    const rim = MESA.R * (1 + 0.07 * noise2(Math.atan2(z - MESA.z, x - MESA.x) * 2.3, 9.1));
+    const ma = Math.atan2(z - MESA.z, x - MESA.x);
+    const rim = MESA.R * (1 + 0.14 * noise2(ma * 2.3, 9.1) + 0.07 * noise2(ma * 5.1, 2.2));
     const t = sstep(rim, rim - MESA.edge, md);
     h = mix(h, Math.max(h, MESA.H + 120 + 34 * fbm(x * 0.004, z * 0.004, 3)), t);
   }

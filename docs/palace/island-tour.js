@@ -21,21 +21,21 @@ function catmull(p0, p1, p2, p3, u, key) {
 
 /* ── reusable framings, shared by the tour and by ?capture poses ────────── */
 export function overviewPose(layout, spin = 0) {
-  const a = -0.30 + spin;
-  const d = 2460;
+  const a = 0.88 + spin;
+  const d = 3700;
   return {
-    pos: v(Math.cos(a) * d, 1180, Math.sin(a) * d),
-    target: v(-40, 230, -90),
-    fov: 38,
+    pos: v(Math.cos(a) * d, 1340, Math.sin(a) * d),
+    target: v(-30, 250, -70),
+    fov: 36,
   };
 }
 
 export function approachPose(layout, u = 0.5) {
   // low over the sea, coming in through the stacks from the east
-  const far = v(3750, 78, 980), near = v(1560, 112, 330);
+  const far = v(3450, 70, 1850), near = v(1500, 108, 760);
   return {
     pos: v(mix(far.x, near.x, u), mix(far.y, near.y, u), mix(far.z, near.z, u)),
-    target: v(mix(600, 180, u), mix(150, 240, u), mix(-180, -230, u)),
+    target: v(mix(700, 180, u), mix(130, 260, u), mix(-60, -200, u)),
     fov: 44,
   };
 }

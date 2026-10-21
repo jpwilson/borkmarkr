@@ -40,15 +40,15 @@ const WATER_PARS = /* glsl */`
   // three crossed wave trains plus a scrolling detail octave
   vec3 waterNormal(vec2 p, float t, float scale, float amp) {
     vec2 q = p * scale;
-    float a = sin(q.x * 1.0 + q.y * 0.6 + t * 1.10);
-    float b = sin(q.x * -0.7 + q.y * 1.3 + t * 0.83);
-    float c = sin(q.x * 1.9 - q.y * 1.1 + t * 1.57);
-    vec2 g = vec2(
+        vec2 g = vec2(
       cos(q.x + q.y * 0.6 + t * 1.10) * 1.0 - cos(q.x * -0.7 + q.y * 1.3 + t * 0.83) * 0.7 + cos(q.x * 1.9 - q.y * 1.1 + t * 1.57) * 1.9,
       cos(q.x + q.y * 0.6 + t * 1.10) * 0.6 + cos(q.x * -0.7 + q.y * 1.3 + t * 0.83) * 1.3 - cos(q.x * 1.9 - q.y * 1.1 + t * 1.57) * 1.1);
-    vec3 d1 = texture2D(uDetail, p * 0.0023 + vec2(t * 0.004, t * 0.0021)).rgb - 0.5;
-    vec3 d2 = texture2D(uDetail, p * 0.0091 - vec2(t * 0.0032, t * 0.0051)).rgb - 0.5;
-    g += (d1.xy * 2.6 + d2.xy * 1.8);
+    // three incommensurate, rotated samples so the tile never shows
+    mat2 rot = mat2(0.80, -0.60, 0.60, 0.80);
+    vec3 d1 = texture2D(uDetail, p * 0.0031 + vec2(t * 0.004, t * 0.0021)).rgb - 0.5;
+    vec3 d2 = texture2D(uDetail, rot * p * 0.0113 - vec2(t * 0.0032, t * 0.0051)).rgb - 0.5;
+    vec3 d3 = texture2D(uDetail, rot * rot * p * 0.0417 + vec2(t * 0.012, -t * 0.009)).rgb - 0.5;
+    g += (d1.xy * 2.2 + d2.xy * 2.0 + d3.xy * 1.4);
     return normalize(vec3(-g.x * amp, 1.0, -g.y * amp));
   }
 `;
@@ -81,15 +81,13 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
     fragmentShader: /* glsl */`
       ${ATMOS_PARS}
       ${WATER_PARS}
-      uniform vec3 uDeep, uShallow, uFoam;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
+      uniform vec3 uDeep, uShallow, uFoam, uSkyMid;
       void main() {
         vec3 viewDir = normalize(cameraPosition - vWorld);
         float dist = length(vWorld - cameraPosition);
         // flatten the ripples with distance or the horizon turns to static
         float detail = 1.0 - smoothstep(900.0, 7000.0, dist);
-        vec3 n = waterNormal(vWorld.xz, uTime, 0.021, mix(0.012, 0.055, detail));
+        vec3 n = waterNormal(vWorld.xz, uTime, 0.038, mix(0.0028, 0.013, detail));
         vec4 isl = islandAt(vWorld.xz);
         float depth = isl.r * 120.0;
 
@@ -99,11 +97,12 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
 
         float fres = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 4.5);
         float toSun = max(0.0, dot(reflect(-viewDir, n), uSunDir));
-        vec3 sky = mix(uSkyColor, uHazeColor, 0.55);
-        vec3 color = mix(body, sky, clamp(fres * 0.95 + 0.06, 0.0, 1.0));
+        float sunward = pow(max(0.0, dot(normalize(vec3(viewDir.x, 0.0, viewDir.z)), -uSunDir)) * 0.5 + 0.5, 4.0);
+        vec3 sky = mix(uSkyMid * 0.34, mix(uHazeColor * 0.52, uSunHaze * 0.72, sunward), 0.55);
+        vec3 color = mix(body, sky, clamp(fres * 0.82 + 0.04, 0.0, 1.0));
         // the glitter path, broad then tight
-        color += uSunColor * pow(toSun, 60.0) * 1.5 * detail;
-        color += uSunColor * pow(toSun, 9.0) * 0.16;
+        color += uSunColor * pow(toSun, 160.0) * 2.2 * detail;
+        color += uSunColor * pow(toSun, 26.0) * 0.10;
 
         // surf: a band on the waterline, lines rolling in, spray on rock
         float waveline = 0.5 + 0.5 * sin(depth * 0.55 - uTime * 1.8 + (texture2D(uDetail, vWorld.xz * 0.0016).r - 0.5) * 7.0);
@@ -148,7 +147,7 @@ export function buildInland(field, uniforms) {
     b.quad(v0, v1, v2, v3);
   }
   // crater lake
-  const lake = { x: -130, z: -830, r: 118, y: 215 };
+  const lake = { x: -130, z: -830, r: 118, y: 290 };
   const c = b.vert(lake.x, lake.y, lake.z, 0, 1, 0, [0.04, 0.09, 0.1], 1, 1, 1);
   const ring = [];
   for (let i = 0; i < 28; i++) {
@@ -181,8 +180,6 @@ export function buildInland(field, uniforms) {
       ${ATMOS_PARS}
       ${WATER_PARS}
       varying vec3 vColor;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
       void main() {
         vec3 viewDir = normalize(cameraPosition - vWorld);
         vec3 n = waterNormal(vWorld.xz, uTime * 1.6, 0.09, 0.02);
@@ -238,8 +235,6 @@ export function buildFalls(field, uniforms) {
       ${ATMOS_PARS}
       uniform sampler2D uDetail;
       varying vec2 vUv;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
       void main() {
         float v = vUv.y;
         vec2 p = vec2(vUv.x * 2.0, v * 1.6 + uTime * 0.55);

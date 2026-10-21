@@ -91,29 +91,38 @@ const mixc = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2
 /* Undercut at the waterline, fluted sides, mossy shelves, a rounded crown —
    the profile of a Ha Long Bay stack rather than a cone. */
 function tower(b, cx, cz, R, H, baseY, field, seed) {
-  const RINGS = 22, SEG = 26;
+  const RINGS = 24, SEG = 26;
   const rows = [];
-  const shadeBase = field ? clamp(sampleGrid(field, field.shade, cx, cz) * 0.6 + 0.4, 0, 1) : 0.9;
+  const shadeBase = field ? clamp(sampleGrid(field, field.shade, cx, cz) * 0.5 + 0.5, 0, 1) : 0.95;
+  // each tower has its own plan shape and lean, so a cluster never repeats
+  const ex = 1 + 0.26 * noise2(seed, 1.3), ez = 1 - 0.2 * noise2(seed + 4.4, 2.9);
+  const twist = noise2(seed * 2.2, 0.7) * 0.8;
+  const leanX = noise2(seed, 7.7) * 0.07, leanZ = noise2(seed + 2, 5.1) * 0.07;
   for (let r = 0; r <= RINGS; r++) {
     const t = r / RINGS;
-    const prof = Math.pow(1 - Math.pow(t, 2.7), 0.36) * (1 - 0.2 * Math.exp(-Math.pow((t - 0.03) / 0.07, 2)));
-    const shelf = 1 + 0.07 * Math.sin(t * 17 + seed);
+    // sheer to about three-quarters height, then break into a crown
+    const prof = 1 - 0.10 * t - 0.92 * Math.pow(Math.max(0, (t - 0.88) / 0.12), 1.5);
+    const ledge = 1 + 0.045 * Math.sin(t * 21 + seed * 3.1) + 0.03 * Math.sin(t * 7.3 - seed);
     const row = [];
     const y = baseY + t * H;
     for (let i = 0; i < SEG; i++) {
-      const a = (i / SEG) * Math.PI * 2;
-      const flute = 1 + 0.085 * Math.sin(a * 9 + seed * 2.1 + t * 2.0) + 0.06 * noise2(Math.cos(a) * 2.4 + seed, Math.sin(a) * 2.4 + t * 3.1);
-      const rad = R * prof * shelf * flute;
-      const x = cx + Math.cos(a) * rad, z = cz + Math.sin(a) * rad;
-      // pale limestone, wet dark streaks, moss on the shelves and the crown
-      const streak = clamp(0.5 + 0.9 * noise2(a * 3.4 + seed, t * 1.3), 0, 1);
-      let c = mixc(PAL.limestone, PAL.rockWet, Math.pow(streak, 2.0) * 0.8);
-      c = mixc(c, PAL.rockPale, 0.25 * (1 - t));
-      const mossAmt = clamp(0.75 * Math.pow(t, 1.4) + 0.5 * noise2(a * 2.1 - seed, t * 4.7), 0, 1) * (t > 0.12 ? 1 : 0.2);
-      c = mixc(c, mossAmt > 0.55 ? PAL.jungleMid : PAL.moss, clamp((mossAmt - 0.35) * 1.3, 0, 0.85));
-      const lightUp = 0.8 + 0.45 * t;
-      row.push(b.vert(x, y, z, Math.cos(a), 0.22 + t * 0.5, Math.sin(a),
-        [c[0] * lightUp, c[1] * lightUp, c[2] * lightUp], shadeBase * (0.55 + 0.45 * t), 0.55 + 0.45 * t, 0.25));
+      const a = (i / SEG) * Math.PI * 2 + twist * t;
+      const fl = Math.sin(a * 8 + seed * 2.1), fn = noise2(Math.cos(a) * 2.6 + seed, Math.sin(a) * 2.6 + t * 1.6);
+      const flute = 1 + 0.12 * fl + 0.10 * fn + 0.05 * Math.sin(a * 21 + t * 4.0);
+      const rad = R * Math.max(0.02, prof) * ledge * flute;
+      const x = cx + Math.cos(a) * rad * ex + leanX * t * H;
+      const z = cz + Math.sin(a) * rad * ez + leanZ * t * H;
+      // pale limestone; narrow wet streaks; moss in the gullies and the crown
+      const streak = clamp(0.5 + 0.8 * noise2(a * 5.1 + seed, t * 0.9), 0, 1);
+      let c = mixc(PAL.limestone, PAL.rockPale, 0.3 + 0.4 * noise2(a * 2.3, t * 2.1));
+      c = mixc(c, PAL.rockWet, Math.pow(clamp((streak - 0.62) * 2.8, 0, 1), 1.7) * 0.28);
+      const moss = clamp(0.55 * Math.pow(t, 2.0) + 0.75 * noise2(a * 1.9 - seed, t * 3.3) - 0.12, 0, 1);
+      c = mixc(c, moss > 0.6 ? PAL.jungleMid : PAL.moss, clamp((moss - 0.42) * 1.5, 0, 0.8));
+      // the grooves are drawn with shading, not geometry: cheap and legible
+      const groove = clamp(0.58 + 0.46 * (fl * 0.6 + fn * 0.5) + 0.12 * Math.sin(a * 21 + t * 4.0), 0.3, 1.25);
+      const up = (0.82 + 0.4 * t) * groove;
+      row.push(b.vert(x, y, z, Math.cos(a) * ex, 0.12 + t * 0.35, Math.sin(a) * ez,
+        [c[0] * up, c[1] * up, c[2] * up], shadeBase * (0.62 + 0.38 * t), 0.5 + 0.5 * t, 0.2));
     }
     rows.push(row);
   }
@@ -121,7 +130,8 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
     const j = (i + 1) % SEG;
     b.quad(rows[r][i], rows[r][j], rows[r + 1][j], rows[r + 1][i]);
   }
-  const topC = b.vert(cx, baseY + H + R * 0.08, cz, 0, 1, 0, mixc(PAL.jungleMid, PAL.moss, 0.5), shadeBase, 1, 0.5);
+  const topC = b.vert(cx + leanX * H, baseY + H + R * 0.06, cz + leanZ * H, 0, 1, 0,
+    mixc(PAL.jungleMid, PAL.moss, 0.5), shadeBase, 1, 0.5);
   for (let i = 0; i < SEG; i++) b.tri(topC, rows[RINGS][i], rows[RINGS][(i + 1) % SEG]);
 }
 

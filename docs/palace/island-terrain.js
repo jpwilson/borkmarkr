@@ -32,9 +32,9 @@ export const PAL = {
   jungleDry:  srgb("#737139"),
   moss:       srgb("#3c5c1d"),
   rockDark:   srgb("#2e2823"),
-  rockWet:    srgb("#3b3731"),
-  rockPale:   srgb("#6d6a5d"),
-  limestone:  srgb("#8e8c7c"),
+  rockWet:    srgb("#4c4840"),
+  rockPale:   srgb("#827f70"),
+  limestone:  srgb("#bdbaa8"),
   ash:        srgb("#332d29"),
   ashLight:   srgb("#564c43"),
   lava:       srgb("#b4350f"),
@@ -98,7 +98,7 @@ export const groundAt = (field, x, z) => sampleGrid(field, field.h, x, z);
 /* Sun visibility: march the grid toward the sun and look for anything that
    rises above the ray. Soft-edged, so ridge shadows have a penumbra. */
 export const SUN_AZ = 2.63;   // from the west-north-west
-export const SUN_EL = 0.205;  // low, golden hour
+export const SUN_EL = 0.285;  // low, golden hour
 
 function bakeSun(field) {
   const { res, step, h, shade } = field;
@@ -256,7 +256,7 @@ export function buildTerrain(field, uniforms) {
 
 /* ── shared shader chunks ───────────────────────────────────────────────── */
 export const ATMOS_PARS = /* glsl */`
-  uniform vec3 uSunDir, uSunColor, uSkyColor, uGroundColor, uFogColor, uHazeColor;
+  uniform vec3 uSunDir, uSunColor, uSkyColor, uGroundColor, uFogColor, uHazeColor, uSunHaze;
   uniform float uFogDensity, uFogHeight, uTime, uExposure;
   varying vec3 vWorld;
 
@@ -271,8 +271,9 @@ export const ATMOS_PARS = /* glsl */`
     float integral = fh * abs(a - b) / dh;
     float amount = 1.0 - exp(-uFogDensity * dist * integral);
     float toSun = max(0.0, dot(normalize(viewDir), uSunDir));
-    vec3 fogCol = mix(uFogColor, uHazeColor, pow(toSun, 3.0) * 0.85);
-    fogCol += uSunColor * pow(toSun, 14.0) * 0.35 * amount;
+    vec3 fogCol = mix(uFogColor, uHazeColor, pow(toSun, 2.0) * 0.6);
+    fogCol = mix(fogCol, uSunHaze, pow(toSun, 7.0) * 0.55);
+    fogCol += uSunHaze * pow(toSun, 22.0) * 0.5 * amount;
     return mix(color, fogCol, clamp(amount, 0.0, 1.0));
   }
 `;
@@ -293,8 +294,6 @@ export function terrainMaterial(uniforms) {
       ${ATMOS_PARS}
       uniform sampler2D uDetail;
       varying vec3 vNormal; varying vec3 vColor; varying vec3 vLit;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
 
       void main() {
         vec3 n = normalize(vNormal);
