@@ -9,7 +9,7 @@ import { ATMOS_PARS, sampleGrid } from "./island-terrain.js";
 import { Build } from "./island-props.js";
 import { clamp, mix } from "./island-layout.js";
 
-const CANVAS = [0.52, 0.44, 0.30], CANVAS_LIT = [0.72, 0.64, 0.47];
+const CANVAS = [0.30, 0.25, 0.165], CANVAS_LIT = [0.47, 0.40, 0.27];
 const WOOD = [0.16, 0.115, 0.075], WOOD_LIT = [0.3, 0.22, 0.14];
 const CLOTH = [0.72, 0.26, 0.13];
 const STONE = [0.42, 0.4, 0.36];
@@ -105,7 +105,7 @@ function geoFor(kind) {
 
 /* A camp is a camp, not a circus: about a storey and a half on the ground.
    From the air the warm glow below carries them, not their silhouettes. */
-const KIND_SCALE = { camp: 8.6, totem: 7.4, banner: 8.4, torch: 7.8, cairn: 6.6 };
+const KIND_SCALE = { camp: 6.0, totem: 5.4, banner: 6.2, torch: 5.6, cairn: 4.6 };
 
 export function buildMarkers(field, layout, uniforms) {
   const group = new THREE.Group();

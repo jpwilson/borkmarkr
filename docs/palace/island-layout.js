@@ -295,6 +295,27 @@ export function moistureAt(x, z, h) {
   return clamp(w, 0, 1);
 }
 
+/* ── the sun ────────────────────────────────────────────────────────────── */
+/* island-terrain bakes visibility into the field with these; they live here
+   so the pure side of the island can ask the same question without a grid. */
+export const SUN_AZ = 2.63;   // from the west-north-west
+export const SUN_EL = 0.33;   // low, golden hour
+
+/* Does the sun reach (x, z)? March the heightfield toward it and look for
+   anything standing above the ray. Soft-edged, like the baked version. */
+export function sunAt(x, z) {
+  const dx = Math.cos(SUN_AZ), dz = Math.sin(SUN_AZ), dy = Math.tan(SUN_EL);
+  const y0 = heightAt(x, z);
+  let worst = 0;
+  for (let s = 1; s <= 48; s++) {
+    const d = s * 28;
+    const over = (heightAt(x + dx * d, z + dz * d) - (y0 + dy * d + 2)) / (22 + d * 0.085);
+    if (over > worst) worst = over;
+    if (worst > 1) break;
+  }
+  return 1 - clamp(worst, 0, 1);
+}
+
 /* ── how high the jungle stands ─────────────────────────────────────────── */
 /* The tallest crown island-flora can place, measured in the same units the
    scatter uses: (7 + 32)·1.23 of blob radius, plus the squash headroom. The

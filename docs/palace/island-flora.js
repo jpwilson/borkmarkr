@@ -15,9 +15,26 @@ import { clamp, mix, sstep, noise2, fbm, coastField, riverSample, zoneField, ISL
 const mixc = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
 
 /* ── blob geometry: a squashed, dented ball of leaves ───────────────────── */
-function blobGeometry({ bands = 3, segs = 9, squash = 0.74, dent = 0.3, seed = 1, pinch = 0.55 } = {}) {
+/* `lobes` is what stops a crown reading as a toy: instead of one ball, the
+   radius picks up a handful of smooth bulges pointing in fixed directions,
+   so the silhouette breaks into overlapping masses the way a broadleaf crown
+   does. Three seeds give three shapes, which is enough variety at any
+   distance you can tell one tree from another. */
+function blobGeometry({ bands = 3, segs = 9, squash = 0.74, dent = 0.3, seed = 1, pinch = 0.55, lobes = 0 } = {}) {
   const pos = [], nrm = [], col = [], idx = [];
   const rows = [];
+  // lobe directions, spread over the upper hemisphere by the golden angle
+  const lobeDirs = [];
+  for (let k = 0; k < lobes; k++) {
+    const t = (k + 0.5) / lobes;
+    const phi = Math.acos(1 - 0.92 * t);
+    const th = k * 2.3999632 + seed * 2.1;
+    lobeDirs.push({
+      x: Math.sin(phi) * Math.cos(th), y: Math.cos(phi), z: Math.sin(phi) * Math.sin(th),
+      amp: 0.33 + 0.38 * Math.abs(noise2(k * 1.7 + seed, 3.3)),
+      w: 0.62 + 0.34 * Math.abs(noise2(k * 2.9 - seed, 5.1)),
+    });
+  }
   for (let b = 0; b <= bands + 1; b++) {
     const phi = (b / (bands + 1)) * Math.PI;
     const row = [];
@@ -28,13 +45,22 @@ function blobGeometry({ bands = 3, segs = 9, squash = 0.74, dent = 0.3, seed = 1
       const sx = Math.sin(phi) * Math.cos(th), sy = Math.cos(phi), sz = Math.sin(phi) * Math.sin(th);
       let r = 1 + dent * (noise2(sx * 1.15 + seed * 3.1, sz * 1.15 + sy * 1.15)
                         + 0.5 * noise2(sx * 2.6 - seed, sz * 2.6 + sy * 2.2));
+      let lobeAt = 0;
+      for (const L of lobeDirs) {
+        const d = sx * L.x + sy * L.y + sz * L.z;              // cosine to the lobe
+        const bump = Math.exp(-Math.pow((1 - d) / L.w, 2) * 2.4) * L.amp;
+        lobeAt = Math.max(lobeAt, bump);
+        r += bump * 0.45;
+      }
       r *= 1 - pinch * Math.pow(clamp((phi - Math.PI * 0.55) / (Math.PI * 0.45), 0, 1), 1.6);
       const x = Math.sin(phi) * Math.cos(th) * r;
       const z = Math.sin(phi) * Math.sin(th) * r;
       const y = Math.cos(phi) * r * squash;
       const up = clamp(y * 0.5 + 0.55, 0, 1.2);
-      // dark underside, sunlit crown, a touch of yellow in the highlights
-      const c = mixc(mixc([0.013, 0.024, 0.009], [0.075, 0.155, 0.032], Math.pow(up, 1.8)), [0.18, 0.25, 0.058], Math.pow(up, 5.5) * 0.5);
+      // dark underside, sunlit crown, a touch of yellow in the highlights; the
+      // saddles between lobes keep the shadow even where the crown faces up
+      const lit = Math.pow(up, 1.8) * (0.52 + 0.48 * clamp(lobeAt / 0.36, 0, 1));
+      const c = mixc(mixc([0.011, 0.020, 0.008], [0.082, 0.163, 0.034], lit), [0.21, 0.27, 0.062], Math.pow(up, 5.5) * 0.55);
       const l = Math.hypot(x, y, z) || 1;
       row.push(pos.length / 3);
       pos.push(x, y + 0.26, z); nrm.push(x / l, y / l, z / l); col.push(c[0], c[1], c[2]);
@@ -118,8 +144,8 @@ function emergentGeometry() {
     tc.push(c[0], c[1], c[2]);
   }
   trunk.setAttribute("color", new THREE.Float32BufferAttribute(tc, 3));
-  const crown = blobGeometry({ bands: 3, segs: 9, squash: 0.74, dent: 0.2, seed: 5.5, pinch: 0.42 });
-  crown.scale(0.86, 0.66, 0.86);
+  const crown = blobGeometry({ bands: 3, segs: 10, squash: 0.74, dent: 0.18, seed: 5.5, pinch: 0.42, lobes: 4 });
+  crown.scale(0.92, 0.58, 0.92);
   crown.translate(0, 0.42, 0);
   return mergeGeos([trunk.toNonIndexed(), crown.toNonIndexed()]);
 }
@@ -143,7 +169,7 @@ function mergeGeos(list) {
 
 /* ── mangrove: dark crown over a cone of stilt roots ────────────────────── */
 function mangroveGeometry() {
-  const crown = blobGeometry({ bands: 2, segs: 8, squash: 0.5, dent: 0.36, seed: 2.2, pinch: 0.4 });
+  const crown = blobGeometry({ bands: 3, segs: 9, squash: 0.5, dent: 0.3, seed: 2.2, pinch: 0.4, lobes: 3 });
   crown.scale(1, 0.8, 1);
   crown.translate(0, 0.55, 0);
   const roots = new THREE.ConeGeometry(0.55, 0.62, 7, 1, true);
@@ -162,6 +188,7 @@ export function floraMaterial(uniforms, { sway = 1 } = {}) {
       attribute vec3 ilit;
       uniform float uTime, uSway;
       varying vec3 vWorld; varying vec3 vNormal; varying vec3 vColor; varying vec3 vLit;
+      varying float vUp;
       void main() {
         vec3 p = position;
         vec4 wp = modelMatrix * instanceMatrix * vec4(p, 1.0);
@@ -172,27 +199,48 @@ export function floraMaterial(uniforms, { sway = 1 } = {}) {
         vNormal = normalize(mat3(instanceMatrix) * normal);
         vColor = color * instanceColor;
         vLit = ilit;
+        // where this vertex sits in its own crown: 0 underside, 1 sunlit top
+        vUp = clamp(p.y * 0.62 + 0.42, 0.0, 1.0);
         gl_Position = projectionMatrix * viewMatrix * wp;
       }
     `,
     fragmentShader: /* glsl */`
       ${ATMOS_PARS}
-      varying vec3 vNormal; varying vec3 vColor; varying vec3 vLit;
+      uniform sampler2D uDetail;
+      varying vec3 vNormal; varying vec3 vColor; varying vec3 vLit; varying float vUp;
       void main() {
         vec3 n = normalize(vNormal);
         vec3 viewDir = normalize(cameraPosition - vWorld);
+        // leaf clumps: a crown is not a smooth surface, it is a few hundred
+        // sprays of leaves. Two world-space octaves break the normal up so the
+        // shading stops reading as moulded plastic.
+        // fade it out with distance: at a kilometre it is only aliasing
+        float near = 1.0 - smoothstep(260.0, 1500.0, length(vWorld - cameraPosition));
+        vec2 ca = vWorld.xz * 0.17 + vWorld.y * 0.06;
+        vec2 cb = vWorld.zy * 0.52 - vWorld.x * 0.05;
+        float c1 = texture2D(uDetail, ca).r - 0.5;
+        float c2 = texture2D(uDetail, cb).g - 0.5;
+        float c3 = texture2D(uDetail, ca * 3.1 + 0.31).b - 0.5;
+        n = normalize(n + vec3(c1 + c3 * 0.6, (c1 + c2) * 0.28, c2 + c3 * 0.6) * mix(0.16, 0.52, near));
+
         float shade = vLit.x, ao = vLit.y;
+        // ambient occlusion by height: the holes between crowns go dark, which
+        // is what gives an aerial its texture instead of a field of highlights
+        float deep = mix(0.26, 1.0, pow(vUp, 1.35));
         float ndl = dot(n, uSunDir);
-        float sun = pow(clamp(ndl * 0.56 + 0.44, 0.0, 1.0), 1.35) * mix(0.16, 1.0, shade);
+        float sun = pow(clamp(ndl * 0.56 + 0.44, 0.0, 1.0), 1.5) * mix(0.13, 1.0, shade) * mix(0.42, 1.0, vUp);
         vec3 light = uSunColor * sun;
-        light += uSkyColor * (0.33 + 0.26 * n.y) * ao;
-        light += uGroundColor * 0.14 * ao;
+        light += uSkyColor * (0.30 + 0.26 * n.y) * ao * deep;
+        light += uGroundColor * 0.13 * ao * deep;
         // leaves glow where the low sun comes through them
         float trans = pow(clamp(dot(viewDir, -uSunDir), 0.0, 1.0), 2.2) * clamp(0.6 - ndl, 0.0, 1.0);
-        light += uSunColor * trans * 0.55 * shade;
+        light += uSunColor * trans * 0.6 * shade * vUp;
         vec3 color = vColor * light;
+        // a thin hot edge where a crown turns away into the sun
+        float rim = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 2.6) * clamp(ndl * 0.6 + 0.4, 0.0, 1.0);
+        color += uSunColor * rim * 0.26 * shade * vUp;
         vec3 hv = normalize(uSunDir + viewDir);
-        color += uSunColor * pow(max(dot(n, hv), 0.0), 26.0) * 0.07 * shade;
+        color += uSunColor * pow(max(dot(n, hv), 0.0), 26.0) * 0.06 * shade;
         color = applyAtmos(color, vWorld, -viewDir);
         gl_FragColor = vec4(color * uExposure, 1.0);
         #include <tonemapping_fragment>
@@ -219,6 +267,17 @@ function shuffled(list, seed) {
 }
 
 const VOLCANO = { x: -150, z: -330 };
+
+/* A stand of jungle is not one plant. Most crowns are plain green; a tenth
+   are the pale yellow-green of new growth, a tenth the blue-green of the
+   shade species, and a rare few are flowering — the red specks that stop an
+   aerial from reading as a single colour. */
+function species(u) {
+  if (u < 0.11) return [1.40, 1.05, 0.46];
+  if (u < 0.23) return [0.62, 0.97, 1.06];
+  if (u < 0.255) return [1.62, 0.70, 0.50];
+  return [1, 1, 1];
+}
 
 /* How much jungle a spot can hold, 0..1. The biome differences people read
    from the air — bare ash, pale karst, open temple plaza, marsh, dunes — are
@@ -315,15 +374,23 @@ export function buildFlora(field, layout, uniforms, stacks) {
       const x = cx + Math.cos(ka) * kr, z = cz + Math.sin(ka) * kr;
       const y = groundAt(field, x, z);
       if (y < 2.5) continue;
-      const s = (7 + 32 * Math.pow(r(), 2.0)) * (0.78 + 0.45 * d);
+      // size: mostly small, with a long tail of big crowns. A rainforest seen
+      // from above is a few giants among a mass of ordinary trees, not a tray
+      // of equal balls.
+      const s = (5.5 + 34 * Math.pow(r(), 2.4)) * (0.78 + 0.45 * d);
       const wet = clamp(moist + 0.25 * (r() - 0.5), 0, 1);
       // tint: wetter is deeper and bluer, drier is olive and yellow
       // large-scale mottling: whole stands of canopy go dark or bright,
       // which is what stops an aerial reading as one flat green
-      const mot = 0.52 + 0.95 * clamp(0.5 + 0.75 * fbm(x * 0.0021 + 17.3, z * 0.0021 - 9.1, 3), 0, 1);
-      const v = mot * (0.8 + 0.4 * r());
-      const tint = [v * (mix(1.26, 0.74, wet) + 0.2 * (r() - 0.5)), v * (mix(0.95, 1.08, wet) + 0.16 * (r() - 0.5)), v * (mix(0.56, 0.9, wet) + 0.14 * (r() - 0.5))];
-      canopy.push({ x, z, y: y - s * 0.16, s, yaw: r() * 6.28, tint, shade, ao, moist: wet });
+      const mot = 0.46 + 1.05 * clamp(0.5 + 0.75 * fbm(x * 0.0021 + 17.3, z * 0.0021 - 9.1, 3), 0, 1);
+      const v = mot * (0.66 + 0.68 * r());
+      const hue = species(r());
+      const tint = [
+        v * hue[0] * (mix(1.26, 0.74, wet) + 0.26 * (r() - 0.5)),
+        v * hue[1] * (mix(0.95, 1.08, wet) + 0.20 * (r() - 0.5)),
+        v * hue[2] * (mix(0.56, 0.9, wet) + 0.18 * (r() - 0.5)),
+      ];
+      canopy.push({ x, z, y: y - s * 0.16, s, yaw: r() * 6.28, tint, shade, ao, moist: wet, variant: (r() * 3) | 0 });
     }
     // understory: small dark crowns filling the gaps between the big ones
     if (d > 0.3 && r() < 0.55) {
@@ -338,10 +405,12 @@ export function buildFlora(field, layout, uniforms, stacks) {
       }
     }
     // the tall ones that break the canopy line
-    if (r() < 0.05 * d && h > 40 && h < 620) {
-      const s = 24 + 20 * r();
+    if (r() < 0.095 * d && h > 30 && h < 640) {
+      const s = 27 + 24 * r();
+      const hue = species(r() * 0.9);
       emergent.push({ x: cx, z: cz, y: h - 1, s, yaw: r() * 6.28,
-        tint: [0.62 + 0.2 * r(), 0.8 + 0.15 * r(), 0.55 + 0.18 * r()], shade, ao, moist });
+        tint: [hue[0] * (0.66 + 0.24 * r()), hue[1] * (0.84 + 0.16 * r()), hue[2] * (0.56 + 0.2 * r())],
+        shade, ao, moist });
     }
   }
 
@@ -396,9 +465,14 @@ export function buildFlora(field, layout, uniforms, stacks) {
     made.push(mesh);
   };
 
-  const canopyGeo = blobGeometry({ bands: 3, segs: 8, squash: 0.66, dent: 0.17, seed: 1.1, pinch: 0.3 });
-  const scrubGeo = blobGeometry({ bands: 2, segs: 7, squash: 0.58, dent: 0.14, seed: 7.3, pinch: 0.55 });
-  add("canopy", canopyGeo, canopy, 7717, 1);
+  // three crown shapes, each a different arrangement of lobes
+  const crowns = [
+    blobGeometry({ bands: 4, segs: 10, squash: 0.62, dent: 0.14, seed: 1.1, pinch: 0.3, lobes: 4 }),
+    blobGeometry({ bands: 4, segs: 10, squash: 0.70, dent: 0.16, seed: 4.7, pinch: 0.26, lobes: 3 }),
+    blobGeometry({ bands: 3, segs: 9, squash: 0.55, dent: 0.19, seed: 8.3, pinch: 0.34, lobes: 5 }),
+  ];
+  const scrubGeo = blobGeometry({ bands: 2, segs: 7, squash: 0.58, dent: 0.2, seed: 7.3, pinch: 0.55, lobes: 2 });
+  crowns.forEach((geo, k) => add(`canopy-${k}`, geo, canopy.filter((c) => (c.variant ?? 0) === k), 7717 + k * 131, 1));
   add("emergent", emergentGeometry(), emergent, 3391, 1);
   add("palm", palmGeometry(), palms, 5519, 1);
   add("mangrove", mangroveGeometry(), mangroves, 8821, 1);

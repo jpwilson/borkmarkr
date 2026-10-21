@@ -5,7 +5,7 @@
    calls and nothing is mutated while a frame is being computed, so renderAt(t)
    gives the same camera, the same selection and the same caption whatever ran
    before it. */
-import { heightAt, clamp, mix, zoneBySite, clearanceAt, canopyTopAt, liftOverCanopy } from "./island-layout.js";
+import { heightAt, clamp, mix, zoneBySite, clearanceAt, canopyTopAt, liftOverCanopy, sunAt } from "./island-layout.js";
 
 const v = (x, y, z) => ({ x, y, z });
 const ease = (u) => u * u * (3 - 2 * u);
@@ -91,26 +91,35 @@ export function markerPose(layout, marker, opts = {}) {
   const pitch = opts.pitch ?? 0.50;
   const x = marker.x + Math.cos(a) * d, z = marker.z + Math.sin(a) * d;
   // frame the marker a little below centre: the camp, not the sky above it
-  const target = v(marker.x, marker.y + 11, marker.z);
+  const target = v(marker.x, marker.y + 8, marker.z);
   const raw = v(x, target.y + d * Math.tan(pitch), z);
   // and climb until nothing — ground or crown — stands in the line of sight
   const pos = liftOverCanopy(raw, target, layout.clearings, 18);
-  return { pos, target, fov: opts.fov ?? 40 };
+  return { pos, target, fov: opts.fov ?? 45 };
 }
 
-/* The bookmark the tour lands on: the oldest save in the biggest camp of the
-   river valley — open ground, with the river behind it — falling back to
-   whatever zones the library actually has. */
+/* The bookmark the tour lands on. The beat is the one close-up in the film,
+   so the camp it picks has to be one the golden hour actually reaches: a
+   landing in a ridge shadow is a black frame however well it is composed.
+   Preference order breaks ties between equally lit camps. */
 export function heroMarker(layout) {
-  const prefer = ["river", "lagoon", "highland", "temple"];
-  for (const siteId of prefer) {
+  const prefer = ["river", "lagoon", "highland", "temple", "karst", "swamp", "volcano"];
+  let best = null, bestScore = -1;
+  prefer.forEach((siteId, rank) => {
     const zone = zoneBySite(layout, siteId);
-    if (zone && zone.markers.length) {
-      const best = zone.districts.reduce((a, b) => (b.total > a.total ? b : a), zone.districts[0]);
-      return zone.markers.find((m) => m.district === best.name) || zone.markers[0];
+    if (!zone || !zone.markers.length) return;
+    const biggest = zone.districts.reduce((a, b) => (b.total > a.total ? b : a), zone.districts[0]);
+    const seen = new Set();
+    for (const m of zone.markers) {
+      if (seen.has(m.camp)) continue;
+      seen.add(m.camp);
+      const score = sunAt(m.campX, m.campZ) * 2
+        + (m.district === biggest.name ? 0.5 : 0)
+        - rank * 0.14;
+      if (score > bestScore) { bestScore = score; best = m; }
     }
-  }
-  return layout.markers[0] || null;
+  });
+  return best || layout.markers[0] || null;
 }
 
 function zonesForTour(layout) {

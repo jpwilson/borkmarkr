@@ -92,7 +92,7 @@ export class IslandScene {
     this.root = root;
 
     this.sky = buildSky(u);
-    this.terrain = buildTerrain(field, u);
+    this.terrain = buildTerrain(field, u, this.layout.clearings);
     this.stacks = buildStacks(field, u);
     this.boulders = buildBoulders(field, this.layout, u);
     const templeZone = zoneBySite(this.layout, "temple");
@@ -240,8 +240,8 @@ export class IslandScene {
     const ring = this.selectRing;
     if (!marker) { ring.visible = false; return; }
     ring.visible = true;
-    ring.position.set(marker.x, marker.y + 0.6, marker.z);
-    const s = 13;
+    ring.position.set(marker.x, marker.y + 1.4, marker.z);
+    const s = 10;
     ring.scale.set(s, s, s);
   }
 

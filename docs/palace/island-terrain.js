@@ -9,7 +9,7 @@
 import * as THREE from "three";
 import {
   TERRAIN_HALF, ISLAND_R, SEA_LEVEL, heightAt, coastField, moistureAt, riverSample,
-  zoneField, clamp, sstep, mix, fbm,
+  zoneField, clamp, sstep, mix, fbm, CAMP_CLEAR, CAMP_FADE, SUN_AZ, SUN_EL,
 } from "./island-layout.js";
 
 /* ── colour helpers (authored in sRGB, uploaded linear) ─────────────────── */
@@ -97,9 +97,9 @@ export const sampleGrid = (field, arr, x, z) => {
 export const groundAt = (field, x, z) => sampleGrid(field, field.h, x, z);
 
 /* Sun visibility: march the grid toward the sun and look for anything that
-   rises above the ray. Soft-edged, so ridge shadows have a penumbra. */
-export const SUN_AZ = 2.63;   // from the west-north-west
-export const SUN_EL = 0.33;  // low, golden hour
+   rises above the ray. Soft-edged, so ridge shadows have a penumbra. The
+   angles are island-layout's, so the baked grid and the pure sunAt() agree. */
+export { SUN_AZ, SUN_EL };
 
 function bakeSun(field) {
   const { res, step, h, shade } = field;
@@ -160,7 +160,7 @@ function bakeAO(field) {
 /* ── vertex colour ──────────────────────────────────────────────────────── */
 const tmpA = [0, 0, 0], tmpB = [0, 0, 0];
 
-function groundColor(x, z, y, slope, moist, zoneGap, out) {
+function groundColor(x, z, y, slope, moist, zoneGap, camp, out) {
   const dryHigh = clamp((y - 330) / 300, 0, 1);
   let veg = lerp3(PAL.jungleDeep, PAL.jungleLit, clamp(moist * 1.15 - 0.08, 0, 1), tmpA);
   veg = lerp3(veg, PAL.jungleDry, dryHigh * 0.55, tmpA);
@@ -201,6 +201,14 @@ function groundColor(x, z, y, slope, moist, zoneGap, out) {
     lerp3(out, PAL.trail, t * 0.92, out);
   }
 
+  // a camp clearing: ground beaten down to earth and dry grass, which is what
+  // makes a camp read as a clearing from the air and keeps the close-up on
+  // the landing beat from being a black floor under a shadowed canopy
+  if (camp > 0 && y > 6) {
+    const earth = lerp3(PAL.jungleDry, PAL.trail, 0.25 + 0.4 * fbm(x * 0.03, z * 0.03, 2), tmpB);
+    lerp3(out, earth, camp * 0.44, out);
+  }
+
   // under water: pale sand in the shallows, dark basalt as it drops away
   if (y < 2) {
     const sh = clamp((y + 22) / 24, 0, 1);
@@ -211,7 +219,18 @@ function groundColor(x, z, y, slope, moist, zoneGap, out) {
 }
 
 /* ── the terrain mesh ───────────────────────────────────────────────────── */
-export function buildTerrain(field, uniforms) {
+export function buildTerrain(field, uniforms, clearings = []) {
+  /* How beaten-down the ground is here, 0..1 — the same clearing island-flora
+     cuts the crowns out of and island-tour flies the camera into. */
+  const campAt = (x, z) => {
+    let m = 0;
+    for (const c of clearings) {
+      const d = Math.hypot(x - c.x, z - c.z);
+      if (d < CAMP_CLEAR) m = Math.max(m, 1 - sstep(CAMP_CLEAR * 0.22, CAMP_CLEAR * 0.96, d));
+      if (m >= 1) break;
+    }
+    return m;
+  };
   const { res, half, step, h, slope, moist, shade, ao, gap } = field;
   const keep = new Int32Array(res * res).fill(-1);
   const pos = [], col = [], nrm = [], lit = [], idx = [];
@@ -237,7 +256,7 @@ export function buildTerrain(field, uniforms) {
     const nx = (l - r) / (2 * step), nz = (u - d) / (2 * step);
     const il = 1 / Math.hypot(nx, 1, nz);
     nrm.push(nx * il, il, nz * il);
-    groundColor(x, z, y, slope[k], moist[k], gap[k], c);
+    groundColor(x, z, y, slope[k], moist[k], gap[k], campAt(x, z), c);
     col.push(c[0], c[1], c[2]);
     lit.push(shade[k], ao[k], clamp(moist[k], 0, 1));
   }
