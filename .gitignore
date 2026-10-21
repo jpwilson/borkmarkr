@@ -31,3 +31,6 @@ Config.local.xcconfig
 .build/
 Marketing/captures/
 node_modules/
+
+# Python (the page generators import a sibling module, so they leave this behind)
+__pycache__/
