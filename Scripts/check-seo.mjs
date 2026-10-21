@@ -38,6 +38,8 @@ const PAGES = [
   { file: "vs-mymind.html", path: "/vs-mymind" },
   { file: "how-to-organize-twitter-bookmarks.html", path: "/how-to-organize-twitter-bookmarks" },
   { file: "how-to-search-twitter-bookmarks.html", path: "/how-to-search-twitter-bookmarks" },
+  { file: "lifetime.html", path: "/lifetime" },
+  { file: "palace/index.html", path: "/palace/" },
   { file: "press/index.html", path: "/press/" },
   { file: "privacy.html", path: "/privacy" },
   { file: "terms.html", path: "/terms" },

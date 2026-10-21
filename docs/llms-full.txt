@@ -2132,7 +2132,7 @@ nothing is charged. We'll email you a payment link when it goes live, and you ca
 
 🎟️
 
-## You're on the founders list
+### You're on the founders list
 
 We saved your spot at . When payments go live you'll
 get one email with a real checkout link — the price stays $30 for you even if it goes up later.
