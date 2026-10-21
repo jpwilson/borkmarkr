@@ -95,20 +95,25 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
   const rows = [];
   const shadeBase = field ? clamp(sampleGrid(field, field.shade, cx, cz) * 0.5 + 0.5, 0, 1) : 0.95;
   // each tower has its own plan shape and lean, so a cluster never repeats
-  const ex = 1 + 0.26 * noise2(seed, 1.3), ez = 1 - 0.2 * noise2(seed + 4.4, 2.9);
-  const twist = noise2(seed * 2.2, 0.7) * 0.8;
-  const leanX = noise2(seed, 7.7) * 0.07, leanZ = noise2(seed + 2, 5.1) * 0.07;
+  const ex = 1 + 0.34 * noise2(seed, 1.3), ez = 1 - 0.28 * noise2(seed + 4.4, 2.9);
+  const twist = noise2(seed * 2.2, 0.7) * 1.1;
+  const leanX = noise2(seed, 7.7) * 0.10, leanZ = noise2(seed + 2, 5.1) * 0.10;
+  // some towers taper like a blade, others stand almost straight
+  const taper = 0.08 + 0.42 * Math.abs(noise2(seed * 1.7, 3.3));
+  const breakAt = 0.74 + 0.2 * Math.abs(noise2(seed + 9, 1.1));
   for (let r = 0; r <= RINGS; r++) {
     const t = r / RINGS;
     // sheer to about three-quarters height, then break into a crown
-    const prof = 1 - 0.10 * t - 0.92 * Math.pow(Math.max(0, (t - 0.88) / 0.12), 1.5);
+    const prof = 1 - taper * t - 0.9 * Math.pow(Math.max(0, (t - breakAt) / (1 - breakAt)), 1.7);
     const ledge = 1 + 0.045 * Math.sin(t * 21 + seed * 3.1) + 0.03 * Math.sin(t * 7.3 - seed);
     const row = [];
     const y = baseY + t * H;
     for (let i = 0; i < SEG; i++) {
       const a = (i / SEG) * Math.PI * 2 + twist * t;
       const fl = Math.sin(a * 8 + seed * 2.1), fn = noise2(Math.cos(a) * 2.6 + seed, Math.sin(a) * 2.6 + t * 1.6);
-      const flute = 1 + 0.12 * fl + 0.10 * fn + 0.05 * Math.sin(a * 21 + t * 4.0);
+      // the crown breaks into separate crags rather than rounding off
+      const crag = t > breakAt ? 0.45 * noise2(Math.cos(a) * 3.4 + seed * 2, Math.sin(a) * 3.4) * ((t - breakAt) / (1 - breakAt)) : 0;
+      const flute = 1 + 0.13 * fl + 0.11 * fn + 0.05 * Math.sin(a * 21 + t * 4.0) + crag;
       const rad = R * Math.max(0.02, prof) * ledge * flute;
       const x = cx + Math.cos(a) * rad * ex + leanX * t * H;
       const z = cz + Math.sin(a) * rad * ez + leanZ * t * H;
@@ -130,8 +135,8 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
     const j = (i + 1) % SEG;
     b.quad(rows[r][i], rows[r][j], rows[r + 1][j], rows[r + 1][i]);
   }
-  const topC = b.vert(cx + leanX * H, baseY + H + R * 0.06, cz + leanZ * H, 0, 1, 0,
-    mixc(PAL.jungleMid, PAL.moss, 0.5), shadeBase, 1, 0.5);
+  const topC = b.vert(cx + leanX * H, baseY + H + R * 0.05, cz + leanZ * H, 0, 1, 0,
+    mixc(PAL.limestone, PAL.moss, 0.45), shadeBase, 1, 0.3);
   for (let i = 0; i < SEG; i++) b.tri(topC, rows[RINGS][i], rows[RINGS][(i + 1) % SEG]);
 }
 

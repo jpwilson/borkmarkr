@@ -55,8 +55,8 @@ export class IslandScene {
     this.detail = detailTexture(256);
     this.uniforms = {
       uSunDir: { value: sun },
-      uSunColor: { value: lin("#ffead6", 1.62) },
-      uSkyColor: { value: lin("#95bdd4", 0.72) },
+      uSunColor: { value: lin("#ffe7cc", 1.95) },
+      uSkyColor: { value: lin("#95bdd4", 0.60) },
       uSkyMid: { value: lin("#86aec6", 1.0) },
       uZenith: { value: lin("#0e3860", 1.0) },
       uGroundColor: { value: lin("#3c452c", 0.3) },
@@ -70,7 +70,7 @@ export class IslandScene {
       uDetail: { value: this.detail },
       uHalf: { value: TERRAIN_HALF },
       uDeep: { value: lin("#04171f", 1) },
-      uShallow: { value: lin("#1f948a", 1) },
+      uShallow: { value: lin("#29b0a0", 1) },
       uFoam: { value: lin("#e9efe9", 1) },
       uSway: { value: 0.9 },
       uDepth: { value: null },

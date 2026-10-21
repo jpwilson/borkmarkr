@@ -105,6 +105,7 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
         color += uSunColor * pow(toSun, 26.0) * 0.10;
 
         // surf: a band on the waterline, lines rolling in, spray on rock
+        if (depth < 42.0) {
         float waveline = 0.5 + 0.5 * sin(depth * 0.55 - uTime * 1.8 + (texture2D(uDetail, vWorld.xz * 0.0016).r - 0.5) * 7.0);
         float band = (1.0 - smoothstep(0.0, 13.0, depth)) * waveline;
         float edge = (1.0 - smoothstep(0.0, 3.2, depth));
@@ -112,6 +113,7 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
         float foam = clamp(band * 0.85 + edge * 0.75 + cliff * 1.6, 0.0, 1.0);
         foam *= 0.55 + 0.45 * texture2D(uDetail, vWorld.xz * 0.012 + vec2(uTime * 0.01, 0.0)).g * 2.0;
         color = mix(color, uFoam, clamp(foam, 0.0, 0.92));
+        }
 
         color = applyAtmos(color, vWorld, -viewDir);
         gl_FragColor = vec4(color * uExposure, 1.0);

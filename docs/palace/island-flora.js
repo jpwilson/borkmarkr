@@ -230,7 +230,7 @@ function canopyDensity(field, x, z, h, slope, moist, zone, temple) {
   if (temple) d *= clamp(sstep(72, 170, Math.hypot(x - temple.x, z - temple.z)), 0.08, 1);
   const beach = sstep(80, 20, coastField(x, z)) * sstep(24, 8, h);
   d *= 1 - 0.9 * beach;
-  if (zone.gap < 14 && slope < 0.8) d *= 0.12;                   // keep the trail open
+  if (zone.gap < 26 && slope < 1.0) d *= 0.07;                   // keep the trail open
   return clamp(d, 0, 1);
 }
 
@@ -313,11 +313,11 @@ export function buildFlora(field, layout, uniforms, stacks) {
   // crowns clinging to the limestone towers
   for (const st of (stacks || [])) {
     const topY = st.sea ? -26 + st.h : st.h;
-    const n = 7 + Math.floor(r() * 7);
+    const n = 14 + Math.floor(r() * 10);
     for (let k = 0; k < n; k++) {
-      const a = r() * 6.283, rr = st.r * 0.32 * Math.sqrt(r());
+      const a = r() * 6.283, rr = st.r * 0.5 * Math.sqrt(r());
       canopy.push({ x: st.x + Math.cos(a) * rr, z: st.z + Math.sin(a) * rr, y: topY + 2,
-        s: 9 + 11 * r(), yaw: r() * 6.28, tint: [0.8 + 0.2 * r(), 1.0, 0.72 + 0.2 * r()], shade: 1, ao: 0.95, moist: 0.5 });
+        s: 5 + 8 * r(), yaw: r() * 6.28, tint: [0.8 + 0.2 * r(), 1.0, 0.72 + 0.2 * r()], shade: 1, ao: 0.95, moist: 0.5 });
     }
     // ledge growth down the flanks
     for (let k = 0; k < 6; k++) {

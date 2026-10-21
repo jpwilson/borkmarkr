@@ -33,15 +33,15 @@ export const PAL = {
   moss:       srgb("#3c5c1d"),
   rockDark:   srgb("#2e2823"),
   rockWet:    srgb("#4c4840"),
-  rockPale:   srgb("#827f70"),
-  limestone:  srgb("#bdbaa8"),
+  rockPale:   srgb("#938f7e"),
+  limestone:  srgb("#d2cebb"),
   ash:        srgb("#332d29"),
   ashLight:   srgb("#564c43"),
   lava:       srgb("#b4350f"),
-  sand:       srgb("#cbb084"),
+  sand:       srgb("#d8c095"),
   sandWet:    srgb("#8b7a5b"),
   marsh:      srgb("#38401f"),
-  trail:      srgb("#9b8358"),
+  trail:      srgb("#b09467"),
   shallow:    srgb("#9ab79b"),
   seabed:     srgb("#233a3a"),
   bamboo:     srgb("#6d7d33"),
@@ -187,9 +187,9 @@ function groundColor(x, z, y, slope, moist, zoneGap, out) {
   if (beach > 0) lerp3(out, PAL.sand, clamp(beach, 0, 1), out);
 
   // the trail that runs the zone boundary, the way the aerial reference reads
-  if (zoneGap < 30 && y > 26 && slope < 0.85) {
-    const t = sstep(30, 6, zoneGap) * clamp(1 - slope * 0.8, 0, 1);
-    lerp3(out, PAL.trail, t * 0.72, out);
+  if (zoneGap < 46 && y > 20 && slope < 1.05) {
+    const t = sstep(46, 8, zoneGap) * clamp(1.15 - slope * 0.7, 0, 1);
+    lerp3(out, PAL.trail, t * 0.8, out);
   }
 
   // under water: pale sand in the shallows, dark basalt as it drops away
@@ -311,9 +311,9 @@ export function terrainMaterial(uniforms) {
         float ndl = dot(n, uSunDir);
         // wrapped diffuse: foliage does not fall off like a billiard ball
         float wrap = clamp((ndl + 0.35) / 1.35, 0.0, 1.0);
-        float sun = pow(wrap, 1.25) * mix(0.18, 1.0, shade);
+        float sun = pow(wrap, 1.55) * mix(0.14, 1.0, shade);
         vec3 light = uSunColor * sun;
-        light += uSkyColor * (0.34 + 0.3 * n.y) * ao;
+        light += uSkyColor * (0.30 + 0.30 * n.y) * ao;
         light += uGroundColor * (0.18 * (1.0 - n.y)) * ao;
 
         // back-scatter: light bleeding through the canopy on the sun side
