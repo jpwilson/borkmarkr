@@ -69,6 +69,8 @@
   a { color: var(--accent-text); text-decoration: none; }
   [hidden] { display: none !important; }
   h1, h2, h3 { font-family: var(--font-head); letter-spacing: -.02em; }
+  /* Was an <h1>; demoted so the document has one. Keeps the h1 metrics. */
+  .account-title { font-size: 2em; margin: .67em 0; }
   /* One focus ring for everything keyboard-reachable; fields use their border instead. */
   :focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
   .field:focus-visible, .nav-search:focus-visible, dialog textarea:focus-visible, dialog select:focus-visible {
@@ -415,7 +417,28 @@
     .auth-card { width: 100%; }
   }
   @media (min-width: 881px) { .m-links { display: none; } }
-  .auth-card h1 { font-size: 27px; margin: 0 0 6px; }
+  /* ── Signed-out explainer, below the auth fold ──
+     Plain HTML, always in the document, so a crawler that runs no JavaScript
+     still gets the whole pitch. Shown and hidden with #auth in render(). */
+  #home-about { border-top: 1px solid var(--hairline); background: var(--surface); }
+  .about-in { max-width: 820px; margin: 0 auto; padding: 56px 24px 72px; }
+  .about-in h2 { font-size: clamp(23px, 3vw, 30px); margin: 44px 0 12px; }
+  .about-in h2:first-of-type { margin-top: 0; }
+  .about-in h3 { font-size: 17px; margin: 22px 0 4px; }
+  .about-in p { color: var(--ink-2); margin: 0 0 14px; line-height: 1.6; }
+  .about-in .lede { font-size: 17.5px; color: var(--ink); }
+  .about-grid { display: grid; gap: 4px 28px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .about-steps { padding-left: 20px; }
+  .about-steps li { margin: 8px 0; color: var(--ink-2); }
+  .about-in .qa { border-top: 1px solid var(--hairline); padding-top: 16px; margin-top: 16px; }
+  .about-in .qa h3 { margin: 0 0 4px; font-size: 16.5px; color: var(--ink); }
+  .about-more { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 10px 0 0; padding: 0; list-style: none; font-weight: 600; }
+  .about-foot { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairline);
+    color: var(--faint); font-size: 13px; }
+  .about-foot a { color: var(--ink-2); font-weight: 600; }
+
+  .auth-card h1, .auth-card h2 { font-family: var(--font-head); font-size: 27px;
+    letter-spacing: -.02em; margin: 0 0 6px; }
   .auth-card > div > p { color: var(--ink-2); margin: 0 0 16px; }
   .auth-card > div > p.err, .auth-card > div > p.hint, .auth-card > div > p.consent { margin-bottom: 0; }
   .auth-card .field { margin-bottom: 10px; }
@@ -795,22 +818,15 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
+  "@type": "WebSite",
   "name": "bookmarker",
-  "applicationCategory": "Productivity",
-  "operatingSystem": "iOS",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  },
-  "description": "bookmarker is a native iOS app that consolidates all your saved content from Instagram, X, TikTok, and YouTube into one searchable library.",
-  "url": "https://bookmarker.lol",
-  "image": "https://bookmarker.lol/img/share-v2.jpg",
-  "creator": {
+  "url": "https://bookmarker.lol/",
+  "inLanguage": "en",
+  "description": "One library for everything you save on Instagram, X (Twitter), TikTok, YouTube and the web.",
+  "publisher": {
     "@type": "Organization",
     "name": "bookmarker",
-    "url": "https://bookmarker.lol"
+    "url": "https://bookmarker.lol/"
   }
 }
 </script>
@@ -819,55 +835,134 @@
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "bookmarker",
-  "url": "https://bookmarker.lol",
+  "url": "https://bookmarker.lol/",
   "logo": "https://bookmarker.lol/img/apple-touch-icon.png",
-  "description": "The universal library for everything you save on Instagram, X, TikTok, and YouTube.",
-  "sameAs": []
+  "email": "hello@bookmarker.lol",
+  "description": "bookmarker makes a bookmark manager for iPhone and the web that puts everything you save on Instagram, X (Twitter), TikTok, YouTube and the open web into one searchable library.",
+  "founder": {
+    "@type": "Person",
+    "name": "Jean-Paul Wilson"
+  },
+  "sameAs": [
+    "https://apps.apple.com/us/app/bookmarker-save-links-reels/id6799805479"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MobileApplication",
+  "name": "Bookmarker: Save Links & Reels",
+  "alternateName": "bookmarker",
+  "url": "https://bookmarker.lol/app/",
+  "sameAs": "https://apps.apple.com/us/app/bookmarker-save-links-reels/id6799805479",
+  "installUrl": "https://apps.apple.com/us/app/bookmarker-save-links-reels/id6799805479",
+  "applicationCategory": "ProductivityApplication",
+  "applicationSubCategory": "Bookmark manager",
+  "operatingSystem": "iOS 17.0 or later",
+  "image": "https://bookmarker.lol/img/share-v2.jpg",
+  "screenshot": [
+    "https://bookmarker.lol/img/library.png",
+    "https://bookmarker.lol/img/browse.png",
+    "https://bookmarker.lol/img/search.png"
+  ],
+  "description": "bookmarker is a free bookmark manager for iPhone and the web that collects everything you save on Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a topic and subtopic automatically, and lets you search it again later.",
+  "featureList": [
+    "Save any link from any app through the iOS share sheet",
+    "Automatic filing into 50 topics and 612 subtopics, always overridable",
+    "Browse by topic or by the app a save came from",
+    "Search titles, accounts, tags, notes, topics and links",
+    "Dated notes on any save",
+    "Counts how often you reopen something",
+    "Import browser bookmarks and X, Instagram, TikTok and YouTube data exports",
+    "Share a collection of saves as a link",
+    "Works offline; the first 20 saves need no account"
+  ],
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock",
+    "url": "https://apps.apple.com/us/app/bookmarker-save-links-reels/id6799805479"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Jean-Paul Wilson"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "bookmarker",
+    "url": "https://bookmarker.lol/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "bookmarker web app",
+  "url": "https://bookmarker.lol/",
+  "applicationCategory": "ProductivityApplication",
+  "operatingSystem": "Any modern web browser",
+  "browserRequirements": "Requires JavaScript",
+  "description": "The bookmarker web app: sign in to read, search and browse the library you built on your iPhone, and to add links from a browser.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "bookmarker",
+    "url": "https://bookmarker.lol/"
+  }
 }
 </script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "FAQPage",
+  "url": "https://bookmarker.lol/",
+  "inLanguage": "en",
   "mainEntity": [
     {
       "@type": "Question",
       "name": "What is bookmarker?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "bookmarker is a native iOS app that brings together all your saved content from Instagram, X (Twitter), TikTok, and YouTube into one searchable library. Instead of having bookmarks scattered across different apps, bookmarker gives you one place to save, organize, and find everything."
+        "text": "bookmarker is a free bookmark manager for iPhone and the web. It collects everything you save on Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files each save into a topic and subtopic automatically, and lets you search it later. A saved item is called a bork."
       }
     },
     {
       "@type": "Question",
-      "name": "How does bookmarker work?",
+      "name": "What does bookmarker cost?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Install the bookmarker iOS app and use the share sheet in any app (Instagram, X, TikTok, YouTube, Safari) to save a link. bookmarker automatically fetches the content, categorizes it by topic, and adds it to your searchable library. You can browse by topic, search by full text, and organize with tags."
+        "text": "It is free on the App Store. The first 20 saves need no account. Past 20, signing up is also free — an email address and a six-digit code — and makes the library unlimited, backed up and readable on the web. There is no paid tier in the app."
       }
     },
     {
       "@type": "Question",
-      "name": "Which platforms does bookmarker support?",
+      "name": "Which apps can I save from?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "bookmarker works with Instagram, X (Twitter), TikTok, YouTube, and any other app that supports iOS sharing. You can save posts, videos, tweets, reels, and links from any app using the share sheet."
+        "text": "Any app with an iOS share sheet. bookmarker recognises Instagram, X (Twitter), TikTok, YouTube, YouTube Shorts, Threads, Pinterest and ordinary web pages, and labels each save with where it came from. You can also paste a link straight into the app or the web app."
       }
     },
     {
       "@type": "Question",
-      "name": "Can I search my bookmarked content?",
+      "name": "What exactly can I search?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. bookmarker provides full-text search across all your saved content, not just titles. You can find anything by searching the actual content, filtering by topic or platform, and browsing by category."
+        "text": "The title, the account that posted it, your tags, your notes, the topic and subtopic, the source app, the link, and whatever post text came with the save — the description a page published, or the full post body when the save arrived in an X data export. You can narrow a search to topics, subtopics or tags. bookmarker never fetches the page behind the link, so the body of an article, a PDF or a video transcript is not indexed."
       }
     },
     {
       "@type": "Question",
-      "name": "Is bookmarker free?",
+      "name": "Is there an Android app?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "bookmarker offers a free tier with core functionality. Premium features are available for advanced users who need additional capabilities."
+        "text": "No. There is a native iPhone app (iOS 17 or later) and a web app at bookmarker.lol that runs in any modern browser, including on Android and desktop, once you have signed in."
       }
     }
   ]
@@ -912,7 +1007,7 @@
   <div class="auth-card">
     <a class="brand auth-card-brand" href="/app"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
     <div id="auth-choose">
-      <h1>Every save.<br>One library.</h1>
+      <h2>Every save.<br>One library.</h2>
       <p>Sign in and your borks follow you — phone, laptop, everywhere.</p>
       <p class="hint" style="margin-bottom:16px">Sign in to use your web library. Try your first 20 saves on iPhone without an account; sign in for unlimited saves and backup. No payment required.</p>
       <button class="btn g-btn" id="google-btn" hidden>
@@ -927,7 +1022,7 @@
       <p class="consent">By continuing you agree to the <a href="/terms">Terms of Use</a> and <a href="/privacy">Privacy Policy</a>.</p>
     </div>
     <div id="auth-email" hidden>
-      <h1 id="auth-email-title">Create your account</h1>
+      <h2 id="auth-email-title">Create your account</h2>
       <p id="auth-email-blurb"></p>
       <input class="field" id="email-input" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email address">
       <button class="btn" data-act="send-code">Email me a code</button>
@@ -938,7 +1033,7 @@
       <p class="consent">By continuing you agree to the <a href="/terms">Terms of Use</a> and <a href="/privacy">Privacy Policy</a>.</p>
     </div>
     <div id="auth-code" hidden>
-      <h1>Check your email</h1>
+      <h2>Check your email</h2>
       <p id="code-blurb"></p>
       <input class="field" id="code-input" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" placeholder="123456" aria-label="Six-digit code">
       <button class="btn" data-act="verify-code">Continue</button>
@@ -948,6 +1043,130 @@
     </div>
   </div>
   <p class="pitch-links m-links" style="text-align:center;padding-bottom:30px">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/palace">Library Island</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+  </div>
+</section>
+
+<!-- ─────────────── Signed-out explainer ───────────────
+     Below the auth fold. Same HTML for people and for crawlers; hidden
+     alongside #auth once you are signed in. -->
+<section id="home-about" hidden>
+  <div class="about-in">
+    <h2>What is bookmarker?</h2>
+    <p class="lede">bookmarker is a free bookmark manager for iPhone and the web that collects everything you
+      save on Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a
+      topic automatically, and lets you find it again later. It is for people who save hundreds or thousands of
+      posts across several apps and can never find any of them again.</p>
+    <p>Every app keeps its own saved list. None of them talk to each other, almost nothing in them has a title
+      worth reading, and there is no subject to browse by — so you end up with five separate piles of things you
+      meant to come back to. bookmarker is the layer above all of them. A saved item is a <strong>bork</strong>.</p>
+
+    <h2>What it does</h2>
+    <div class="about-grid">
+      <div>
+        <h3>Save from anywhere</h3>
+        <p>Tap Share in any iPhone app and pick bookmarker, or paste a link here on the web. The title, the
+          account that posted it and a thumbnail come along where the platform publishes them.</p>
+      </div>
+      <div>
+        <h3>It files itself</h3>
+        <p>Every bork lands in a topic and subtopic — Fitness &rsaquo; Mobility, Recipes &rsaquo; Meal prep. Fifty
+          topics, 612 subtopics, your own subtopics on top, and every suggestion is overridable. Keyword matching
+          does it on the spot and offline; signed in, the links it cannot place go to our server, which asks a
+          language model.</p>
+      </div>
+      <div>
+        <h3>Browse two ways</h3>
+        <p>By topic, to see everything about running wherever it came from. Or by source app, to see everything
+          you kept from TikTok. Each view filters the other.</p>
+      </div>
+      <div>
+        <h3>Find it again</h3>
+        <p>Search the title, the account, any post text that came with the save, your tags, your notes, the topic
+          and subtopic, the source app and the link — and narrow a search to topics, subtopics or tags when a word
+          is too common.</p>
+      </div>
+      <div>
+        <h3>Notes, and a memory</h3>
+        <p>Add a dated note so you remember why you kept something. bookmarker also counts how many times you
+          have gone back to it — the signal platform bookmarks throw away.</p>
+      </div>
+      <div>
+        <h3>Bring what you already saved</h3>
+        <p>Import your browser bookmarks, or the data export from X, Instagram, TikTok or YouTube, and thousands
+          of old saves become a filed, searchable library in one step.</p>
+      </div>
+    </div>
+
+    <h2>How it works</h2>
+    <ol class="about-steps">
+      <li><strong>Share.</strong> In Instagram, TikTok or YouTube, tap Share and pick bookmarker. On X, tap Share
+        and then “Share via…”. Pin bookmarker to the front of the share sheet once and it is the first icon from
+        then on.</li>
+      <li><strong>Bork.</strong> The link, the title, the account and a thumbnail are recorded on the spot.
+        Saving is one tap; organising is optional and can happen later.</li>
+      <li><strong>Filed.</strong> It lands in a topic and subtopic, ready to browse, search, annotate and open —
+        straight back to the original post in the app it came from.</li>
+    </ol>
+
+    <h2>What it costs</h2>
+    <p>bookmarker is free on the App Store, for iOS 17 or later. Your first 20 saves need no account at all. Past
+      20, signing up is also free — an email address and a six-digit code, no password to invent — and makes the
+      library unlimited, backs it up, and makes it readable here on the web. There is no paid tier in the app and
+      nothing in it costs money.</p>
+
+    <h2>Common questions</h2>
+    <div class="qa">
+      <h3>Which apps can I save from?</h3>
+      <p>Any app with an iOS share sheet. bookmarker recognises Instagram, X (Twitter), TikTok, YouTube, YouTube
+        Shorts, Threads, Pinterest and ordinary web pages, and labels each save with where it came from.</p>
+    </div>
+    <div class="qa">
+      <h3>Does bookmarker copy the posts I save?</h3>
+      <p>No. It stores the link, the title, the account and a thumbnail where one is published, and opening a
+        save sends you to the original. It is not an archive: if the original is deleted, the link dies with it.</p>
+    </div>
+    <div class="qa">
+      <h3>What exactly can I search?</h3>
+      <p>Titles, accounts, tags, notes, topics, subtopics, the source app, the link, and whatever post text came
+        with the save — the description a page published, or the full post body when the save arrived in an X data
+        export. What bookmarker never does is open the page behind the link, so the body of an article, a PDF or a
+        video transcript is not indexed. There is no quoted-phrase operator either — several words mean “all of
+        these must appear”.</p>
+    </div>
+    <div class="qa">
+      <h3>Will I get thumbnails for Instagram, TikTok and X?</h3>
+      <p>Often not. YouTube and most web pages publish the metadata bookmarker reads; Instagram, TikTok and X
+        usually do not publish it to an unauthenticated request, so those saves often arrive with a plain title
+        and no image. The save, the filing and the search still work.</p>
+    </div>
+    <div class="qa">
+      <h3>Is there an Android app?</h3>
+      <p>No. There is an iPhone app and this web app, which runs in any modern browser — including on Android and
+        on a desktop — once you have signed in.</p>
+    </div>
+    <p><a href="/faq">Ten more answers in the full FAQ →</a></p>
+
+    <h2>Read more</h2>
+    <ul class="about-more">
+      <li><a href="/what-is-bookmarker">What is bookmarker?</a></li>
+      <li><a href="/app/">The iPhone app</a></li>
+      <li><a href="/faq">FAQ</a></li>
+      <li><a href="/alternatives">Best bookmark managers for saved posts</a></li>
+      <li><a href="/vs-twitter-bookmarks">vs X (Twitter) bookmarks</a></li>
+      <li><a href="/vs-raindrop">vs Raindrop.io</a></li>
+      <li><a href="/vs-twillot">vs Twillot</a></li>
+      <li><a href="/vs-mymind">vs mymind</a></li>
+      <li><a href="/how-to-organize-twitter-bookmarks">How to organise your X bookmarks</a></li>
+      <li><a href="/how-to-search-twitter-bookmarks">How to search your X bookmarks</a></li>
+      <li><a href="/palace/">Library Island</a></li>
+      <li><a href="/press/">Press kit</a></li>
+    </ul>
+
+    <p class="about-foot">© 2026 bookmarker · Made by JP ·
+      <a href="/get/">Get the app</a> ·
+      <a href="/privacy">Privacy</a> ·
+      <a href="/terms">Terms</a> ·
+      <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a></p>
   </div>
 </section>
 
@@ -1042,7 +1261,7 @@
     </section>
 
     <section id="view-you" hidden>
-      <h1 class="account-title">You &amp; your library</h1>
+      <h2 class="account-title">You &amp; your library</h2>
       <div class="you-grid">
         <div class="you-col">
           <div class="you-card account-identity">
@@ -2682,6 +2901,7 @@ function replay(el, cls) {
 function render() {
   const s = store.session;
   $("auth").hidden = !!s || demoMode;
+  $("home-about").hidden = !!s || demoMode;
   $("app").hidden = !s && !demoMode;
   $("demo-banner").hidden = !demoMode;
   syncBannerHeight();

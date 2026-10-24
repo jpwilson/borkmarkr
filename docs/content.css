@@ -1,0 +1,92 @@
+/* bookmarker — shared stylesheet for the written pages (comparisons, FAQ,
+   alternatives, how-tos). Same tokens and fonts as the app and /app/, so a
+   page that explains bookmarker looks like it belongs to bookmarker.
+   Extracted from the inline <style> the vs-* pages used to carry, so there is
+   one place to change the look of all of them. */
+:root {
+  --paper: #F6F3EE; --surface: #FFFFFF; --ink: #191510; --ink-2: #5B554D;
+  --meta: #8A8378; --hairline: #EAE4DA; --coral: #FF5A2D; --accent-text: #C93A12;
+  --tint: #FFE9E1;
+  --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
+h1, h2, h3 { font-family: var(--font-head); letter-spacing: -.02em; }
+a { color: var(--accent-text); text-decoration: none; }
+a:hover { text-decoration: underline; }
+img { max-width: 100%; }
+
+/* ── header ── */
+.site-head { background: var(--surface); border-bottom: 1px solid var(--hairline); }
+.head-in { max-width: 1040px; margin: 0 auto; padding: 14px 20px; display: flex; flex-wrap: wrap;
+  align-items: center; gap: 10px 22px; }
+.brand { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-head);
+  font-weight: 800; font-size: 19px; color: var(--ink); }
+.brand img { width: 28px; height: 28px; border-radius: 8px; }
+.head-nav { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14.5px; font-weight: 600; }
+.head-nav a { color: var(--ink-2); }
+.head-cta { margin-left: auto; background: var(--coral); color: #fff; font-weight: 700; font-size: 14px;
+  padding: 9px 16px; border-radius: 999px; }
+.head-cta:hover { text-decoration: none; opacity: .9; }
+
+/* ── page body ── */
+main { max-width: 740px; margin: 0 auto; padding: 32px 20px 72px; }
+.crumbs { font-size: 13.5px; color: var(--meta); margin: 0 0 18px; }
+.crumbs a { color: var(--ink-2); font-weight: 600; }
+h1 { font-size: 36px; line-height: 1.2; margin: 0 0 12px; }
+.meta { color: var(--meta); font-size: 14px; margin: 0 0 32px; }
+.intro { font-size: 18px; line-height: 1.7; margin-bottom: 28px; color: var(--ink-2); }
+h2 { font-size: 26px; margin: 46px 0 14px; }
+h3 { font-size: 19px; margin: 30px 0 10px; }
+ul, ol { padding-left: 22px; }
+li { margin: 7px 0; }
+.lede-note, .callout { background: var(--surface); border: 1px solid var(--hairline); border-left: 3px solid var(--coral);
+  border-radius: 12px; padding: 16px 18px; margin: 26px 0; }
+.callout p:first-child { margin-top: 0; }
+.callout p:last-child { margin-bottom: 0; }
+
+/* ── tables ── */
+.comparison-table { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px;
+  overflow-x: auto; margin: 30px 0; }
+.comparison-table table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.comparison-table th { background: var(--paper); padding: 13px 15px; text-align: left; font-weight: 700;
+  border-bottom: 1px solid var(--hairline); vertical-align: top; }
+.comparison-table td { padding: 12px 15px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+.comparison-table tr:last-child td { border-bottom: none; }
+.yes { color: #1B7F4C; font-weight: 600; }
+.no { color: #B4432B; font-weight: 600; }
+
+/* ── FAQ ── */
+.qa { border-top: 1px solid var(--hairline); padding-top: 22px; margin-top: 22px; }
+.qa h2 { font-size: 21px; margin: 0 0 8px; }
+.qa p:last-child { margin-bottom: 0; }
+
+/* ── cards / lists of pages ── */
+.cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin: 26px 0; }
+.card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 16px 18px; }
+.card h3 { margin: 0 0 6px; font-size: 17px; }
+.card p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
+
+.cta { background: var(--coral); color: #fff; padding: 13px 26px; border-radius: 999px;
+  display: inline-block; font-weight: 700; margin: 30px 0; }
+.cta:hover { text-decoration: none; opacity: .9; }
+.cta-sub { display: block; font-size: 13.5px; color: var(--meta); margin: -20px 0 30px; }
+
+/* ── footer ── */
+.site-foot { border-top: 1px solid var(--hairline); background: var(--surface); padding: 30px 20px 40px; }
+.foot-in { max-width: 1040px; margin: 0 auto; display: grid; gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); font-size: 14.5px; }
+.foot-in h2 { font-family: var(--font-body); font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--meta); margin: 0 0 8px; font-weight: 700; }
+.foot-in ul { list-style: none; padding: 0; margin: 0; }
+.foot-in li { margin: 5px 0; }
+.foot-in a { color: var(--ink-2); font-weight: 600; }
+.foot-copy { max-width: 1040px; margin: 26px auto 0; color: var(--meta); font-size: 13px; }
+
+@media (max-width: 640px) {
+  h1 { font-size: 29px; }
+  h2 { font-size: 22px; }
+  .head-cta { margin-left: 0; }
+}
