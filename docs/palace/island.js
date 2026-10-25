@@ -224,6 +224,7 @@ function zoneIndexAt(field, x, z) {
 }
 
 function swapLibrary(next) {
+  slow = 0;
   state.atlas = next;
   state.selection = null; state.focus = null;
   state.tour.playing = false; state.tour.t = 0; state.flight = null;
@@ -322,10 +323,11 @@ function wire() {
 }
 
 /* ── frame loop (never runs in capture mode) ────────────────────────────── */
-let last = 0, slow = 0, fast = 0;
+let last = 0, slow = 0;
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.1, (now - last) / 1000);
+  const elapsed = (now - last) / 1000;
+  const dt = Math.min(0.1, elapsed);
   last = now;
   // the scene clock only runs when something is meant to be moving, so under
   // prefers-reduced-motion the water, mist and smoke hold still
@@ -351,9 +353,11 @@ function frame(now) {
   scene.render();
 
   // quality ladder: give up resolution, foliage and particles before frame rate
-  const fps = 1 / Math.max(dt, 1e-4);
-  if (fps < 44) { slow++; fast = 0; } else if (fps > 56) { fast++; slow = 0; }
-  if (slow > 24) {
+  // Use elapsed time, not 25 frames (which can take many seconds on a phone).
+  // A hidden tab is not evidence of GPU load.
+  if (!document.hidden && elapsed > 1 / 44) slow += elapsed;
+  else slow = 0;
+  if (slow >= 0.75) {
     slow = 0;
     if (scene.quality.tier === "high") scene.setQuality("mid");
     else if (scene.quality.tier === "mid") scene.setQuality("low");
@@ -414,10 +418,12 @@ function installCapture() {
         show(mapPose(L), at("overview", 0.5), { labels: true });
       } else if (name === "zone") {
         const zone = (opts.topic && zoneById(L, opts.topic)) || L.zones[0];
+        if (!zone) return api.pose("overview");
         caption = { label: zone.place, detail: `${zone.name} · ${zone.total} saved · ${zone.biome}` };
         show(zonePose(L, zone, opts), at(`zone-${zone.siteId}`, 0.75), { zone: zone.index, only: zone.index });
       } else if (name === "marker") {
         const marker = (opts.id && L.byId.get(opts.id)) || heroMarker(L);
+        if (!marker) return api.pose("overview");
         caption = { label: L.zones[marker.zone].place, detail: marker.item.title };
         show(markerPose(L, marker, opts), at("marker", 0.9), { zone: marker.zone, marker, only: marker.zone });
       } else show(overviewPose(L, opts.spin || 0), at("overview", 0.8));

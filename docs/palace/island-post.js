@@ -16,9 +16,12 @@
    position, so ?capture stays deterministic. */
 import * as THREE from "three";
 
-const QUAD = new THREE.BufferGeometry();
-QUAD.setAttribute("position", new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
-QUAD.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 2, 0, 0, 2], 2));
+function quadGeometry() {
+  const QUAD = new THREE.BufferGeometry();
+  QUAD.setAttribute("position", new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
+  QUAD.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 2, 0, 0, 2], 2));
+  return QUAD;
+}
 
 /* Narkowicz's ACES fit, in the renderer's own form, so turning post on does
    not change the tone curve the scene was lit for. */
@@ -33,7 +36,7 @@ const ACES = /* glsl */`
   }
 `;
 
-function pass(uniforms, fragmentShader) {
+function pass(geometry, uniforms, fragmentShader) {
   const mat = new THREE.RawShaderMaterial({
     uniforms,
     glslVersion: THREE.GLSL3,
@@ -44,7 +47,7 @@ function pass(uniforms, fragmentShader) {
       ${fragmentShader}`,
     depthTest: false, depthWrite: false,
   });
-  return new THREE.Mesh(QUAD, mat);
+  return new THREE.Mesh(geometry, mat);
 }
 
 export class Post {
@@ -52,6 +55,8 @@ export class Post {
     this.renderer = renderer;
     this.capture = capture;
     this.enabled = true;
+    this.scale = 1;
+    this.geometry = quadGeometry();
     this.width = 1; this.height = 1;
     this.quad = new THREE.Scene();
     this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -90,7 +95,7 @@ export class Post {
       },
     };
 
-    this.mBright = pass(this.u.bright, /* glsl */`
+    this.mBright = pass(this.geometry, this.u.bright, /* glsl */`
       uniform sampler2D uTex; uniform vec2 uTexel, uSun; uniform float uThreshold, uSunOn;
       void main() {
         // a 4-tap box on the way down: the quarter-res buffer is what both
@@ -104,11 +109,11 @@ export class Post {
         vec3 b = c * max(0.0, l - uThreshold) / max(l, 1e-4);
         // the shafts only come from what is near the sun on screen, which is
         // what stops a bright lagoon on the far side throwing rays sideways
-        float near = smoothstep(0.95, 0.12, length((vUv - uSun) * vec2(1.0, 0.56)));
+        float near = (1.0 - smoothstep(0.12, 0.95, length((vUv - uSun) * vec2(1.0, 0.56))));
         fragColor = vec4(b, near * uSunOn);
       }`);
 
-    this.mBlur = pass(this.u.blur, /* glsl */`
+    this.mBlur = pass(this.geometry, this.u.blur, /* glsl */`
       uniform sampler2D uTex; uniform vec2 uDir;
       void main() {
         vec4 s = texture(uTex, vUv) * 0.227027;
@@ -117,7 +122,7 @@ export class Post {
         fragColor = s;
       }`);
 
-    this.mRays = pass(this.u.rays, /* glsl */`
+    this.mRays = pass(this.geometry, this.u.rays, /* glsl */`
       uniform sampler2D uTex; uniform vec2 uSun; uniform float uDensity, uDecay, uWeight;
       void main() {
         vec2 d = (vUv - uSun) * uDensity / 24.0;
@@ -134,7 +139,7 @@ export class Post {
         fragColor = vec4(acc / max(total, 1e-4), 1.0);
       }`);
 
-    this.mComp = pass(this.u.comp, /* glsl */`
+    this.mComp = pass(this.geometry, this.u.comp, /* glsl */`
       ${ACES}
       uniform sampler2D uScene, uBloom, uRays;
       uniform vec2 uSun, uTexel;
@@ -165,7 +170,7 @@ export class Post {
         vec2 q = vUv - 0.5;
         float vig = 1.0 - uVignette * dot(q, q) * 1.9;
         c *= clamp(vig, 0.0, 1.0);
-        float halo = smoothstep(0.62, 0.0, length((vUv - uSun) * vec2(1.0, 0.62)));
+        float halo = (1.0 - smoothstep(0.0, 0.62, length((vUv - uSun) * vec2(1.0, 0.62))));
         c += uSunTint * halo * halo * 0.055 * uRayAmt;
 
         /* The canvas is sRGB and nothing in this pass is a three.js material,
@@ -191,11 +196,11 @@ export class Post {
     this.height = Math.max(1, Math.round(h));
     const pr = this.renderer.getPixelRatio();
     const fw = Math.max(1, Math.round(this.width * pr)), fh = Math.max(1, Math.round(this.height * pr));
-    this.rt.scene.setSize(fw, fh);
-    const qw = Math.max(2, Math.round(fw / 4)), qh = Math.max(2, Math.round(fh / 4));
-    this.rt.bright.setSize(qw, qh);
-    this.rt.tmp.setSize(qw, qh);
-    this.rt.rays.setSize(qw, qh);
+    this.rt.scene.setSize(this.enabled ? fw : 1, this.enabled ? fh : 1);
+    const qw = Math.max(2, Math.round(fw * this.scale / 4)), qh = Math.max(2, Math.round(fh * this.scale / 4));
+    this.rt.bright.setSize(this.enabled ? qw : 1, this.enabled ? qh : 1);
+    this.rt.tmp.setSize(this.enabled ? qw : 1, this.enabled ? qh : 1);
+    this.rt.rays.setSize(this.enabled ? qw : 1, this.enabled ? qh : 1);
     this.u.bright.uTexel.value.set(1 / fw, 1 / fh);
     this.u.comp.uTexel.value.set(1 / fw, 1 / fh);
     this.qw = qw; this.qh = qh;
@@ -253,12 +258,14 @@ export class Post {
     u.blur.uTex.value = this.rt.tmp.texture;
     u.blur.uDir.value.set(0, 1.6 / this.qh);
     this.blit(this.mBlur, this.rt.bright);
-    u.blur.uTex.value = this.rt.bright.texture;
-    u.blur.uDir.value.set(3.4 / this.qw, 0);
-    this.blit(this.mBlur, this.rt.tmp);
-    u.blur.uTex.value = this.rt.tmp.texture;
-    u.blur.uDir.value.set(0, 3.4 / this.qh);
-    this.blit(this.mBlur, this.rt.bright);
+    if (this.scale >= 1) {
+      u.blur.uTex.value = this.rt.bright.texture;
+      u.blur.uDir.value.set(3.4 / this.qw, 0);
+      this.blit(this.mBlur, this.rt.tmp);
+      u.blur.uTex.value = this.rt.tmp.texture;
+      u.blur.uDir.value.set(0, 3.4 / this.qh);
+      this.blit(this.mBlur, this.rt.bright);
+    }
 
     u.comp.uScene.value = this.rt.scene.texture;
     u.comp.uBloom.value = this.rt.bright.texture;
@@ -267,6 +274,7 @@ export class Post {
   }
 
   dispose() {
+    this.geometry.dispose();
     for (const t of Object.values(this.rt)) t.dispose();
     for (const m of [this.mBright, this.mBlur, this.mRays, this.mComp]) m.material.dispose();
   }

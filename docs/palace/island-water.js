@@ -405,18 +405,18 @@ export function buildFalls(field, uniforms) {
         vec2 p = vec2(vUv.x * 3.0, v * 2.2 + uTime * 0.6);
         // the shelves where the drop steps: water piles up, goes white and
         // re-forms below, which is what makes one sheet read as three tiers
-        float shelf = smoothstep(0.10, 0.0, abs(fract(v * 3.0 + 0.18) - 0.5) - 0.34);
+        float shelf = (1.0 - smoothstep(0.0, 0.10, abs(fract(v * 3.0 + 0.18) - 0.5) - 0.34));
         float streak = texture2D(uDetail, p).r * 0.7 + texture2D(uDetail, p * vec2(4.0, 2.6) + 0.3).g * 0.6;
         float threads = 0.55 + 0.45 * sin(vUv.x * 46.0 + streak * 7.0);
         float body = smoothstep(0.30, 0.62, streak * 0.8 + threads * 0.35 + (1.0 - v) * 0.12);
         // feathered on every edge: a waterfall has no straight sides, and a
         // hard-edged trapezoid is the one thing that reads as cardboard
-        float sides = smoothstep(0.0, 0.30, vUv.x) * smoothstep(1.0, 0.70, vUv.x);
+        float sides = smoothstep(0.0, 0.30, vUv.x) * (1.0 - smoothstep(0.70, 1.0, vUv.x));
         sides *= 0.72 + 0.5 * streak;
         float lip = smoothstep(0.90, 1.0, v);
         float alpha = clamp(body * sides * (0.38 + 0.44 * v) + lip * sides * 0.8 + shelf * sides * 0.45, 0.0, 1.0);
-        alpha *= mix(0.78, 0.20, smoothstep(0.5, 0.0, v));   // breaks into spray
-        alpha *= smoothstep(1.02, 0.86, v);                  // and fades in at the lip
+        alpha *= mix(0.78, 0.20, (1.0 - smoothstep(0.0, 0.5, v)));   // breaks into spray
+        alpha *= (1.0 - smoothstep(0.86, 1.02, v));                  // and fades in at the lip
         vec3 color = mix(vec3(0.72, 0.82, 0.86), vec3(1.0), clamp(lip * 0.8 + shelf * 0.7 + 0.2, 0.0, 1.0));
         color *= 0.45 + 0.75 * uSunColor;
         vec3 viewDir = normalize(cameraPosition - vWorld);

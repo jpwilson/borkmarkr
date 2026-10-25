@@ -20,6 +20,17 @@ import { TERRAIN_HALF, STACKS, clamp, mix, zoneBySite } from "./island-layout.js
    light and every fog colour by a second gamma. */
 const lin = (hex, scale = 1) => new THREE.Color(hex).multiplyScalar(scale);
 
+// Start conservatively before the first expensive frame; capture ignores hints.
+export function initialTier() {
+  const cores = navigator.hardwareConcurrency || 4;
+  const memory = navigator.deviceMemory || 8;
+  const small = Math.min(window.innerWidth, window.innerHeight) < 600;
+  const touch = navigator.maxTouchPoints > 0;
+  if (cores <= 4 || memory <= 4 || (small && touch)) return "low";
+  if (cores <= 8 || small || touch || window.devicePixelRatio > 1.5) return "mid";
+  return "high";
+}
+
 export class IslandScene {
   constructor({ canvas, labelHost, layout, capture = false }) {
     this.canvas = canvas;
@@ -87,6 +98,7 @@ export class IslandScene {
     };
     this.build();
     this.buildLabels();
+    this.setQuality(this.capture ? "high" : initialTier());
     return this;
   }
 
@@ -143,6 +155,7 @@ export class IslandScene {
   dispose() {
     const seen = new Set();
     this.root?.traverse((o) => {
+      if (o.isInstancedMesh) o.dispose();
       if (o.geometry && !seen.has(o.geometry)) { seen.add(o.geometry); o.geometry.dispose(); }
       const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
       for (const m of mats) if (!seen.has(m)) { seen.add(m); m.dispose(); }
@@ -303,6 +316,7 @@ export class IslandScene {
     // marker.index is the position in layout.markers, which is the order
     // the beacon buffer was built in; marker.slot is per-kind and would
     // light the wrong camp
+    if (this.capture) marker = null;
     if (u) u.uHover.value = marker ? marker.index ?? -1 : -1;
   }
 
@@ -325,15 +339,17 @@ export class IslandScene {
     // and dropping them costs far less of the look than dropping the jungle
     const tiers = {
       high: { pixelRatio: Math.min(window.devicePixelRatio || 1, 2), flora: 1, particles: 1, post: 1 },
-      mid: { pixelRatio: 1, flora: 0.55, particles: 0.5, post: 1 },
+      mid: { pixelRatio: 1, flora: 0.55, particles: 0.5, post: 0.5 },
       low: { pixelRatio: 0.8, flora: 0.3, particles: 0, post: 0 },
     };
-    const q = tiers[tier] || tiers.high;
+    if (!tiers[tier]) tier = "high";
+    const q = tiers[tier];
     this.quality = { ...q, tier };
     this.renderer.setPixelRatio(this.capture ? 1 : q.pixelRatio);
     setFloraDensity(this.flora, this.capture ? 1 : q.flora);
     this.setParticles(this.capture ? 1 : q.particles);
     this.post.enabled = q.post > 0;
+    this.post.scale = q.post || 1;
     if (this.birds) this.birds.visible = q.particles > 0 || q.post > 0;
     this.resize(this.width, this.height);
     return this.quality;

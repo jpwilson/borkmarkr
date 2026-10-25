@@ -217,9 +217,9 @@ function buildGlow(layout, uniforms) {
       varying vec2 vUv; varying float vFlicker; varying float vNear; varying float vLift;
       void main() {
         float r = length(vUv);
-        float core = smoothstep(0.5, 0.0, r);
-        float halo = smoothstep(1.0, 0.1, r);
-        float glow = smoothstep(1.0, 0.45, r);
+        float core = (1.0 - smoothstep(0.0, 0.5, r));
+        float halo = (1.0 - smoothstep(0.1, 1.0, r));
+        float glow = (1.0 - smoothstep(0.45, 1.0, r));
         vec3 color = mix(vec3(1.0, 0.44, 0.13), vec3(1.0, 0.94, 0.78), core);
         float a = (halo * 0.26 + glow * 0.26 + core * 1.05) * vFlicker * uGlow * mix(0.3, 1.0, vNear);
         a *= 1.0 + vLift * 0.7;
@@ -252,7 +252,7 @@ export function buildSelectRing(uniforms) {
       void main(){
         // soft on both edges, so it reads as light on the ground
         float r = length(vP.xz);
-        float band = smoothstep(0.56, 0.78, r) * smoothstep(1.02, 0.86, r);
+        float band = smoothstep(0.56, 0.78, r) * (1.0 - smoothstep(0.86, 1.02, r));
         float pulse = 0.62 + 0.38 * sin(uTime * 2.0);
         float a = band * pulse * 0.8;
         gl_FragColor = vec4(vec3(1.0, 0.72, 0.38) * a, a);

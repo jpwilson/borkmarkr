@@ -35,13 +35,13 @@ export function buildSky(uniforms) {
         vec2 p = vec2(atan(d.z, d.x) * 0.42, d.y * 2.6);
         float lo = texture2D(uDetail, p * vec2(0.5, 1.2) + vec2(uTime * 0.0012, 0.0)).r
                  + texture2D(uDetail, p * vec2(1.6, 2.4) - vec2(uTime * 0.0021, 0.0)).g * 0.6;
-        float band = smoothstep(0.78, 1.26, lo) * smoothstep(0.34, 0.02, abs(h - 0.055));
+        float band = smoothstep(0.78, 1.26, lo) * (1.0 - smoothstep(0.02, 0.34, abs(h - 0.055)));
         vec3 lowCloud = mix(uHazeColor * 0.62, uSunHaze * 1.45, pow(toSun, 1.6) * 0.85 + 0.15);
         color = mix(color, lowCloud, band * 0.78);
 
         float md = texture2D(uDetail, p * vec2(0.26, 0.55) + vec2(uTime * 0.0007, 0.02)).b
                  + texture2D(uDetail, p * vec2(0.9, 1.5) - vec2(uTime * 0.0013, 0.0)).r * 0.5;
-        float deck = smoothstep(0.86, 1.34, md) * smoothstep(0.02, 0.22, h) * smoothstep(0.62, 0.18, h);
+        float deck = smoothstep(0.86, 1.34, md) * smoothstep(0.02, 0.22, h) * (1.0 - smoothstep(0.18, 0.62, h));
         // lit from below by a sun that is nearly on the horizon
         vec3 midCloud = mix(uFogColor * 0.72, uSunHaze * 1.25, pow(toSun, 1.2) * 0.7 + 0.12);
         color = mix(color, midCloud, deck * 0.52);
@@ -147,7 +147,7 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
       varying vec2 vUv; varying float vSeed; varying float vFade; varying float vFloor;
       void main() {
         float r = length(vUv);
-        float soft = smoothstep(1.0, 0.1, r);
+        float soft = (1.0 - smoothstep(0.1, 1.0, r));
         vec2 q = vUv * 0.33 + vec2(vSeed * 3.7, vSeed * 1.9) + vec2(uTime * 0.0015, 0.0);
         float n = texture2D(uDetail, q).r * 0.7 + texture2D(uDetail, q * 2.7 + 0.21).b * 0.5;
         float alpha = soft * smoothstep(0.22, 0.95, n + soft * 0.55) * uOpacity * vFade;

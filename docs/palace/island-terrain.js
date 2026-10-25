@@ -331,7 +331,7 @@ export const ATMOS_PARS = /* glsl */`
     c = mix(c, uSunHaze, pow(toSun, 2.4) * 0.62 * (1.0 - smoothstep(0.08, 0.55, h)));
     c += uSunHaze * pow(toSun, 9.0) * 0.5;
     c += uSunColor * pow(toSun, 60.0) * 0.6;
-    c = mix(c, uFogColor * 0.8, smoothstep(0.0, -0.09, h));
+    c = mix(c, uFogColor * 0.8, (1.0 - smoothstep(-0.09, 0.0, h)));
     return c;
   }
 
@@ -417,7 +417,7 @@ export function terrainMaterial(uniforms) {
            a hole in the frame unless its edges catch something; this is the
            grazing light that runs along the top of every backlit ridge. */
         float graze = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 2.2)
-                    * clamp(0.5 - ndl, 0.0, 1.0) * smoothstep(0.55, 0.05, n.y);
+                    * clamp(0.5 - ndl, 0.0, 1.0) * (1.0 - smoothstep(0.05, 0.55, n.y));
         color += uSunHaze * graze * 0.22 * shade;
 
         /* The lava. Emissive, so it survives the shadow of its own crater

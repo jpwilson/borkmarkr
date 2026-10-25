@@ -59,7 +59,9 @@ function lobeArrays({ bands = 3, segs = 8, squash = 0.74, dent = 0.3, seed = 1, 
   for (let b = 0; b < rows.length - 1; b++) for (let sgi = 0; sgi < segs; sgi++) {
     const a = rows[b][sgi], c = rows[b][(sgi + 1) % segs];
     const d = rows[b + 1][sgi], e = rows[b + 1][(sgi + 1) % segs];
-    idx.push(a, c, d, c, e, d);
+    // Each pole is a collapsed ring: one triangle per sector has zero area.
+    if (b > 0) idx.push(a, c, d);
+    if (b < rows.length - 2) idx.push(c, e, d);
   }
   return { pos, nrm, idx };
 }
