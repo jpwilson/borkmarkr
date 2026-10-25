@@ -97,6 +97,23 @@ export const SITES = [
 ];
 export const MAX_ZONES = SITES.length;
 
+/* A faint hue per place, multiplied into both the ground colour and the
+   foliage standing on it. Small numbers on purpose: enough that the zones
+   read as different country from three kilometres up — the way the aerial
+   reference does — and not so much that the island turns into a pie chart. */
+export const SITE_TINT = {
+  volcano:  [1.12, 0.94, 0.80],   // ash and old lava
+  karst:    [0.96, 1.01, 1.02],   // limestone grey-green
+  temple:   [1.11, 1.03, 0.78],   // dry golden terraces
+  river:    [0.90, 1.07, 0.93],   // wet valley green
+  falls:    [0.86, 1.00, 1.08],   // spray-cooled cliffs
+  swamp:    [0.97, 0.97, 0.76],   // tannin olive
+  lagoon:   [1.10, 1.03, 0.86],   // sand and sun
+  highland: [0.84, 0.97, 1.03],   // cloud-forest blue-green
+  crater:   [1.03, 1.06, 0.82],   // bamboo rim
+};
+export const tintOf = (siteId) => SITE_TINT[siteId] || [1, 1, 1];
+
 /* The river: volcano flank → valley → delta in the marsh → sea. Carved into
    the heightfield and drawn as a water ribbon by the renderer. */
 export const RIVER = [

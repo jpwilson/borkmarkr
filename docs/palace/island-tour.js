@@ -21,7 +21,13 @@ function catmull(p0, p1, p2, p3, u, key) {
 
 /* ── reusable framings, shared by the tour and by ?capture poses ────────── */
 export function overviewPose(layout, spin = 0) {
-  const a = 0.88 + spin;
+  /* The hero framing, and the one thing that decides whether the island is
+     lit at all: at the old bearing the camera stood on the shadow side and
+     every ridge in the frame was fill light. From here the sun is about
+     forty degrees off the lens, so the near slopes take the key, the
+     valleys behind them fall into blue shadow, and the sea stacks sit out
+     to the right with the lagoon under the camera. */
+  const a = 1.50 + spin;
   const d = 3380;
   return {
     pos: v(Math.cos(a) * d, 1280, Math.sin(a) * d),
@@ -52,12 +58,12 @@ export function zonePose(layout, zone, opts = {}) {
   // out at sea, the lagoon off the reef, the valley looking up it
   const framing = {
     volcano:  { dist: 1180, height: 760, lift: 300, fov: 40, az: 1.45 },
-    karst:    { dist: 900,  height: 430, lift: 120, fov: 42, az: 0.15 },
-    temple:   { dist: 660,  height: 470, lift: 40,  fov: 40, az: 1.50 },
+    karst:    { dist: 1180, height: 560, lift: 150, fov: 38, az: 0.42 },
+    temple:   { dist: 820,  height: 520, lift: 60,  fov: 38, az: 1.62 },
     river:    { dist: 780,  height: 430, lift: 40,  fov: 42, az: 1.95 },
     falls:    { dist: 980,  height: 330, lift: 150, fov: 40, az: -1.47, abs: true, aim: [0, -430] },
-    swamp:    { dist: 560,  height: 250, lift: 14,  fov: 44, az: 2.35 },
-    lagoon:   { dist: 760,  height: 340, lift: 10,  fov: 42, az: 1.30 },
+    swamp:    { dist: 760,  height: 330, lift: 20,  fov: 40, az: 2.20 },
+    lagoon:   { dist: 900,  height: 400, lift: 16,  fov: 40, az: 1.18 },
     highland: { dist: 940,  height: 660, lift: 180, fov: 40, az: 2.55 },
     crater:   { dist: 720,  height: 540, lift: 110, fov: 40, az: 1.85 },
   }[zone.siteId] || { dist: 820, height: 500, lift: 60, fov: 42, az: 1.35 };

@@ -112,9 +112,14 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
         vec4 isl = islandAt(vWorld.xz);
         float depth = isl.r * 120.0;
 
-        float shallow = 1.0 - smoothstep(1.0, 34.0, depth);
+        /* Depth is the whole story of tropical water: navy out past the
+           shelf, turquoise over the sand, nearly white where it is ankle
+           deep. Three steps, because two of them read as a gradient and
+           three read as a reef. */
+        float shallow = 1.0 - smoothstep(1.0, 46.0, depth);
         vec3 body = mix(uDeep, uShallow, shallow * shallow);
-        body = mix(body, uShallow * 1.25 + uFoam * 0.12, (1.0 - smoothstep(0.0, 9.0, depth)) * 0.65);
+        body = mix(body, uShallow * 1.35 + uFoam * 0.10, (1.0 - smoothstep(0.0, 16.0, depth)) * 0.72);
+        body = mix(body, uShallow * 1.1 + uFoam * 0.40, (1.0 - smoothstep(0.0, 4.5, depth)) * 0.65);
 
         float fres = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 4.5);
         vec3 refl = reflect(-viewDir, n);
@@ -122,18 +127,28 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
         vec3 sky = skyAt(normalize(vec3(refl.x, abs(refl.y) + 0.02, refl.z))) * 0.88;
         vec3 color = mix(body, sky, clamp(fres * 0.9 + 0.05, 0.0, 1.0));
         // the glitter path, broad then tight
-        color += uSunColor * pow(toSun, 160.0) * 2.2 * detail;
-        color += uSunColor * pow(toSun, 26.0) * 0.10;
+        /* The glitter path. Three widths again: the hard specks, the broad
+           sheen they sit in, and a wide wash that only shows when the line
+           of sight is nearly down the sun's own reflection. */
+        color += uSunColor * pow(toSun, 220.0) * 4.0 * detail;
+        color += uSunColor * pow(toSun, 42.0) * 0.55 * detail;
+        color += uSunHaze * pow(toSun, 9.0) * 0.14;
 
         // surf: a band on the waterline, lines rolling in, spray on rock
-        if (depth < 42.0) {
-        float waveline = 0.5 + 0.5 * sin(depth * 0.55 - uTime * 1.8 + (texture2D(uDetail, vWorld.xz * 0.0016).r - 0.5) * 7.0);
-        float band = (1.0 - smoothstep(0.0, 13.0, depth)) * waveline;
-        float edge = (1.0 - smoothstep(0.0, 3.2, depth));
-        float cliff = isl.g * (1.0 - smoothstep(0.0, 26.0, depth));
-        float foam = clamp(band * 0.85 + edge * 0.75 + cliff * 1.6, 0.0, 1.0);
+        if (depth < 56.0) {
+        // two sets of rollers at different spacings, so the surf comes in in
+        // lines rather than as one ring round the island
+        float jit = (texture2D(uDetail, vWorld.xz * 0.0016).r - 0.5) * 7.0;
+        float waveline = 0.5 + 0.5 * sin(depth * 0.55 - uTime * 1.8 + jit);
+        float waveline2 = 0.5 + 0.5 * sin(depth * 0.23 - uTime * 1.1 + jit * 1.7);
+        float band = (1.0 - smoothstep(0.0, 15.0, depth)) * waveline;
+        band += (1.0 - smoothstep(0.0, 34.0, depth)) * waveline2 * 0.45;
+        float edge = (1.0 - smoothstep(0.0, 3.6, depth));
+        // and a collar of white water round anything standing in the sea
+        float cliff = isl.g * (1.0 - smoothstep(0.0, 30.0, depth));
+        float foam = clamp(band * 0.9 + edge * 0.85 + cliff * 1.8, 0.0, 1.0);
         foam *= 0.55 + 0.45 * texture2D(uDetail, vWorld.xz * 0.012 + vec2(uTime * 0.01, 0.0)).g * 2.0;
-        color = mix(color, uFoam, clamp(foam, 0.0, 0.92));
+        color = mix(color, uFoam, clamp(foam, 0.0, 0.94));
         }
 
         color = applyAtmos(color, vWorld, -viewDir);
@@ -266,7 +281,7 @@ export function buildInland(field, uniforms) {
   const mat = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: /* glsl */`
-      attribute vec3 lit;
+      attribute vec4 lit;
       varying vec3 vWorld; varying vec3 vColor; varying float vMarsh;
       void main() {
         vec4 wp = modelMatrix * vec4(position, 1.0);
@@ -331,6 +346,15 @@ export function buildInland(field, uniforms) {
 export function buildFalls(field, uniforms) {
   const pos = [], uv = [], idx = [];
   const push = (x, y, z, u, v) => { pos.push(x, y, z); uv.push(u, v); return pos.length / 3 - 1; };
+  /* Three tiers to a fall, not one sheet. A four-hundred-metre drop in one
+     unbroken ribbon reads as a painted stripe; broken into a high thread, a
+     wide middle and a boiling base — each stepped out from the cliff and
+     wider than the one above it — it reads as water falling a long way. */
+  const TIERS = [
+    { from: 0.00, to: 0.34, w: 0.80, out: 0.0 },
+    { from: 0.30, to: 0.72, w: 1.15, out: 0.42 },
+    { from: 0.66, to: 1.02, w: 1.75, out: 1.0 },
+  ];
   for (const f of FALLS) {
     const top = heightAt(f.x, f.z);
     // aim the sheet away from the plateau centre
@@ -339,12 +363,17 @@ export function buildFalls(field, uniforms) {
     const px = -dz, pz = dx;
     const drop = top + 6;
     const x0 = f.x + dx * 18, z0 = f.z + dz * 18;
-    const run = 62;
-    const a = push(x0 + px * f.w, top + 3, z0 + pz * f.w, 0, 1);
-    const b2 = push(x0 - px * f.w, top + 3, z0 - pz * f.w, 1, 1);
-    const c = push(x0 - px * f.w * 1.5 + dx * run, top - drop, z0 - pz * f.w * 1.5 + dz * run, 1, 0);
-    const d = push(x0 + px * f.w * 1.5 + dx * run, top - drop, z0 + pz * f.w * 1.5 + dz * run, 0, 0);
-    idx.push(a, c, b2, a, d, c);
+    const run = 74;
+    for (const T of TIERS) {
+      const yA = top + 3 - drop * T.from, yB = top + 3 - drop * T.to;
+      const oA = T.out * run * T.from + run * T.from, oB = T.out * run * T.to + run * T.to;
+      const wA = f.w * T.w, wB = f.w * T.w * 1.35;
+      const a = push(x0 + px * wA + dx * oA, yA, z0 + pz * wA + dz * oA, 0, 1);
+      const b2 = push(x0 - px * wA + dx * oA, yA, z0 - pz * wA + dz * oA, 1, 1);
+      const c = push(x0 - px * wB + dx * oB, yB, z0 - pz * wB + dz * oB, 1, 0);
+      const d = push(x0 + px * wB + dx * oB, yB, z0 + pz * wB + dz * oB, 0, 0);
+      idx.push(a, c, b2, a, d, c);
+    }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));

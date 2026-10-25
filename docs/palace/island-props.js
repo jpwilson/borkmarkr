@@ -11,9 +11,9 @@ import { clamp, mix, sstep, noise2, fbm, heightAt, STACKS, LAND_STACKS } from ".
 export class Build {
   constructor() { this.pos = []; this.nrm = []; this.col = []; this.lit = []; this.idx = []; }
   get count() { return this.pos.length / 3; }
-  vert(x, y, z, nx, ny, nz, c, shade, ao = 1, moist = 0) {
+  vert(x, y, z, nx, ny, nz, c, shade, ao = 1, moist = 0, glow = 0) {
     this.pos.push(x, y, z); this.nrm.push(nx, ny, nz);
-    this.col.push(c[0], c[1], c[2]); this.lit.push(shade, ao, moist);
+    this.col.push(c[0], c[1], c[2]); this.lit.push(shade, ao, moist, glow);
     return this.count - 1;
   }
   tri(a, b, c) { this.idx.push(a, b, c); }
@@ -79,7 +79,7 @@ export class Build {
     g.setAttribute("position", new THREE.Float32BufferAttribute(this.pos, 3));
     g.setAttribute("normal", new THREE.Float32BufferAttribute(this.nrm, 3));
     g.setAttribute("color", new THREE.Float32BufferAttribute(this.col, 3));
-    g.setAttribute("lit", new THREE.Float32BufferAttribute(this.lit, 3));
+    g.setAttribute("lit", new THREE.Float32BufferAttribute(this.lit, 4));
     g.setIndex(this.count > 65535 ? new THREE.Uint32BufferAttribute(this.idx, 1) : new THREE.Uint16BufferAttribute(this.idx, 1));
     g.computeBoundingSphere();
     return g;
@@ -92,7 +92,7 @@ const mixc = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2
 /* Undercut at the waterline, fluted sides, mossy shelves, a rounded crown —
    the profile of a Ha Long Bay stack rather than a cone. */
 function tower(b, cx, cz, R, H, baseY, field, seed) {
-  const RINGS = 30, SEG = 28;
+  const RINGS = 34, SEG = 30;
   const rows = [];
   const shadeBase = field ? clamp(sampleGrid(field, field.shade, cx, cz) * 0.5 + 0.5, 0, 1) : 0.95;
   // each tower has its own plan shape and lean, so a cluster never repeats
@@ -120,7 +120,13 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
     // sheer the whole way, with the sea notching a visible undercut in the
     // bottom few metres — the overhang every Ha Long photograph has
     let prof = 1 - taper * t;
-    prof *= 1 - 0.19 * Math.exp(-Math.pow((t - 0.045) / 0.05, 2));
+    /* The undercut. A limestone tower standing in the sea is eaten away at
+       the waterline into a notch you can put a boat under, and the overhang
+       above it is the single silhouette cue that says karst rather than
+       column. Deeper than before, and with a flare below it where the
+       collapsed rock piles up. */
+    prof *= 1 - 0.30 * Math.exp(-Math.pow((t - 0.05) / 0.045, 2));
+    prof *= 1 + 0.12 * Math.exp(-Math.pow(t / 0.028, 2));
     const ledgeWave = Math.sin(t * 23 + seed * 3.1);
     const ledge = 1 + 0.045 * ledgeWave + 0.028 * Math.sin(t * 8.7 - seed);
     const row = [];
@@ -129,7 +135,10 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
       const a = (i / SEG) * Math.PI * 2 + twist * t;
       // deep vertical fissures, constant up the tower, plus finer flutes
       const fl = Math.sin(a * 7 + seed * 2.1);
-      const fissure = Math.pow(Math.abs(Math.sin(a * 4.5 + seed * 5.3)), 7) * 0.9;
+      // two sets of fissures at different spacings: one deep chimney every
+      // quarter turn, and a finer comb of flutes between them
+      const fissure = Math.pow(Math.abs(Math.sin(a * 4.5 + seed * 5.3)), 7) * 0.9
+                    + Math.pow(Math.abs(Math.sin(a * 9.0 - seed * 2.7)), 11) * 0.6;
       const fn = noise2(Math.cos(a) * 2.6 + seed, Math.sin(a) * 2.6 + t * 0.7);
       // above the break the rock between the spires is eaten away, so the
       // plan narrows to a handful of fingers instead of staying a disc
@@ -138,7 +147,7 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
       // the notches cut in, but not to nothing: pared to a needle a tower
       // stops being limestone and starts being a tooth
       const crag = up > 0 ? Math.pow(up, 1.25) * (0.95 * sp - 0.50) : 0;
-      const flute = 1 + 0.10 * fl + 0.09 * fn + 0.045 * Math.sin(a * 19 + t * 2.0) - fissure * 0.16 + crag;
+      const flute = 1 + 0.15 * fl + 0.12 * fn + 0.07 * Math.sin(a * 19 + t * 2.0) - fissure * 0.22 + crag;
       const rad = R * Math.max(0.02, prof) * ledge * Math.max(0.05, flute);
       const x = cx + Math.cos(a) * rad * ex + leanX * t * H;
       const z = cz + Math.sin(a) * rad * ez + leanZ * t * H;
@@ -148,13 +157,16 @@ function tower(b, cx, cz, R, H, baseY, field, seed) {
       // pale dry limestone, with long dark rain streaks running straight down
       const streak = clamp(0.5 + 0.85 * noise2(a * 6.3 + seed, t * 0.45), 0, 1);
       let c = mixc(PAL.limestone, PAL.rockPale, 0.08 + 0.3 * noise2(a * 2.3, t * 1.2));
-      c = mixc(c, PAL.rockWet, Math.pow(clamp((streak - 0.56) * 3.0, 0, 1), 1.3) * 0.46);
-      c = mixc(c, PAL.rockDark, fissure * 0.30);
+      // the long dark rain streaks that run straight down a karst face
+      c = mixc(c, PAL.rockWet, Math.pow(clamp((streak - 0.50) * 3.0, 0, 1), 1.2) * 0.62);
+      c = mixc(c, PAL.rockDark, clamp(fissure, 0, 1) * 0.46);
+      // and the foot of the tower is wet, dark and black with algae
+      c = mixc(c, PAL.rockDark, Math.pow(1 - clamp(t / 0.09, 0, 1), 1.4) * 0.55);
       // vegetation drapes over the crown and catches on the wider ledges,
       // thinning to bare rock on the sheer middle of the tower
       const shelf = clamp(0.5 + 0.5 * ledgeWave, 0, 1);
-      const moss = clamp(1.25 * Math.pow(t, 2.6) + 0.34 * shelf * sstep(0.1, 0.55, t)
-        + 0.55 * noise2(a * 1.9 - seed, t * 2.6) - 0.26, 0, 1);
+      const moss = clamp(1.45 * Math.pow(t, 2.4) + 0.42 * shelf * sstep(0.1, 0.55, t)
+        + 0.62 * noise2(a * 1.9 - seed, t * 2.6) - 0.24, 0, 1);
       c = mixc(c, moss > 0.58 ? PAL.jungleDeep : PAL.moss, clamp((moss - 0.30) * 1.9, 0, 0.9));
       // the grooves are drawn with shading, not geometry: cheap and legible
       const groove = clamp(0.5 + 0.5 * (fl * 0.6 + fn * 0.5) + 0.12 * Math.sin(a * 19 + t * 2.0)
@@ -207,51 +219,69 @@ export function buildTemple(field, uniforms, site) {
   const mossy = mixc(stone, PAL.moss, 0.42);
   const yaw = 0.42;
 
-  const tiers = 4;
+  /* Five tiers instead of four and half as wide again, because from the
+     overview the old one was a pale smudge on a hillside. At this size it
+     is the thing that tells you which zone you are looking at. */
+  const tiers = 5;
+  const STEP = 26;
   for (let i = 0; i < tiers; i++) {
-    const w = 164 - i * 30, hh = 22 - i * 1.5;
-    const y = base + i * 21 + hh / 2 - 2;
-    const c = mixc(stone, mossy, 0.25 + 0.14 * i);
+    const w = 238 - i * 38, hh = 26 - i * 1.6;
+    const y = base + i * STEP + hh / 2 - 2;
+    const c = mixc(stone, mossy, 0.22 + 0.15 * i);
     b.box(cx, y, cz, w, hh, w, yaw, c, shade, 0.85 - i * 0.05);
+    // a lip on each tier, so the steps read as masonry and not as a cake
+    b.box(cx, y + hh / 2 + 1.6, cz, w + 9, 3.6, w + 9, yaw, mixc(c, PAL.rockDark, 0.3), shade, 0.7 - i * 0.04);
   }
-  // shrine on top
-  b.box(cx, base + tiers * 21 + 9, cz, 38, 22, 38, yaw, mixc(stone, mossy, 0.5), shade, 0.8);
-  b.box(cx, base + tiers * 21 + 22, cz, 44, 6, 44, yaw, mixc(stone, PAL.moss, 0.6), shade, 0.75);
+  // shrine on top, and a broken lintel over its door
+  const topY = base + tiers * STEP;
+  b.box(cx, topY + 13, cz, 54, 30, 54, yaw, mixc(stone, mossy, 0.5), shade, 0.8);
+  b.box(cx, topY + 30, cz, 62, 7, 62, yaw, mixc(stone, PAL.moss, 0.62), shade, 0.75);
+  b.box(cx, topY + 40, cz, 20, 13, 20, yaw + 0.3, mixc(stone, PAL.moss, 0.5), shade, 0.8);
 
-  // stair down the south face
+  // the great stair down the south face, wide and deep
   const sa = yaw;
-  for (let i = 0; i < 18; i++) {
-    const t = i / 17;
-    const w = 26;
-    const d = 86 - t * 46;
-    const y = base + t * (tiers * 21) + 1;
-    b.box(cx + Math.sin(sa) * d, y, cz + Math.cos(sa) * d, w, 3.4, 7, yaw, mixc(stone, mossy, 0.3 + t * 0.3), shade, 0.8);
+  for (let i = 0; i < 26; i++) {
+    const t = i / 25;
+    const w = 46;
+    const d = 126 - t * 64;
+    const y = base + t * (tiers * STEP) + 1;
+    b.box(cx + Math.sin(sa) * d, y, cz + Math.cos(sa) * d, w, 4.4, 9, yaw, mixc(stone, mossy, 0.3 + t * 0.3), shade, 0.8);
+  }
+  // balustrades either side of the stair
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 9; i++) {
+      const t = i / 8;
+      const d = 126 - t * 64;
+      const y = base + t * (tiers * STEP) + 7;
+      b.box(cx + Math.sin(sa) * d + Math.cos(sa) * side * 27, y, cz + Math.cos(sa) * d - Math.sin(sa) * side * 27,
+        9, 11, 11, yaw, mixc(stone, PAL.moss, 0.4 + 0.3 * t), shade, 0.72);
+    }
   }
 
   // columns, mostly broken, around a cleared plaza
-  for (let i = 0; i < 14; i++) {
-    const a = (i / 14) * Math.PI * 2 + 0.2;
-    const rad = 118 + 16 * noise2(i * 1.3, 2.1);
+  for (let i = 0; i < 20; i++) {
+    const a = (i / 20) * Math.PI * 2 + 0.2;
+    const rad = 168 + 22 * noise2(i * 1.3, 2.1);
     const x = cx + Math.cos(a) * rad, z = cz + Math.sin(a) * rad;
     const g = groundAt(field, x, z);
     const broken = noise2(i * 2.7, 5.5);
-    const h = broken > 0.1 ? 26 + 10 * broken : 7 + 12 * Math.abs(broken);
-    b.cylinder(x, g - 1, z, 4.4, 3.9, h, 9, mixc(stone, mossy, 0.3 + 0.4 * Math.abs(broken)), shade * 0.95);
-    if (broken > 0.3) b.box(x, g + h + 1.6, z, 11, 3.2, 11, a, mixc(stone, mossy, 0.5), shade, 0.8);
+    const h = broken > 0.1 ? 34 + 16 * broken : 9 + 16 * Math.abs(broken);
+    b.cylinder(x, g - 1, z, 5.4, 4.7, h, 9, mixc(stone, mossy, 0.3 + 0.4 * Math.abs(broken)), shade * 0.95);
+    if (broken > 0.3) b.box(x, g + h + 2, z, 14, 4, 14, a, mixc(stone, mossy, 0.5), shade, 0.8);
     else {
       // a toppled drum lying in the grass
-      const fx = x + Math.cos(a + 1.1) * 14, fz = z + Math.sin(a + 1.1) * 14;
-      b.cylinder(fx, groundAt(field, fx, fz) + 3, fz, 4.2, 4.0, 13, 8, mixc(stone, PAL.moss, 0.55), shade, Math.PI / 2, a + 1.1);
+      const fx = x + Math.cos(a + 1.1) * 17, fz = z + Math.sin(a + 1.1) * 17;
+      b.cylinder(fx, groundAt(field, fx, fz) + 3.6, fz, 5.1, 4.8, 17, 8, mixc(stone, PAL.moss, 0.58), shade, Math.PI / 2, a + 1.1);
     }
   }
-  // fallen blocks
-  for (let i = 0; i < 22; i++) {
+  // fallen blocks, tumbled down the slope below the plaza
+  for (let i = 0; i < 34; i++) {
     const a = i * 2.3999632;
-    const rad = 70 + 110 * Math.sqrt((i % 11) / 11);
+    const rad = 86 + 150 * Math.sqrt((i % 11) / 11);
     const x = cx + Math.cos(a) * rad, z = cz + Math.sin(a) * rad;
     const g = groundAt(field, x, z);
-    const s = 5 + 6 * Math.abs(noise2(i * 3.1, 7.7));
-    b.box(x, g + s * 0.35, z, s * 1.6, s * 0.8, s, a * 1.7, mixc(stone, PAL.moss, 0.45 + 0.3 * Math.abs(noise2(i, 1))), shade, 0.7);
+    const s = 6 + 8 * Math.abs(noise2(i * 3.1, 7.7));
+    b.box(x, g + s * 0.35, z, s * 1.7, s * 0.85, s, a * 1.7, mixc(stone, PAL.moss, 0.45 + 0.3 * Math.abs(noise2(i, 1))), shade, 0.7);
   }
 
   const mesh = new THREE.Mesh(b.geometry(), terrainMaterial(uniforms));

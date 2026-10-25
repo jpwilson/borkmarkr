@@ -23,17 +23,32 @@ export function buildSky(uniforms) {
         float h = d.y;
         vec3 color = skyAt(d);
         float toSun = max(0.0, dot(d, uSunDir));
-        // the disc itself, flattened by the haze it sits in
-        float disc = smoothstep(0.99955, 0.99985, toSun);
-        color = mix(color, uSunColor * 2.6, disc * clamp(h * 14.0, 0.0, 1.0));
+        // the disc itself, flattened and reddened by the haze it sits in
+        float disc = smoothstep(0.99930, 0.99972, toSun);
+        color = mix(color, uSunColor * 3.4, disc * clamp(h * 10.0, 0.0, 1.0));
 
-        // long low cloud banks, drifting
+        /* Three cloud layers, not one band. A high sheet catching the sun
+           from underneath, a mid deck drifting the other way, and the long
+           low bank sitting on the horizon that gives the sea somewhere to
+           end. Each is the same noise read at a different scale and speed,
+           which is cheap and reads as weather. */
         vec2 p = vec2(atan(d.z, d.x) * 0.42, d.y * 2.6);
-        float n = texture2D(uDetail, p * vec2(0.5, 1.2) + vec2(uTime * 0.0012, 0.0)).r
-                + texture2D(uDetail, p * vec2(1.6, 2.4) - vec2(uTime * 0.0021, 0.0)).g * 0.6;
-        float band = smoothstep(0.80, 1.3, n) * smoothstep(0.42, 0.04, abs(h - 0.085));
-        vec3 cloud = mix(uHazeColor * 0.7, uSunHaze * 1.2, pow(toSun, 2.0) * 0.8 + 0.2);
-        color = mix(color, cloud, band * 0.62);
+        float lo = texture2D(uDetail, p * vec2(0.5, 1.2) + vec2(uTime * 0.0012, 0.0)).r
+                 + texture2D(uDetail, p * vec2(1.6, 2.4) - vec2(uTime * 0.0021, 0.0)).g * 0.6;
+        float band = smoothstep(0.78, 1.26, lo) * smoothstep(0.34, 0.02, abs(h - 0.055));
+        vec3 lowCloud = mix(uHazeColor * 0.62, uSunHaze * 1.45, pow(toSun, 1.6) * 0.85 + 0.15);
+        color = mix(color, lowCloud, band * 0.78);
+
+        float md = texture2D(uDetail, p * vec2(0.26, 0.55) + vec2(uTime * 0.0007, 0.02)).b
+                 + texture2D(uDetail, p * vec2(0.9, 1.5) - vec2(uTime * 0.0013, 0.0)).r * 0.5;
+        float deck = smoothstep(0.86, 1.34, md) * smoothstep(0.02, 0.22, h) * smoothstep(0.62, 0.18, h);
+        // lit from below by a sun that is nearly on the horizon
+        vec3 midCloud = mix(uFogColor * 0.72, uSunHaze * 1.25, pow(toSun, 1.2) * 0.7 + 0.12);
+        color = mix(color, midCloud, deck * 0.52);
+
+        float hi = texture2D(uDetail, p * vec2(0.14, 0.3) + vec2(uTime * 0.00035, 0.0)).g;
+        float veil = smoothstep(0.58, 0.9, hi) * smoothstep(0.16, 0.7, h);
+        color = mix(color, mix(uHazeColor, uSunHaze, pow(toSun, 2.0)) * 0.9, veil * 0.22);
 
         gl_FragColor = vec4(color * uExposure, 1.0);
         #include <tonemapping_fragment>
@@ -57,6 +72,7 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
   const pos = new Float32Array(n * 4 * 3);
   const corner = new Float32Array(n * 4 * 2);
   const params = new Float32Array(n * 4 * 4);
+  const floor = new Float32Array(n * 4);
   const idx = [];
   const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
   list.forEach((p, i) => {
@@ -65,6 +81,7 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
       pos[v * 3] = p.x; pos[v * 3 + 1] = p.y; pos[v * 3 + 2] = p.z;
       corner[v * 2] = corners[c][0]; corner[v * 2 + 1] = corners[c][1];
       params[v * 4] = p.s; params[v * 4 + 1] = p.seed; params[v * 4 + 2] = p.speed ?? 1; params[v * 4 + 3] = p.rise ?? 1;
+      floor[v] = p.floor ?? -1e4;
     }
     const b = i * 4;
     idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
@@ -73,6 +90,7 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
   g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   g.setAttribute("corner", new THREE.BufferAttribute(corner, 2));
   g.setAttribute("params", new THREE.BufferAttribute(params, 4));
+  g.setAttribute("floorY", new THREE.BufferAttribute(floor, 1));
   g.setIndex(idx);
   g.computeBoundingSphere();
   if (g.boundingSphere) g.boundingSphere.radius += 400;
@@ -82,9 +100,9 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
     transparent: true,
     depthWrite: false,
     vertexShader: /* glsl */`
-      attribute vec2 corner; attribute vec4 params;
+      attribute vec2 corner; attribute vec4 params; attribute float floorY;
       uniform float uTime, uKind, uFlat;
-      varying vec3 vWorld; varying vec2 vUv; varying float vSeed; varying float vFade;
+      varying vec3 vWorld; varying vec2 vUv; varying float vSeed; varying float vFade; varying float vFloor;
       void main() {
         vec3 c = position;
         float size = params.x, seed = params.y, speed = params.z, rise = params.w;
@@ -100,8 +118,8 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
           // smoke: a column that recycles, growing and thinning as it climbs
           float age = fract(uTime * 0.035 * speed + seed);
           c.y += age * rise;
-          c.x += age * age * 230.0 + sin(seed * 9.1 + age * 3.0) * 34.0 * age;
-          c.z += age * 26.0 + cos(seed * 5.5 + age * 2.4) * 30.0 * age;
+          c.x += age * age * 420.0 + sin(seed * 9.1 + age * 3.0) * 52.0 * age;
+          c.z += age * age * 180.0 + cos(seed * 5.5 + age * 2.4) * 46.0 * age;
           size *= 0.35 + age * 2.6;
           fade = smoothstep(0.0, 0.12, age) * (1.0 - smoothstep(0.45, 1.0, age));
         } else {
@@ -117,7 +135,7 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
         vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
         up = normalize(mix(up, vec3(0.0, 1.0, 0.0), 0.25));
         vec3 world = c + right * corner.x * size * uFlat + up * corner.y * size;
-        vWorld = world; vUv = corner; vSeed = seed; vFade = fade;
+        vWorld = world; vUv = corner; vSeed = seed; vFade = fade; vFloor = floorY;
         gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
       }
     `,
@@ -125,7 +143,7 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
       ${ATMOS_PARS}
       uniform sampler2D uDetail;
       uniform vec3 uTint; uniform float uOpacity, uKind;
-      varying vec2 vUv; varying float vSeed; varying float vFade;
+      varying vec2 vUv; varying float vSeed; varying float vFade; varying float vFloor;
       void main() {
         float r = length(vUv);
         float soft = smoothstep(1.0, 0.1, r);
@@ -135,11 +153,20 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
         if (alpha < 0.004) discard;
         vec3 viewDir = normalize(cameraPosition - vWorld);
         float toSun = max(0.0, dot(normalize(-viewDir), uSunDir));
-        // mist is lit from behind by a low sun: that is the whole effect
-        vec3 color = uTint * (uSkyColor * 0.85 + uSunColor * (0.10 + pow(toSun, 3.0) * 0.55));
+        /* Mist is lit from behind by a low sun: that is the whole effect.
+           The warm term is strongly directional, so a bank between the
+           camera and the sun goes almost white and one behind the camera
+           stays a cold blue — which is what layers the valleys. */
+        vec3 color = uTint * (uSkyColor * 0.72 + uSunHaze * (0.07 + pow(toSun, 2.6) * 0.72)
+                              + uSunColor * pow(toSun, 10.0) * 0.45);
         float dist = length(vWorld - cameraPosition);
         // a bank only reads as a bank from outside it
-        alpha *= smoothstep(60.0, 520.0, dist);
+        alpha *= smoothstep(90.0, 820.0, dist);
+        /* The quad is flat and the hillside is not, so where they cross the
+           intersection draws a hard line. Fading the bottom of a bank out
+           as it approaches the ground beneath it hides the seam and, as a
+           bonus, is exactly how mist behaves: it thins where it touches. */
+        alpha *= smoothstep(0.0, 26.0, vWorld.y - vFloor);
         color = applyAtmos(color, vWorld, -viewDir);
         gl_FragColor = vec4(color * uExposure, alpha);
         #include <tonemapping_fragment>
@@ -163,36 +190,66 @@ const rnd = (seed) => {
    out over the water between the sea stacks. */
 export function buildMist(field, layout, uniforms, groundAt) {
   const r = rnd(4242);
-  const low = [], high = [];
-  // low mist collects where the ground is concave: valleys, basins, the bay
-  for (let i = 0; i < 900 && low.length < 130; i++) {
+  const low = [], mid = [], high = [];
+  /* Mist sits where mist sits. The low banks go into the hollows — the
+     field's own sky-occlusion tells us where those are — the mid layer
+     wraps the shoulders of the ridges at the height a cloud base would sit,
+     and the high layer caps the volcano and the plateau. Three layers at
+     three heights is what reads as weather; one even wash reads as a dirty
+     lens, which is what the old single band was. */
+  for (let i = 0; i < 2600 && low.length < 96; i++) {
     const a = r() * Math.PI * 2;
-    const rad = 300 + 1600 * Math.sqrt(r());
+    const rad = 260 + 1640 * Math.sqrt(r());
     const x = Math.cos(a) * rad, z = Math.sin(a) * rad;
     const g = groundAt(x, z);
     const hollow = field ? sampleGrid(field, field.ao, x, z) : 0.5;
-    if (g > 6 && hollow > 0.80) continue;
-    const base = Math.max(4, g) + 12 + r() * 70;
-    low.push({ x, y: base, z, s: 130 + 240 * r(), seed: r(), speed: 0.5 + r() });
+    if (g > 6 && hollow > 0.78) continue;
+    const base = Math.max(4, g) + 16 + r() * 60;
+    low.push({ x, y: base, z, s: 170 + 300 * r(), seed: r(), speed: 0.45 + 0.9 * r(), floor: Math.max(0, g) - 4 });
   }
-  // banks lying on the water out among the sea stacks
-  for (let i = 0; i < 60; i++) {
-    const x = 760 + 1500 * r(), z = -1300 + 2600 * r();
-    low.push({ x, y: 10 + 70 * r(), z, s: 180 + 300 * r(), seed: r(), speed: 0.35 + 0.8 * r() });
+  // banks lying on the water out among the sea stacks, where the reference
+  // picture has them: thick, low, and hiding the feet of the towers
+  for (let i = 0; i < 44; i++) {
+    const x = 700 + 1600 * r(), z = -1400 + 2800 * r();
+    low.push({ x, y: 8 + 62 * r(), z, s: 220 + 360 * r(), seed: r(), speed: 0.3 + 0.8 * r(), floor: -40 });
   }
-  for (let i = 0; i < 46; i++) {
+  // and over the marsh, which is the one place on the island that steams
+  for (let i = 0; i < 26; i++) {
+    const a = r() * Math.PI * 2, rad = 380 * Math.sqrt(r());
+    const x = -740 + Math.cos(a) * rad, z = 520 + Math.sin(a) * rad;
+    low.push({ x, y: 10 + 26 * r(), z, s: 110 + 200 * r(), seed: r(), speed: 0.25 + 0.5 * r(), floor: 0 });
+  }
+  // the cloud base: a layer wrapping the ridges at two or three hundred metres
+  for (let i = 0; i < 1400 && mid.length < 46; i++) {
     const a = r() * Math.PI * 2;
-    const rad = 300 + 1100 * Math.sqrt(r());
+    const rad = 150 + 1250 * Math.sqrt(r());
     const x = Math.cos(a) * rad, z = Math.sin(a) * rad;
     const g = groundAt(x, z);
-    high.push({ x, y: Math.max(150, g * 0.78 + 170) + r() * 120, z, s: 320 + 420 * r(), seed: r(), speed: 0.35 + 0.6 * r() });
+    if (g < 70) continue;
+    mid.push({ x, y: g * 0.62 + 150 + r() * 90, z, s: 260 + 360 * r(), seed: r(), speed: 0.3 + 0.7 * r(), floor: g - 60 });
+  }
+  // cloud clinging to the volcano and the plateau
+  for (const peak of [[-150, -330, 620], [430, -800, 420], [-820, -180, 380], [-130, -830, 400]]) {
+    for (let i = 0; i < 11; i++) {
+      const a = r() * Math.PI * 2, rad = 90 + 340 * Math.sqrt(r());
+      high.push({ x: peak[0] + Math.cos(a) * rad, y: peak[2] + (r() - 0.4) * 150, z: peak[1] + Math.sin(a) * rad,
+        s: 230 + 330 * r(), seed: r(), speed: 0.25 + 0.5 * r(), floor: -1e4 });
+    }
+  }
+  for (let i = 0; i < 24; i++) {
+    const a = r() * Math.PI * 2;
+    const rad = 300 + 1200 * Math.sqrt(r());
+    const x = Math.cos(a) * rad, z = Math.sin(a) * rad;
+    const g = groundAt(x, z);
+    high.push({ x, y: Math.max(170, g * 0.78 + 200) + r() * 140, z, s: 340 + 460 * r(), seed: r(), speed: 0.3 + 0.6 * r(), floor: -1e4 });
   }
   const group = new THREE.Group();
   group.name = "mist";
-  // opacity is deliberately low: these are layers that separate the ridges,
-  // not weather. Stacked three or four deep they still read as a bank.
-  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.97, 0.92], opacity: 0.075, flat: 2.3, name: "mist-low", order: 6 }));
-  group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.042, flat: 2.6, name: "mist-high", order: 7 }));
+  // opacity stays low per quad: these are layers that separate the ridges,
+  // not weather. Stacked three or four deep they read as a bank.
+  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.044, flat: 2.4, name: "mist-low", order: 6 }));
+  group.add(puffSystem(uniforms, mid, { kind: 0, color: [1, 0.95, 0.88], opacity: 0.034, flat: 2.5, name: "mist-mid", order: 7 }));
+  group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.95, 0.9], opacity: 0.030, flat: 2.7, name: "mist-high", order: 8 }));
   return group;
 }
 
@@ -200,13 +257,13 @@ export function buildSmoke(uniforms, site) {
   const r = rnd(1717);
   const list = [];
   const base = heightAt(site.x, site.z);
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 46; i++) {
     list.push({
-      x: site.x + (r() - 0.5) * 70, y: base + 10, z: site.z + (r() - 0.5) * 70,
-      s: 42 + 40 * r(), seed: r(), speed: 0.6 + 0.8 * r(), rise: 520 + 420 * r(),
+      x: site.x + (r() - 0.5) * 90, y: base + 10, z: site.z + (r() - 0.5) * 90,
+      s: 38 + 44 * r(), seed: r(), speed: 0.5 + 0.8 * r(), rise: 620 + 560 * r(), floor: -1e4,
     });
   }
-  return puffSystem(uniforms, list, { kind: 1, color: [0.84, 0.8, 0.78], opacity: 0.22, flat: 1.25, name: "smoke", order: 8 });
+  return puffSystem(uniforms, list, { kind: 1, color: [0.62, 0.56, 0.55], opacity: 0.22, flat: 1.15, name: "smoke", order: 9 });
 }
 
 export function buildSpray(uniforms) {
@@ -214,12 +271,12 @@ export function buildSpray(uniforms) {
   const list = [];
   for (const f of FALLS) {
     const base = 2;
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 26; i++) {
       list.push({
-        x: f.x + (r() - 0.5) * f.w * 2.4, y: base + r() * 14, z: f.z + (r() - 0.5) * f.w * 2.4,
-        s: 16 + 20 * r(), seed: r(), speed: 0.7 + 0.6 * r(), rise: 60 + 70 * r(),
+        x: f.x + (r() - 0.5) * f.w * 3.0, y: base + r() * 26, z: f.z + (r() - 0.5) * f.w * 3.0,
+        s: 22 + 30 * r(), seed: r(), speed: 0.6 + 0.6 * r(), rise: 90 + 120 * r(), floor: -1e4,
       });
     }
   }
-  return puffSystem(uniforms, list, { kind: 2, color: [1, 1, 1], opacity: 0.3, flat: 1.4, name: "spray", order: 9 });
+  return puffSystem(uniforms, list, { kind: 2, color: [1, 1, 1], opacity: 0.34, flat: 1.4, name: "spray", order: 10 });
 }

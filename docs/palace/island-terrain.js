@@ -9,7 +9,7 @@
 import * as THREE from "three";
 import {
   TERRAIN_HALF, ISLAND_R, SEA_LEVEL, heightAt, coastField, moistureAt, riverSample,
-  zoneField, clamp, sstep, mix, fbm, CAMP_CLEAR, CAMP_FADE, SUN_AZ, SUN_EL,
+  zoneField, clamp, sstep, mix, fbm, noise2, tintOf, CAMP_CLEAR, CAMP_FADE, SUN_AZ, SUN_EL,
 } from "./island-layout.js";
 
 /* ── colour helpers (authored in sRGB, uploaded linear) ─────────────────── */
@@ -27,25 +27,26 @@ const lerp3 = (a, b, t, out) => {
 };
 
 export const PAL = {
-  jungleDeep: srgb("#15240e"),
-  jungleMid:  srgb("#2b4315"),
-  jungleLit:  srgb("#4e7023"),
-  jungleDry:  srgb("#737139"),
-  moss:       srgb("#3c5c1d"),
-  rockDark:   srgb("#2e2823"),
-  rockWet:    srgb("#4c4840"),
-  rockPale:   srgb("#8d9088"),
-  limestone:  srgb("#c6c8c1"),
-  ash:        srgb("#332d29"),
-  ashLight:   srgb("#564c43"),
-  lava:       srgb("#b4350f"),
-  sand:       srgb("#d8c095"),
+  jungleDeep: srgb("#0d1d08"),
+  jungleMid:  srgb("#27420f"),
+  jungleLit:  srgb("#55791f"),
+  jungleDry:  srgb("#7d7a33"),
+  moss:       srgb("#3f6418"),
+  rockDark:   srgb("#241f1a"),
+  rockWet:    srgb("#3b352d"),
+  rockPale:   srgb("#95978c"),
+  limestone:  srgb("#e0dfd2"),
+  ash:        srgb("#2b2522"),
+  ashLight:   srgb("#5c5048"),
+  lava:       srgb("#d64410"),
+  sand:       srgb("#e2c99c"),
   sandWet:    srgb("#8b7a5b"),
-  marsh:      srgb("#38401f"),
-  trail:      srgb("#b09467"),
+  marsh:      srgb("#333d1b"),
+  trail:      srgb("#b89a68"),
   shallow:    srgb("#9ab79b"),
-  seabed:     srgb("#233a3a"),
-  bamboo:     srgb("#6d7d33"),
+  seabed:     srgb("#1d3434"),
+  bamboo:     srgb("#7b8b35"),
+  strata:     srgb("#6b5a45"),
 };
 
 /* ── the field ──────────────────────────────────────────────────────────── */
@@ -160,35 +161,50 @@ function bakeAO(field) {
 /* ── vertex colour ──────────────────────────────────────────────────────── */
 const tmpA = [0, 0, 0], tmpB = [0, 0, 0];
 
-function groundColor(x, z, y, slope, moist, zoneGap, camp, out) {
+function groundColor(x, z, y, slope, moist, zoneGap, camp, tint, out) {
   const dryHigh = clamp((y - 330) / 300, 0, 1);
-  let veg = lerp3(PAL.jungleDeep, PAL.jungleLit, clamp(moist * 1.15 - 0.08, 0, 1), tmpA);
-  veg = lerp3(veg, PAL.jungleDry, dryHigh * 0.55, tmpA);
+  let veg = lerp3(PAL.jungleDeep, PAL.jungleLit, clamp(moist * 1.2 - 0.06, 0, 1), tmpA);
+  veg = lerp3(veg, PAL.jungleDry, dryHigh * 0.58, tmpA);
   const varia = fbm(x * 0.0032, z * 0.0032, 3);
-  veg = lerp3(veg, PAL.moss, clamp(varia * 0.8 + 0.3, 0, 1) * 0.35, tmpA);
+  veg = lerp3(veg, PAL.moss, clamp(varia * 0.8 + 0.3, 0, 1) * 0.4, tmpA);
 
   // rock where it is steep, plus the volcano's ash cone and the karst shelf
   const vd = Math.hypot(x + 150, z + 330);
   const ashAmt = clamp(1 - vd / 430, 0, 1) * clamp((y - 180) / 180, 0, 1);
-  let rockAmt = sstep(0.52, 1.15, slope) * 0.95 + dryHigh * 0.2;
+  let rockAmt = sstep(0.48, 1.05, slope) * 0.97 + dryHigh * 0.22;
   rockAmt = clamp(rockAmt + ashAmt * 0.9, 0, 1);
   let rock = lerp3(PAL.rockDark, PAL.rockPale, clamp(0.35 + 0.5 * fbm(x * 0.008, z * 0.008, 2), 0, 1), tmpB);
+  /* Exposed strata: horizontal bands cut into the rock colour, the way a
+     cliff shows the layers it was built from. Banded on height alone, so
+     the lines run level around a whole headland instead of wandering. */
+  const band = 0.5 + 0.5 * Math.sin(y * 0.19 + 2.3 * noise2(x * 0.0022, z * 0.0022));
+  rock = lerp3(rock, PAL.strata, Math.pow(band, 2.4) * 0.5 * sstep(0.55, 1.2, slope), tmpB);
+  // and the steepest faces are wet: sea cliffs, gorge walls, the fall basins
+  const wetRock = sstep(1.05, 1.9, slope) * clamp(0.35 + moist, 0, 1);
+  rock = lerp3(rock, PAL.rockDark, wetRock * 0.72, tmpB);
   if (ashAmt > 0) rock = lerp3(rock, lerp3(PAL.ash, PAL.ashLight, clamp(0.3 + varia, 0, 1), [0, 0, 0]), clamp(ashAmt * 1.3, 0, 1), tmpB);
   lerp3(veg, rock, rockAmt, out);
 
   // caldera floor: cooled basalt, with the vent still warm
+  let glow = 0;
   if (vd < 230 && y < 540) {
     const t = sstep(230, 60, vd);
-    lerp3(out, PAL.ash, t * 0.85, out);
-    const vent = sstep(96, 20, vd) * sstep(520, 440, y);
-    if (vent > 0) lerp3(out, PAL.lava, vent * 0.75, out);
+    lerp3(out, PAL.ash, t * 0.9, out);
+    /* Lava. Not a wash of orange over the whole floor — a crust of cooled
+       basalt with a web of cracks still glowing through it, which is what
+       the caldera needs to read as alive from three kilometres up. */
+    const crack = Math.abs(fbm(x * 0.016 + 3.1, z * 0.016 - 7.7, 3));
+    const vein = Math.pow(clamp(1 - crack * 5.5, 0, 1), 1.6);
+    const vent = sstep(150, 24, vd) * sstep(540, 430, y);
+    glow = clamp(vent * (0.25 + vein * 1.4), 0, 1);
+    if (glow > 0) lerp3(out, PAL.lava, clamp(glow * 0.85, 0, 0.9), out);
   }
 
   // marsh and riverbank
   const r = riverSample(x, z);
-  if (r.d < 180) lerp3(out, PAL.marsh, Math.exp(-(r.d * r.d) / (120 * 120)) * 0.7, out);
+  if (r.d < 180) lerp3(out, PAL.marsh, Math.exp(-(r.d * r.d) / (120 * 120)) * 0.72, out);
   const sd = Math.hypot(x + 740, z - 520);
-  if (sd < 520) lerp3(out, PAL.marsh, sstep(520, 180, sd) * 0.75, out);
+  if (sd < 520) lerp3(out, PAL.marsh, sstep(520, 180, sd) * 0.78, out);
 
   // beaches: a bright band either side of the waterline
   const m = coastField(x, z);
@@ -198,12 +214,10 @@ function groundColor(x, z, y, slope, moist, zoneGap, camp, out) {
   // the trail that runs the zone boundary, the way the aerial reference reads
   if (zoneGap < 52 && y > 16 && slope < 1.15) {
     const t = sstep(52, 10, zoneGap) * clamp(1.2 - slope * 0.6, 0, 1);
-    lerp3(out, PAL.trail, t * 0.92, out);
+    lerp3(out, PAL.trail, t * 0.9, out);
   }
 
-  // a camp clearing: ground beaten down to earth and dry grass, which is what
-  // makes a camp read as a clearing from the air and keeps the close-up on
-  // the landing beat from being a black floor under a shadowed canopy
+  // a camp clearing: ground beaten down to earth and dry grass
   if (camp > 0 && y > 6) {
     const earth = lerp3(PAL.jungleDry, PAL.trail, 0.25 + 0.4 * fbm(x * 0.03, z * 0.03, 2), tmpB);
     lerp3(out, earth, camp * 0.34, out);
@@ -215,7 +229,16 @@ function groundColor(x, z, y, slope, moist, zoneGap, camp, out) {
     const bed = lerp3(PAL.seabed, PAL.sand, sh * sh, tmpB);
     lerp3(out, bed, sstep(4, -6, y), out);
   }
-  return out;
+
+  /* The zone's own hue, last and lightly: a few per cent is enough for the
+     boundaries to read from the air without the island turning into a map. */
+  if (tint && y > 1) {
+    const w = clamp((y - 1) / 14, 0, 1) * 0.72;
+    out[0] *= mix(1, tint[0], w);
+    out[1] *= mix(1, tint[1], w);
+    out[2] *= mix(1, tint[2], w);
+  }
+  return glow;
 }
 
 /* ── the terrain mesh ───────────────────────────────────────────────────── */
@@ -231,7 +254,8 @@ export function buildTerrain(field, uniforms, clearings = []) {
     }
     return m;
   };
-  const { res, half, step, h, slope, moist, shade, ao, gap } = field;
+  const { res, half, step, h, slope, moist, shade, ao, gap, zone, sites } = field;
+  const tints = (sites || []).map((st) => tintOf(st.id));
   const keep = new Int32Array(res * res).fill(-1);
   const pos = [], col = [], nrm = [], lit = [], idx = [];
   const c = [0, 0, 0];
@@ -256,9 +280,9 @@ export function buildTerrain(field, uniforms, clearings = []) {
     const nx = (l - r) / (2 * step), nz = (u - d) / (2 * step);
     const il = 1 / Math.hypot(nx, 1, nz);
     nrm.push(nx * il, il, nz * il);
-    groundColor(x, z, y, slope[k], moist[k], gap[k], campAt(x, z), c);
+    const glow = groundColor(x, z, y, slope[k], moist[k], gap[k], campAt(x, z), tints[zone[k]], c);
     col.push(c[0], c[1], c[2]);
-    lit.push(shade[k], ao[k], clamp(moist[k], 0, 1));
+    lit.push(shade[k], ao[k], clamp(moist[k], 0, 1), glow);
   }
   for (let j = 0; j < res - 1; j++) for (let i = 0; i < res - 1; i++) {
     const a = keep[j * res + i], b = keep[j * res + i + 1];
@@ -271,7 +295,7 @@ export function buildTerrain(field, uniforms, clearings = []) {
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
   g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-  g.setAttribute("lit", new THREE.Float32BufferAttribute(lit, 3));
+  g.setAttribute("lit", new THREE.Float32BufferAttribute(lit, 4));
   g.setIndex(idx.length > 65535 ? new THREE.Uint32BufferAttribute(idx, 1) : new THREE.Uint16BufferAttribute(idx, 1));
   g.computeBoundingSphere();
 
@@ -284,7 +308,7 @@ export function buildTerrain(field, uniforms, clearings = []) {
 
 /* ── shared shader chunks ───────────────────────────────────────────────── */
 export const ATMOS_PARS = /* glsl */`
-  uniform vec3 uSunDir, uSunColor, uSkyColor, uSkyMid, uZenith, uGroundColor, uFogColor, uHazeColor, uSunHaze;
+  uniform vec3 uSunDir, uSunColor, uSunDeep, uSkyColor, uSkyMid, uZenith, uGroundColor, uFogColor, uHazeColor, uSunHaze;
   uniform float uFogDensity, uFogHeight, uTime, uExposure;
   varying vec3 vWorld;
 
@@ -292,18 +316,24 @@ export const ATMOS_PARS = /* glsl */`
      colour of the sky above it instead of a guess. */
   vec3 skyAt(vec3 d) {
     float h = clamp(d.y, -1.0, 1.0);
-    vec3 c = mix(uSkyMid, uZenith, pow(clamp(h, 0.0, 1.0), 0.55));
-    float horizon = pow(1.0 - clamp(abs(h) * 9.5, 0.0, 1.0), 2.6);
-    c = mix(c, uHazeColor, horizon * 0.72);
+    vec3 c = mix(uSkyMid, uZenith, pow(clamp(h, 0.0, 1.0), 0.48));
+    // the horizon band: wide, warm and bright, the way a low sun leaves it
+    float horizon = pow(1.0 - clamp(abs(h) * 7.0, 0.0, 1.0), 2.2);
+    c = mix(c, uHazeColor, horizon * 0.84);
     float toSun = max(0.0, dot(d, uSunDir));
-    c = mix(c, uSunHaze, pow(toSun, 3.5) * 0.55 * (1.0 - smoothstep(0.1, 0.5, h)));
-    c += uSunHaze * pow(toSun, 12.0) * 0.35;
+    // the glow around the sun, in three widths: a broad warm wash, a tight
+    // halo and the hot core. One term alone always reads as a painted blob.
+    c = mix(c, uSunHaze, pow(toSun, 2.4) * 0.62 * (1.0 - smoothstep(0.08, 0.55, h)));
+    c += uSunHaze * pow(toSun, 9.0) * 0.5;
+    c += uSunColor * pow(toSun, 60.0) * 0.6;
     c = mix(c, uFogColor * 0.8, smoothstep(0.0, -0.09, h));
     return c;
   }
 
-  // Warm aerial perspective: thicker low down, and brighter when you look
-  // into the sun, which is what makes the mist read as light rather than haze.
+  /* Aerial perspective, layered: thicker low down, warmer the closer the
+     line of sight runs to the sun, and with a separate cool term for the
+     parts of the island that are looking away from it. That split is what
+     stacks the ridges into planes instead of washing them all one grey. */
   vec3 applyAtmos(vec3 color, vec3 world, vec3 viewDir) {
     float dist = length(world - cameraPosition);
     float hCam = max(cameraPosition.y, 0.0), hPt = max(world.y, 0.0);
@@ -313,9 +343,10 @@ export const ATMOS_PARS = /* glsl */`
     float integral = fh * abs(a - b) / dh;
     float amount = 1.0 - exp(-uFogDensity * dist * integral);
     float toSun = max(0.0, dot(normalize(viewDir), uSunDir));
-    vec3 fogCol = mix(uFogColor, uHazeColor, pow(toSun, 2.0) * 0.6);
-    fogCol = mix(fogCol, uSunHaze, pow(toSun, 7.0) * 0.55);
-    fogCol += uSunHaze * pow(toSun, 22.0) * 0.5 * amount;
+    vec3 cool = uFogColor * mix(0.82, 1.0, clamp(hPt / 600.0, 0.0, 1.0));
+    vec3 fogCol = mix(cool, uHazeColor, pow(toSun, 1.6) * 0.72);
+    fogCol = mix(fogCol, uSunHaze, pow(toSun, 5.0) * 0.62);
+    fogCol += uSunHaze * pow(toSun, 18.0) * 0.8 * amount;
     return mix(color, fogCol, clamp(amount, 0.0, 1.0));
   }
 `;
@@ -324,8 +355,8 @@ export function terrainMaterial(uniforms) {
   return new THREE.ShaderMaterial({
     uniforms,
     vertexShader: /* glsl */`
-      attribute vec3 lit;
-      varying vec3 vWorld; varying vec3 vNormal; varying vec3 vColor; varying vec3 vLit;
+      attribute vec4 lit;
+      varying vec3 vWorld; varying vec3 vNormal; varying vec3 vColor; varying vec4 vLit;
       void main() {
         vec4 wp = modelMatrix * vec4(position, 1.0);
         vWorld = wp.xyz; vNormal = normal; vColor = color; vLit = lit;
@@ -335,43 +366,55 @@ export function terrainMaterial(uniforms) {
     fragmentShader: /* glsl */`
       ${ATMOS_PARS}
       uniform sampler2D uDetail;
-      varying vec3 vNormal; varying vec3 vColor; varying vec3 vLit;
+      varying vec3 vNormal; varying vec3 vColor; varying vec4 vLit;
 
       void main() {
         vec3 n = normalize(vNormal);
         vec3 viewDir = normalize(cameraPosition - vWorld);
 
-        // two scales of procedural detail, cross-faded by slope, standing in
-        // for the texture a real surface would have at this distance
+        // three scales of procedural detail, cross-faded by distance,
+        // standing in for the texture a real surface would have
         vec3 d1 = texture2D(uDetail, vWorld.xz * 0.0022).rgb;
         vec3 d2 = texture2D(uDetail, vWorld.xz * 0.0135).rgb;
-        // a third octave that only exists close up, so standing in a clearing
-        // is not standing on a flat wash of one colour
         float close = 1.0 - smoothstep(90.0, 700.0, length(vWorld - cameraPosition));
         vec3 d3 = texture2D(uDetail, vWorld.xz * 0.11).rgb;
         float grain = (d1.r - 0.5) * 0.7 + (d2.g - 0.5) * 0.45 + (d3.r - 0.5) * 0.5 * close;
-        vec3 base = vColor * (1.0 + grain * 0.42);
-        base *= 1.0 + (d2.b - 0.5) * 0.25 + (d3.b - 0.5) * 0.3 * close;
+        vec3 base = vColor * (1.0 + grain * 0.46);
+        base *= 1.0 + (d2.b - 0.5) * 0.28 + (d3.b - 0.5) * 0.32 * close;
+        // a normal perturbed by the same detail, so a hillside has relief
+        // at the scale between the heightfield's cells and its pixels
+        n = normalize(n + vec3((d2.r - 0.5), 0.0, (d2.g - 0.5)) * 0.42
+                        + vec3((d3.r - 0.5), 0.0, (d3.g - 0.5)) * 0.5 * close);
 
         float shade = vLit.x, ao = vLit.y;
         float ndl = dot(n, uSunDir);
         // wrapped diffuse: foliage does not fall off like a billiard ball
-        float wrap = clamp(ndl * 0.56 + 0.44, 0.0, 1.0);
-        float sun = pow(wrap, 1.45) * mix(0.16, 1.0, shade);
+        float wrap = clamp(ndl * 0.54 + 0.46, 0.0, 1.0);
+        float sun = pow(wrap, 1.5) * mix(0.10, 1.0, shade);
         vec3 light = uSunColor * sun;
-        light += uSkyColor * (0.30 + 0.30 * n.y) * ao;
-        light += uGroundColor * (0.18 * (1.0 - n.y)) * ao;
+        light += uSkyColor * (0.32 + 0.34 * n.y) * ao;
+        light += uGroundColor * (0.20 * (1.0 - n.y)) * ao;
 
         // back-scatter: light bleeding through the canopy on the sun side
         float back = pow(clamp(dot(viewDir, -uSunDir) * 0.5 + 0.5, 0.0, 1.0), 3.0);
-        light += uSunColor * back * 0.16 * vLit.z * shade;
+        light += uSunDeep * back * 0.22 * vLit.z * shade;
 
         vec3 color = base * light;
 
         // wet specular on rock and water-cut ground, low and sharp
         vec3 hv = normalize(uSunDir + viewDir);
-        float spec = pow(max(dot(n, hv), 0.0), 42.0) * (1.0 - vLit.z) * shade * 0.35;
+        float spec = pow(max(dot(n, hv), 0.0), 42.0) * (1.0 - vLit.z) * shade * 0.42;
         color += uSunColor * spec;
+
+        /* The lava. Emissive, so it survives the shadow of its own crater
+           wall, and it breathes: the crust over a vent is never still. */
+        float glow = vLit.w;
+        if (glow > 0.001) {
+          float pulse = 0.72 + 0.28 * sin(uTime * 0.8 + vWorld.x * 0.03 + vWorld.z * 0.021);
+          float crust = 0.5 + 0.5 * sin(uTime * 0.35 + vWorld.z * 0.05);
+          vec3 hot = mix(vec3(1.6, 0.30, 0.03), vec3(2.6, 1.05, 0.22), glow * crust);
+          color += hot * pow(glow, 1.5) * pulse * 3.2;
+        }
 
         color = applyAtmos(color, vWorld, -viewDir);
         gl_FragColor = vec4(color * uExposure, 1.0);

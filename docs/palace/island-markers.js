@@ -190,13 +190,16 @@ function buildGlow(layout, uniforms) {
         // A world-space ember that never drops below a readable pixel size —
         // but the floor is for altitude. Up close it is a campfire standing
         // next to a tent, and at 3.4 m it burned the tent out.
-        float size = max(mix(0.9, 3.4, smoothstep(90.0, 520.0, dist)), dist * 0.0062) * params.y;
+        float size = max(mix(1.1, 4.6, smoothstep(90.0, 520.0, dist)), dist * 0.0078) * params.y;
         vNear = smoothstep(26.0, 130.0, dist);
         vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
         vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
         vec3 world = c + right * corner.x * size + up * corner.y * size;
         vUv = corner;
-        vFlicker = 0.72 + 0.28 * sin(uTime * 6.1 + params.x * 40.0) * sin(uTime * 2.7 + params.x * 11.0);
+        // a fire flicker over a slow breath, so a camp reads as lit rather
+        // than as a dot: the slow term is what the eye picks up from altitude
+        vFlicker = (0.74 + 0.26 * sin(uTime * 6.1 + params.x * 40.0) * sin(uTime * 2.7 + params.x * 11.0))
+                 * (0.84 + 0.30 * sin(uTime * 1.15 + params.x * 6.3));
         gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
       }
     `,
@@ -205,10 +208,11 @@ function buildGlow(layout, uniforms) {
       varying vec2 vUv; varying float vFlicker; varying float vNear;
       void main() {
         float r = length(vUv);
-        float core = smoothstep(0.55, 0.0, r);
+        float core = smoothstep(0.5, 0.0, r);
         float halo = smoothstep(1.0, 0.1, r);
-        vec3 color = mix(vec3(1.0, 0.52, 0.2), vec3(1.0, 0.93, 0.76), core);
-        float a = (halo * 0.3 + core * 0.9) * vFlicker * uGlow * mix(0.3, 1.0, vNear);
+        float glow = smoothstep(1.0, 0.45, r);
+        vec3 color = mix(vec3(1.0, 0.44, 0.13), vec3(1.0, 0.94, 0.78), core);
+        float a = (halo * 0.26 + glow * 0.26 + core * 1.05) * vFlicker * uGlow * mix(0.3, 1.0, vNear);
         gl_FragColor = vec4(color * a, a);
       }
     `,
