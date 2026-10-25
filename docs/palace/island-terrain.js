@@ -30,19 +30,19 @@ export const PAL = {
   jungleDeep: srgb("#0d1d08"),
   jungleMid:  srgb("#27420f"),
   jungleLit:  srgb("#55791f"),
-  jungleDry:  srgb("#7d7a33"),
+  jungleDry:  srgb("#63632c"),
   moss:       srgb("#3f6418"),
-  rockDark:   srgb("#241f1a"),
+  rockDark:   srgb("#352d25"),
   rockWet:    srgb("#3b352d"),
   rockPale:   srgb("#95978c"),
   limestone:  srgb("#e0dfd2"),
   ash:        srgb("#2b2522"),
   ashLight:   srgb("#5c5048"),
   lava:       srgb("#d64410"),
-  sand:       srgb("#e2c99c"),
+  sand:       srgb("#d4bb8f"),
   sandWet:    srgb("#8b7a5b"),
   marsh:      srgb("#333d1b"),
-  trail:      srgb("#b89a68"),
+  trail:      srgb("#a98d60"),
   shallow:    srgb("#9ab79b"),
   seabed:     srgb("#1d3434"),
   bamboo:     srgb("#7b8b35"),
@@ -167,11 +167,16 @@ function groundColor(x, z, y, slope, moist, zoneGap, camp, tint, out) {
   veg = lerp3(veg, PAL.jungleDry, dryHigh * 0.58, tmpA);
   const varia = fbm(x * 0.0032, z * 0.0032, 3);
   veg = lerp3(veg, PAL.moss, clamp(varia * 0.8 + 0.3, 0, 1) * 0.4, tmpA);
+  /* Under a closed canopy the floor is leaf litter in deep shade, not dry
+     grass. Below the canopy line the ground goes dark and slightly warm,
+     which also stops the gaps between crowns reading as bare dirt. */
+  const litter = clamp((1 - dryHigh) * sstep(0.12, 0.55, moist) * clamp(1.3 - slope * 0.9, 0, 1), 0, 1);
+  veg = lerp3(veg, PAL.jungleDeep, litter * 0.52, tmpA);
 
   // rock where it is steep, plus the volcano's ash cone and the karst shelf
   const vd = Math.hypot(x + 150, z + 330);
   const ashAmt = clamp(1 - vd / 430, 0, 1) * clamp((y - 180) / 180, 0, 1);
-  let rockAmt = sstep(0.48, 1.05, slope) * 0.97 + dryHigh * 0.22;
+  let rockAmt = sstep(0.58, 1.18, slope) * 0.97 + dryHigh * 0.22;
   rockAmt = clamp(rockAmt + ashAmt * 0.9, 0, 1);
   let rock = lerp3(PAL.rockDark, PAL.rockPale, clamp(0.35 + 0.5 * fbm(x * 0.008, z * 0.008, 2), 0, 1), tmpB);
   /* Exposed strata: horizontal bands cut into the rock colour, the way a
@@ -181,7 +186,7 @@ function groundColor(x, z, y, slope, moist, zoneGap, camp, tint, out) {
   rock = lerp3(rock, PAL.strata, Math.pow(band, 2.4) * 0.5 * sstep(0.55, 1.2, slope), tmpB);
   // and the steepest faces are wet: sea cliffs, gorge walls, the fall basins
   const wetRock = sstep(1.05, 1.9, slope) * clamp(0.35 + moist, 0, 1);
-  rock = lerp3(rock, PAL.rockDark, wetRock * 0.72, tmpB);
+  rock = lerp3(rock, PAL.rockWet, wetRock * 0.78, tmpB);
   if (ashAmt > 0) rock = lerp3(rock, lerp3(PAL.ash, PAL.ashLight, clamp(0.3 + varia, 0, 1), [0, 0, 0]), clamp(ashAmt * 1.3, 0, 1), tmpB);
   lerp3(veg, rock, rockAmt, out);
 
@@ -208,7 +213,7 @@ function groundColor(x, z, y, slope, moist, zoneGap, camp, tint, out) {
 
   // beaches: a bright band either side of the waterline
   const m = coastField(x, z);
-  const beach = sstep(70, 18, m) * sstep(26, 9, y) * clamp(1.15 - slope * 2.2, 0, 1);
+  const beach = sstep(46, 12, m) * sstep(20, 7, y) * clamp(1.15 - slope * 2.2, 0, 1);
   if (beach > 0) lerp3(out, PAL.sand, clamp(beach, 0, 1), out);
 
   // the trail that runs the zone boundary, the way the aerial reference reads
@@ -219,8 +224,8 @@ function groundColor(x, z, y, slope, moist, zoneGap, camp, tint, out) {
 
   // a camp clearing: ground beaten down to earth and dry grass
   if (camp > 0 && y > 6) {
-    const earth = lerp3(PAL.jungleDry, PAL.trail, 0.25 + 0.4 * fbm(x * 0.03, z * 0.03, 2), tmpB);
-    lerp3(out, earth, camp * 0.34, out);
+    const earth = lerp3(PAL.jungleDry, PAL.trail, 0.3 + 0.45 * fbm(x * 0.03, z * 0.03, 2), tmpB);
+    lerp3(out, earth, camp * 0.46, out);
   }
 
   // under water: pale sand in the shallows, dark basalt as it drops away
@@ -392,8 +397,10 @@ export function terrainMaterial(uniforms) {
         float wrap = clamp(ndl * 0.54 + 0.46, 0.0, 1.0);
         float sun = pow(wrap, 1.5) * mix(0.10, 1.0, shade);
         vec3 light = uSunColor * sun;
-        light += uSkyColor * (0.32 + 0.34 * n.y) * ao;
-        light += uGroundColor * (0.20 * (1.0 - n.y)) * ao;
+        // a vertical face sees half the dome and a lot of lit water and
+        // rock below it; without that bounce a sea cliff renders as a hole
+        light += uSkyColor * (0.40 + 0.30 * n.y) * ao;
+        light += uGroundColor * (0.34 * (1.0 - n.y)) * ao;
 
         // back-scatter: light bleeding through the canopy on the sun side
         float back = pow(clamp(dot(viewDir, -uSunDir) * 0.5 + 0.5, 0.0, 1.0), 3.0);
@@ -405,6 +412,13 @@ export function terrainMaterial(uniforms) {
         vec3 hv = normalize(uSunDir + viewDir);
         float spec = pow(max(dot(n, hv), 0.0), 42.0) * (1.0 - vLit.z) * shade * 0.42;
         color += uSunColor * spec;
+
+        /* A rim on the shadow side. A sea cliff with its back to the sun is
+           a hole in the frame unless its edges catch something; this is the
+           grazing light that runs along the top of every backlit ridge. */
+        float graze = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 2.2)
+                    * clamp(0.5 - ndl, 0.0, 1.0) * smoothstep(0.55, 0.05, n.y);
+        color += uSunHaze * graze * 0.22 * shade;
 
         /* The lava. Emissive, so it survives the shadow of its own crater
            wall, and it breathes: the crust over a vent is never still. */

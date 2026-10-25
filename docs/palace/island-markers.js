@@ -103,9 +103,10 @@ function geoFor(kind) {
   return b.geometry();
 }
 
-/* A camp is a camp, not a circus: about a storey and a half on the ground.
-   From the air the warm glow below carries them, not their silhouettes. */
-const KIND_SCALE = { camp: 6.0, totem: 5.4, banner: 6.2, torch: 5.6, cairn: 4.6 };
+/* A camp is a camp, not a circus — but the close-up is flown from two
+   hundred and fifty metres up, and at the old size a tent was four pixels.
+   Half as big again: still small against the jungle, now legible. */
+const KIND_SCALE = { camp: 9.2, totem: 8.4, banner: 9.6, torch: 8.6, cairn: 7.2 };
 
 export function buildMarkers(field, layout, uniforms) {
   const group = new THREE.Group();
@@ -145,7 +146,9 @@ export function buildMarkers(field, layout, uniforms) {
     group.add(mesh);
     meshes.push(mesh);
   }
-  group.add(buildGlow(layout, uniforms));
+  const glow = buildGlow(layout, uniforms);
+  group.add(glow);
+  group.userData.glow = glow;
   group.userData.meshes = meshes;
   return group;
 }
@@ -156,6 +159,7 @@ function buildGlow(layout, uniforms) {
   const pos = new Float32Array(n * 4 * 3);
   const corner = new Float32Array(n * 4 * 2);
   const params = new Float32Array(n * 4 * 2);
+  const slot = new Float32Array(n * 4);
   const idx = [];
   const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
   layout.markers.forEach((m, i) => {
@@ -165,6 +169,7 @@ function buildGlow(layout, uniforms) {
       corner[v * 2] = corners[c][0]; corner[v * 2 + 1] = corners[c][1];
       params[v * 2] = (i % 97) / 97;
       params[v * 2 + 1] = m.kind === "torch" ? 1.25 : 1;
+      slot[v] = i;
     }
     const b = i * 4;
     idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
@@ -173,24 +178,28 @@ function buildGlow(layout, uniforms) {
   g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   g.setAttribute("corner", new THREE.BufferAttribute(corner, 2));
   g.setAttribute("params", new THREE.BufferAttribute(params, 2));
+  g.setAttribute("slot", new THREE.BufferAttribute(slot, 1));
   g.setIndex(idx);
   g.computeBoundingSphere();
   const mat = new THREE.ShaderMaterial({
-    uniforms: { ...uniforms, uSelected: { value: -1 }, uGlow: { value: 1 } },
+    uniforms: { ...uniforms, uSelected: { value: -1 }, uHover: { value: -1 }, uGlow: { value: 1 } },
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexShader: /* glsl */`
-      attribute vec2 corner; attribute vec2 params;
-      uniform float uTime;
-      varying vec2 vUv; varying float vFlicker; varying float vNear;
+      attribute vec2 corner; attribute vec2 params; attribute float slot;
+      uniform float uTime, uHover, uSelected;
+      varying vec2 vUv; varying float vFlicker; varying float vNear; varying float vLift;
       void main() {
         vec3 c = position;
         float dist = length(c - cameraPosition);
+        // the one under the cursor, and the one the card is open on, flare up
+        vLift = (abs(slot - uHover) < 0.5 ? 1.0 : 0.0) + (abs(slot - uSelected) < 0.5 ? 1.0 : 0.0);
         // A world-space ember that never drops below a readable pixel size —
         // but the floor is for altitude. Up close it is a campfire standing
         // next to a tent, and at 3.4 m it burned the tent out.
-        float size = max(mix(1.1, 4.6, smoothstep(90.0, 520.0, dist)), dist * 0.0078) * params.y;
+        float size = max(mix(1.1, 4.6, smoothstep(90.0, 520.0, dist)), dist * 0.0078) * params.y
+                   * (1.0 + vLift * (0.55 + 0.18 * sin(uTime * 3.4)));
         vNear = smoothstep(26.0, 130.0, dist);
         vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
         vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
@@ -205,7 +214,7 @@ function buildGlow(layout, uniforms) {
     `,
     fragmentShader: /* glsl */`
       uniform float uGlow;
-      varying vec2 vUv; varying float vFlicker; varying float vNear;
+      varying vec2 vUv; varying float vFlicker; varying float vNear; varying float vLift;
       void main() {
         float r = length(vUv);
         float core = smoothstep(0.5, 0.0, r);
@@ -213,11 +222,13 @@ function buildGlow(layout, uniforms) {
         float glow = smoothstep(1.0, 0.45, r);
         vec3 color = mix(vec3(1.0, 0.44, 0.13), vec3(1.0, 0.94, 0.78), core);
         float a = (halo * 0.26 + glow * 0.26 + core * 1.05) * vFlicker * uGlow * mix(0.3, 1.0, vNear);
+        a *= 1.0 + vLift * 0.7;
         gl_FragColor = vec4(color * a, a);
       }
     `,
   });
   const mesh = new THREE.Mesh(g, mat);
+  mesh.userData.uniforms = mat.uniforms;
   mesh.name = "marker-glow";
   mesh.renderOrder = 11;
   mesh.frustumCulled = false;

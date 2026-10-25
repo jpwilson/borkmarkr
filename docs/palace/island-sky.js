@@ -118,10 +118,11 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
           // smoke: a column that recycles, growing and thinning as it climbs
           float age = fract(uTime * 0.035 * speed + seed);
           c.y += age * rise;
-          c.x += age * age * 420.0 + sin(seed * 9.1 + age * 3.0) * 52.0 * age;
-          c.z += age * age * 180.0 + cos(seed * 5.5 + age * 2.4) * 46.0 * age;
-          size *= 0.35 + age * 2.6;
-          fade = smoothstep(0.0, 0.12, age) * (1.0 - smoothstep(0.45, 1.0, age));
+          // the plume lies over, hard, the way a plume in a sea breeze does
+          c.x += age * age * 900.0 + sin(seed * 9.1 + age * 3.0) * 70.0 * age;
+          c.z += age * age * 420.0 + cos(seed * 5.5 + age * 2.4) * 64.0 * age;
+          size *= 0.35 + age * 3.4;
+          fade = smoothstep(0.0, 0.10, age) * (1.0 - smoothstep(0.30, 0.95, age));
         } else {
           // spray: short-lived, tight to the source
           float age = fract(uTime * 0.33 * speed + seed);
@@ -197,15 +198,20 @@ export function buildMist(field, layout, uniforms, groundAt) {
      and the high layer caps the volcano and the plateau. Three layers at
      three heights is what reads as weather; one even wash reads as a dirty
      lens, which is what the old single band was. */
-  for (let i = 0; i < 2600 && low.length < 96; i++) {
+  for (let i = 0; i < 2600 && low.length < 108; i++) {
     const a = r() * Math.PI * 2;
     const rad = 260 + 1640 * Math.sqrt(r());
     const x = Math.cos(a) * rad, z = Math.sin(a) * rad;
     const g = groundAt(x, z);
     const hollow = field ? sampleGrid(field, field.ao, x, z) : 0.5;
     if (g > 6 && hollow > 0.78) continue;
-    const base = Math.max(4, g) + 16 + r() * 60;
-    low.push({ x, y: base, z, s: 170 + 300 * r(), seed: r(), speed: 0.45 + 0.9 * r(), floor: Math.max(0, g) - 4 });
+    /* Thick where it collects and nothing where it does not: the hollower
+       the ground, the lower and fatter the bank. An even scatter of equal
+       puffs is a dirty lens; a few deep banks lying in the valleys is
+       weather. */
+    const depth = 1 - clamp((hollow - 0.5) / 0.4, 0, 1);
+    const base = Math.max(4, g) + 10 + r() * 46 * (1.2 - depth * 0.6);
+    low.push({ x, y: base, z, s: 150 + 300 * r() * (0.7 + depth), seed: r(), speed: 0.45 + 0.9 * r(), floor: Math.max(0, g) - 4 });
   }
   // banks lying on the water out among the sea stacks, where the reference
   // picture has them: thick, low, and hiding the feet of the towers
@@ -247,8 +253,8 @@ export function buildMist(field, layout, uniforms, groundAt) {
   group.name = "mist";
   // opacity stays low per quad: these are layers that separate the ridges,
   // not weather. Stacked three or four deep they read as a bank.
-  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.044, flat: 2.4, name: "mist-low", order: 6 }));
-  group.add(puffSystem(uniforms, mid, { kind: 0, color: [1, 0.95, 0.88], opacity: 0.034, flat: 2.5, name: "mist-mid", order: 7 }));
+  group.add(puffSystem(uniforms, low, { kind: 0, color: [1, 0.96, 0.9], opacity: 0.062, flat: 2.6, name: "mist-low", order: 6 }));
+  group.add(puffSystem(uniforms, mid, { kind: 0, color: [1, 0.95, 0.88], opacity: 0.040, flat: 2.6, name: "mist-mid", order: 7 }));
   group.add(puffSystem(uniforms, high, { kind: 0, color: [1, 0.95, 0.9], opacity: 0.030, flat: 2.7, name: "mist-high", order: 8 }));
   return group;
 }
@@ -257,13 +263,13 @@ export function buildSmoke(uniforms, site) {
   const r = rnd(1717);
   const list = [];
   const base = heightAt(site.x, site.z);
-  for (let i = 0; i < 46; i++) {
+  for (let i = 0; i < 40; i++) {
     list.push({
       x: site.x + (r() - 0.5) * 90, y: base + 10, z: site.z + (r() - 0.5) * 90,
-      s: 38 + 44 * r(), seed: r(), speed: 0.5 + 0.8 * r(), rise: 620 + 560 * r(), floor: -1e4,
+      s: 34 + 38 * r(), seed: r(), speed: 0.5 + 0.8 * r(), rise: 300 + 300 * r(), floor: -1e4,
     });
   }
-  return puffSystem(uniforms, list, { kind: 1, color: [0.62, 0.56, 0.55], opacity: 0.22, flat: 1.15, name: "smoke", order: 9 });
+  return puffSystem(uniforms, list, { kind: 1, color: [0.66, 0.58, 0.54], opacity: 0.20, flat: 1.3, name: "smoke", order: 9 });
 }
 
 export function buildSpray(uniforms) {
@@ -271,12 +277,12 @@ export function buildSpray(uniforms) {
   const list = [];
   for (const f of FALLS) {
     const base = 2;
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < 34; i++) {
       list.push({
-        x: f.x + (r() - 0.5) * f.w * 3.0, y: base + r() * 26, z: f.z + (r() - 0.5) * f.w * 3.0,
-        s: 22 + 30 * r(), seed: r(), speed: 0.6 + 0.6 * r(), rise: 90 + 120 * r(), floor: -1e4,
+        x: f.x + (r() - 0.5) * f.w * 3.6, y: base + r() * 34, z: f.z + (r() - 0.5) * f.w * 3.6,
+        s: 26 + 38 * r(), seed: r(), speed: 0.55 + 0.6 * r(), rise: 110 + 150 * r(), floor: -1e4,
       });
     }
   }
-  return puffSystem(uniforms, list, { kind: 2, color: [1, 1, 1], opacity: 0.34, flat: 1.4, name: "spray", order: 10 });
+  return puffSystem(uniforms, list, { kind: 2, color: [1, 1, 1], opacity: 0.44, flat: 1.5, name: "spray", order: 10 });
 }

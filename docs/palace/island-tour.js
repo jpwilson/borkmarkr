@@ -37,11 +37,15 @@ export function overviewPose(layout, spin = 0) {
 }
 
 export function approachPose(layout, u = 0.5) {
-  // low over the sea, coming in through the stacks from the east
-  const far = v(3450, 70, 1850), near = v(1500, 108, 760);
+  /* Low over the sea, in through the stacks — and now flown straight down
+     the sun's own bearing, so the island comes up as a silhouette against
+     the light with the shafts coming through the towers and the mist. A
+     sun-side approach is the one frame in the film that can be backlit;
+     every other beat wants the key on the land. */
+  const far = v(3400, 70, -1750), near = v(1450, 108, -700);
   return {
     pos: v(mix(far.x, near.x, u), mix(far.y, near.y, u), mix(far.z, near.z, u)),
-    target: v(mix(700, 180, u), mix(130, 260, u), mix(-60, -200, u)),
+    target: v(mix(650, 150, u), mix(130, 260, u), mix(120, -60, u)),
     fov: 44,
   };
 }
@@ -61,9 +65,9 @@ export function zonePose(layout, zone, opts = {}) {
     karst:    { dist: 1180, height: 560, lift: 150, fov: 38, az: 0.42 },
     temple:   { dist: 820,  height: 520, lift: 60,  fov: 38, az: 1.62 },
     river:    { dist: 780,  height: 430, lift: 40,  fov: 42, az: 1.95 },
-    falls:    { dist: 980,  height: 330, lift: 150, fov: 40, az: -1.47, abs: true, aim: [0, -430] },
-    swamp:    { dist: 760,  height: 330, lift: 20,  fov: 40, az: 2.20 },
-    lagoon:   { dist: 900,  height: 400, lift: 16,  fov: 40, az: 1.18 },
+    falls:    { dist: 1120, height: 390, lift: 190, fov: 38, az: -1.86, abs: true, aim: [-80, -400] },
+    swamp:    { dist: 600,  height: 430, lift: 16,  fov: 42, az: 2.05 },
+    lagoon:   { dist: 860,  height: 520, lift: 50,  fov: 40, az: 1.46, aim: [-150, -160] },
     highland: { dist: 940,  height: 660, lift: 180, fov: 40, az: 2.55 },
     crater:   { dist: 720,  height: 540, lift: 110, fov: 40, az: 1.85 },
   }[zone.siteId] || { dist: 820, height: 500, lift: 60, fov: 42, az: 1.35 };
@@ -101,7 +105,7 @@ export function markerPose(layout, marker, opts = {}) {
      tilt; the ground distance follows from them, never the other way round,
      because a camera lifted over a crown must not turn into a plan view. */
   const target = v(marker.x, marker.y + 8, marker.z);
-  const alt = opts.alt ?? 170;
+  const alt = opts.alt ?? 255;
   const pitch = opts.pitch ?? 0.72;
   const tan = Math.tan(pitch);
   /* Where to hover. The near geometry of this island is a scatter of blobs
@@ -206,8 +210,8 @@ export function buildPlan(layout) {
 
   /* 2 — rise over the reef and the coast */
   const rise = push("rise", "The coast", 5, "Reef, surf line, first canopy");
-  key(at(rise, 0.5), { pos: v(1500, 420, 60), target: v(300, 220, -160), fov: 42 }, { roll: -0.04 });
-  key(at(rise, 1), { pos: v(2150, 820, -260), target: v(60, 230, -140), fov: 40 }, { roll: -0.02 });
+  key(at(rise, 0.5), { pos: v(1250, 430, -380), target: v(120, 230, -160), fov: 42 }, { roll: -0.04 });
+  key(at(rise, 1), { pos: v(1540, 880, 1380), target: v(40, 250, -120), fov: 40 }, { roll: -0.02 });
 
   /* 3 — the whole island */
   const over = push("overview", "Library Island", 6, `${layout.zones.length} zones`);
@@ -233,12 +237,12 @@ export function buildPlan(layout) {
     const dip = push("dip", heroZone.place, 5, `${heroZone.biome}`);
     dip.zone = heroZone.index;
     key(at(dip, 0.1), zonePose(layout, heroZone, { offset: 0.9, dist: 1.25 }));
-    key(at(dip, 1), markerPose(layout, hero, { alt: 330, pitch: 0.62, fov: 40, angle }));
+    key(at(dip, 1), markerPose(layout, hero, { alt: 430, pitch: 0.62, fov: 40, angle }));
 
     const land = push("marker", "One bookmark", 6, hero.item.title);
     land.zone = heroZone.index;
     land.marker = hero.id;
-    key(at(land, 0.35), markerPose(layout, hero, { alt: 235, pitch: 0.68, angle }));
+    key(at(land, 0.35), markerPose(layout, hero, { alt: 340, pitch: 0.68, angle }));
     key(at(land, 1), hover);
   }
 

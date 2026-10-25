@@ -84,8 +84,8 @@ function clumpGeometry(seed, { count = 3, spread = 0.52, drop = 0.34, bands = 3,
     const sc = first ? 1 : 0.46 + 0.42 * r();
     const yOff = first ? 0.30 + 0.12 * r() : -drop * (0.25 + 0.95 * r());
     const lobe = lobeArrays({
-      bands, segs, squash: 0.56 + 0.26 * r(), dent: 0.17 + 0.16 * r(),
-      seed: seed * 1.7 + k * 3.3, pinch: 0.22 + 0.3 * r(), lobes: 3 + ((r() * 3) | 0),
+      bands, segs, squash: 0.62 + 0.26 * r(), dent: 0.26 + 0.20 * r(),
+      seed: seed * 1.7 + k * 3.3, pinch: 0.18 + 0.26 * r(), lobes: 3 + ((r() * 3) | 0),
     });
     const sx = sc * (0.82 + 0.4 * r()), sz = sc * (0.82 + 0.4 * r()), sy = sc * (0.72 + 0.4 * r());
     const ox = Math.cos(a) * rad, oz = Math.sin(a) * rad;
@@ -95,7 +95,13 @@ function clumpGeometry(seed, { count = 3, spread = 0.52, drop = 0.34, bands = 3,
       const y = lobe.pos[i + 1] * sy + yOff;
       const z = lobe.pos[i + 2] * sz + oz;
       P.push(x, y, z);
-      N.push(lobe.nrm[i], lobe.nrm[i + 1], lobe.nrm[i + 2]);
+      /* A squashed sphere's normals are not the sphere's normals: they go
+         through the inverse scale, not the scale. Skipping this is what made
+         every crown shade like a flat plate with a hard rim — the lobes were
+         lit as if they were still round. */
+      let nx = lobe.nrm[i] / sx, ny = lobe.nrm[i + 1] / sy, nz = lobe.nrm[i + 2] / sz;
+      const nl = Math.hypot(nx, ny, nz) || 1;
+      N.push(nx / nl, ny / nl, nz / nl);
       if (y > maxY) maxY = y;
       if (y < minY) minY = y;
     }
@@ -298,7 +304,7 @@ function mangroveGeometry() {
 }
 
 /* ── the foliage shader ─────────────────────────────────────────────────── */
-export function floraMaterial(uniforms, { sway = 1 } = {}) {
+export function floraMaterial(uniforms, { sway = 1, twoSided = false } = {}) {
   return new THREE.ShaderMaterial({
     // spread copies the uniform *objects*, so uTime and the palette stay
     // shared; only the sway strength is this material's own
@@ -318,7 +324,11 @@ export function floraMaterial(uniforms, { sway = 1 } = {}) {
         float local = sin(uTime * 2.1 + wp.x * 0.07 + wp.z * 0.05) * 0.22;
         wp.xz += (gust + local) * uSway * uSwayK * max(0.0, p.y) * 0.85;
         vWorld = wp.xyz;
-        vNormal = normalize(mat3(instanceMatrix) * normal);
+        /* instanceMatrix carries a non-uniform scale, so the normal has to
+           go through the inverse of it. mat3(instanceMatrix) * normal tips
+           every normal toward the squashed axis, which reads as faceting. */
+        vec3 isc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
+        vNormal = normalize(mat3(instanceMatrix) * (normal / max(isc * isc, vec3(1e-4))));
         vColor = color * instanceColor;
         vLit = ilit;
         // where this vertex sits in its own crown: 0 underside, 1 sunlit top
@@ -342,7 +352,7 @@ export function floraMaterial(uniforms, { sway = 1 } = {}) {
         float c1 = texture2D(uDetail, ca).r - 0.5;
         float c2 = texture2D(uDetail, cb).g - 0.5;
         float c3 = texture2D(uDetail, ca * 3.1 + 0.31).b - 0.5;
-        n = normalize(n + vec3(c1 + c3 * 0.6, (c1 + c2) * 0.28, c2 + c3 * 0.6) * mix(0.20, 0.62, near));
+        n = normalize(n + vec3(c1 + c3 * 0.6, (c1 + c2) * 0.28, c2 + c3 * 0.6) * mix(0.17, 0.30, near));
 
         float shade = vLit.x, ao = vLit.y;
         // ambient occlusion by height: the holes between crowns go dark,
@@ -375,7 +385,10 @@ export function floraMaterial(uniforms, { sway = 1 } = {}) {
       }
     `,
     vertexColors: true,
-    side: THREE.DoubleSide,
+    // crowns are closed volumes; only the strip geometry — fronds, ferns,
+    // stilt roots — needs its back faces, and leaving them on everywhere
+    // doubled the fill cost for nothing
+    side: twoSided ? THREE.DoubleSide : THREE.FrontSide,
   });
 }
 
@@ -449,7 +462,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
   // built from three or four lobes rather than a single ball: the triangle
   // budget buys silhouette instead of count, which is what the canopy was
   // short of
-  const CLUSTERS = 15000;
+  const CLUSTERS = 15500;
   const r = rng(99173);
   // a zone's own hue, multiplied into every plant standing in it, so the
   // biomes read as different country from the air
@@ -485,6 +498,9 @@ export function buildFlora(field, layout, uniforms, stacks) {
     // marsh: mangroves standing in the shallows
     const marshD = Math.hypot(cx + 740, cz - 520);
     if (marshD < 430 && h > 1 && h < 30) {
+      // thinner than the jungle: a mangrove flat is half open water, and
+      // packing it solid hid the one thing that makes it read as a swamp
+      if (r() < 0.3) continue;
       const n = 1 + Math.floor(r() * 2);
       for (let k = 0; k < n; k++) {
         const s = 7 + 6 * r();
@@ -511,8 +527,8 @@ export function buildFlora(field, layout, uniforms, stacks) {
       continue;
     }
     // a clump of 1–5 crowns, so the canopy is lumpy rather than evenly dotted
-    const n = 1 + Math.floor(d * 2.6 * (0.6 + 0.8 * r()));
-    const spreadR = 14 + 26 * r();
+    const n = 1 + Math.floor(d * 5.2 * (0.6 + 0.8 * r()));
+    const spreadR = 13 + 22 * r();
     const zt = tintAt(zone.zone);
     for (let k = 0; k < n; k++) {
       const ka = r() * 6.283, kr = spreadR * Math.sqrt(r());
@@ -524,7 +540,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
       // of equal balls.
       // size: mostly small, with a long tail of big crowns, and a wider
       // spread than before so no two neighbours read as the same tree
-      const s = (6.5 + 44 * Math.pow(r(), 2.6)) * (0.74 + 0.5 * d);
+      const s = (6.2 + 26 * Math.pow(r(), 2.2)) * (0.74 + 0.5 * d);
       const wet = clamp(moist + 0.25 * (r() - 0.5), 0, 1);
       // tint: wetter is deeper and bluer, drier is olive and yellow
       // large-scale mottling: whole stands of canopy go dark or bright,
@@ -540,8 +556,8 @@ export function buildFlora(field, layout, uniforms, stacks) {
       canopy.push({ x, z, y: y - s * 0.10, s, yaw: r() * 6.28, tint, shade, ao, moist: wet, variant: (r() * 6) | 0 });
     }
     // understory: small dark crowns filling the gaps between the big ones
-    if (d > 0.3 && r() < 0.6) {
-      const un = 1 + Math.floor(r() * 2);
+    if (d > 0.22 && r() < 0.8) {
+      const un = 1 + Math.floor(r() * 3);
       for (let k = 0; k < un; k++) {
         const ka = r() * 6.283, kr = spreadR * 1.3 * Math.sqrt(r());
         const x = cx + Math.cos(ka) * kr, z = cz + Math.sin(ka) * kr;
@@ -558,7 +574,7 @@ export function buildFlora(field, layout, uniforms, stacks) {
     // more of them and bigger, because that is what a canopy highland is
     const highland = Math.hypot(cx + 820, cz + 180) < 560 ? 2.1 : 1;
     if (r() < 0.14 * d * highland && h > 24 && h < 660) {
-      const s = (34 + 34 * r()) * (highland > 1 ? 1.2 : 1);
+      const s = (26 + 24 * r()) * (highland > 1 ? 1.25 : 1);
       const hue = species(r() * 0.9);
       emergent.push({ x: cx, z: cz, y: h - 1, s, yaw: r() * 6.28,
         tint: [zt[0] * hue[0] * (0.66 + 0.24 * r()), zt[1] * hue[1] * (0.86 + 0.16 * r()), zt[2] * hue[2] * (0.52 + 0.2 * r())],
@@ -595,10 +611,10 @@ export function buildFlora(field, layout, uniforms, stacks) {
   const group = new THREE.Group();
   group.name = "flora";
   const made = [];
-  const add = (name, geo, list, seed, sway = 1, flatten = 1) => {
+  const add = (name, geo, list, seed, sway = 1, twoSided = false, flatten = 1) => {
     if (!list.length) return;
     shuffled(list, seed);
-    const mesh = new THREE.InstancedMesh(geo, floraMaterial(uniforms, { sway }), list.length);
+    const mesh = new THREE.InstancedMesh(geo, floraMaterial(uniforms, { sway, twoSided }), list.length);
     const lit = new Float32Array(list.length * 3);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3();
     const col = new THREE.Color();
@@ -629,21 +645,21 @@ export function buildFlora(field, layout, uniforms, stacks) {
      the ground. Six variants is the point where a hillside stops repeating
      at the distance you can actually tell one crown from another. */
   const crowns = [
-    clumpGeometry(1.1, { count: 4, spread: 0.56, drop: 0.38, bands: 3, segs: 8 }),
+    clumpGeometry(1.1, { count: 4, spread: 0.56, drop: 0.38, bands: 3, segs: 9 }),
     clumpGeometry(4.7, { count: 3, spread: 0.62, drop: 0.30, bands: 3, segs: 9 }),
-    clumpGeometry(8.3, { count: 5, spread: 0.50, drop: 0.44, bands: 2, segs: 8 }),
-    clumpGeometry(2.9, { count: 3, spread: 0.44, drop: 0.26, bands: 3, segs: 8, trunk: 0.5 }),
-    clumpGeometry(6.1, { count: 4, spread: 0.68, drop: 0.34, bands: 2, segs: 9 }),
+    clumpGeometry(8.3, { count: 5, spread: 0.50, drop: 0.44, bands: 3, segs: 8 }),
+    clumpGeometry(2.9, { count: 3, spread: 0.44, drop: 0.26, bands: 4, segs: 10, trunk: 0.5 }),
+    clumpGeometry(6.1, { count: 4, spread: 0.68, drop: 0.34, bands: 3, segs: 9 }),
     clumpGeometry(9.7, { count: 3, spread: 0.38, drop: 0.22, bands: 3, segs: 9, trunk: 0.7 }),
   ];
   const scrubGeo = clumpGeometry(7.3, { count: 2, spread: 0.46, drop: 0.3, bands: 2, segs: 7 });
   crowns.forEach((geo, k) => add(`canopy-${k}`, geo, canopy.filter((c) => (c.variant ?? 0) === k), 7717 + k * 131, 1));
   const emergents = [emergentGeometry(5.5), emergentGeometry(2.3), emergentGeometry(7.9)];
   emergents.forEach((geo, k) => add(`emergent-${k}`, geo, emergent.filter((c) => (c.variant ?? 0) === k), 3391 + k * 97, 1.25));
-  add("palm", palmGeometry(), palms, 5519, 2.1);
-  add("mangrove", mangroveGeometry(), mangroves, 8821, 0.6);
+  add("palm", palmGeometry(), palms, 5519, 2.1, true);
+  add("mangrove", mangroveGeometry(), mangroves, 8821, 0.6, true);
   add("scrub", scrubGeo, scrub, 2203, 1.3);
-  add("fern", fernGeometry(), ferns, 4409, 2.4);
+  add("fern", fernGeometry(), ferns, 4409, 2.4, true);
 
   group.userData.meshes = made;
   group.userData.total = canopy.length + emergent.length + palms.length + mangroves.length + scrub.length + ferns.length;

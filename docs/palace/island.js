@@ -263,6 +263,7 @@ function wire() {
      pointerup arrives. Track the pointer we are following and end the drag
      on every way it can end, or the next move keeps orbiting the camera. */
   const endDrag = () => { drag = null; stage.style.cursor = "grab"; };
+  stage.addEventListener("pointerleave", () => { scene.setHover(null); state.dirty = true; });
   stage.addEventListener("pointerdown", (e) => {
     if (drag) return;
     drag = { id: e.pointerId, x: e.clientX, y: e.clientY, az: orbit.az, pol: orbit.pol };
@@ -290,6 +291,8 @@ function wire() {
     if (drag) return;
     const hit = scene.pick(e.clientX, e.clientY);
     stage.style.cursor = hit ? "pointer" : "grab";
+    scene.setHover(hit);
+    state.dirty = true;
     if (hit && hit !== state.selection) ui.showTip(hit, e.clientX, e.clientY - 6);
     else if (!hit) ui.showTip(state.selection && state.tour.playing ? state.selection : null);
   });
@@ -302,7 +305,7 @@ function wire() {
     if (hit) {
       actions.exitTour();
       actions.select(hit);
-      flyTo(markerPose(state.layout, hit, { alt: 125, pitch: 0.72 }), 1200);
+      flyTo(markerPose(state.layout, hit, { alt: 230, pitch: 0.7 }), 1200);
     } else actions.select(null);
   });
   stage.addEventListener("wheel", (e) => {

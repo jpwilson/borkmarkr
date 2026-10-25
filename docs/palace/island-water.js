@@ -244,7 +244,7 @@ export function buildInland(field, uniforms) {
      the basin keeps only the cells whose ground lies under the pool line, so
      the mangrove flats read as a lace of still pools and mud banks instead of
      a slab of grey hanging out over the beach. */
-  const M = { x: -740, z: 520, r: 420, y: 6.8 };
+  const M = { x: -740, z: 520, r: 460, y: 9.8 };
   const STEP = 11;
   const N = Math.ceil((M.r * 2) / STEP);
   // held back off the sand: a pool that reached the beach drew a hard-edged
@@ -346,15 +346,13 @@ export function buildInland(field, uniforms) {
 export function buildFalls(field, uniforms) {
   const pos = [], uv = [], idx = [];
   const push = (x, y, z, u, v) => { pos.push(x, y, z); uv.push(u, v); return pos.length / 3 - 1; };
-  /* Three tiers to a fall, not one sheet. A four-hundred-metre drop in one
-     unbroken ribbon reads as a painted stripe; broken into a high thread, a
-     wide middle and a boiling base — each stepped out from the cliff and
-     wider than the one above it — it reads as water falling a long way. */
-  const TIERS = [
-    { from: 0.00, to: 0.34, w: 0.80, out: 0.0 },
-    { from: 0.30, to: 0.72, w: 1.15, out: 0.42 },
-    { from: 0.66, to: 1.02, w: 1.75, out: 1.0 },
-  ];
+  /* One continuous ribbon per fall rather than three stacked quads. The
+     stacked version left visible gaps where one card ended and the next
+     began, and each card had straight sides; a ribbon resampled down the
+     drop can widen, lean out and wander, which is what falling water does.
+     The tiers survive as three steps in the lean and as shelves the shader
+     brightens — see the `v` bands in the fragment. */
+  const STEPS = 14;
   for (const f of FALLS) {
     const top = heightAt(f.x, f.z);
     // aim the sheet away from the plateau centre
@@ -362,17 +360,22 @@ export function buildFalls(field, uniforms) {
     const dx = Math.cos(ang), dz = Math.sin(ang);
     const px = -dz, pz = dx;
     const drop = top + 6;
-    const x0 = f.x + dx * 18, z0 = f.z + dz * 18;
-    const run = 74;
-    for (const T of TIERS) {
-      const yA = top + 3 - drop * T.from, yB = top + 3 - drop * T.to;
-      const oA = T.out * run * T.from + run * T.from, oB = T.out * run * T.to + run * T.to;
-      const wA = f.w * T.w, wB = f.w * T.w * 1.35;
-      const a = push(x0 + px * wA + dx * oA, yA, z0 + pz * wA + dz * oA, 0, 1);
-      const b2 = push(x0 - px * wA + dx * oA, yA, z0 - pz * wA + dz * oA, 1, 1);
-      const c = push(x0 - px * wB + dx * oB, yB, z0 - pz * wB + dz * oB, 1, 0);
-      const d = push(x0 + px * wB + dx * oB, yB, z0 + pz * wB + dz * oB, 0, 0);
-      idx.push(a, c, b2, a, d, c);
+    const x0 = f.x + dx * 16, z0 = f.z + dz * 16;
+    const run = 58;
+    let prev = null;
+    for (let k = 0; k <= STEPS; k++) {
+      const t = k / STEPS;
+      // out from the cliff in three leans, so the drop reads as tiered
+      const lean = (t * 0.38 + 0.30 * Math.pow(t, 2.2) + 0.12 * Math.sin(t * 7.4)) ;
+      const w = f.w * (0.72 + 1.05 * Math.pow(t, 1.25)) * (1 + 0.1 * Math.sin(t * 9.1 + f.a * 3));
+      const wob = Math.sin(t * 5.3 + f.a * 7) * f.w * 0.26;
+      const y = top + 3 - drop * t;
+      const o = run * lean;
+      const cxp = x0 + dx * o + px * wob, czp = z0 + dz * o + pz * wob;
+      const L = push(cxp + px * w, y, czp + pz * w, 0, 1 - t);
+      const R = push(cxp - px * w, y, czp - pz * w, 1, 1 - t);
+      if (prev) idx.push(prev.L, L, R, prev.L, R, prev.R);
+      prev = { L, R };
     }
   }
   const g = new THREE.BufferGeometry();
@@ -395,18 +398,25 @@ export function buildFalls(field, uniforms) {
         float v = vUv.y;
         // fine vertical threads scrolling down, thinning as the fall breaks up
         vec2 p = vec2(vUv.x * 3.0, v * 2.2 + uTime * 0.6);
+        // the shelves where the drop steps: water piles up, goes white and
+        // re-forms below, which is what makes one sheet read as three tiers
+        float shelf = smoothstep(0.10, 0.0, abs(fract(v * 3.0 + 0.18) - 0.5) - 0.34);
         float streak = texture2D(uDetail, p).r * 0.7 + texture2D(uDetail, p * vec2(4.0, 2.6) + 0.3).g * 0.6;
         float threads = 0.55 + 0.45 * sin(vUv.x * 46.0 + streak * 7.0);
         float body = smoothstep(0.30, 0.62, streak * 0.8 + threads * 0.35 + (1.0 - v) * 0.12);
-        float sides = smoothstep(0.0, 0.22, vUv.x) * smoothstep(1.0, 0.78, vUv.x);
-        float lip = smoothstep(0.93, 1.0, v);
-        float alpha = clamp(body * sides * (0.42 + 0.5 * v) + lip * 0.75, 0.0, 1.0);
-        alpha *= mix(0.9, 0.22, smoothstep(0.45, 0.0, v));   // breaks into spray
-        vec3 color = mix(vec3(0.72, 0.82, 0.86), vec3(1.0), lip * 0.8 + 0.2);
+        // feathered on every edge: a waterfall has no straight sides, and a
+        // hard-edged trapezoid is the one thing that reads as cardboard
+        float sides = smoothstep(0.0, 0.30, vUv.x) * smoothstep(1.0, 0.70, vUv.x);
+        sides *= 0.72 + 0.5 * streak;
+        float lip = smoothstep(0.90, 1.0, v);
+        float alpha = clamp(body * sides * (0.38 + 0.44 * v) + lip * sides * 0.8 + shelf * sides * 0.45, 0.0, 1.0);
+        alpha *= mix(0.78, 0.20, smoothstep(0.5, 0.0, v));   // breaks into spray
+        alpha *= smoothstep(1.02, 0.86, v);                  // and fades in at the lip
+        vec3 color = mix(vec3(0.72, 0.82, 0.86), vec3(1.0), clamp(lip * 0.8 + shelf * 0.7 + 0.2, 0.0, 1.0));
         color *= 0.45 + 0.75 * uSunColor;
         vec3 viewDir = normalize(cameraPosition - vWorld);
         color = applyAtmos(color, vWorld, -viewDir);
-        gl_FragColor = vec4(color * uExposure, alpha * 0.92);
+        gl_FragColor = vec4(color * uExposure, alpha * 0.80);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }

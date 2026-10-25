@@ -227,11 +227,25 @@ export class IslandScene {
     cam.up.set(0, 1, 0);
     cam.lookAt(view.target.x, view.target.y, view.target.z);
     if (view.roll) cam.rotateZ(view.roll);
-    // framings are authored for a wide frame; on a narrow one, widen the
-    // vertical angle so the same island still fits across the screen
+    /* Framings are authored for a wide frame. On a narrow one the vertical
+       angle opens up so the same island still fits across the screen — but
+       only so far: past about a 70-degree lens a phone frame is all sky and
+       a tiny island, so the rest of the fit is bought by moving the camera
+       in instead, which keeps the subject big and the perspective sane. */
     const ref = 16 / 9, aspect = this.width / Math.max(1, this.height);
+    const narrow = clamp((ref / Math.max(0.2, aspect) - 1) / 2.4, 0, 1);
     const fov = aspect >= ref ? view.fov
-      : Math.min(72, 2 * Math.atan(Math.tan((view.fov * Math.PI) / 360) * Math.pow(ref / aspect, 0.55)) * (180 / Math.PI));
+      : Math.min(64, 2 * Math.atan(Math.tan((view.fov * Math.PI) / 360) * Math.pow(ref / aspect, 0.42)) * (180 / Math.PI));
+    if (narrow > 0) {
+      const k = mix(1, 0.66, narrow);
+      cam.position.set(
+        view.target.x + (view.pos.x - view.target.x) * k,
+        view.target.y + (view.pos.y - view.target.y) * k,
+        view.target.z + (view.pos.z - view.target.z) * k,
+      );
+      cam.lookAt(view.target.x, view.target.y, view.target.z);
+      if (view.roll) cam.rotateZ(view.roll);
+    }
     if (cam.fov !== fov) cam.fov = fov;
     cam.updateProjectionMatrix();
     // project() and sunScreen() both read matrixWorldInverse; without this
@@ -281,8 +295,20 @@ export class IslandScene {
     return best;
   }
 
+  /* Which beacon the cursor is over. Null in capture mode — a frame must
+     not depend on where a pointer happens to be. */
+  setHover(marker) {
+    const u = this.markers?.userData?.glow?.userData?.uniforms;
+    // marker.index is the position in layout.markers, which is the order
+    // the beacon buffer was built in; marker.slot is per-kind and would
+    // light the wrong camp
+    if (u) u.uHover.value = marker ? marker.index ?? -1 : -1;
+  }
+
   setSelected(marker) {
     this.selected = marker || null;
+    const u = this.markers?.userData?.glow?.userData?.uniforms;
+    if (u) u.uSelected.value = marker ? marker.index ?? -1 : -1;
     const ring = this.selectRing;
     if (!marker) { ring.visible = false; return; }
     ring.visible = true;

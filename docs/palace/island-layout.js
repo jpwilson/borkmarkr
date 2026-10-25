@@ -153,9 +153,12 @@ export const LAGOON = { x: 660, z: 620 };
 /* Reef arc enclosing the lagoon: the crest sits just under the surface. */
 export const REEF = { x: 560, z: 520, r: 760, from: -0.35, to: 1.5 };
 
-/* The three waterfalls, on the seaward rim of the mesa. */
+/* The three waterfalls, on the seaward rim of the mesa. That rim faces away
+   from a west-north-westerly sun, so the cliff is always the shadow side —
+   which is the right way round for water: the falls and the spray cloud at
+   their feet are the brightest things in the frame against a dark wall. */
 export const FALLS = [
-  { a: -0.30, w: 17 }, { a: -0.02, w: 26 }, { a: 0.26, w: 13 },
+  { a: -0.44, w: 19 }, { a: -0.12, w: 29 }, { a: 0.20, w: 14 },
 ].map((f) => ({
   ...f,
   x: MESA.x + Math.sin(f.a) * (MESA.R - 55),
