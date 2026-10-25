@@ -290,6 +290,70 @@ export function buildTemple(field, uniforms, site) {
   return mesh;
 }
 
+/* ── the wreck on the reef ──────────────────────────────────────────────── */
+/* Something went aground here before the expedition did. A broken hull
+   canted over on the reef crest off the lagoon, with one mast still up and
+   a spar in the water — the one piece of story on the island that is not a
+   bookmark, and the thing that makes the lagoon beat worth flying past. */
+export function buildWreck(uniforms) {
+  const b = new Build();
+  const cx = 905, cz = 672;              // aground in the lagoon shallows, off the beach
+  const heel = 0.42;                     // listing to starboard
+  const yaw = -0.9;
+  const hull = [0.09, 0.075, 0.055], hullLit = [0.20, 0.165, 0.115];
+  const bleach = [0.33, 0.30, 0.25];
+  const ca = Math.cos(yaw), sa = Math.sin(yaw);
+  const place = (x, y, z) => {
+    // heel about the keel line, then yaw into place
+    const y2 = y * Math.cos(heel) - z * Math.sin(heel);
+    const z2 = y * Math.sin(heel) + z * Math.cos(heel);
+    return [cx + x * ca - z2 * sa, -4.5 + y2, cz + x * sa + z2 * ca];
+  };
+  // seven frames down the hull, tapering to a stem and a broken stern
+  const rows = [];
+  const LEN = 64, BEAM = 12.5;
+  for (let i = 0; i <= 7; i++) {
+    const t = i / 7;
+    const x = -LEN / 2 + t * LEN;
+    // the stern third is gone: the deck line drops away into open ribs
+    const alive = 1 - sstep(0.62, 1.0, t);
+    const w = BEAM * Math.sin(Math.PI * Math.pow(t, 0.8)) * 0.9 + 0.8;
+    const top = 8.5 * alive + 0.8;
+    const row = [];
+    for (const [dz, dy] of [[-w, top], [-w * 0.86, -2.4], [w * 0.86, -2.4], [w, top]]) {
+      const pale = 0.3 + 0.6 * clamp((dy + 3) / 8, 0, 1);
+      const c = mixc(mixc(hull, hullLit, pale), bleach, 0.25 + 0.4 * Math.abs(noise2(x * 0.3, dz * 0.3)));
+      row.push(b.vert(...place(x, dy, dz), Math.sign(dz) * 0.8, 0.5, 0, c, 1, 0.75, 0.3));
+    }
+    rows.push(row);
+  }
+  for (let i = 0; i < 7; i++) for (let k = 0; k < 3; k++) {
+    b.quad(rows[i][k], rows[i + 1][k], rows[i + 1][k + 1], rows[i][k + 1]);
+  }
+  // the deck, forward of the break
+  for (let i = 0; i < 4; i++) b.quad(rows[i][0], rows[i][3], rows[i + 1][3], rows[i + 1][0]);
+  // ribs standing where the stern used to be
+  for (let i = 0; i < 6; i++) {
+    const x = 8 + i * 5.6;
+    const w = BEAM * Math.sin(Math.PI * Math.pow(0.62 + i * 0.055, 0.8)) * 0.9;
+    for (const side of [-1, 1]) {
+      const p0 = place(x, -2.0, side * w * 0.86), p1 = place(x, 2.2 + i * 0.5, side * w);
+      b.cylinder(p0[0], p0[1], p0[2], 0.5, 0.35, Math.hypot(p1[1] - p0[1], 2), 5,
+        mixc(hull, bleach, 0.5), 1, side * 0.4, yaw, 0.7);
+    }
+  }
+  // the mast, still up, and a spar lying in the water
+  const m0 = place(-12, 7.5, 0);
+  b.cylinder(m0[0], m0[1], m0[2], 1.5, 0.7, 42, 6, mixc(hull, bleach, 0.4), 1, heel + 0.1, yaw, 0.8);
+  const s0 = place(19, -2.2, -15);
+  b.cylinder(s0[0], s0[1] + 0.4, s0[2], 0.9, 0.6, 30, 5, mixc(hull, bleach, 0.55), 1, Math.PI / 2, yaw + 1.3, 0.8);
+
+  const mesh = new THREE.Mesh(b.geometry(), terrainMaterial(uniforms));
+  mesh.name = "wreck";
+  mesh.userData.tris = b.idx.length / 3;
+  return mesh;
+}
+
 /* ── boulders, logs and driftwood ───────────────────────────────────────── */
 export function buildBoulders(field, layout, uniforms, count = 220) {
   const b = new Build();

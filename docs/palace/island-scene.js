@@ -6,7 +6,7 @@
    picking, and the quality ladder used outside capture mode. */
 import * as THREE from "three";
 import { buildField, buildTerrain, detailTexture, groundAt, sampleGrid, SUN_AZ, SUN_EL } from "./island-terrain.js";
-import { buildStacks, buildTemple, buildBoulders } from "./island-props.js";
+import { buildStacks, buildTemple, buildBoulders, buildWreck } from "./island-props.js";
 import { buildFlora, setFloraDensity } from "./island-flora.js";
 import { buildOcean, buildInland, buildFalls, depthTexture } from "./island-water.js";
 import { buildSky, buildMist, buildSmoke, buildSpray } from "./island-sky.js";
@@ -108,6 +108,7 @@ export class IslandScene {
     this.boulders = buildBoulders(field, this.layout, u);
     const templeZone = zoneBySite(this.layout, "temple");
     this.temple = buildTemple(field, u, templeZone || { x: 150, z: 450 });
+    this.wreck = buildWreck(u);
     this.flora = buildFlora(field, this.layout, u, this.stacks.userData.list);
     this.oceanFar = buildOcean(field, u, { inner: false });
     this.oceanNear = buildOcean(field, u, { inner: true });
@@ -122,7 +123,7 @@ export class IslandScene {
     this.birds = buildBirds(field, this.layout, u);
 
     for (const o of [this.sky, this.oceanFar, this.oceanNear, this.terrain, this.stacks, this.boulders,
-      this.temple, this.flora, this.inland, this.falls, this.markers, this.selectRing,
+      this.temple, this.wreck, this.flora, this.inland, this.falls, this.markers, this.selectRing,
       this.birds, this.mist, this.spray, this.smoke]) root.add(o);
     this.scene.add(root);
 

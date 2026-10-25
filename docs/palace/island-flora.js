@@ -611,15 +611,27 @@ export function buildFlora(field, layout, uniforms, stacks) {
   const group = new THREE.Group();
   group.name = "flora";
   const made = [];
-  const add = (name, geo, list, seed, sway = 1, twoSided = false, flatten = 1) => {
+  /* `tilt` is the small lean every plant has and no instanced scatter ever
+     gives them: yaw alone leaves every crown's axis dead vertical, so the
+     tops of a hillside line up like a tray of eggs. A tenth of a radian of
+     random lean, keyed off the instance index so it stays deterministic, is
+     enough to break that up. */
+  const add = (name, geo, list, seed, sway = 1, twoSided = false, tilt = 0.16, flatten = 1) => {
     if (!list.length) return;
     shuffled(list, seed);
     const mesh = new THREE.InstancedMesh(geo, floraMaterial(uniforms, { sway, twoSided }), list.length);
     const lit = new Float32Array(list.length * 3);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3();
+    const lean = new THREE.Quaternion(), axis = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
     const col = new THREE.Color();
     list.forEach((it, i) => {
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), it.yaw);
+      q.setFromAxisAngle(up, it.yaw);
+      if (tilt > 0) {
+        const a = ((i * 47) % 360) * (Math.PI / 180);
+        const amt = tilt * (((i * 83) % 100) / 100) * (((i * 31) % 100) / 100 + 0.35);
+        lean.setFromAxisAngle(axis.set(Math.cos(a), 0, Math.sin(a)), amt);
+        q.premultiply(lean);
+      }
       p.set(it.x, it.y, it.z);
       const sq = 0.7 + 0.6 * ((i * 37) % 100) / 100;
       s.set(it.s * (0.86 + 0.28 * ((i * 53) % 100) / 100), it.s * flatten * sq, it.s * (0.86 + 0.28 * ((i * 71) % 100) / 100));
@@ -653,13 +665,13 @@ export function buildFlora(field, layout, uniforms, stacks) {
     clumpGeometry(9.7, { count: 3, spread: 0.38, drop: 0.22, bands: 3, segs: 9, trunk: 0.7 }),
   ];
   const scrubGeo = clumpGeometry(7.3, { count: 2, spread: 0.46, drop: 0.3, bands: 2, segs: 7 });
-  crowns.forEach((geo, k) => add(`canopy-${k}`, geo, canopy.filter((c) => (c.variant ?? 0) === k), 7717 + k * 131, 1));
+  crowns.forEach((geo, k) => add(`canopy-${k}`, geo, canopy.filter((c) => (c.variant ?? 0) === k), 7717 + k * 131, 1, false, 0.17));
   const emergents = [emergentGeometry(5.5), emergentGeometry(2.3), emergentGeometry(7.9)];
-  emergents.forEach((geo, k) => add(`emergent-${k}`, geo, emergent.filter((c) => (c.variant ?? 0) === k), 3391 + k * 97, 1.25));
-  add("palm", palmGeometry(), palms, 5519, 2.1, true);
-  add("mangrove", mangroveGeometry(), mangroves, 8821, 0.6, true);
-  add("scrub", scrubGeo, scrub, 2203, 1.3);
-  add("fern", fernGeometry(), ferns, 4409, 2.4, true);
+  emergents.forEach((geo, k) => add(`emergent-${k}`, geo, emergent.filter((c) => (c.variant ?? 0) === k), 3391 + k * 97, 1.25, false, 0.07));
+  add("palm", palmGeometry(), palms, 5519, 2.1, true, 0.13);
+  add("mangrove", mangroveGeometry(), mangroves, 8821, 0.6, true, 0.10);
+  add("scrub", scrubGeo, scrub, 2203, 1.3, false, 0.24);
+  add("fern", fernGeometry(), ferns, 4409, 2.4, true, 0.30);
 
   group.userData.meshes = made;
   group.userData.total = canopy.length + emergent.length + palms.length + mangroves.length + scrub.length + ferns.length;

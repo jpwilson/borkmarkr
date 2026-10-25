@@ -108,9 +108,14 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
         float dist = length(vWorld - cameraPosition);
         // flatten the ripples with distance or the horizon turns to static
         float detail = 1.0 - smoothstep(900.0, 7000.0, dist);
-        vec3 n = waterNormal(vWorld.xz, uTime, 0.038, mix(0.0028, 0.013, detail));
         vec4 isl = islandAt(vWorld.xz);
         float depth = isl.r * 120.0;
+        /* Deep water runs in long slow swells; over a reef the same wind
+           makes short steep chop. One scale for the whole ocean is what
+           made it read as a single sheet of textured plastic. */
+        float shoal = 1.0 - smoothstep(4.0, 70.0, depth);
+        vec3 n = waterNormal(vWorld.xz, uTime, mix(0.030, 0.085, shoal),
+                             mix(0.0028, mix(0.011, 0.020, shoal), detail));
 
         /* Depth is the whole story of tropical water: navy out past the
            shelf, turquoise over the sand, nearly white where it is ankle
