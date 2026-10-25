@@ -119,8 +119,8 @@ function puffSystem(uniforms, list, { kind = 0, color = [1, 1, 1], opacity = 0.5
           float age = fract(uTime * 0.035 * speed + seed);
           c.y += age * rise;
           // the plume lies over, hard, the way a plume in a sea breeze does
-          c.x += age * age * 900.0 + sin(seed * 9.1 + age * 3.0) * 70.0 * age;
-          c.z += age * age * 420.0 + cos(seed * 5.5 + age * 2.4) * 64.0 * age;
+          c.x += age * age * 430.0 + sin(seed * 9.1 + age * 3.0) * 70.0 * age;
+          c.z += age * age * 190.0 + cos(seed * 5.5 + age * 2.4) * 64.0 * age;
           size *= 0.35 + age * 3.4;
           fade = smoothstep(0.0, 0.10, age) * (1.0 - smoothstep(0.30, 0.95, age));
         } else {
@@ -266,10 +266,10 @@ export function buildSmoke(uniforms, site) {
   for (let i = 0; i < 40; i++) {
     list.push({
       x: site.x + (r() - 0.5) * 90, y: base + 10, z: site.z + (r() - 0.5) * 90,
-      s: 34 + 38 * r(), seed: r(), speed: 0.5 + 0.8 * r(), rise: 300 + 300 * r(), floor: -1e4,
+      s: 32 + 36 * r(), seed: r(), speed: 0.5 + 0.8 * r(), rise: 380 + 360 * r(), floor: -1e4,
     });
   }
-  return puffSystem(uniforms, list, { kind: 1, color: [0.66, 0.58, 0.54], opacity: 0.20, flat: 1.3, name: "smoke", order: 9 });
+  return puffSystem(uniforms, list, { kind: 1, color: [0.72, 0.63, 0.58], opacity: 0.26, flat: 1.3, name: "smoke", order: 9 });
 }
 
 export function buildSpray(uniforms) {

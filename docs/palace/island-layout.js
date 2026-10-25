@@ -348,8 +348,8 @@ export function sunAt(x, z) {
    camera has to clear this, not just the ground, or a flight beat ends up
    inside a tree and the frame goes flat green. */
 export const CANOPY_TOP = 74;
-export const CAMP_CLEAR = 44;   // bare ground around a camp, wide enough to frame it in
-export const CAMP_FADE = 102;  // and the scrubby edge of the clearing
+export const CAMP_CLEAR = 64;   // bare ground around a camp, wide enough to frame it in
+export const CAMP_FADE = 136;  // and the scrubby edge of the clearing
 
 /* A deliberately conservative upper bound on the canopy at (x, z): the
    pure-number twin of island-flora's canopyDensity, with the terms that only
@@ -361,11 +361,11 @@ export function canopyTopAt(x, z, clearings) {
   if (h < 3.5 || h > 820) return Math.max(h, SEA_LEVEL);
   const slope = slopeAt(x, z);
   if (slope > 2.0) return h;
-  let d = 0.25 + 0.95 * moistureAt(x, z, h);
+  let d = 0.37 + 0.82 * moistureAt(x, z, h);
   d *= clamp(1.4 - slope * 0.42, 0.22, 1);
   d *= sstep(3.5, 16, h);
   d *= 1 - 0.8 * sstep(560, 760, h);
-  d *= clamp(sstep(250, 560, Math.hypot(x + 150, z + 330)), 0, 1);   // bare ash cone
+  d *= clamp(sstep(170, 400, Math.hypot(x + 150, z + 330)), 0, 1);   // bare ash cone
   d *= 1 - 0.9 * sstep(80, 20, coastField(x, z)) * sstep(24, 8, h);  // the sand
   if (clearings) for (const c of clearings) {
     const cd = Math.hypot(x - c.x, z - c.z);
@@ -398,11 +398,24 @@ export function clearanceAt(x, z, clearings, pad = 26) {
    clears every sample is a max over u of (need(u) − target.y)/u. The headroom
    grows with u: right next to the subject the only thing to clear is the
    subject's own ground, and demanding full clearance there would tip every
-   close-up into a steep plan view. */
-export function liftOverCanopy(pos, target, clearings, margin = 16, samples = 32) {
+   close-up into a steep plan view.
+
+   The sample count matters more than it looks: a crown is about thirty-five
+   metres across and a sight line can run four hundred, so a coarse march
+   steps straight over one. Fifty-six samples puts a sample every seven
+   metres, which no crown can hide between. */
+export function liftOverCanopy(pos, target, clearings, margin = 16, samples = 56, near = 40) {
   let rise = pos.y - target.y;
+  const ground = Math.hypot(pos.x - target.x, pos.z - target.z) || 1;
+  /* Ignore the first few metres. Dividing by u is what finds the lift, and
+     at u near zero it divides by nothing: one crown standing ten metres
+     from the camp asks for a two-kilometre camera. Inside `near` the camp's
+     own clearing is the only thing on the line anyway, and the clearing
+     carries no canopy by construction — see canopyDensity. */
+  const uMin = Math.min(0.45, near / ground);
   for (let i = 1; i <= samples; i++) {
     const u = i / samples;
+    if (u < uMin) continue;
     const x = mix(target.x, pos.x, u), z = mix(target.z, pos.z, u);
     const need = canopyTopAt(x, z, clearings) + margin * u - target.y;
     if (need > rise * u) rise = need / u;

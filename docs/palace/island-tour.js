@@ -105,7 +105,7 @@ export function markerPose(layout, marker, opts = {}) {
      tilt; the ground distance follows from them, never the other way round,
      because a camera lifted over a crown must not turn into a plan view. */
   const target = v(marker.x, marker.y + 8, marker.z);
-  const alt = opts.alt ?? 255;
+  const alt = opts.alt ?? 225;
   const pitch = opts.pitch ?? 0.72;
   const tan = Math.tan(pitch);
   /* Where to hover. The near geometry of this island is a scatter of blobs
@@ -137,16 +137,23 @@ export function markerPose(layout, marker, opts = {}) {
       const d = (y0 - target.y) / tan;
       const x = marker.x + Math.cos(a) * d, z = marker.z + Math.sin(a) * d;
       const y = Math.max(y0, clearanceAt(x, z, layout.clearings, 72));
+      /* How much height this bearing costs to see over. A camp on a slope
+         has a ridge on one side of it, and a bearing pointed into that
+         ridge has to climb until the sight line clears the whole thing —
+         which is how a hundred-and-fifty-metre hover turned into a camera
+         a mile and a half up. Price the climb into the choice and the
+         downhill bearings win, which is where the view was anyway. */
+      const climb = liftOverCanopy(v(x, y, z), target, layout.clearings, 24, 22).y - y;
       // nudged back toward the camp's open side, and toward staying low:
       // height is bought only where it actually buys a clear frame
       const off = Math.abs(((a - nominal + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-      const score = crowd(x, z, y) + off * 0.012 + (k - 1) * 0.05;
+      const score = crowd(x, z, y + climb) + off * 0.012 + (k - 1) * 0.05 + climb * 0.0045;
       if (!best || score < best.score) best = { score, a, pos: v(x, y, z) };
     }
   }
   // and climb until nothing — ground or crown — stands in the line of sight
-  const pos = liftOverCanopy(best.pos, target, layout.clearings, 18);
-  return { pos, target, fov: opts.fov ?? 34, angle: best.a };
+  const pos = liftOverCanopy(best.pos, target, layout.clearings, 24);
+  return { pos, target, fov: opts.fov ?? 27, angle: best.a };
 }
 
 /* The bookmark the tour lands on. The beat is the one close-up in the film,
@@ -154,6 +161,23 @@ export function markerPose(layout, marker, opts = {}) {
    landing in a ridge shadow is a black frame however well it is composed.
    Preference order breaks ties between equally lit camps. */
 export function heroMarker(layout) {
+  /* How shut in a camp is: the steepest rise anywhere around it inside four
+     hundred metres. A camp at the bottom of a bowl cannot be filmed from a
+     helicopter without the camera climbing over the rim, and the shot that
+     comes back is a speck in a crater — so openness is scored alongside
+     the light. */
+  const shutIn = (x, z) => {
+    const base = heightAt(x, z);
+    let worst = 0;
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + 0.37;
+      for (const r of [140, 280, 430]) {
+        const rise = (heightAt(x + Math.cos(a) * r, z + Math.sin(a) * r) - base) / r;
+        if (rise > worst) worst = rise;
+      }
+    }
+    return clamp(worst, 0, 1);
+  };
   const prefer = ["river", "lagoon", "highland", "temple", "karst", "swamp", "volcano"];
   let best = null, bestScore = -1;
   prefer.forEach((siteId, rank) => {
@@ -165,6 +189,7 @@ export function heroMarker(layout) {
       if (seen.has(m.camp)) continue;
       seen.add(m.camp);
       const score = sunAt(m.campX, m.campZ) * 2
+        - shutIn(m.campX, m.campZ) * 2.0
         + (m.district === biggest.name ? 0.5 : 0)
         - rank * 0.14;
       if (score > bestScore) { bestScore = score; best = m; }
@@ -237,12 +262,12 @@ export function buildPlan(layout) {
     const dip = push("dip", heroZone.place, 5, `${heroZone.biome}`);
     dip.zone = heroZone.index;
     key(at(dip, 0.1), zonePose(layout, heroZone, { offset: 0.9, dist: 1.25 }));
-    key(at(dip, 1), markerPose(layout, hero, { alt: 430, pitch: 0.62, fov: 40, angle }));
+    key(at(dip, 1), markerPose(layout, hero, { alt: 420, pitch: 0.62, fov: 36, angle }));
 
     const land = push("marker", "One bookmark", 6, hero.item.title);
     land.zone = heroZone.index;
     land.marker = hero.id;
-    key(at(land, 0.35), markerPose(layout, hero, { alt: 340, pitch: 0.68, angle }));
+    key(at(land, 0.35), markerPose(layout, hero, { alt: 320, pitch: 0.68, fov: 31, angle }));
     key(at(land, 1), hover);
   }
 
@@ -304,7 +329,7 @@ export class Tour {
     if (beat.marker) {
       const m = this.layout.byId?.get(beat.marker);
       if (m && (pos.x !== target.x || pos.z !== target.z)) {
-        const clear = liftOverCanopy(pos, { x: m.x, y: m.y + 11, z: m.z }, clearings, 18);
+        const clear = liftOverCanopy(pos, { x: m.x, y: m.y + 11, z: m.z }, clearings, 26);
         if (clear.y > pos.y) { target.y += clear.y - pos.y; pos.y = clear.y; }
       }
     }

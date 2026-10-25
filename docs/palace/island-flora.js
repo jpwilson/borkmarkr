@@ -352,7 +352,7 @@ export function floraMaterial(uniforms, { sway = 1, twoSided = false } = {}) {
         float c1 = texture2D(uDetail, ca).r - 0.5;
         float c2 = texture2D(uDetail, cb).g - 0.5;
         float c3 = texture2D(uDetail, ca * 3.1 + 0.31).b - 0.5;
-        n = normalize(n + vec3(c1 + c3 * 0.6, (c1 + c2) * 0.28, c2 + c3 * 0.6) * mix(0.17, 0.30, near));
+        n = normalize(n + vec3(c1 + c3 * 0.6, (c1 + c2) * 0.28, c2 + c3 * 0.6) * mix(0.17, 0.44, near));
 
         float shade = vLit.x, ao = vLit.y;
         // ambient occlusion by height: the holes between crowns go dark,
@@ -426,12 +426,12 @@ function species(u) {
 function canopyDensity(field, x, z, h, slope, moist, zone, temple, camps) {
   if (h < 3.5 || h > 820) return 0;
   if (slope > 2.0) return 0;
-  let d = 0.25 + 0.95 * moist;
+  let d = 0.37 + 0.82 * moist;
   d *= clamp(1.4 - slope * 0.42, 0.22, 1);
   d *= sstep(3.5, 16, h);
   d *= 1 - 0.8 * sstep(560, 760, h);
   const vd = Math.hypot(x - VOLCANO.x, z - VOLCANO.z);
-  d *= clamp(sstep(250, 560, vd), 0.0, 1);                       // ash cone is bare
+  d *= clamp(sstep(170, 400, vd), 0.0, 1);                       // the ash cone is bare, the flanks are not
   if (temple) d *= clamp(sstep(110, 250, Math.hypot(x - temple.x, z - temple.z)), 0.06, 1);
   const beach = sstep(80, 20, coastField(x, z)) * sstep(24, 8, h);
   d *= 1 - 0.9 * beach;
@@ -439,7 +439,7 @@ function canopyDensity(field, x, z, h, slope, moist, zone, temple, camps) {
   const riv = riverSample(x, z);
   d *= clamp(sstep(42, 115, riv.d), 0.0, 1);
   // natural clearings: grass shelves, slips, outcrops
-  d *= clamp(0.55 + 1.1 * fbm(x * 0.0034 + 41.2, z * 0.0034 - 7.8, 2), 0, 1);
+  d *= clamp(0.72 + 0.95 * fbm(x * 0.0034 + 41.2, z * 0.0034 - 7.8, 2), 0, 1);
   if (zone.gap < 40 && slope < 1.15) d *= 0.05 + 0.9 * sstep(14, 40, zone.gap);                   // keep the trail open
   // a camp stands in a clearing, the way a camp does — and the camera relies
   // on it: island-layout's canopyTopAt cuts the same hole, to the metre
@@ -647,8 +647,8 @@ export function buildFlora(field, layout, uniforms, stacks) {
   const crowns = [
     clumpGeometry(1.1, { count: 4, spread: 0.56, drop: 0.38, bands: 3, segs: 9 }),
     clumpGeometry(4.7, { count: 3, spread: 0.62, drop: 0.30, bands: 3, segs: 9 }),
-    clumpGeometry(8.3, { count: 5, spread: 0.50, drop: 0.44, bands: 3, segs: 8 }),
-    clumpGeometry(2.9, { count: 3, spread: 0.44, drop: 0.26, bands: 4, segs: 10, trunk: 0.5 }),
+    clumpGeometry(8.3, { count: 4, spread: 0.50, drop: 0.44, bands: 3, segs: 8 }),
+    clumpGeometry(2.9, { count: 3, spread: 0.44, drop: 0.26, bands: 3, segs: 9, trunk: 0.5 }),
     clumpGeometry(6.1, { count: 4, spread: 0.68, drop: 0.34, bands: 3, segs: 9 }),
     clumpGeometry(9.7, { count: 3, spread: 0.38, drop: 0.22, bands: 3, segs: 9, trunk: 0.7 }),
   ];

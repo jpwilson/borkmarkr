@@ -235,9 +235,9 @@ export class IslandScene {
     const ref = 16 / 9, aspect = this.width / Math.max(1, this.height);
     const narrow = clamp((ref / Math.max(0.2, aspect) - 1) / 2.4, 0, 1);
     const fov = aspect >= ref ? view.fov
-      : Math.min(64, 2 * Math.atan(Math.tan((view.fov * Math.PI) / 360) * Math.pow(ref / aspect, 0.42)) * (180 / Math.PI));
+      : Math.min(68, 2 * Math.atan(Math.tan((view.fov * Math.PI) / 360) * Math.pow(ref / aspect, 0.48)) * (180 / Math.PI));
     if (narrow > 0) {
-      const k = mix(1, 0.66, narrow);
+      const k = mix(1, 0.80, narrow);
       cam.position.set(
         view.target.x + (view.pos.x - view.target.x) * k,
         view.target.y + (view.pos.y - view.target.y) * k,
@@ -312,8 +312,8 @@ export class IslandScene {
     const ring = this.selectRing;
     if (!marker) { ring.visible = false; return; }
     ring.visible = true;
-    ring.position.set(marker.x, marker.y + 1.4, marker.z);
-    const s = 10;
+    ring.position.set(marker.x, marker.y + 1.6, marker.z);
+    const s = 16;
     ring.scale.set(s, s, s);
   }
 
@@ -324,8 +324,8 @@ export class IslandScene {
     // and dropping them costs far less of the look than dropping the jungle
     const tiers = {
       high: { pixelRatio: Math.min(window.devicePixelRatio || 1, 2), flora: 1, particles: 1, post: 1 },
-      mid: { pixelRatio: 1, flora: 0.7, particles: 0.5, post: 1 },
-      low: { pixelRatio: 0.8, flora: 0.42, particles: 0, post: 0 },
+      mid: { pixelRatio: 1, flora: 0.55, particles: 0.5, post: 1 },
+      low: { pixelRatio: 0.8, flora: 0.3, particles: 0, post: 0 },
     };
     const q = tiers[tier] || tiers.high;
     this.quality = { ...q, tier };

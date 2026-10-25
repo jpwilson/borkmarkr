@@ -175,7 +175,7 @@ function groundColor(x, z, y, slope, moist, zoneGap, camp, tint, out) {
 
   // rock where it is steep, plus the volcano's ash cone and the karst shelf
   const vd = Math.hypot(x + 150, z + 330);
-  const ashAmt = clamp(1 - vd / 430, 0, 1) * clamp((y - 180) / 180, 0, 1);
+  const ashAmt = clamp(1 - vd / 330, 0, 1) * clamp((y - 240) / 180, 0, 1);
   let rockAmt = sstep(0.58, 1.18, slope) * 0.97 + dryHigh * 0.22;
   rockAmt = clamp(rockAmt + ashAmt * 0.9, 0, 1);
   let rock = lerp3(PAL.rockDark, PAL.rockPale, clamp(0.35 + 0.5 * fbm(x * 0.008, z * 0.008, 2), 0, 1), tmpB);

@@ -305,7 +305,7 @@ function wire() {
     if (hit) {
       actions.exitTour();
       actions.select(hit);
-      flyTo(markerPose(state.layout, hit, { alt: 230, pitch: 0.7 }), 1200);
+      flyTo(markerPose(state.layout, hit, { alt: 300, pitch: 0.7 }), 1200);
     } else actions.select(null);
   });
   stage.addEventListener("wheel", (e) => {

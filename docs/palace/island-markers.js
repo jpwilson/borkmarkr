@@ -9,10 +9,10 @@ import { ATMOS_PARS, sampleGrid } from "./island-terrain.js";
 import { Build } from "./island-props.js";
 import { clamp, mix } from "./island-layout.js";
 
-const CANVAS = [0.30, 0.25, 0.165], CANVAS_LIT = [0.47, 0.40, 0.27];
+const CANVAS = [0.23, 0.19, 0.125], CANVAS_LIT = [0.38, 0.32, 0.21];
 const WOOD = [0.16, 0.115, 0.075], WOOD_LIT = [0.3, 0.22, 0.14];
 const CLOTH = [0.72, 0.26, 0.13];
-const STONE = [0.42, 0.4, 0.36];
+const STONE = [0.25, 0.235, 0.205];
 
 function instancedMaterial(uniforms) {
   return new THREE.ShaderMaterial({
@@ -106,7 +106,7 @@ function geoFor(kind) {
 /* A camp is a camp, not a circus — but the close-up is flown from two
    hundred and fifty metres up, and at the old size a tent was four pixels.
    Half as big again: still small against the jungle, now legible. */
-const KIND_SCALE = { camp: 9.2, totem: 8.4, banner: 9.6, torch: 8.6, cairn: 7.2 };
+const KIND_SCALE = { camp: 9.2, totem: 7.2, banner: 9.4, torch: 8.0, cairn: 6.2 };
 
 export function buildMarkers(field, layout, uniforms) {
   const group = new THREE.Group();
@@ -235,19 +235,27 @@ function buildGlow(layout, uniforms) {
   return mesh;
 }
 
-/* A ring drawn on the ground under the selected marker. */
+/* A ring drawn on the ground under the selected marker. Warm, soft-edged and
+   breathing, rather than the hard white hoop it used to be — half occluded
+   by a crown that read as a glyph someone had left on the screen. */
 export function buildSelectRing(uniforms) {
-  const g = new THREE.RingGeometry(0.72, 1, 48);
+  const g = new THREE.RingGeometry(0.58, 1, 64);
   g.rotateX(-Math.PI / 2);
   const mat = new THREE.ShaderMaterial({
     uniforms: { ...uniforms, uRing: { value: 1 } },
     transparent: true,
     depthWrite: false,
-    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-    fragmentShader: `uniform float uTime; varying vec2 vUv;
+    blending: THREE.AdditiveBlending,
+    vertexShader: `varying vec2 vUv; varying vec3 vP;
+      void main(){ vUv = uv; vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `uniform float uTime; varying vec2 vUv; varying vec3 vP;
       void main(){
-        float pulse = 0.65 + 0.35 * sin(uTime * 2.2);
-        gl_FragColor = vec4(vec3(1.0, 0.86, 0.66) * pulse, 0.85 * pulse);
+        // soft on both edges, so it reads as light on the ground
+        float r = length(vP.xz);
+        float band = smoothstep(0.56, 0.78, r) * smoothstep(1.02, 0.86, r);
+        float pulse = 0.62 + 0.38 * sin(uTime * 2.0);
+        float a = band * pulse * 0.8;
+        gl_FragColor = vec4(vec3(1.0, 0.72, 0.38) * a, a);
       }`,
   });
   const mesh = new THREE.Mesh(g, mat);
