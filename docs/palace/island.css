@@ -56,9 +56,16 @@ button { font: inherit; color: inherit; }
   background: rgba(10, 15, 14, .42); border: 1px solid var(--hair);
   backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
   text-shadow: 0 1px 10px rgba(0, 0, 0, .7);
-  transition: background .18s, border-color .18s;
+  transition: background .18s, border-color .18s, box-shadow .18s;
 }
-.zone-label:hover, .zone-label.is-focus { background: rgba(22, 30, 27, .66); border-color: var(--hair-strong); }
+/* A label is a way into a zone, so it has to look like one: it lifts and
+   warms under the cursor rather than just changing its fill by four per cent. */
+/* No transform here: the renderer owns that property, and overriding it on
+   hover would snap the label off its zone and into the corner. */
+.zone-label:hover { background: rgba(28, 37, 33, .78); border-color: var(--ember-deep);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .45), 0 0 0 1px rgba(232, 162, 76, .22); }
+.zone-label.is-focus { background: rgba(22, 30, 27, .7); border-color: var(--hair-strong);
+  box-shadow: 0 0 0 1px rgba(232, 162, 76, .22), 0 6px 20px rgba(0, 0, 0, .4); }
 .zl-name { font-family: var(--serif); font-size: 17px; letter-spacing: .01em;
   max-width: 44vw; overflow: hidden; text-overflow: ellipsis; }
 .zl-count { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ember); }
@@ -132,7 +139,8 @@ button { font: inherit; color: inherit; }
 
 /* ── bookmark card ──────────────────────────────────────────────────────── */
 #card { right: 24px; bottom: 96px; width: 310px; padding: 16px 17px 17px;
-  max-height: calc(100vh - 220px); overflow-y: auto; overscroll-behavior: contain; }
+  max-height: calc(100vh - 220px); overflow-y: auto; overscroll-behavior: contain;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 232, 196, .05); }
 .card-close { position: absolute; top: 8px; right: 9px; width: 24px; height: 24px; border: 0; border-radius: 50%;
   background: none; color: var(--faint); font-size: 17px; line-height: 1; cursor: pointer; }
 .card-close:hover { color: var(--ink); background: rgba(255, 230, 196, .1); }

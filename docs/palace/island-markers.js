@@ -9,10 +9,10 @@ import { ATMOS_PARS, sampleGrid } from "./island-terrain.js";
 import { Build } from "./island-props.js";
 import { clamp, mix } from "./island-layout.js";
 
-const CANVAS = [0.30, 0.25, 0.165], CANVAS_LIT = [0.47, 0.40, 0.27];
+const CANVAS = [0.23, 0.19, 0.125], CANVAS_LIT = [0.38, 0.32, 0.21];
 const WOOD = [0.16, 0.115, 0.075], WOOD_LIT = [0.3, 0.22, 0.14];
 const CLOTH = [0.72, 0.26, 0.13];
-const STONE = [0.42, 0.4, 0.36];
+const STONE = [0.25, 0.235, 0.205];
 
 function instancedMaterial(uniforms) {
   return new THREE.ShaderMaterial({
@@ -103,9 +103,10 @@ function geoFor(kind) {
   return b.geometry();
 }
 
-/* A camp is a camp, not a circus: about a storey and a half on the ground.
-   From the air the warm glow below carries them, not their silhouettes. */
-const KIND_SCALE = { camp: 6.0, totem: 5.4, banner: 6.2, torch: 5.6, cairn: 4.6 };
+/* A camp is a camp, not a circus — but the close-up is flown from two
+   hundred and fifty metres up, and at the old size a tent was four pixels.
+   Half as big again: still small against the jungle, now legible. */
+const KIND_SCALE = { camp: 9.2, totem: 7.2, banner: 9.4, torch: 8.0, cairn: 6.2 };
 
 export function buildMarkers(field, layout, uniforms) {
   const group = new THREE.Group();
@@ -145,7 +146,9 @@ export function buildMarkers(field, layout, uniforms) {
     group.add(mesh);
     meshes.push(mesh);
   }
-  group.add(buildGlow(layout, uniforms));
+  const glow = buildGlow(layout, uniforms);
+  group.add(glow);
+  group.userData.glow = glow;
   group.userData.meshes = meshes;
   return group;
 }
@@ -156,6 +159,7 @@ function buildGlow(layout, uniforms) {
   const pos = new Float32Array(n * 4 * 3);
   const corner = new Float32Array(n * 4 * 2);
   const params = new Float32Array(n * 4 * 2);
+  const slot = new Float32Array(n * 4);
   const idx = [];
   const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
   layout.markers.forEach((m, i) => {
@@ -165,6 +169,7 @@ function buildGlow(layout, uniforms) {
       corner[v * 2] = corners[c][0]; corner[v * 2 + 1] = corners[c][1];
       params[v * 2] = (i % 97) / 97;
       params[v * 2 + 1] = m.kind === "torch" ? 1.25 : 1;
+      slot[v] = i;
     }
     const b = i * 4;
     idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
@@ -173,66 +178,84 @@ function buildGlow(layout, uniforms) {
   g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   g.setAttribute("corner", new THREE.BufferAttribute(corner, 2));
   g.setAttribute("params", new THREE.BufferAttribute(params, 2));
+  g.setAttribute("slot", new THREE.BufferAttribute(slot, 1));
   g.setIndex(idx);
   g.computeBoundingSphere();
   const mat = new THREE.ShaderMaterial({
-    uniforms: { ...uniforms, uSelected: { value: -1 }, uGlow: { value: 1 } },
+    uniforms: { ...uniforms, uSelected: { value: -1 }, uHover: { value: -1 }, uGlow: { value: 1 } },
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexShader: /* glsl */`
-      attribute vec2 corner; attribute vec2 params;
-      uniform float uTime;
-      varying vec2 vUv; varying float vFlicker; varying float vNear;
+      attribute vec2 corner; attribute vec2 params; attribute float slot;
+      uniform float uTime, uHover, uSelected;
+      varying vec2 vUv; varying float vFlicker; varying float vNear; varying float vLift;
       void main() {
         vec3 c = position;
         float dist = length(c - cameraPosition);
+        // the one under the cursor, and the one the card is open on, flare up
+        vLift = (abs(slot - uHover) < 0.5 ? 1.0 : 0.0) + (abs(slot - uSelected) < 0.5 ? 1.0 : 0.0);
         // A world-space ember that never drops below a readable pixel size —
         // but the floor is for altitude. Up close it is a campfire standing
         // next to a tent, and at 3.4 m it burned the tent out.
-        float size = max(mix(0.9, 3.4, smoothstep(90.0, 520.0, dist)), dist * 0.0062) * params.y;
+        float size = max(mix(1.1, 4.6, smoothstep(90.0, 520.0, dist)), dist * 0.0078) * params.y
+                   * (1.0 + vLift * (0.55 + 0.18 * sin(uTime * 3.4)));
         vNear = smoothstep(26.0, 130.0, dist);
         vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
         vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
         vec3 world = c + right * corner.x * size + up * corner.y * size;
         vUv = corner;
-        vFlicker = 0.72 + 0.28 * sin(uTime * 6.1 + params.x * 40.0) * sin(uTime * 2.7 + params.x * 11.0);
+        // a fire flicker over a slow breath, so a camp reads as lit rather
+        // than as a dot: the slow term is what the eye picks up from altitude
+        vFlicker = (0.74 + 0.26 * sin(uTime * 6.1 + params.x * 40.0) * sin(uTime * 2.7 + params.x * 11.0))
+                 * (0.84 + 0.30 * sin(uTime * 1.15 + params.x * 6.3));
         gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
       }
     `,
     fragmentShader: /* glsl */`
       uniform float uGlow;
-      varying vec2 vUv; varying float vFlicker; varying float vNear;
+      varying vec2 vUv; varying float vFlicker; varying float vNear; varying float vLift;
       void main() {
         float r = length(vUv);
-        float core = smoothstep(0.55, 0.0, r);
-        float halo = smoothstep(1.0, 0.1, r);
-        vec3 color = mix(vec3(1.0, 0.52, 0.2), vec3(1.0, 0.93, 0.76), core);
-        float a = (halo * 0.3 + core * 0.9) * vFlicker * uGlow * mix(0.3, 1.0, vNear);
+        float core = (1.0 - smoothstep(0.0, 0.5, r));
+        float halo = (1.0 - smoothstep(0.1, 1.0, r));
+        float glow = (1.0 - smoothstep(0.45, 1.0, r));
+        vec3 color = mix(vec3(1.0, 0.44, 0.13), vec3(1.0, 0.94, 0.78), core);
+        float a = (halo * 0.26 + glow * 0.26 + core * 1.05) * vFlicker * uGlow * mix(0.3, 1.0, vNear);
+        a *= 1.0 + vLift * 0.7;
         gl_FragColor = vec4(color * a, a);
       }
     `,
   });
   const mesh = new THREE.Mesh(g, mat);
+  mesh.userData.uniforms = mat.uniforms;
   mesh.name = "marker-glow";
   mesh.renderOrder = 11;
   mesh.frustumCulled = false;
   return mesh;
 }
 
-/* A ring drawn on the ground under the selected marker. */
+/* A ring drawn on the ground under the selected marker. Warm, soft-edged and
+   breathing, rather than the hard white hoop it used to be — half occluded
+   by a crown that read as a glyph someone had left on the screen. */
 export function buildSelectRing(uniforms) {
-  const g = new THREE.RingGeometry(0.72, 1, 48);
+  const g = new THREE.RingGeometry(0.58, 1, 64);
   g.rotateX(-Math.PI / 2);
   const mat = new THREE.ShaderMaterial({
     uniforms: { ...uniforms, uRing: { value: 1 } },
     transparent: true,
     depthWrite: false,
-    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-    fragmentShader: `uniform float uTime; varying vec2 vUv;
+    blending: THREE.AdditiveBlending,
+    vertexShader: `varying vec2 vUv; varying vec3 vP;
+      void main(){ vUv = uv; vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `uniform float uTime; varying vec2 vUv; varying vec3 vP;
       void main(){
-        float pulse = 0.65 + 0.35 * sin(uTime * 2.2);
-        gl_FragColor = vec4(vec3(1.0, 0.86, 0.66) * pulse, 0.85 * pulse);
+        // soft on both edges, so it reads as light on the ground
+        float r = length(vP.xz);
+        float band = smoothstep(0.56, 0.78, r) * (1.0 - smoothstep(0.86, 1.02, r));
+        float pulse = 0.62 + 0.38 * sin(uTime * 2.0);
+        float a = band * pulse * 0.8;
+        gl_FragColor = vec4(vec3(1.0, 0.72, 0.38) * a, a);
       }`,
   });
   const mesh = new THREE.Mesh(g, mat);

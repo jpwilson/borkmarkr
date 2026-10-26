@@ -6,17 +6,30 @@
    picking, and the quality ladder used outside capture mode. */
 import * as THREE from "three";
 import { buildField, buildTerrain, detailTexture, groundAt, sampleGrid, SUN_AZ, SUN_EL } from "./island-terrain.js";
-import { buildStacks, buildTemple, buildBoulders } from "./island-props.js";
+import { buildStacks, buildTemple, buildBoulders, buildWreck } from "./island-props.js";
 import { buildFlora, setFloraDensity } from "./island-flora.js";
 import { buildOcean, buildInland, buildFalls, depthTexture } from "./island-water.js";
 import { buildSky, buildMist, buildSmoke, buildSpray } from "./island-sky.js";
 import { buildMarkers, buildSelectRing } from "./island-markers.js";
+import { buildBirds } from "./island-fauna.js";
+import { Post } from "./island-post.js";
 import { TERRAIN_HALF, STACKS, clamp, mix, zoneBySite } from "./island-layout.js";
 
 /* THREE.ColorManagement is on, so `new THREE.Color(hex)` already lands in the
    renderer's linear working space; converting again here used to darken every
    light and every fog colour by a second gamma. */
 const lin = (hex, scale = 1) => new THREE.Color(hex).multiplyScalar(scale);
+
+// Start conservatively before the first expensive frame; capture ignores hints.
+export function initialTier() {
+  const cores = navigator.hardwareConcurrency || 4;
+  const memory = navigator.deviceMemory || 8;
+  const small = Math.min(window.innerWidth, window.innerHeight) < 600;
+  const touch = navigator.maxTouchPoints > 0;
+  if (cores <= 4 || memory <= 4 || (small && touch)) return "low";
+  if (cores <= 8 || small || touch || window.devicePixelRatio > 1.5) return "mid";
+  return "high";
+}
 
 export class IslandScene {
   constructor({ canvas, labelHost, layout, capture = false }) {
@@ -25,7 +38,7 @@ export class IslandScene {
     this.layout = layout;
     this.capture = capture;
     this.width = 1; this.height = 1;
-    this.quality = { pixelRatio: 1, flora: 1, tier: "high" };
+    this.quality = { pixelRatio: 1, flora: 1, particles: 1, post: 1, tier: "high" };
     this.labels = [];
     this.selected = null;
     this.disposables = [];
@@ -42,6 +55,10 @@ export class IslandScene {
     renderer.toneMappingExposure = 1.0;
     renderer.setClearColor(0x9fb0b4, 1);
     this.renderer = renderer;
+    /* The grade. Materials write linear radiance into its buffer; with it
+       switched off they tone-map straight to the canvas instead, so the low
+       tier loses the bloom and the shafts and nothing else. */
+    this.post = new Post(renderer, { capture: this.capture });
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(40, 16 / 9, 2, 120000);
@@ -52,30 +69,36 @@ export class IslandScene {
     this.sun = sun;
 
     this.detail = detailTexture(256);
+    /* Golden hour, keyed hard: a hot low sun, a cool sky fill that owns the
+       shadows, and a horizon haze that is nearly the colour of the sun. The
+       separation between those two is the whole look — a single grey fill
+       for both is what made this read as an overcast afternoon. */
     this.uniforms = {
       uSunDir: { value: sun },
-      uSunColor: { value: lin("#ffeeda", 1.72) },
-      uSkyColor: { value: lin("#8ab6dc", 0.56) },
-      uSkyMid: { value: lin("#86aec6", 1.0) },
-      uZenith: { value: lin("#0e3860", 1.0) },
-      uGroundColor: { value: lin("#35402a", 0.2) },
-      uFogColor: { value: lin("#93a8ad", 1.0) },
-      uHazeColor: { value: lin("#e4e0d2", 1.0) },
-      uSunHaze: { value: lin("#ffd6a2", 1.0) },
-      uFogDensity: { value: 0.000058 },
-      uFogHeight: { value: 390 },
+      uSunColor: { value: lin("#ffd3a0", 2.45) },
+      uSunDeep: { value: lin("#ff9a4e", 1.0) },
+      uSkyColor: { value: lin("#74a6d8", 0.66) },
+      uSkyMid: { value: lin("#86b4d8", 1.0) },
+      uZenith: { value: lin("#0d2f58", 1.0) },
+      uGroundColor: { value: lin("#4a3c22", 0.30) },
+      uFogColor: { value: lin("#8ba3ad", 1.0) },
+      uHazeColor: { value: lin("#f4dcb8", 1.0) },
+      uSunHaze: { value: lin("#ffb468", 1.0) },
+      uFogDensity: { value: 0.000074 },
+      uFogHeight: { value: 340 },
       uTime: { value: 0 },
       uExposure: { value: 0.70 },
       uDetail: { value: this.detail },
       uHalf: { value: TERRAIN_HALF },
-      uDeep: { value: lin("#04171f", 1) },
-      uShallow: { value: lin("#29b0a0", 1) },
-      uFoam: { value: lin("#e9efe9", 1) },
-      uSway: { value: 0.9 },
+      uDeep: { value: lin("#031420", 1) },
+      uShallow: { value: lin("#2ec6b4", 1) },
+      uFoam: { value: lin("#eef4ee", 1) },
+      uSway: { value: 1.0 },
       uDepth: { value: null },
     };
     this.build();
     this.buildLabels();
+    this.setQuality(this.capture ? "high" : initialTier());
     return this;
   }
 
@@ -97,6 +120,7 @@ export class IslandScene {
     this.boulders = buildBoulders(field, this.layout, u);
     const templeZone = zoneBySite(this.layout, "temple");
     this.temple = buildTemple(field, u, templeZone || { x: 150, z: 450 });
+    this.wreck = buildWreck(u);
     this.flora = buildFlora(field, this.layout, u, this.stacks.userData.list);
     this.oceanFar = buildOcean(field, u, { inner: false });
     this.oceanNear = buildOcean(field, u, { inner: true });
@@ -108,10 +132,11 @@ export class IslandScene {
     this.spray = buildSpray(u);
     this.markers = buildMarkers(field, this.layout, u);
     this.selectRing = buildSelectRing(u);
+    this.birds = buildBirds(field, this.layout, u);
 
     for (const o of [this.sky, this.oceanFar, this.oceanNear, this.terrain, this.stacks, this.boulders,
-      this.temple, this.flora, this.inland, this.falls, this.markers, this.selectRing,
-      this.mist, this.spray, this.smoke]) root.add(o);
+      this.temple, this.wreck, this.flora, this.inland, this.falls, this.markers, this.selectRing,
+      this.birds, this.mist, this.spray, this.smoke]) root.add(o);
     this.scene.add(root);
 
     this.stats = {
@@ -130,6 +155,7 @@ export class IslandScene {
   dispose() {
     const seen = new Set();
     this.root?.traverse((o) => {
+      if (o.isInstancedMesh) o.dispose();
       if (o.geometry && !seen.has(o.geometry)) { seen.add(o.geometry); o.geometry.dispose(); }
       const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
       for (const m of mats) if (!seen.has(m)) { seen.add(m); m.dispose(); }
@@ -143,6 +169,7 @@ export class IslandScene {
   destroy() {
     this.dispose();
     this.detail?.dispose();
+    this.post?.dispose();
     this.renderer?.dispose();
   }
 
@@ -214,11 +241,25 @@ export class IslandScene {
     cam.up.set(0, 1, 0);
     cam.lookAt(view.target.x, view.target.y, view.target.z);
     if (view.roll) cam.rotateZ(view.roll);
-    // framings are authored for a wide frame; on a narrow one, widen the
-    // vertical angle so the same island still fits across the screen
+    /* Framings are authored for a wide frame. On a narrow one the vertical
+       angle opens up so the same island still fits across the screen — but
+       only so far: past about a 70-degree lens a phone frame is all sky and
+       a tiny island, so the rest of the fit is bought by moving the camera
+       in instead, which keeps the subject big and the perspective sane. */
     const ref = 16 / 9, aspect = this.width / Math.max(1, this.height);
+    const narrow = clamp((ref / Math.max(0.2, aspect) - 1) / 2.4, 0, 1);
     const fov = aspect >= ref ? view.fov
-      : Math.min(72, 2 * Math.atan(Math.tan((view.fov * Math.PI) / 360) * Math.pow(ref / aspect, 0.55)) * (180 / Math.PI));
+      : Math.min(68, 2 * Math.atan(Math.tan((view.fov * Math.PI) / 360) * Math.pow(ref / aspect, 0.48)) * (180 / Math.PI));
+    if (narrow > 0) {
+      const k = mix(1, 0.80, narrow);
+      cam.position.set(
+        view.target.x + (view.pos.x - view.target.x) * k,
+        view.target.y + (view.pos.y - view.target.y) * k,
+        view.target.z + (view.pos.z - view.target.z) * k,
+      );
+      cam.lookAt(view.target.x, view.target.y, view.target.z);
+      if (view.roll) cam.rotateZ(view.roll);
+    }
     if (cam.fov !== fov) cam.fov = fov;
     cam.updateProjectionMatrix();
     // project() and sunScreen() both read matrixWorldInverse; without this
@@ -268,13 +309,26 @@ export class IslandScene {
     return best;
   }
 
+  /* Which beacon the cursor is over. Null in capture mode — a frame must
+     not depend on where a pointer happens to be. */
+  setHover(marker) {
+    const u = this.markers?.userData?.glow?.userData?.uniforms;
+    // marker.index is the position in layout.markers, which is the order
+    // the beacon buffer was built in; marker.slot is per-kind and would
+    // light the wrong camp
+    if (this.capture) marker = null;
+    if (u) u.uHover.value = marker ? marker.index ?? -1 : -1;
+  }
+
   setSelected(marker) {
     this.selected = marker || null;
+    const u = this.markers?.userData?.glow?.userData?.uniforms;
+    if (u) u.uSelected.value = marker ? marker.index ?? -1 : -1;
     const ring = this.selectRing;
     if (!marker) { ring.visible = false; return; }
     ring.visible = true;
-    ring.position.set(marker.x, marker.y + 1.4, marker.z);
-    const s = 10;
+    ring.position.set(marker.x, marker.y + 1.6, marker.z);
+    const s = 16;
     ring.scale.set(s, s, s);
   }
 
@@ -284,22 +338,28 @@ export class IslandScene {
     // smoke column and the spray are all full-screen overdraw on a slow GPU,
     // and dropping them costs far less of the look than dropping the jungle
     const tiers = {
-      high: { pixelRatio: Math.min(window.devicePixelRatio || 1, 2), flora: 1, particles: 1 },
-      mid: { pixelRatio: 1, flora: 0.68, particles: 0.5 },
-      low: { pixelRatio: 0.8, flora: 0.42, particles: 0 },
+      high: { pixelRatio: Math.min(window.devicePixelRatio || 1, 2), flora: 1, particles: 1, post: 1 },
+      mid: { pixelRatio: 1, flora: 0.55, particles: 0.5, post: 0.5 },
+      low: { pixelRatio: 0.8, flora: 0.3, particles: 0, post: 0 },
     };
-    const q = tiers[tier] || tiers.high;
+    if (!tiers[tier]) tier = "high";
+    const q = tiers[tier];
     this.quality = { ...q, tier };
     this.renderer.setPixelRatio(this.capture ? 1 : q.pixelRatio);
     setFloraDensity(this.flora, this.capture ? 1 : q.flora);
     this.setParticles(this.capture ? 1 : q.particles);
+    this.post.enabled = q.post > 0;
+    this.post.scale = q.post || 1;
+    if (this.birds) this.birds.visible = q.particles > 0 || q.post > 0;
     this.resize(this.width, this.height);
     return this.quality;
   }
 
   setParticles(level) {
     const hi = level >= 1;
-    for (const m of this.mist?.children || []) m.visible = level > 0 && (hi || m.name !== "mist-high");
+    // the low banks are the ones doing the work; the mid and high layers are
+    // the first thing a slow GPU can afford to lose
+    for (const m of this.mist?.children || []) m.visible = level > 0 && (hi || m.name === "mist-low");
     if (this.smoke) this.smoke.visible = level > 0;
     if (this.spray) this.spray.visible = hi;
   }
@@ -307,6 +367,7 @@ export class IslandScene {
   resize(w, h) {
     this.width = Math.max(1, w); this.height = Math.max(1, h);
     this.renderer.setSize(this.width, this.height, false);
+    this.post.setSize(this.width, this.height);
     this.camera.aspect = this.width / this.height;
     this.camera.updateProjectionMatrix();
   }
@@ -320,8 +381,9 @@ export class IslandScene {
   }
 
   render() {
-    this.renderer.render(this.scene, this.camera);
-    const info = this.renderer.info.render;
+    const s = this.sunScreen();
+    this.post.render(this.scene, this.camera, { x: s.x / 100, y: 1 - s.y / 100, front: s.front });
+    const info = this.post.info || this.renderer.info.render;
     this.stats.tris = Math.round(info.triangles / 1000);
     this.stats.calls = info.calls;
     this.updateLabels();

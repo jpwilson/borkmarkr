@@ -21,7 +21,13 @@ function catmull(p0, p1, p2, p3, u, key) {
 
 /* ── reusable framings, shared by the tour and by ?capture poses ────────── */
 export function overviewPose(layout, spin = 0) {
-  const a = 0.88 + spin;
+  /* The hero framing, and the one thing that decides whether the island is
+     lit at all: at the old bearing the camera stood on the shadow side and
+     every ridge in the frame was fill light. From here the sun is about
+     forty degrees off the lens, so the near slopes take the key, the
+     valleys behind them fall into blue shadow, and the sea stacks sit out
+     to the right with the lagoon under the camera. */
+  const a = 1.50 + spin;
   const d = 3380;
   return {
     pos: v(Math.cos(a) * d, 1280, Math.sin(a) * d),
@@ -31,11 +37,15 @@ export function overviewPose(layout, spin = 0) {
 }
 
 export function approachPose(layout, u = 0.5) {
-  // low over the sea, coming in through the stacks from the east
-  const far = v(3450, 70, 1850), near = v(1500, 108, 760);
+  /* Low over the sea, in through the stacks — and now flown straight down
+     the sun's own bearing, so the island comes up as a silhouette against
+     the light with the shafts coming through the towers and the mist. A
+     sun-side approach is the one frame in the film that can be backlit;
+     every other beat wants the key on the land. */
+  const far = v(3400, 70, -1750), near = v(1450, 108, -700);
   return {
     pos: v(mix(far.x, near.x, u), mix(far.y, near.y, u), mix(far.z, near.z, u)),
-    target: v(mix(700, 180, u), mix(130, 260, u), mix(-60, -200, u)),
+    target: v(mix(650, 150, u), mix(130, 260, u), mix(120, -60, u)),
     fov: 44,
   };
 }
@@ -52,12 +62,12 @@ export function zonePose(layout, zone, opts = {}) {
   // out at sea, the lagoon off the reef, the valley looking up it
   const framing = {
     volcano:  { dist: 1180, height: 760, lift: 300, fov: 40, az: 1.45 },
-    karst:    { dist: 900,  height: 430, lift: 120, fov: 42, az: 0.15 },
-    temple:   { dist: 660,  height: 470, lift: 40,  fov: 40, az: 1.50 },
+    karst:    { dist: 1180, height: 560, lift: 150, fov: 38, az: 0.42 },
+    temple:   { dist: 820,  height: 520, lift: 60,  fov: 38, az: 1.62 },
     river:    { dist: 780,  height: 430, lift: 40,  fov: 42, az: 1.95 },
-    falls:    { dist: 980,  height: 330, lift: 150, fov: 40, az: -1.47, abs: true, aim: [0, -430] },
-    swamp:    { dist: 560,  height: 250, lift: 14,  fov: 44, az: 2.35 },
-    lagoon:   { dist: 760,  height: 340, lift: 10,  fov: 42, az: 1.30 },
+    falls:    { dist: 1120, height: 390, lift: 190, fov: 38, az: -1.86, abs: true, aim: [-80, -400] },
+    swamp:    { dist: 600,  height: 430, lift: 16,  fov: 42, az: 2.05 },
+    lagoon:   { dist: 860,  height: 520, lift: 50,  fov: 40, az: 1.46, aim: [-150, -160] },
     highland: { dist: 940,  height: 660, lift: 180, fov: 40, az: 2.55 },
     crater:   { dist: 720,  height: 540, lift: 110, fov: 40, az: 1.85 },
   }[zone.siteId] || { dist: 820, height: 500, lift: 60, fov: 42, az: 1.35 };
@@ -95,7 +105,7 @@ export function markerPose(layout, marker, opts = {}) {
      tilt; the ground distance follows from them, never the other way round,
      because a camera lifted over a crown must not turn into a plan view. */
   const target = v(marker.x, marker.y + 8, marker.z);
-  const alt = opts.alt ?? 170;
+  const alt = opts.alt ?? 225;
   const pitch = opts.pitch ?? 0.72;
   const tan = Math.tan(pitch);
   /* Where to hover. The near geometry of this island is a scatter of blobs
@@ -127,16 +137,23 @@ export function markerPose(layout, marker, opts = {}) {
       const d = (y0 - target.y) / tan;
       const x = marker.x + Math.cos(a) * d, z = marker.z + Math.sin(a) * d;
       const y = Math.max(y0, clearanceAt(x, z, layout.clearings, 72));
+      /* How much height this bearing costs to see over. A camp on a slope
+         has a ridge on one side of it, and a bearing pointed into that
+         ridge has to climb until the sight line clears the whole thing —
+         which is how a hundred-and-fifty-metre hover turned into a camera
+         a mile and a half up. Price the climb into the choice and the
+         downhill bearings win, which is where the view was anyway. */
+      const climb = liftOverCanopy(v(x, y, z), target, layout.clearings, 24, 22).y - y;
       // nudged back toward the camp's open side, and toward staying low:
       // height is bought only where it actually buys a clear frame
       const off = Math.abs(((a - nominal + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-      const score = crowd(x, z, y) + off * 0.012 + (k - 1) * 0.05;
+      const score = crowd(x, z, y + climb) + off * 0.012 + (k - 1) * 0.05 + climb * 0.0045;
       if (!best || score < best.score) best = { score, a, pos: v(x, y, z) };
     }
   }
   // and climb until nothing — ground or crown — stands in the line of sight
-  const pos = liftOverCanopy(best.pos, target, layout.clearings, 18);
-  return { pos, target, fov: opts.fov ?? 34, angle: best.a };
+  const pos = liftOverCanopy(best.pos, target, layout.clearings, 24);
+  return { pos, target, fov: opts.fov ?? 27, angle: best.a };
 }
 
 /* The bookmark the tour lands on. The beat is the one close-up in the film,
@@ -144,6 +161,23 @@ export function markerPose(layout, marker, opts = {}) {
    landing in a ridge shadow is a black frame however well it is composed.
    Preference order breaks ties between equally lit camps. */
 export function heroMarker(layout) {
+  /* How shut in a camp is: the steepest rise anywhere around it inside four
+     hundred metres. A camp at the bottom of a bowl cannot be filmed from a
+     helicopter without the camera climbing over the rim, and the shot that
+     comes back is a speck in a crater — so openness is scored alongside
+     the light. */
+  const shutIn = (x, z) => {
+    const base = heightAt(x, z);
+    let worst = 0;
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + 0.37;
+      for (const r of [140, 280, 430]) {
+        const rise = (heightAt(x + Math.cos(a) * r, z + Math.sin(a) * r) - base) / r;
+        if (rise > worst) worst = rise;
+      }
+    }
+    return clamp(worst, 0, 1);
+  };
   const prefer = ["river", "lagoon", "highland", "temple", "karst", "swamp", "volcano"];
   let best = null, bestScore = -1;
   prefer.forEach((siteId, rank) => {
@@ -155,6 +189,7 @@ export function heroMarker(layout) {
       if (seen.has(m.camp)) continue;
       seen.add(m.camp);
       const score = sunAt(m.campX, m.campZ) * 2
+        - shutIn(m.campX, m.campZ) * 2.0
         + (m.district === biggest.name ? 0.5 : 0)
         - rank * 0.14;
       if (score > bestScore) { bestScore = score; best = m; }
@@ -200,8 +235,8 @@ export function buildPlan(layout) {
 
   /* 2 — rise over the reef and the coast */
   const rise = push("rise", "The coast", 5, "Reef, surf line, first canopy");
-  key(at(rise, 0.5), { pos: v(1500, 420, 60), target: v(300, 220, -160), fov: 42 }, { roll: -0.04 });
-  key(at(rise, 1), { pos: v(2150, 820, -260), target: v(60, 230, -140), fov: 40 }, { roll: -0.02 });
+  key(at(rise, 0.5), { pos: v(1250, 430, -380), target: v(120, 230, -160), fov: 42 }, { roll: -0.04 });
+  key(at(rise, 1), { pos: v(1540, 880, 1380), target: v(40, 250, -120), fov: 40 }, { roll: -0.02 });
 
   /* 3 — the whole island */
   const over = push("overview", "Library Island", 6, `${layout.zones.length} zones`);
@@ -227,12 +262,12 @@ export function buildPlan(layout) {
     const dip = push("dip", heroZone.place, 5, `${heroZone.biome}`);
     dip.zone = heroZone.index;
     key(at(dip, 0.1), zonePose(layout, heroZone, { offset: 0.9, dist: 1.25 }));
-    key(at(dip, 1), markerPose(layout, hero, { alt: 330, pitch: 0.62, fov: 40, angle }));
+    key(at(dip, 1), markerPose(layout, hero, { alt: 420, pitch: 0.62, fov: 36, angle }));
 
     const land = push("marker", "One bookmark", 6, hero.item.title);
     land.zone = heroZone.index;
     land.marker = hero.id;
-    key(at(land, 0.35), markerPose(layout, hero, { alt: 235, pitch: 0.68, angle }));
+    key(at(land, 0.35), markerPose(layout, hero, { alt: 320, pitch: 0.68, fov: 31, angle }));
     key(at(land, 1), hover);
   }
 
@@ -294,7 +329,7 @@ export class Tour {
     if (beat.marker) {
       const m = this.layout.byId?.get(beat.marker);
       if (m && (pos.x !== target.x || pos.z !== target.z)) {
-        const clear = liftOverCanopy(pos, { x: m.x, y: m.y + 11, z: m.z }, clearings, 18);
+        const clear = liftOverCanopy(pos, { x: m.x, y: m.y + 11, z: m.z }, clearings, 26);
         if (clear.y > pos.y) { target.y += clear.y - pos.y; pos.y = clear.y; }
       }
     }

@@ -36,11 +36,23 @@ export class IslandUI {
       const b = el("log-toggle");
       b.setAttribute("aria-expanded", b.getAttribute("aria-expanded") === "true" ? "false" : "true");
     });
-    if (window.matchMedia("(max-width: 820px)").matches) el("log-toggle").setAttribute("aria-expanded", "false");
+    /* The log is a sidebar on a laptop and half the screen on a phone, so it
+       starts closed on a narrow viewport — and follows the viewport, rather
+       than being decided once at load. Rotating a phone used to leave the
+       list covering the island. */
+    this.narrow = window.matchMedia("(max-width: 820px)");
+    const fit = () => {
+      if (document.activeElement === el("log-toggle")) return;   // the visitor chose
+      el("log-toggle").setAttribute("aria-expanded", this.narrow.matches ? "false" : "true");
+    };
+    fit();
+    this.onNarrow = fit;
+    this.narrow.addEventListener("change", fit);
     return this;
   }
 
   destroy() {
+    this.narrow?.removeEventListener("change", this.onNarrow);
     for (const [node, type, fn] of this.bound) node.removeEventListener(type, fn);
     this.bound = [];
     el("log-list").textContent = "";

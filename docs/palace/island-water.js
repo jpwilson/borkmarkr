@@ -108,13 +108,23 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
         float dist = length(vWorld - cameraPosition);
         // flatten the ripples with distance or the horizon turns to static
         float detail = 1.0 - smoothstep(900.0, 7000.0, dist);
-        vec3 n = waterNormal(vWorld.xz, uTime, 0.038, mix(0.0028, 0.013, detail));
         vec4 isl = islandAt(vWorld.xz);
         float depth = isl.r * 120.0;
+        /* Deep water runs in long slow swells; over a reef the same wind
+           makes short steep chop. One scale for the whole ocean is what
+           made it read as a single sheet of textured plastic. */
+        float shoal = 1.0 - smoothstep(4.0, 70.0, depth);
+        vec3 n = waterNormal(vWorld.xz, uTime, mix(0.030, 0.085, shoal),
+                             mix(0.0028, mix(0.011, 0.020, shoal), detail));
 
-        float shallow = 1.0 - smoothstep(1.0, 34.0, depth);
+        /* Depth is the whole story of tropical water: navy out past the
+           shelf, turquoise over the sand, nearly white where it is ankle
+           deep. Three steps, because two of them read as a gradient and
+           three read as a reef. */
+        float shallow = 1.0 - smoothstep(1.0, 46.0, depth);
         vec3 body = mix(uDeep, uShallow, shallow * shallow);
-        body = mix(body, uShallow * 1.25 + uFoam * 0.12, (1.0 - smoothstep(0.0, 9.0, depth)) * 0.65);
+        body = mix(body, uShallow * 1.35 + uFoam * 0.10, (1.0 - smoothstep(0.0, 16.0, depth)) * 0.72);
+        body = mix(body, uShallow * 1.1 + uFoam * 0.40, (1.0 - smoothstep(0.0, 4.5, depth)) * 0.65);
 
         float fres = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 4.5);
         vec3 refl = reflect(-viewDir, n);
@@ -122,18 +132,28 @@ export function buildOcean(field, uniforms, { inner = false } = {}) {
         vec3 sky = skyAt(normalize(vec3(refl.x, abs(refl.y) + 0.02, refl.z))) * 0.88;
         vec3 color = mix(body, sky, clamp(fres * 0.9 + 0.05, 0.0, 1.0));
         // the glitter path, broad then tight
-        color += uSunColor * pow(toSun, 160.0) * 2.2 * detail;
-        color += uSunColor * pow(toSun, 26.0) * 0.10;
+        /* The glitter path. Three widths again: the hard specks, the broad
+           sheen they sit in, and a wide wash that only shows when the line
+           of sight is nearly down the sun's own reflection. */
+        color += uSunColor * pow(toSun, 220.0) * 4.0 * detail;
+        color += uSunColor * pow(toSun, 42.0) * 0.55 * detail;
+        color += uSunHaze * pow(toSun, 9.0) * 0.14;
 
         // surf: a band on the waterline, lines rolling in, spray on rock
-        if (depth < 42.0) {
-        float waveline = 0.5 + 0.5 * sin(depth * 0.55 - uTime * 1.8 + (texture2D(uDetail, vWorld.xz * 0.0016).r - 0.5) * 7.0);
-        float band = (1.0 - smoothstep(0.0, 13.0, depth)) * waveline;
-        float edge = (1.0 - smoothstep(0.0, 3.2, depth));
-        float cliff = isl.g * (1.0 - smoothstep(0.0, 26.0, depth));
-        float foam = clamp(band * 0.85 + edge * 0.75 + cliff * 1.6, 0.0, 1.0);
+        if (depth < 56.0) {
+        // two sets of rollers at different spacings, so the surf comes in in
+        // lines rather than as one ring round the island
+        float jit = (texture2D(uDetail, vWorld.xz * 0.0016).r - 0.5) * 7.0;
+        float waveline = 0.5 + 0.5 * sin(depth * 0.55 - uTime * 1.8 + jit);
+        float waveline2 = 0.5 + 0.5 * sin(depth * 0.23 - uTime * 1.1 + jit * 1.7);
+        float band = (1.0 - smoothstep(0.0, 15.0, depth)) * waveline;
+        band += (1.0 - smoothstep(0.0, 34.0, depth)) * waveline2 * 0.45;
+        float edge = (1.0 - smoothstep(0.0, 3.6, depth));
+        // and a collar of white water round anything standing in the sea
+        float cliff = isl.g * (1.0 - smoothstep(0.0, 30.0, depth));
+        float foam = clamp(band * 0.9 + edge * 0.85 + cliff * 1.8, 0.0, 1.0);
         foam *= 0.55 + 0.45 * texture2D(uDetail, vWorld.xz * 0.012 + vec2(uTime * 0.01, 0.0)).g * 2.0;
-        color = mix(color, uFoam, clamp(foam, 0.0, 0.92));
+        color = mix(color, uFoam, clamp(foam, 0.0, 0.94));
         }
 
         color = applyAtmos(color, vWorld, -viewDir);
@@ -229,7 +249,7 @@ export function buildInland(field, uniforms) {
      the basin keeps only the cells whose ground lies under the pool line, so
      the mangrove flats read as a lace of still pools and mud banks instead of
      a slab of grey hanging out over the beach. */
-  const M = { x: -740, z: 520, r: 420, y: 6.8 };
+  const M = { x: -740, z: 520, r: 460, y: 9.8 };
   const STEP = 11;
   const N = Math.ceil((M.r * 2) / STEP);
   // held back off the sand: a pool that reached the beach drew a hard-edged
@@ -266,7 +286,7 @@ export function buildInland(field, uniforms) {
   const mat = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: /* glsl */`
-      attribute vec3 lit;
+      attribute vec4 lit;
       varying vec3 vWorld; varying vec3 vColor; varying float vMarsh;
       void main() {
         vec4 wp = modelMatrix * vec4(position, 1.0);
@@ -331,6 +351,13 @@ export function buildInland(field, uniforms) {
 export function buildFalls(field, uniforms) {
   const pos = [], uv = [], idx = [];
   const push = (x, y, z, u, v) => { pos.push(x, y, z); uv.push(u, v); return pos.length / 3 - 1; };
+  /* One continuous ribbon per fall rather than three stacked quads. The
+     stacked version left visible gaps where one card ended and the next
+     began, and each card had straight sides; a ribbon resampled down the
+     drop can widen, lean out and wander, which is what falling water does.
+     The tiers survive as three steps in the lean and as shelves the shader
+     brightens — see the `v` bands in the fragment. */
+  const STEPS = 14;
   for (const f of FALLS) {
     const top = heightAt(f.x, f.z);
     // aim the sheet away from the plateau centre
@@ -338,13 +365,23 @@ export function buildFalls(field, uniforms) {
     const dx = Math.cos(ang), dz = Math.sin(ang);
     const px = -dz, pz = dx;
     const drop = top + 6;
-    const x0 = f.x + dx * 18, z0 = f.z + dz * 18;
-    const run = 62;
-    const a = push(x0 + px * f.w, top + 3, z0 + pz * f.w, 0, 1);
-    const b2 = push(x0 - px * f.w, top + 3, z0 - pz * f.w, 1, 1);
-    const c = push(x0 - px * f.w * 1.5 + dx * run, top - drop, z0 - pz * f.w * 1.5 + dz * run, 1, 0);
-    const d = push(x0 + px * f.w * 1.5 + dx * run, top - drop, z0 + pz * f.w * 1.5 + dz * run, 0, 0);
-    idx.push(a, c, b2, a, d, c);
+    const x0 = f.x + dx * 16, z0 = f.z + dz * 16;
+    const run = 58;
+    let prev = null;
+    for (let k = 0; k <= STEPS; k++) {
+      const t = k / STEPS;
+      // out from the cliff in three leans, so the drop reads as tiered
+      const lean = (t * 0.38 + 0.30 * Math.pow(t, 2.2) + 0.12 * Math.sin(t * 7.4)) ;
+      const w = f.w * (0.72 + 1.05 * Math.pow(t, 1.25)) * (1 + 0.1 * Math.sin(t * 9.1 + f.a * 3));
+      const wob = Math.sin(t * 5.3 + f.a * 7) * f.w * 0.26;
+      const y = top + 3 - drop * t;
+      const o = run * lean;
+      const cxp = x0 + dx * o + px * wob, czp = z0 + dz * o + pz * wob;
+      const L = push(cxp + px * w, y, czp + pz * w, 0, 1 - t);
+      const R = push(cxp - px * w, y, czp - pz * w, 1, 1 - t);
+      if (prev) idx.push(prev.L, L, R, prev.L, R, prev.R);
+      prev = { L, R };
+    }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
@@ -366,18 +403,25 @@ export function buildFalls(field, uniforms) {
         float v = vUv.y;
         // fine vertical threads scrolling down, thinning as the fall breaks up
         vec2 p = vec2(vUv.x * 3.0, v * 2.2 + uTime * 0.6);
+        // the shelves where the drop steps: water piles up, goes white and
+        // re-forms below, which is what makes one sheet read as three tiers
+        float shelf = (1.0 - smoothstep(0.0, 0.10, abs(fract(v * 3.0 + 0.18) - 0.5) - 0.34));
         float streak = texture2D(uDetail, p).r * 0.7 + texture2D(uDetail, p * vec2(4.0, 2.6) + 0.3).g * 0.6;
         float threads = 0.55 + 0.45 * sin(vUv.x * 46.0 + streak * 7.0);
         float body = smoothstep(0.30, 0.62, streak * 0.8 + threads * 0.35 + (1.0 - v) * 0.12);
-        float sides = smoothstep(0.0, 0.22, vUv.x) * smoothstep(1.0, 0.78, vUv.x);
-        float lip = smoothstep(0.93, 1.0, v);
-        float alpha = clamp(body * sides * (0.42 + 0.5 * v) + lip * 0.75, 0.0, 1.0);
-        alpha *= mix(0.9, 0.22, smoothstep(0.45, 0.0, v));   // breaks into spray
-        vec3 color = mix(vec3(0.72, 0.82, 0.86), vec3(1.0), lip * 0.8 + 0.2);
+        // feathered on every edge: a waterfall has no straight sides, and a
+        // hard-edged trapezoid is the one thing that reads as cardboard
+        float sides = smoothstep(0.0, 0.30, vUv.x) * (1.0 - smoothstep(0.70, 1.0, vUv.x));
+        sides *= 0.72 + 0.5 * streak;
+        float lip = smoothstep(0.90, 1.0, v);
+        float alpha = clamp(body * sides * (0.38 + 0.44 * v) + lip * sides * 0.8 + shelf * sides * 0.45, 0.0, 1.0);
+        alpha *= mix(0.78, 0.20, (1.0 - smoothstep(0.0, 0.5, v)));   // breaks into spray
+        alpha *= (1.0 - smoothstep(0.86, 1.02, v));                  // and fades in at the lip
+        vec3 color = mix(vec3(0.72, 0.82, 0.86), vec3(1.0), clamp(lip * 0.8 + shelf * 0.7 + 0.2, 0.0, 1.0));
         color *= 0.45 + 0.75 * uSunColor;
         vec3 viewDir = normalize(cameraPosition - vWorld);
         color = applyAtmos(color, vWorld, -viewDir);
-        gl_FragColor = vec4(color * uExposure, alpha * 0.92);
+        gl_FragColor = vec4(color * uExposure, alpha * 0.80);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }
