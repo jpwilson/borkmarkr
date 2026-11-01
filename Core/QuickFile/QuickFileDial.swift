@@ -815,22 +815,14 @@ struct QuickFileDialFooter: View {
     private var chipsRow: some View {
         if model.filed == nil, let centre = model.centre {
             let subs = Self.chipSubs(for: centre)
-            let chips = HStack(spacing: 8) {
-                ForEach(subs, id: \.self) { sub in
-                    chip(sub, topicID: centre.categoryID, muted: false) {
-                        model.file(model.candidate(topicID: centre.categoryID, subcategory: sub))
-                    }
-                }
-                if centre.subcategory != nil {
-                    chip(QuickFileCopy.just(centre.categoryID), topicID: centre.categoryID, muted: true) {
-                        model.file(model.candidate(topicID: centre.categoryID, subcategory: nil))
-                    }
-                }
-            }
+            // Too wide for the row: drop the last subtopics rather than clip
+            // a chip at the edge. "Just Fitness" always stays.
             ViewThatFits(in: .horizontal) {
-                chips
+                chips(subs, centre: centre)
+                chips(Array(subs.dropLast()), centre: centre)
+                chips(Array(subs.prefix(1)), centre: centre)
                 ScrollView(.horizontal, showsIndicators: false) {
-                    chips.padding(.horizontal, 2)
+                    chips(subs, centre: centre).padding(.horizontal, 2)
                 }
             }
             .id("\(centre.categoryID)|\(centre.subcategory ?? "")|\(model.revision)")
@@ -838,6 +830,21 @@ struct QuickFileDialFooter: View {
             .animation(.easeOut(duration: 0.12), value: centre)
         } else {
             Color.clear
+        }
+    }
+
+    private func chips(_ subs: [String], centre: FilingCandidate) -> some View {
+        HStack(spacing: 8) {
+            ForEach(subs, id: \.self) { sub in
+                chip(sub, topicID: centre.categoryID, muted: false) {
+                    model.file(model.candidate(topicID: centre.categoryID, subcategory: sub))
+                }
+            }
+            if centre.subcategory != nil {
+                chip(QuickFileCopy.just(centre.categoryID), topicID: centre.categoryID, muted: true) {
+                    model.file(model.candidate(topicID: centre.categoryID, subcategory: nil))
+                }
+            }
         }
     }
 
