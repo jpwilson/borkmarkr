@@ -966,6 +966,34 @@ const Filer = (() => {
     let url;
     try { url = new URL(rawURL); } catch { return none; }
 
+    const { hits, categoryScores, subScores, hashtags } = analyse(url, title, text, extra);
+
+    // Ties go to taxonomy order rather than to whatever the hash table felt like.
+    let best = null, bestScore = 0;
+    for (const t of TAXONOMY) {
+      const score = categoryScores.get(t.id) || 0;
+      if (score > bestScore) { best = t.id; bestScore = score; }
+    }
+    // Below this it's a coincidental substring, not a signal. Uncategorised is a
+    // real state and Browse surfaces it, so nothing is lost.
+    if (!best || bestScore < 6) return none;
+
+    return {
+      topic: best,
+      subtopic: subScores.get(best)?.sub ?? null,
+      tags: tagList(hits.get(best) || [], hashtags),
+      score: bestScore,
+      confident: bestScore >= CONFIDENT_SCORE,
+      evidence: bestScore >= CONFIDENT_SCORE ? "strong" : "thin",
+    };
+  }
+
+  /* Everything suggest() and scores() read: each topic's matcher hits, its
+     score and its heaviest subtopic. One pass with two readers, so the single
+     answer and the ranked list never disagree about what a link scored. `url`
+     is a URL or null: text read off a thumbnail has no link of its own. Port
+     of Categorizer.analyse. */
+  function analyse(url, title, text, extra) {
     const unwrapped = unwrapTitle(title);
     const caption = unwrapped.isSocial ? (unwrapped.caption ?? "") : String(title ?? "");
     const body = captionFromDescription(extra.description ?? "");
@@ -975,7 +1003,7 @@ const Filer = (() => {
     // off the front. The URL and the author line are hints at half weight.
     // Hashtags are the author's own filing and score double.
     const authored = normalise([withoutHook(caption), text || "", withoutHook(body)].join(" "));
-    const fromURL = normaliseURL(url);
+    const fromURL = url ? normaliseURL(url) : "";
     const fromAuthor = normalise([extra.author ?? "", unwrapped.author ?? "", unwrapped.bio ?? ""].join(" "));
     const fromTags = normalise(hashtags.join(" "));
 
@@ -1013,24 +1041,48 @@ const Filer = (() => {
       categoryScores.set(categoryID, score);
     }
 
-    // Ties go to taxonomy order rather than to whatever the hash table felt like.
-    let best = null, bestScore = 0;
-    for (const t of TAXONOMY) {
-      const score = categoryScores.get(t.id) || 0;
-      if (score > bestScore) { best = t.id; bestScore = score; }
-    }
-    // Below this it's a coincidental substring, not a signal. Uncategorised is a
-    // real state and Browse surfaces it, so nothing is lost.
-    if (!best || bestScore < 6) return none;
+    return { hits, categoryScores, subScores, hashtags };
+  }
 
-    return {
-      topic: best,
-      subtopic: subScores.get(best)?.sub ?? null,
-      tags: tagList(hits.get(best) || [], hashtags),
-      score: bestScore,
-      confident: bestScore >= CONFIDENT_SCORE,
-      evidence: bestScore >= CONFIDENT_SCORE ? "strong" : "thin",
-    };
+  /**
+   * Every topic with at least one specific hit, highest score first, ties in
+   * taxonomy order: `[{topic, score, subtopic, subWeight, label, hashtag}]`.
+   *
+   * Same reading and the same numbers as suggest(), for Quick File's dial,
+   * which needs the runners-up too. `label` is the spelling of the heaviest
+   * specific hit (the word a reason line can quote) and `hashtag` says whether
+   * that hit was one of the post's own hashtags. `rawURL` may be null to score
+   * text that came without a link. Port of Categorizer.scores.
+   */
+  function scores(rawURL, title, text, extra = {}) {
+    let url = null;
+    if (rawURL) { try { url = new URL(rawURL); } catch { url = null; } }
+    const { hits, categoryScores, subScores } = analyse(url, title, text, extra || {});
+    const index = taxonomyIndex();
+    const at = (id) => (index.has(id) ? index.get(id) : Number.MAX_SAFE_INTEGER);
+    const out = [];
+    for (const [topic, score] of categoryScores) {
+      // First heaviest wins, in matcher order: longest phrase first.
+      let top = null;
+      for (const h of hits.get(topic)) {
+        if (!h.matcher.generic && h.weight > (top ? top.weight : 0)) top = h;
+      }
+      const sub = subScores.get(topic);
+      out.push({
+        topic, score,
+        subtopic: sub ? sub.sub : null,
+        subWeight: sub ? sub.score : 0,
+        label: top ? top.matcher.label : null,
+        hashtag: top ? top.fromHashtag : false,
+      });
+    }
+    return out.sort((a, b) => b.score - a.score || at(a.topic) - at(b.topic));
+  }
+
+  let TAXONOMY_INDEX = null;
+  function taxonomyIndex() {
+    if (!TAXONOMY_INDEX) TAXONOMY_INDEX = new Map(TAXONOMY.map((t, i) => [t.id, i]));
+    return TAXONOMY_INDEX;
   }
 
   /* Tags for the winning topic only: hashtag hits lead, then the longest
@@ -1084,7 +1136,7 @@ const Filer = (() => {
     try { return new URL(rawURL).hostname.replace("www.", "") || null; } catch { return null; }
   }
 
-  return { suggest, fallbackTitle, fallbackAuthor, isSiteName, unwrapTitle, hashtagsIn, withoutHook, CONFIDENT_SCORE, _normalise: normalise, _stem: stem };
+  return { suggest, scores, fallbackTitle, fallbackAuthor, isSiteName, unwrapTitle, hashtagsIn, withoutHook, CONFIDENT_SCORE, _normalise: normalise, _stem: stem };
 })();
 
 /* ══ TagRecency — port of Core/TagRecency.swift ════════════════════════════
