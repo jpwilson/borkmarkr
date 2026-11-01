@@ -1,0 +1,3991 @@
+{
+  "cases" : [
+    {
+      "expect" : [
+        {
+          "creatorKey" : null,
+          "creatorLabel" : null,
+          "domain" : null,
+          "keywordScores" : [
+            {
+              "hashtag" : false,
+              "label" : "mobility",
+              "score" : 14,
+              "subtopic" : "Mobility",
+              "subWeight" : 14,
+              "topic" : "fitness"
+            },
+            {
+              "hashtag" : false,
+              "label" : "drill",
+              "score" : 7,
+              "subtopic" : null,
+              "subWeight" : 0,
+              "topic" : "diy"
+            }
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "mobility",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 14,
+                "subcategory" : "Mobility"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "diy",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "drill",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 7,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "“mobility” in the title",
+            "“drill” in the title",
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "5 mobility drills that undo a desk day",
+        "url" : "https://www.instagram.com/p/five-hip-mobility-drills/"
+      },
+      "memory" : "none",
+      "name" : "keyword"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : "fitlena",
+          "creatorLabel" : "fit.lena",
+          "domain" : null,
+          "keywordScores" : [
+            {
+              "hashtag" : true,
+              "label" : "pilates",
+              "score" : 22,
+              "subtopic" : "Pilates",
+              "subWeight" : 22,
+              "topic" : "fitness"
+            }
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "pilates",
+                "reasons" : [
+                  "hashtag"
+                ],
+                "score" : 22,
+                "subcategory" : "Pilates"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "#pilates in the caption",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "author" : "fit.lena",
+        "description" : "🔥🔥🔥 #pilates #coreworkout #homeworkout",
+        "title" : "fit.lena on Instagram: \"🔥🔥🔥\"",
+        "url" : "https://www.instagram.com/reel/Cpilates01/"
+      },
+      "memory" : "none",
+      "name" : "hashtag"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : null,
+          "creatorLabel" : null,
+          "domain" : "example.com",
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "none",
+            "preselect" : null
+          },
+          "reasonLines" : [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "asdkjh qwe zxc",
+        "url" : "https://example.com/"
+      },
+      "memory" : "none",
+      "name" : "no signal at all"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : "kaylawalks",
+          "creatorLabel" : "@kaylawalks",
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+              "kaylawalks" : [
+                {
+                  "categoryID" : "fitness",
+                  "count" : 1,
+                  "last" : 1776254400,
+                  "subcategory" : "Mobility"
+                }
+              ]
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+              {
+                "categoryID" : "fitness",
+                "recent" : [
+                  1776254400
+                ],
+                "subcategory" : "Mobility"
+              }
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : "@kaylawalks",
+                "creatorPicks" : 1,
+                "matched" : null,
+                "reasons" : [
+                  "creator",
+                  "habit"
+                ],
+                "score" : 13,
+                "subcategory" : "Mobility"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "thin",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "You filed @kaylawalks here last time",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "@kaylawalks on TikTok",
+        "url" : "https://www.tiktok.com/@kaylawalks/video/7311111111111111111"
+      },
+      "memory" : "kaylaOnce",
+      "name" : "creator, one pick"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : "kaylawalks",
+          "creatorLabel" : "@kaylawalks",
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+              "kaylawalks" : [
+                {
+                  "categoryID" : "fitness",
+                  "count" : 2,
+                  "last" : 1793275200,
+                  "subcategory" : "Mobility"
+                },
+                {
+                  "categoryID" : "fitness",
+                  "count" : 1,
+                  "last" : 1790078400,
+                  "subcategory" : "Running"
+                }
+              ]
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+              {
+                "categoryID" : "fitness",
+                "recent" : [
+                  1793275200,
+                  1792670400
+                ],
+                "subcategory" : "Mobility"
+              },
+              {
+                "categoryID" : "fitness",
+                "recent" : [
+                  1790078400
+                ],
+                "subcategory" : "Running"
+              }
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+                  "Running"
+                ],
+                "categoryID" : "fitness",
+                "creator" : "@kaylawalks",
+                "creatorPicks" : 3,
+                "matched" : null,
+                "reasons" : [
+                  "creator",
+                  "habit"
+                ],
+                "score" : 42,
+                "subcategory" : "Mobility"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "You filed @kaylawalks here 3 times",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "@kaylawalks on TikTok",
+        "url" : "https://www.tiktok.com/@kaylawalks/video/7311111111111111112"
+      },
+      "memory" : "kaylaThrice",
+      "name" : "creator, three picks"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : "runwithjo",
+          "creatorLabel" : "@runwithjo",
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+              "runwithjo" : [
+                {
+                  "categoryID" : "fitness",
+                  "count" : 1,
+                  "last" : 1793361600,
+                  "subcategory" : "Running"
+                },
+                {
+                  "categoryID" : "fitness",
+                  "count" : 1,
+                  "last" : 1793102400,
+                  "subcategory" : "Mobility"
+                }
+              ]
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+              {
+                "categoryID" : "fitness",
+                "recent" : [
+                  1793361600
+                ],
+                "subcategory" : "Running"
+              },
+              {
+                "categoryID" : "fitness",
+                "recent" : [
+                  1793102400
+                ],
+                "subcategory" : "Mobility"
+              }
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+                  "Mobility"
+                ],
+                "categoryID" : "fitness",
+                "creator" : "@runwithjo",
+                "creatorPicks" : 2,
+                "matched" : null,
+                "reasons" : [
+                  "creator",
+                  "habit"
+                ],
+                "score" : 30,
+                "subcategory" : "Running"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "You filed @runwithjo here 2 times",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "@runwithjo on TikTok",
+        "url" : "https://www.tiktok.com/@runwithjo/video/7322222222222222222"
+      },
+      "memory" : "split",
+      "name" : "split subtopics"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : null,
+          "creatorLabel" : null,
+          "domain" : "nytimes.com",
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+              "nytimes.com" : [
+                {
+                  "categoryID" : "news",
+                  "count" : 1,
+                  "last" : 1792497600,
+                  "subcategory" : "Politics"
+                }
+              ]
+            },
+            "habits" : [
+              {
+                "categoryID" : "news",
+                "recent" : [
+                  1792497600
+                ],
+                "subcategory" : "Politics"
+              }
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "news",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "domain",
+                  "habit"
+                ],
+                "score" : 8,
+                "subcategory" : "Politics"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "thin",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "You file nytimes.com here",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "author" : "The New York Times",
+        "title" : "The quiet case for doing less",
+        "url" : "https://www.nytimes.com/2026/10/30/opinion/the-quiet-case.html"
+      },
+      "memory" : "nytimes",
+      "name" : "domain"
+    },
+    {
+      "ai" : {
+        "categoryID" : "nutrition",
+        "confidence" : "high",
+        "subcategory" : "High-protein"
+      },
+      "expect" : [
+        {
+          "creatorKey" : "chefnadia",
+          "creatorLabel" : "@chefnadia",
+          "domain" : null,
+          "keywordScores" : [
+            {
+              "hashtag" : false,
+              "label" : "lunch",
+              "score" : 7,
+              "subtopic" : null,
+              "subWeight" : 0,
+              "topic" : "recipes"
+            }
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "nutrition",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "ai"
+                ],
+                "score" : 28,
+                "subcategory" : "High-protein"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "lunch",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 7,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "AI read the caption",
+            "“lunch” in the title",
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "My lunch every day this week",
+        "url" : "https://www.tiktok.com/@chefnadia/video/7333333333333333333"
+      },
+      "memory" : "none",
+      "name" : "AI high vs keyword"
+    },
+    {
+      "ai" : {
+        "categoryID" : "money",
+        "confidence" : "medium",
+        "subcategory" : "Budgeting"
+      },
+      "expect" : [
+        {
+          "creatorKey" : "someone",
+          "creatorLabel" : "@someone",
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "ai"
+                ],
+                "score" : 13,
+                "subcategory" : "Budgeting"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "thin",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "AI read the caption",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "Someone (@someone) on X: \"Okay this changed everything for me\" / X",
+        "url" : "https://x.com/someone/status/1850000000000000000"
+      },
+      "memory" : "none",
+      "name" : "AI medium"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : "mofit",
+          "creatorLabel" : "@mofit",
+          "domain" : null,
+          "keywordScores" : [
+            {
+              "hashtag" : false,
+              "label" : "protein",
+              "score" : 9,
+              "subtopic" : null,
+              "subWeight" : 0,
+              "topic" : "nutrition"
+            }
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+            {
+              "hashtag" : false,
+              "label" : "creatine",
+              "score" : 25,
+              "subtopic" : null,
+              "subWeight" : 0,
+              "topic" : "nutrition"
+            }
+          ],
+          "ocrText" : "40g PROTEIN\ncreatine + oats",
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "nutrition",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "creatine",
+                "reasons" : [
+                  "ocr",
+                  "keyword"
+                ],
+                "score" : 21,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "On-screen text says “creatine”",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "description" : "keeps me full till 2pm, 40g protein",
+        "ocrLines" : [
+          "40g PROTEIN",
+          "creatine + oats",
+          "@mofit",
+          "1.2M"
+        ],
+        "title" : "@mofit on TikTok",
+        "url" : "https://www.tiktok.com/@mofit/video/7344444444444444444"
+      },
+      "memory" : "none",
+      "name" : "OCR boost"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : null,
+          "creatorLabel" : null,
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "none",
+            "preselect" : null
+          },
+          "reasonLines" : [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "ocrLines" : [
+          "Log in to Instagram",
+          "Sign up to see photos and videos from your friends.",
+          "@kaylawalks",
+          "1.2M",
+          "0:15 / 1:02",
+          "Open app"
+        ],
+        "title" : "Instagram",
+        "url" : "https://www.instagram.com/reel/DLoginWall1/"
+      },
+      "memory" : "none",
+      "name" : "login-wall OCR ignored"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : null,
+          "creatorLabel" : null,
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+            {
+              "hashtag" : false,
+              "label" : "mobility",
+              "score" : 33,
+              "subtopic" : "Mobility",
+              "subWeight" : 14,
+              "topic" : "fitness"
+            },
+            {
+              "hashtag" : false,
+              "label" : "routine",
+              "score" : 9,
+              "subtopic" : null,
+              "subWeight" : 0,
+              "topic" : "wellness"
+            }
+          ],
+          "ocrText" : "HIP MOBILITY ROUTINE\n10 min stretching for runners\nDay 3/30",
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "mobility",
+                "reasons" : [
+                  "ocr"
+                ],
+                "score" : 13,
+                "subcategory" : "Mobility"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "wellness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "routine",
+                "reasons" : [
+                  "ocr"
+                ],
+                "score" : 4,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "thin",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "On-screen text says “mobility”",
+            "On-screen text says “routine”",
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "ocrLines" : [
+          "HIP MOBILITY ROUTINE",
+          "10 min stretching for runners",
+          "Day 3/30",
+          "original audio"
+        ],
+        "title" : "Instagram",
+        "url" : "https://www.instagram.com/reel/DOcrOnly01/"
+      },
+      "memory" : "none",
+      "name" : "OCR alone stays thin"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : "yarnloop",
+          "creatorLabel" : "@yarnloop",
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+              "yarnloop" : [
+                {
+                  "categoryID" : "custom.knitting",
+                  "count" : 1,
+                  "last" : 1793448000,
+                  "subcategory" : "Sweaters"
+                },
+                {
+                  "categoryID" : "custom.knitting",
+                  "count" : 1,
+                  "last" : 1793016000
+                }
+              ]
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+              {
+                "categoryID" : "custom.knitting",
+                "recent" : [
+                  1793448000
+                ],
+                "subcategory" : "Sweaters"
+              },
+              {
+                "categoryID" : "custom.knitting",
+                "recent" : [
+                  1793016000
+                ]
+              }
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "custom.knitting",
+                "creator" : "@yarnloop",
+                "creatorPicks" : 2,
+                "matched" : null,
+                "reasons" : [
+                  "creator",
+                  "habit"
+                ],
+                "score" : 30,
+                "subcategory" : "Sweaters"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "You filed @yarnloop here 2 times",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "@yarnloop on TikTok",
+        "url" : "https://www.tiktok.com/@yarnloop/video/7355555555555555555"
+      },
+      "memory" : "yarn",
+      "name" : "custom topic via history",
+      "taxonomyOrder" : [
+        "fashion",
+        "grooming",
+        "relationships",
+        "beauty",
+        "health",
+        "mentalhealth",
+        "truecrime",
+        "cars",
+        "crafts",
+        "diy",
+        "home",
+        "fooddrink",
+        "recipes",
+        "history",
+        "trades",
+        "comedy",
+        "pets",
+        "cleaning",
+        "homestead",
+        "garden",
+        "outdoors",
+        "nature",
+        "parenting",
+        "babyprep",
+        "nutrition",
+        "fitness",
+        "investing",
+        "money",
+        "crypto",
+        "business",
+        "science",
+        "marketing",
+        "tech",
+        "travel",
+        "sports",
+        "photovideo",
+        "creator",
+        "coding",
+        "news",
+        "career",
+        "learning",
+        "ai",
+        "gaming",
+        "wellness",
+        "anime",
+        "music",
+        "filmtv",
+        "beliefs",
+        "books",
+        "art",
+        "custom.knitting"
+      ]
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : "yarnloop",
+          "creatorLabel" : "@yarnloop",
+          "domain" : null,
+          "keywordScores" : [
+            {
+              "hashtag" : false,
+              "label" : "handmade",
+              "score" : 24,
+              "subtopic" : null,
+              "subWeight" : 0,
+              "topic" : "crafts"
+            }
+          ],
+          "memory" : {
+            "creators" : {
+              "yarnloop" : [
+                {
+                  "categoryID" : "custom.knitting",
+                  "count" : 1,
+                  "last" : 1793448000,
+                  "subcategory" : "Sweaters"
+                },
+                {
+                  "categoryID" : "custom.knitting",
+                  "count" : 1,
+                  "last" : 1793016000
+                }
+              ]
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+              {
+                "categoryID" : "custom.knitting",
+                "recent" : [
+                  1793448000
+                ],
+                "subcategory" : "Sweaters"
+              },
+              {
+                "categoryID" : "custom.knitting",
+                "recent" : [
+                  1793016000
+                ]
+              }
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "crafts",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "handmade",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 24,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "“handmade” in the title",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "description" : "chunky cardigan, every stitch handmade",
+        "title" : "@yarnloop on TikTok",
+        "url" : "https://www.tiktok.com/@yarnloop/video/7355555555555555556"
+      },
+      "memory" : "yarn",
+      "name" : "deleted custom topic dropped"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : null,
+          "creatorLabel" : null,
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+              {
+                "categoryID" : "comedy",
+                "recent" : [
+                  1793275200
+                ],
+                "subcategory" : "Memes"
+              },
+              {
+                "categoryID" : "comedy",
+                "recent" : [
+                  1791806400
+                ],
+                "subcategory" : "Skits"
+              }
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+                  "Skits"
+                ],
+                "categoryID" : "comedy",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "habit"
+                ],
+                "score" : 5,
+                "subcategory" : "Memes"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "none",
+            "preselect" : null
+          },
+          "reasonLines" : [
+            "One of your usual spots",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "author" : "instagram.com",
+        "title" : "Instagram",
+        "url" : "https://www.instagram.com/reel/DPlaceholder1/"
+      },
+      "memory" : "placeholder",
+      "name" : "placeholder author skipped"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : "somechannel",
+          "creatorLabel" : "Some Channel",
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+              {
+                "categoryID" : "home",
+                "recent" : [
+                  1793016000,
+                  1791806400
+                ],
+                "subcategory" : "Decor"
+              },
+              {
+                "categoryID" : "cars",
+                "recent" : [
+                  1793361600
+                ],
+                "subcategory" : "Detailing"
+              },
+              {
+                "categoryID" : "fashion",
+                "recent" : [
+                  1793361600
+                ],
+                "subcategory" : "Outfits"
+              }
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "home",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "habit"
+                ],
+                "score" : 5,
+                "subcategory" : "Decor"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fashion",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "habit"
+                ],
+                "score" : 3,
+                "subcategory" : "Outfits"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "cars",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "habit"
+                ],
+                "score" : 3,
+                "subcategory" : "Detailing"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "none",
+            "preselect" : null
+          },
+          "reasonLines" : [
+            "One of your usual spots",
+            "One of your usual spots",
+            "One of your usual spots",
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "author" : "Some Channel",
+        "title" : "A quiet Sunday",
+        "url" : "https://www.youtube.com/watch?v=quiet01"
+      },
+      "memory" : "habits",
+      "name" : "habit fill"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : "wanderfrugal",
+          "creatorLabel" : "@wanderfrugal",
+          "domain" : null,
+          "keywordScores" : [
+            {
+              "hashtag" : false,
+              "label" : "itineraries",
+              "score" : 15,
+              "subtopic" : "Itineraries",
+              "subWeight" : 15,
+              "topic" : "travel"
+            }
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "itineraries",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 15,
+                "subcategory" : "Itineraries"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "“itineraries” in the title",
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "Osaka on $60 a day — full itinerary",
+        "url" : "https://www.tiktok.com/@wanderfrugal/video/7231"
+      },
+      "limit" : 5,
+      "memory" : "none",
+      "name" : "starter fill, five seats"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : null,
+          "creatorLabel" : null,
+          "domain" : "example.org",
+          "keywordScores" : [
+            {
+              "hashtag" : false,
+              "label" : "budgeting",
+              "score" : 12,
+              "subtopic" : "Budgeting",
+              "subWeight" : 12,
+              "topic" : "money"
+            },
+            {
+              "hashtag" : false,
+              "label" : "laptops",
+              "score" : 12,
+              "subtopic" : "Laptops",
+              "subWeight" : 12,
+              "topic" : "tech"
+            }
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "budgeting",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 12,
+                "subcategory" : "Budgeting"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "laptops",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 12,
+                "subcategory" : "Laptops"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "thin",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "“budgeting” in the title",
+            "“laptops” in the title",
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "Budget laptop",
+        "url" : "https://example.org/notes"
+      },
+      "memory" : "none",
+      "name" : "tie broken by taxonomy order"
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : null,
+          "creatorLabel" : null,
+          "domain" : null,
+          "keywordScores" : [
+            {
+              "hashtag" : false,
+              "label" : "mobility",
+              "score" : 14,
+              "subtopic" : "Mobility",
+              "subWeight" : 14,
+              "topic" : "fitness"
+            },
+            {
+              "hashtag" : false,
+              "label" : "drill",
+              "score" : 7,
+              "subtopic" : null,
+              "subWeight" : 0,
+              "topic" : "diy"
+            }
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "wellness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "yours"
+                ],
+                "score" : 0,
+                "subcategory" : "Morning routines"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "mobility",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 14,
+                "subcategory" : "Mobility"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "diy",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "drill",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 7,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "thin",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            null,
+            "“mobility” in the title",
+            "“drill” in the title",
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "5 mobility drills that undo a desk day",
+        "url" : "https://www.instagram.com/p/five-hip-mobility-drills/"
+      },
+      "memory" : "none",
+      "name" : "pinned yours",
+      "pinned" : {
+        "categoryID" : "wellness",
+        "reason" : "yours",
+        "subcategory" : "Morning routines"
+      }
+    },
+    {
+      "expect" : [
+        {
+          "creatorKey" : null,
+          "creatorLabel" : null,
+          "domain" : null,
+          "keywordScores" : [
+            {
+              "hashtag" : false,
+              "label" : "laundry",
+              "score" : 28,
+              "subtopic" : "Laundry",
+              "subWeight" : 13,
+              "topic" : "cleaning"
+            },
+            {
+              "hashtag" : false,
+              "label" : "reset",
+              "score" : 7,
+              "subtopic" : null,
+              "subWeight" : 0,
+              "topic" : "wellness"
+            }
+          ],
+          "memory" : {
+            "creators" : {
+
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+                  "Laundry"
+                ],
+                "categoryID" : "cleaning",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "laundry",
+                "reasons" : [
+                  "guess",
+                  "keyword"
+                ],
+                "score" : 28,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "wellness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : "reset",
+                "reasons" : [
+                  "keyword"
+                ],
+                "score" : 7,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "“laundry” in the title",
+            "“reset” in the title",
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "description" : "Sunday reset: laundry, fridge clean out, fresh sheets",
+        "title" : "Instagram",
+        "url" : "https://www.instagram.com/reel/DGuess0001/"
+      },
+      "memory" : "none",
+      "name" : "pinned guess",
+      "pinned" : {
+        "categoryID" : "cleaning",
+        "reason" : "guess",
+        "subcategory" : null
+      }
+    },
+    {
+      "adding" : [
+        {
+          "author" : null,
+          "category_id" : "fitness",
+          "deleted_at" : null,
+          "filing_source" : "user",
+          "subcategory" : "Mobility",
+          "updated_at" : "2026-11-01T11:59:00Z",
+          "url" : "https://www.tiktok.com/@mobilitymo/video/7366666666666666665"
+        }
+      ],
+      "expect" : [
+        {
+          "creatorKey" : "mobilitymo",
+          "creatorLabel" : "@mobilitymo",
+          "domain" : null,
+          "keywordScores" : [
+
+          ],
+          "memory" : {
+            "creators" : {
+              "mobilitymo" : [
+                {
+                  "categoryID" : "fitness",
+                  "count" : 1,
+                  "last" : 1793534340,
+                  "subcategory" : "Mobility"
+                }
+              ]
+            },
+            "domains" : {
+
+            },
+            "habits" : [
+              {
+                "categoryID" : "fitness",
+                "recent" : [
+                  1793534340
+                ],
+                "subcategory" : "Mobility"
+              }
+            ]
+          },
+          "ocrScores" : [
+
+          ],
+          "ocrText" : null,
+          "ranking" : {
+            "candidates" : [
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "fitness",
+                "creator" : "@mobilitymo",
+                "creatorPicks" : 1,
+                "matched" : null,
+                "reasons" : [
+                  "creator",
+                  "habit"
+                ],
+                "score" : 15,
+                "subcategory" : "Mobility"
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "health",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "recipes",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "money",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "tech",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "ai",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              },
+              {
+                "altSubs" : [
+
+                ],
+                "categoryID" : "travel",
+                "creator" : null,
+                "creatorPicks" : 0,
+                "matched" : null,
+                "reasons" : [
+                  "starter"
+                ],
+                "score" : 0,
+                "subcategory" : null
+              }
+            ],
+            "evidence" : "strong",
+            "preselect" : 0
+          },
+          "reasonLines" : [
+            "You filed @mobilitymo here last time",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ],
+      "input" : {
+        "title" : "@mobilitymo on TikTok",
+        "url" : "https://www.tiktok.com/@mobilitymo/video/7366666666666666666"
+      },
+      "memory" : "none",
+      "name" : "triage learns mid-session"
+    }
+  ],
+  "furniture" : [
+    "log in",
+    "login",
+    "sign in",
+    "signin",
+    "sign up",
+    "signup",
+    "verify",
+    "captcha",
+    "cookie",
+    "cookies",
+    "open app",
+    "open the app",
+    "follow",
+    "following",
+    "followers",
+    "subscribe",
+    "subscribed",
+    "original audio",
+    "original sound",
+    "liked by",
+    "comment",
+    "comments",
+    "share",
+    "shares"
+  ],
+  "keys" : [
+    {
+      "expect" : [
+        {
+          "creator" : "kaylawalks",
+          "creatorLabel" : "@Kayla.Walks",
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.tiktok.com/@Kayla.Walks/video/7300000000000000099"
+    },
+    {
+      "author" : "Pieter Levels",
+      "expect" : [
+        {
+          "creator" : "levelsio",
+          "creatorLabel" : "@levelsio",
+          "domain" : null
+        }
+      ],
+      "url" : "https://x.com/levelsio/status/1850000000000000001"
+    },
+    {
+      "author" : "Pieter Levels",
+      "expect" : [
+        {
+          "creator" : "pieterlevels",
+          "creatorLabel" : "Pieter Levels",
+          "domain" : null
+        }
+      ],
+      "url" : "https://x.com/i/status/1850000000000000002"
+    },
+    {
+      "expect" : [
+        {
+          "creator" : "sophierink",
+          "creatorLabel" : "@sophie.rink",
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.instagram.com/sophie.rink/reel/DBxHipReel/"
+    },
+    {
+      "expect" : [
+        {
+          "creator" : "sophierink",
+          "creatorLabel" : "@sophie.rink",
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.instagram.com/stories/sophie.rink/3400000000000000000/"
+    },
+    {
+      "author" : "instagram.com",
+      "expect" : [
+        {
+          "creator" : null,
+          "creatorLabel" : null,
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.instagram.com/reel/DBxHipReel/"
+    },
+    {
+      "author" : "Instagram",
+      "expect" : [
+        {
+          "creator" : null,
+          "creatorLabel" : null,
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.instagram.com/reel/DBxHipReel/"
+    },
+    {
+      "author" : "  Zoë Ståhl-Øvergaard ",
+      "expect" : [
+        {
+          "creator" : "zoestahlvergaard",
+          "creatorLabel" : "Zoë Ståhl-Øvergaard",
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.instagram.com/reel/DBxHipReel/"
+    },
+    {
+      "expect" : [
+        {
+          "creator" : "squatmechanics",
+          "creatorLabel" : "@SquatMechanics",
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.youtube.com/@SquatMechanics/videos"
+    },
+    {
+      "author" : "Squat Mechanics",
+      "expect" : [
+        {
+          "creator" : "squatmechanics",
+          "creatorLabel" : "Squat Mechanics",
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.youtube.com/watch?v=deadliftform"
+    },
+    {
+      "author" : "youtube.com",
+      "expect" : [
+        {
+          "creator" : null,
+          "creatorLabel" : null,
+          "domain" : null
+        }
+      ],
+      "url" : "https://youtube.com/shorts/abc123"
+    },
+    {
+      "author" : "tiktok.com",
+      "expect" : [
+        {
+          "creator" : null,
+          "creatorLabel" : null,
+          "domain" : null
+        }
+      ],
+      "url" : "https://vm.tiktok.com/ZMabc123/"
+    },
+    {
+      "author" : "@kaylawalks",
+      "expect" : [
+        {
+          "creator" : "kaylawalks",
+          "creatorLabel" : "@kaylawalks",
+          "domain" : null
+        }
+      ],
+      "url" : "https://vm.tiktok.com/ZMabc123/"
+    },
+    {
+      "author" : "J",
+      "expect" : [
+        {
+          "creator" : null,
+          "creatorLabel" : null,
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.tiktok.com/@caf%C3%A9/video/1"
+    },
+    {
+      "author" : "Home",
+      "expect" : [
+        {
+          "creator" : "home",
+          "creatorLabel" : "Home",
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.pinterest.com/pin/1000000000000001/"
+    },
+    {
+      "author" : "The New York Times",
+      "expect" : [
+        {
+          "creator" : null,
+          "creatorLabel" : null,
+          "domain" : "nytimes.com"
+        }
+      ],
+      "url" : "https://www.nytimes.com/2026/10/30/opinion/the-quiet-case.html"
+    },
+    {
+      "author" : "example.com",
+      "expect" : [
+        {
+          "creator" : null,
+          "creatorLabel" : null,
+          "domain" : "example.com"
+        }
+      ],
+      "url" : "https://WWW.Example.COM/a-post"
+    },
+    {
+      "expect" : [
+        {
+          "creator" : "zuck",
+          "creatorLabel" : "@zuck",
+          "domain" : null
+        }
+      ],
+      "url" : "https://www.threads.net/@zuck/post/C1abc"
+    }
+  ],
+  "limits" : {
+    "creators" : 400,
+    "domains" : 200,
+    "habits" : 24,
+    "horizonDays" : 365,
+    "picksPerKey" : 3,
+    "recentPerHabit" : 6
+  },
+  "memories" : {
+    "habits" : [
+      {
+        "author" : null,
+        "category_id" : "fashion",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Outfits",
+        "updated_at" : "2026-10-30T12:00:00Z",
+        "url" : "https://www.pinterest.com/pin/1000000000000001/"
+      },
+      {
+        "author" : null,
+        "category_id" : "cars",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Detailing",
+        "updated_at" : "2026-10-30T12:00:00Z",
+        "url" : "https://www.youtube.com/watch?v=detail01"
+      },
+      {
+        "author" : null,
+        "category_id" : "home",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Decor",
+        "updated_at" : "2026-10-12T12:00:00Z",
+        "url" : "https://www.pinterest.com/pin/1000000000000002/"
+      },
+      {
+        "author" : null,
+        "category_id" : "home",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Decor",
+        "updated_at" : "2026-10-26T12:00:00Z",
+        "url" : "https://www.pinterest.com/pin/1000000000000003/"
+      },
+      {
+        "author" : null,
+        "category_id" : "recipes",
+        "deleted_at" : null,
+        "filing_source" : "automatic",
+        "subcategory" : "Snacks",
+        "updated_at" : "2026-10-31T12:00:00Z",
+        "url" : "https://www.tiktok.com/@snackqueen/video/7300000000000000031"
+      },
+      {
+        "author" : null,
+        "category_id" : "travel",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Itineraries",
+        "updated_at" : "2025-09-27T12:00:00Z",
+        "url" : "https://www.tiktok.com/@wanderfrugal/video/7300000000000000032"
+      },
+      {
+        "author" : null,
+        "category_id" : "gaming",
+        "deleted_at" : "2026-10-31T13:00:00Z",
+        "filing_source" : "user",
+        "subcategory" : null,
+        "updated_at" : "2026-10-31T12:00:00Z",
+        "url" : "https://www.youtube.com/watch?v=gone01"
+      }
+    ],
+    "kaylaOnce" : [
+      {
+        "author" : "@kaylawalks",
+        "category_id" : "fitness",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Mobility",
+        "updated_at" : "2026-04-15T12:00:00Z",
+        "url" : "https://www.tiktok.com/@kaylawalks/video/7300000000000000001"
+      }
+    ],
+    "kaylaThrice" : [
+      {
+        "author" : "@kaylawalks",
+        "category_id" : "fitness",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Mobility",
+        "updated_at" : "2026-10-29T12:00:00Z",
+        "url" : "https://www.tiktok.com/@kaylawalks/video/7300000000000000002"
+      },
+      {
+        "author" : null,
+        "category_id" : "fitness",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Mobility",
+        "updated_at" : "2026-10-22T12:00:00Z",
+        "url" : "https://www.tiktok.com/@kaylawalks/video/7300000000000000003"
+      },
+      {
+        "author" : "tiktok.com",
+        "category_id" : "fitness",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Running",
+        "updated_at" : "2026-09-22T12:00:00Z",
+        "url" : "https://www.tiktok.com/@kaylawalks/video/7300000000000000004"
+      }
+    ],
+    "none" : [
+
+    ],
+    "nytimes" : [
+      {
+        "author" : "The New York Times",
+        "category_id" : "news",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Politics",
+        "updated_at" : "2026-10-20T12:00:00Z",
+        "url" : "https://www.nytimes.com/2026/10/20/us/politics/budget-vote.html"
+      }
+    ],
+    "placeholder" : [
+      {
+        "author" : "instagram.com",
+        "category_id" : "comedy",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Memes",
+        "updated_at" : "2026-10-29T12:00:00Z",
+        "url" : "https://www.instagram.com/reel/DAAAAAAAAA1/"
+      },
+      {
+        "author" : "Instagram",
+        "category_id" : "comedy",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Skits",
+        "updated_at" : "2026-10-12T12:00:00Z",
+        "url" : "https://www.instagram.com/reel/DAAAAAAAAA2/"
+      }
+    ],
+    "split" : [
+      {
+        "author" : null,
+        "category_id" : "fitness",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Running",
+        "updated_at" : "2026-10-30T12:00:00Z",
+        "url" : "https://www.tiktok.com/@runwithjo/video/7300000000000000011"
+      },
+      {
+        "author" : null,
+        "category_id" : "fitness",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Mobility",
+        "updated_at" : "2026-10-27T12:00:00Z",
+        "url" : "https://www.tiktok.com/@runwithjo/video/7300000000000000012"
+      }
+    ],
+    "yarn" : [
+      {
+        "author" : null,
+        "category_id" : "custom.knitting",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : null,
+        "updated_at" : "2026-10-26T12:00:00Z",
+        "url" : "https://www.tiktok.com/@yarnloop/video/7300000000000000021"
+      },
+      {
+        "author" : "@yarnloop",
+        "category_id" : "custom.knitting",
+        "deleted_at" : null,
+        "filing_source" : "user",
+        "subcategory" : "Sweaters",
+        "updated_at" : "2026-10-31T12:00:00Z",
+        "url" : "https://www.tiktok.com/@yarnloop/video/7300000000000000022"
+      }
+    ]
+  },
+  "note" : "Ground truth for docs/filing-suggest.js and Filer.scores: what Core/FilingSuggest.swift, Core/FilingMemory.swift and Categorizer.scores answer. Written by Scripts/gen_filing_fixture.swift --write, which runs every case 40 times; `expect` lists every distinct answer (one means the Swift is deterministic there and the JS must match it exactly). Memories are web rows, built with historyFromRows then FilingMemory.build at `now`; `adding` rows are folded in after. Checked by node Scripts/check_filing_parity.mjs.",
+  "now" : "2026-11-01T12:00:00Z",
+  "ocr" : [
+    {
+      "expect" : [
+        null
+      ],
+      "lines" : [
+
+      ]
+    },
+    {
+      "expect" : [
+        null
+      ],
+      "lines" : [
+        "Log in",
+        "Sign up for TikTok",
+        "@user.name",
+        "12:34",
+        "1.2M"
+      ]
+    },
+    {
+      "expect" : [
+        "Hip mobility routine"
+      ],
+      "lines" : [
+        "  Hip mobility routine  ",
+        "Hip mobility routine",
+        "ok",
+        "Follow for more"
+      ]
+    },
+    {
+      "expect" : [
+        "Short\ntxt"
+      ],
+      "lines" : [
+        "Short",
+        "txt"
+      ]
+    },
+    {
+      "expect" : [
+        null
+      ],
+      "lines" : [
+        "abc",
+        "de"
+      ]
+    },
+    {
+      "expect" : [
+        "Day 3/30"
+      ],
+      "lines" : [
+        "2d ago",
+        "45%",
+        "x2",
+        "Day 3/30"
+      ]
+    },
+    {
+      "expect" : [
+        "Accept all"
+      ],
+      "lines" : [
+        "We use cookies to improve your experience",
+        "Accept all"
+      ]
+    },
+    {
+      "expect" : [
+        "protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine prot"
+      ],
+      "lines" : [
+        "protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine protein oats creatine "
+      ]
+    },
+    {
+      "expect" : [
+        "Morning routine\nZoë’s 5-minute reset"
+      ],
+      "lines" : [
+        "﻿Morning routine",
+        "Zoë’s 5-minute reset"
+      ]
+    }
+  ],
+  "recency" : {
+    "month" : 2,
+    "week" : 3,
+    "year" : 1
+  },
+  "regenerate" : "swiftc -parse-as-library -o /tmp/filing-fixture Core/Platform.swift Core/Taxonomy.swift Core/Categorizer.swift Core/LinkPreview.swift Core/FilingMemory.swift Core/FilingSuggest.swift Scripts/gen_filing_fixture.swift && /tmp/filing-fixture --write Scripts/fixtures/filing_suggest_cases.json",
+  "ringSize" : 7,
+  "starters" : [
+    "fitness",
+    "health",
+    "recipes",
+    "money",
+    "tech",
+    "ai",
+    "travel",
+    "comedy",
+    "sports",
+    "parenting",
+    "home",
+    "beauty",
+    "gaming",
+    "music",
+    "learning",
+    "wellness",
+    "cars",
+    "books"
+  ],
+  "weights" : {
+    "aiHigh" : 28,
+    "aiMedium" : 13,
+    "creatorCap" : 36,
+    "creatorPerPick" : 12,
+    "domainCap" : 18,
+    "domainPerPick" : 6,
+    "habitCap" : 6,
+    "ocrCap" : 13,
+    "preselectFloor" : 6,
+    "strong" : 14
+  }
+}
