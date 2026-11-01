@@ -421,6 +421,8 @@ struct TopicPage: View {
 /// the app exists to prevent.
 struct UncategorisedPage: View {
     @Environment(\.accent) private var accent
+    /// For the model's help in triage; injected by RootView.
+    @Environment(\.account) private var account
     // Waiting borks are saved and visible in the Library, but held out of
     // every count, tile and result until admitted. See `SaveLimit`.
     @Query(
@@ -430,12 +432,18 @@ struct UncategorisedPage: View {
     private var all: [Bookmark]
 
     @State private var detail: Bookmark?
+    @State private var sorting = false
 
     private var visible: [Bookmark] { all.filter { $0.categoryID == nil } }
 
     var body: some View {
+        let visible = self.visible
         ScrollView {
             LazyVStack(spacing: 9) {
+                if !visible.isEmpty {
+                    sortCard(count: visible.count)
+                        .padding(.bottom, 6)
+                }
                 ForEach(visible) { bookmark in
                     Button { detail = bookmark } label: {
                         BookmarkRow(bookmark: bookmark)
@@ -451,5 +459,42 @@ struct UncategorisedPage: View {
         .navigationTitle("Not filed yet")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $detail) { DetailSheet(bookmark: $0).environment(\.accent, accent) }
+        .sheet(isPresented: $sorting) {
+            TriageSheet(deck: .unfiled, account: account)
+                .environment(\.accent, accent)
+        }
+    }
+
+    /// "Sort these": the whole list, one tap each, instead of opening every
+    /// bork to pick its topic.
+    private func sortCard(count: Int) -> some View {
+        HStack(spacing: 13) {
+            QuestArt(motif: .compass)
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(count) without a topic")
+                    .font(Typo.display(16, .bold))
+                    .foregroundStyle(Tokens.ink)
+                Text("Give each a home in one tap.")
+                    .font(Typo.ui(12.5, .medium))
+                    .foregroundStyle(Tokens.inkMeta)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 6)
+            Button { sorting = true } label: {
+                Text("Sort these")
+                    .font(Typo.ui(13.5, .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 15)
+                    .frame(height: 36)
+                    .background(accent.base, in: Capsule())
+            }
+            .buttonStyle(PressableStyle(scale: 0.96))
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface(radius: 18)
     }
 }

@@ -33,6 +33,10 @@ final class PreviewFetcher: ObservableObject {
     /// shared with every other AI feature, and a big import must not spend it
     /// in one scroll: the rest stay on their offline answer.
     private let maxModelCalls = 8
+    /// Thumbnails read for on-screen text per pass: a download (usually from
+    /// the cover cache) and a quick Vision pass each. Four keeps up with a
+    /// normal day's saves without making a pass feel heavy.
+    private let maxThumbnailReads = 4
 
     /// A brk whose metadata just landed and whose filing is still in doubt.
     private struct Candidate {
@@ -50,7 +54,10 @@ final class PreviewFetcher: ObservableObject {
             .filter { $0.needsPreview && !inFlight.contains($0.id) }
             .prefix(24)
 
-        guard !pending.isEmpty else { return }
+        guard !pending.isEmpty else {
+            await readThumbnails(of: bookmarks)
+            return
+        }
 
         var candidates: [Candidate] = []
 
@@ -84,12 +91,35 @@ final class PreviewFetcher: ObservableObject {
 
         try? context.save()
 
-        guard !candidates.isEmpty, let account, let session = await account.currentSession() else { return }
-        for candidate in candidates.prefix(maxModelCalls) {
-            guard let better = await SmartCategorizer.suggest(candidate.context, session: session) else { continue }
-            file(better, on: candidate, in: context)
+        if !candidates.isEmpty, let account, let session = await account.currentSession() {
+            for candidate in candidates.prefix(maxModelCalls) {
+                guard let better = await SmartCategorizer.suggest(candidate.context, session: session) else { continue }
+                file(better, on: candidate, in: context)
+            }
+            try? context.save()
         }
-        try? context.save()
+
+        await readThumbnails(of: bookmarks)
+    }
+
+    /// On-screen text for the saves still waiting on a topic — none yet, or
+    /// only the app's guess — so the Quick File dial and triage have it to
+    /// hand. Read quickly (`.fast`), newest first, a few a pass, and never for
+    /// a filing that is someone's decision. It stays on this device
+    /// (`ThumbnailText`), is never synced and never sent anywhere.
+    private func readThumbnails(of bookmarks: [Bookmark]) async {
+        var due: [(id: String, image: URL)] = []
+        for bookmark in bookmarks {
+            if due.count == maxThumbnailReads { break }
+            guard bookmark.deletedAt == nil, !bookmark.isWaiting, let image = bookmark.imageURL,
+                  Taxonomy.category(id: bookmark.categoryID) == nil
+                    || EnrichmentPolicy.mayFile(source: bookmark.filingSource),
+                  !ThumbnailText.hasRead(bookmark.id, accurate: false) else { continue }
+            due.append((bookmark.id, image))
+        }
+        for entry in due {
+            _ = await ThumbnailText.read(entry.id, imageURL: entry.image, accurate: false)
+        }
     }
 
     /// Writes the metadata and says whether the brk still needs filing.

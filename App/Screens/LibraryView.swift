@@ -47,6 +47,11 @@ struct LibraryView: View {
     @State private var selected: Set<String> = []
     @State private var collecting = false
     @StateObject private var previews = PreviewFetcher()
+    /// "Sort your borks", from the banner.
+    @State private var triageDeck: TriageSheet.Deck?
+    /// The unsorted count when the banner was last waved away. It stays away
+    /// until the count goes above this.
+    @AppStorage("triage.snoozedAt") private var sortSnoozedAt = 0
 
     /// Everything that counts. A waiting bork is saved and on screen, but it
     /// is not part of the library yet — not in the stats line, not in
@@ -86,6 +91,7 @@ struct LibraryView: View {
         let waitingCount = bookmarks.count - live.count
         let visible = self.visible
         let platforms = presentPlatforms
+        let unsorted = TriageSheet.unfiled(live).count
         GeometryReader { viewport in
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -94,6 +100,15 @@ struct LibraryView: View {
                     WaitingBanner(count: waitingCount) { onShowWall(.waiting) }
                         .padding(.horizontal, 18)
                         .transition(.opacity)
+                }
+                if unsorted > sortSnoozedAt {
+                    SortBanner(
+                        count: unsorted,
+                        onSort: { triageDeck = .unfiled },
+                        onSnooze: { withAnimation(Motion.gentle) { sortSnoozedAt = unsorted } }
+                    )
+                    .padding(.horizontal, 18)
+                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 }
                 if showingBackupBanner {
                     SignInNudgeBanner(
@@ -144,8 +159,17 @@ struct LibraryView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        // Sorting brings the count down; the banner comes back when it rises
+        // past where it was waved away, not merely back to it.
+        .onChange(of: unsorted) { _, count in
+            if count < sortSnoozedAt { sortSnoozedAt = count }
+        }
         .sheet(item: $detail) { bookmark in
             DetailSheet(bookmark: bookmark)
+                .environment(\.accent, accent)
+        }
+        .sheet(item: $triageDeck) { deck in
+            TriageSheet(deck: deck, account: account)
                 .environment(\.accent, accent)
         }
         .sheet(isPresented: $collecting) {
@@ -541,6 +565,73 @@ struct LibraryView: View {
         guard !unread.isEmpty else { return }
         for bookmark in unread { bookmark.isUnread = false }
         try? context.save()
+    }
+}
+
+/// "3 borks to sort": the door into triage, wearing the clay compass. Its ×
+/// snoozes it until the count goes up again.
+private struct SortBanner: View {
+    let count: Int
+    let onSort: () -> Void
+    let onSnooze: () -> Void
+
+    @Environment(\.accent) private var accent
+
+    var body: some View {
+        Button(action: onSort) {
+            HStack(spacing: 13) {
+                QuestArt(motif: .compass)
+                    .frame(width: 62, height: 62)
+                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("\(count) \(Copy.borks(count)) to sort")
+                        .font(Typo.display(17, .bold))
+                        .foregroundStyle(Tokens.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("One tap each · about \(Self.estimate(count))")
+                        .font(Typo.ui(12.5, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 6)
+                Text("Sort")
+                    .font(Typo.ui(13.5, .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .frame(height: 34)
+                    .background(accent.base, in: Capsule())
+                    .shadow(color: accent.base.opacity(0.3), radius: 8, y: 4)
+            }
+            .padding(12)
+            .padding(.trailing, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .cardSurface(radius: 20)
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityLabel("\(count) \(Copy.borks(count)) to sort")
+        .accessibilityHint("Opens Sort your borks, one tap each")
+        .overlay(alignment: .topTrailing) {
+            Button(action: onSnooze) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .heavy))
+                    .foregroundStyle(Tokens.inkSecondary)
+                    .frame(width: 22, height: 22)
+                    .background(Tokens.paper, in: Circle())
+                    .overlay(Circle().stroke(Tokens.hairline, lineWidth: 1))
+                    .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .offset(x: 14, y: -14)
+            .accessibilityLabel("Not now")
+        }
+    }
+
+    /// About three seconds a bork, said the way a person would.
+    static func estimate(_ count: Int) -> String {
+        let seconds = max(5, count * 3)
+        return seconds < 60 ? "\(seconds) seconds" : "\(Int((Double(seconds) / 60).rounded(.up))) min"
     }
 }
 

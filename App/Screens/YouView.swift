@@ -10,6 +10,10 @@ struct YouView: View {
     @AppStorage("accentKey") private var accentKey = AccentRamp.fallback.key
     @AppStorage("feedDensity") private var density = "cards"
     @AppStorage("startingTab") private var startingTab = AppTab.library.rawValue
+    /// Quick File on the share sheet. In the App Group's defaults, because
+    /// the Share Extension is the one that reads it.
+    @AppStorage(QuickFileSettings.askAfterShareKey, store: QuickFileSettings.store)
+    private var askAfterShare = true
 
     @Query(filter: #Predicate<Bookmark> { $0.deletedAt == nil })
     private var bookmarks: [Bookmark]
@@ -327,9 +331,44 @@ struct YouView: View {
                     title: "Save from other apps",
                     subtitle: "The fastest way to add anything"
                 ) { showingHowTo = true }
+
+                insetDivider
+
+                askAfterShareRow
             }
             .cardSurface(radius: Tokens.cardRadius)
         }
+    }
+
+    /// On: the share sheet saves, then shows the dial, and one more tap
+    /// files it. Off: the old one-tap share that saves and leaves.
+    private var askAfterShareRow: some View {
+        Toggle(isOn: $askAfterShare.animation(.easeOut(duration: 0.18))) {
+            HStack(spacing: 12) {
+                Image(systemName: "dial.medium.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(accent.deep)
+                    .frame(width: 32, height: 32)
+                    .background(accent.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ask where it goes after sharing")
+                        .font(Typo.ui(14, .semibold))
+                        .foregroundStyle(Tokens.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(askAfterShare
+                         ? "Saved first, then one tap to file it"
+                         : "Sharing saves and closes; sort later")
+                        .font(Typo.ui(12, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .tint(accent.base)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(minHeight: 56)
+        .onChange(of: askAfterShare) { _, _ in Haptics.select() }
     }
 
     private var insetDivider: some View {
