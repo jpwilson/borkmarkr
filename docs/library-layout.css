@@ -1,34 +1,100 @@
 /* Library mirrors the app's hierarchy; desktop uses the available width. */
 main, main > section, .you-col, .card-body { min-width: 0; }
-.library-intro { display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:32px; margin:8px 0 28px; }
-.library-intro h1, .account-title { font-family:var(--font-head); font-size:clamp(28px,3vw,40px); letter-spacing:-.04em; margin:0 0 6px; }
-.library-intro p { margin:0 0 18px; color:var(--meta); }
-.library-search { width:100%; min-height:48px; text-align:left; border:1px solid var(--hairline); border-radius:18px; padding:12px 16px; background:var(--surface); color:var(--meta); }
-.library-insight { display:flex; align-items:center; gap:12px; background:#E1F2E9; border:1px solid #B8DECB; border-radius:24px; padding:22px; min-width:0; }
-.library-insight b { display:block; font-family:var(--font-head); font-size:22px; line-height:1.15; margin-bottom:10px; }
-.library-insight p { font-size:14px; margin:0; color:#386A53; }
-.library-insight img { width:96px; height:96px; border-radius:24px; flex-shrink:0; }
-#home-sections .quests { display:flex; overflow-x:auto; gap:14px; padding:2px 2px 18px; scroll-snap-type:x proximity; }
-#home-sections .quest-card { flex:0 0 200px; display:flex; flex-direction:column; gap:0; padding:0; border-radius:24px; overflow:hidden; scroll-snap-align:start; align-items:stretch; }
-#home-sections .quest-art { width:100%; height:150px; object-fit:cover; border-radius:0; }
-#home-sections .quest-card > span { display:block; flex:1; background:var(--quest-tint,var(--tint)); padding:16px; min-height:90px; }
-#home-sections .quest-t { font-size:18px; line-height:1.2; display:block; }
-#home-sections .quest-m { margin-top:7px; }
-#home-sections .quest-new { flex:0 0 180px; min-height:160px; border-radius:24px; white-space:normal; }
+/* ── The library home: one set of sections, three layouts ──
+   Phones: the intro, the sort card, a strip of side quests, then the feed.
+   761–1099px: the intro beside the sort card, the strip under them. From
+   1100px the same sections are a 280px rail that stays beside the feed, so
+   the grid starts right under the nav, and the page may grow to 1440px. */
+.lib-intro { margin:2px 0 16px; }
+.lib-hello h1 { font-family:var(--font-head); font-size:clamp(28px,3vw,38px); letter-spacing:-.04em; line-height:1.05; margin:0 0 6px; }
+.account-title { font-family:var(--font-head); font-size:clamp(28px,3vw,40px); letter-spacing:-.04em; margin:0 0 6px; }
+.lib-hello p { margin:0 0 14px; color:var(--meta); font-size:14px; }
+.library-search { display:flex; align-items:center; gap:10px; width:100%; min-height:46px; text-align:left; border:1px solid var(--hairline); border-radius:16px; padding:11px 14px; background:var(--surface); color:var(--meta); }
+.library-search:hover { border-color:var(--dashed); color:var(--ink-2); }
+.library-search svg { width:18px; height:18px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+.lib-card { border-radius:22px; margin:0 0 18px; min-width:0; }
+.library-insight { display:flex; align-items:center; gap:14px; background:#E1F2E9; border:1px solid #B8DECB; padding:18px; }
+.library-insight b { display:block; font-family:var(--font-head); font-size:19px; line-height:1.15; margin-bottom:6px; }
+.library-insight p { font-size:13.5px; line-height:1.45; margin:0; color:#386A53; }
+.library-insight img { width:84px; height:84px; border-radius:20px; flex-shrink:0; }
+/* Saves waiting for a home: coral tint, the clay compass, one button. */
+.lib-sort { display:flex; align-items:center; gap:14px; padding:14px 16px 14px 14px; background:var(--tint); border:1px solid color-mix(in srgb, var(--coral) 24%, transparent); }
+.lib-sort img { width:68px; height:68px; border-radius:18px; flex:0 0 auto; object-fit:cover; }
+.lib-sort-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.lib-sort-text b { font-family:var(--font-head); font-size:18px; line-height:1.15; letter-spacing:-.015em; }
+.lib-sort-text span { color:var(--accent-text); font-size:13px; font-weight:600; }
+.lib-sort-more { align-self:flex-start; border:0; background:none; padding:5px 0 0; color:var(--ink-2); font-size:12.5px; font-weight:700; text-align:left; }
+.lib-sort .btn-sm { flex:0 0 auto; padding:0 20px; }
+.lib-quests { margin:0 0 4px; }
+#home-sections .h-row { margin:2px 0 10px; }
+#home-sections .quests { display:flex; overflow-x:auto; gap:12px; padding:2px 2px 16px; scroll-snap-type:x proximity; }
+#home-sections .quest-card { flex:0 0 168px; display:flex; flex-direction:column; gap:0; padding:0; border-radius:20px; overflow:hidden; scroll-snap-align:start; align-items:stretch; }
+#home-sections .quest-art { width:100%; height:112px; object-fit:cover; border-radius:0; }
+#home-sections .quest-card > span { display:block; flex:1; background:var(--quest-tint,var(--tint)); padding:12px 14px 14px; min-height:74px; }
+#home-sections .quest-t { font-size:15px; line-height:1.2; }
+#home-sections .quest-m { margin-top:5px; }
+#home-sections .quest-new { flex:0 0 140px; min-height:150px; border-radius:20px; white-space:normal; }
+.lib-topics { display:none; }
 .library-tools { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin:4px 0 18px; }
 .feed-actions { display:flex; gap:10px; align-items:center; }
 .density { display:flex; background:var(--control); padding:4px; border-radius:999px; }
-.density button { border:0; background:none; border-radius:999px; padding:8px 12px; min-height:40px; font-weight:600; color:var(--ink-2); }
+.density button { display:inline-flex; align-items:center; gap:6px; border:0; background:none; border-radius:999px; padding:8px 12px; min-height:40px; font-weight:600; color:var(--ink-2); }
 .density button[aria-pressed=true] { background:var(--surface); color:var(--ink); box-shadow:0 1px 3px #19151012; }
+.density svg { width:15px; height:15px; flex:0 0 auto; fill:currentColor; }
 #platform-chips, #topic-refinements .chips { position:static; margin:0; padding:0 0 14px; }
 #topic-refinements { margin:16px 0; }
-.grid.list-mode { display:flex; flex-direction:column; }
-.card.feed-row { display:flex; align-items:center; gap:14px; padding:14px; min-width:0; }
-.feed-thumb { width:64px; height:64px; border-radius:16px; flex:0 0 64px; overflow:hidden; display:grid; place-items:center; background:var(--control); }
-.feed-thumb img { width:100%; height:100%; object-fit:cover; }
+@media (min-width:761px) and (max-width:1099px) {
+  #home-sections:not(:empty) { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:24px; align-items:center; }
+  .lib-intro { grid-column:1; margin:0 0 18px; }
+  .lib-card { grid-column:2; }
+  .lib-quests { grid-column:1 / -1; }
+}
+@media (min-width:1100px) {
+  main, .nav-in { max-width:1440px; }
+  #view-library { display:grid; grid-template-columns:minmax(0,1fr) 280px; grid-template-areas:"feed rail"; column-gap:32px; align-items:start; }
+  #view-library:has(> #home-sections:empty) { grid-template-columns:minmax(0,1fr); grid-template-areas:"feed"; }
+  #home-sections { grid-area:rail; position:sticky; top:calc(var(--banner-h) + var(--nav-h) + 18px); max-height:calc(100vh - var(--banner-h) - var(--nav-h) - 30px);
+    overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; margin:0 -4px; padding:2px 4px 24px; }
+  #home-sections::-webkit-scrollbar { display:none; }
+  .lib-feed { grid-area:feed; min-width:0; display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:16px; align-items:start; }
+  .lib-feed > .grid, .lib-feed > .state { grid-column:1 / -1; }
+  #platform-chips { grid-column:1; grid-row:1; }
+  #library-tools { grid-column:2; grid-row:1; margin:0 0 14px; }
+  #library-tools .h-title, #home-sections .library-search { display:none; }
+  .lib-hello h1 { font-size:32px; }
+  .lib-hello p { margin-bottom:18px; }
+  .lib-sort { display:grid; grid-template-columns:56px minmax(0,1fr); gap:12px; padding:14px; }
+  .lib-sort img { width:56px; height:56px; border-radius:16px; }
+  .lib-sort .btn-sm { grid-column:1 / -1; width:100%; }
+  .library-insight { align-items:flex-start; padding:16px; gap:12px; }
+  .library-insight b { font-size:17px; }
+  .library-insight img { width:60px; height:60px; border-radius:16px; }
+  #home-sections .quests { flex-direction:column; overflow:visible; gap:8px; padding:0 0 4px; scroll-snap-type:none; }
+  #home-sections .quest-card { flex:0 0 auto; flex-direction:row; align-items:center; gap:12px; padding:8px 12px 8px 8px; border-radius:18px; }
+  #home-sections .quest-art { width:56px; height:56px; border-radius:14px; flex:0 0 auto; }
+  #home-sections .quest-card > span { background:none; padding:0; min-height:0; }
+  #home-sections .quest-t { font-size:14px; }
+  #home-sections .quest-new { flex:0 0 auto; min-height:44px; border-radius:16px; padding:10px 14px; }
+  #home-sections .quest-starter { flex-direction:column; align-items:flex-start; margin:0 0 8px; }
+  .lib-topics { display:block; margin-top:16px; }
+  .lib-topics .topic-pills { flex-wrap:wrap; gap:8px; padding:0 0 4px; }
+  .lib-topics .topic-pill { height:40px; padding:0 13px 0 4px; font-size:13px; }
+  .lib-topics .pill-art { width:32px; height:32px; }
+}
+/* List density: the app's rows. */
+.grid.list-mode { display:flex; flex-direction:column; align-items:stretch; }
+.card.feed-row { display:flex; align-items:center; gap:14px; padding:12px 14px; min-width:0; contain-intrinsic-size:auto 92px; }
+.feed-thumb { position:relative; width:64px; height:64px; border-radius:16px; flex:0 0 64px; overflow:hidden; display:grid; place-items:center; background:var(--control); }
+.feed-thumb img { width:100%; height:100%; object-fit:cover; object-position:50% 30%; }
+.feed-thumb.art { background:color-mix(in srgb, var(--pt, #EEE8DE) 45%, #fff); }
+.feed-thumb.art img { transform:scale(1.2); }
+.feed-thumb.quote { background:linear-gradient(135deg,#2A2C33,#111318); color:rgba(255,255,255,.62); font:800 36px/1 var(--font-head); padding-top:14px; }
+.feed-thumb.unfiled { background:var(--paper); border:1.5px dashed var(--dashed); color:var(--ink-2); }
 .feed-row .card-body { flex:1; padding:0; }
-.feed-row .card-title { font-size:17px; }
-.feed-row .card-meta { margin-top:7px; }
+.feed-row .card-author .pbadge { width:18px; height:18px; border-radius:6px; }
+.feed-row .card-author .pbadge .pg { width:10px; height:10px; }
+.feed-row .card-title { font-size:15.5px; }
+.feed-row .card-meta { margin-top:6px; }
 .selecting .feed-row { padding-right:50px; }
 #view-you { max-width:1060px; margin:0 auto; }
 .account-title { margin:8px 0 22px; }
@@ -72,21 +138,36 @@ main, main > section, .you-col, .card-body { min-width: 0; }
   .quest-guide { grid-template-columns:1fr; padding:22px; gap:20px; }
   .quest-guide > img { width:130px; height:130px; }
   .quest-guide h1 { font-size:28px; }
-  .library-intro { grid-template-columns:1fr; gap:18px; margin:4px 0 24px; }
-  .library-intro h1 { font-size:32px; }
-  .library-insight { padding:18px; border-radius:22px; }
-  .library-insight b { font-size:21px; }
-  .library-insight img { width:72px; height:72px; border-radius:20px; }
-  #home-sections .quest-card { flex-basis:160px; }
-  #home-sections .quest-art { height:120px; }
-  #home-sections .quest-card > span { min-height:90px; padding:13px; }
-  #home-sections .quest-t { font-size:17px; }
-  #home-sections .quest-new { flex-basis:140px; }
+  /* A phone gets to the feed sooner: the same sections, tighter. */
+  .lib-intro { margin:0 0 12px; }
+  .lib-hello h1 { font-size:28px; margin-bottom:4px; }
+  .lib-hello p { margin-bottom:10px; font-size:13.5px; }
+  .library-search { min-height:44px; padding:10px 13px; }
+  .lib-card { border-radius:20px; margin-bottom:14px; }
+  .library-insight { padding:14px; }
+  .library-insight b { font-size:17px; }
+  .library-insight img { width:56px; height:56px; border-radius:15px; }
+  .lib-sort { padding:10px 12px 10px 10px; gap:12px; }
+  .lib-sort img { width:52px; height:52px; border-radius:14px; }
+  .lib-sort-text b { font-size:16.5px; }
+  #home-sections .h-row { margin:0 0 8px; }
+  #home-sections .quests { gap:10px; padding-bottom:12px; }
+  #home-sections .quest-card { flex-basis:132px; border-radius:18px; }
+  #home-sections .quest-art { height:80px; }
+  #home-sections .quest-card > span { min-height:0; padding:9px 11px 11px; }
+  #home-sections .quest-t { font-size:13.5px; }
+  #home-sections .quest-new { flex-basis:118px; min-height:124px; border-radius:18px; }
+  #platform-chips { padding-bottom:10px; }
+  .library-tools { margin:0 0 12px; }
   .library-tools .h-title { font-size:17px; }
-  .density button { min-width:44px; padding:8px 10px; }
-  .card-body { padding:12px; }
-  .card-title { font-size:14px; }
-  .filing-path { font-size:11px; }
+  .density button { min-width:44px; padding:8px 11px; justify-content:center; }
+  .density button span { display:none; }
+  .card-body { padding:9px 10px 11px; }
+  .card-title { font-size:13.5px; }
+  .card-meta { font-size:11px; }
+  .poster { padding:11px; gap:8px; }
+  .poster-title { font-size:16.5px; }
+  .card-text .card-title { font-size:13.5px; }
   .tabbar { left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); height:70px; padding:0 5px; border:1px solid var(--hairline); border-radius:30px; background:color-mix(in srgb,var(--control) 94%,transparent); box-shadow:0 12px 32px #19151026; grid-template-columns:1fr 1fr 64px 1fr 1fr; }
   .tabbar .fab-mobile { width:56px; height:56px; justify-self:center; transform:translateY(-15px); border:3px solid var(--paper); }
   .tab { font-size:11px; min-height:48px; }
