@@ -1492,3 +1492,124 @@ memory metrics only harvest on a device, so the scroll test times itself.
 Card accessibility frames in a scrolled `LazyVStack` are reported taller than
 drawn, so the layout test checks horizontal containment only and attaches a
 screenshot per pass; decorative covers are hidden from accessibility.
+
+## Quick File: saved first, filed in one more tap (feat/quick-file)
+
+Every save now gets a dial: seven likely topics, the best guess in the
+centre, one more tap to file it. It appears on the share sheet, in the
+iPhone's Add sheet, in the web's Add dialog, and in a triage deck for
+whatever is left unfiled. The save is never part of the decision. It
+happens first, exactly where it happened before, and the dial only ever
+writes a filing onto a save that already exists.
+
+**"Advisory" now means "stored as a guess until you confirm it."** The rule
+was that every caller lets the user override the Categorizer *before
+saving*. Quick File saves before anyone has looked, so the override moves to
+*before it counts*: the best guess is stored with `filingSource:
+"automatic"`, shown as a guess, may be re-filed by enrichment, and never
+replaces `"user"`. Only a tap on the dial, a pick in the full picker or a
+filing in triage writes `"user"`. A save with no valid topic is unfiled; a
+legacy save with no `filingSource` is never nagged about. Nothing waits on
+the ranking, the preview, OCR or the model.
+
+**The Share Extension now asks, which reverses "deliberately unchanged".**
+The Add-sheet section above left it alone: "one tap over someone else's app,
+no screen to ask on". That was right while asking meant waiting. Now
+`Store.enqueue` is still tap 1 and still the first thing that happens, and
+the dial appears over the saved card. Tap 2 re-enqueues the same inbox file
+(named after a hash of the bookmark's id, so it is replaced atomically) with
+`"user"`, which `Store.save` already lets win. "Not now" keeps the guess: it
+drains after 6 seconds without a touch, any touch stops it, 60 seconds is the
+hard cap, and under VoiceOver or Switch Control there is no timer at all.
+There is no "Undo save" in the extension. A setting, "Ask where it goes after
+sharing" (on by default), brings back the old one-tap exit. The extension
+still never opens SwiftData, uses the network, calls the model, runs OCR or
+decodes a full-size image. It ranks from a snapshot the app leaves in the App
+Group (`FilingSnapshot`, `quickfile/snapshot-v1.json`) and draws topic art
+from 240 px thumbnails the app copies there. `project.yml` is unchanged: the
+extension keeps SF Rounded rather than bundling Bricolage.
+
+**One ranking, written twice and held together.** `Core/FilingSuggest.swift`
+and `docs/filing-suggest.js` score each topic as keywords
+(`Categorizer.scores` / `Filer.scores`), plus on-screen text at half weight
+capped at 13, plus the model's answer (high 28, medium 13), plus 12 per
+filing of this creator up to 36, plus 6 per filing of this website up to 18
+(web links only), plus the recency of your filings in that topic up to 6 (3
+a week, 2 a month, 1 a year). Seven distinct topics go on the ring: by score,
+then your most recent filing there, then taxonomy order. A pin (the filing a
+save already has, or its stored guess) leads, and the onboarding interests
+fill empty seats. The centre is preselected only for a reason about this link
+and a score of 6 or more. "Sorted for you" is still 14, the Categorizer's own
+line, but it also needs a reason about the link itself (its words, hashtags,
+creator, site or the model). So on-screen text and habit can lift a guess up
+the ring but never make it strong alone, while a second save from a creator
+you filed a minute ago does arrive strong. Whole numbers, code-point
+ordering, ASCII keys and a `now` passed in make the two ports agree exactly:
+`Scripts/gen_filing_fixture.swift` writes 21 ranking cases, 18 key cases and 9
+OCR cases to `Scripts/fixtures/filing_suggest_cases.json`, and `node
+Scripts/check_filing_parity.mjs` compares the JS field by field. It is a
+script, not CI; making it a test needs the owner's sign-off. `suggest` is
+byte-for-byte unchanged: `scores` is the same analysis read a second way, and
+the 52-case categorizer fixture still matches without being regenerated.
+
+**A creator is a key, not a name.** It is the handle in the URL when the URL
+names one, otherwise the stored author unless that is a placeholder (empty, a
+platform name, the link's own host), folded to `a–z 0–9`. So `@Kayla.Walks` on
+TikTok, `kayla_walks` on X and a "Kayla Walks" channel are one person, with
+the same key on both platforms. Web links have no creator: their author is
+usually the site, which the domain already counts, and counting it twice let
+one website outvote what the page said. The reason line shows the URL's
+handle or the author exactly as stored, never an invented "@".
+
+**No new tables.** History is the bookmarks themselves: topic, subtopic,
+author, URL, `filing_source` and `updated_at` already sync (`filing_source`
+since 0016). Memory is rebuilt on demand (on the web from the live rows, on
+the phone from SwiftData, in the extension from the snapshot) out of your own
+filings from the last 365 days, capped at 400 creators and 200 sites with
+three picks each, and 24 habits. No migration, no server change. On-screen
+text is cached on the device by `stableID` and never synced, and `stableID`
+itself is untouched.
+
+**Triage is "Sort your borks".** Two decks: "Not filed yet" (no valid topic,
+newest first) and "Check our guesses" (automatic saves from the last 30 days
+whose ranking today is not strong), each card showing its current guess
+first. Memory updates as you sort. The model is asked only when signed in,
+never in the demo, only for the next two cards with no evidence at all, and
+at most 12 times a session: the 200-a-day quota is shared with every AI
+feature. The end screen is the clay compass, "Everything has a home." and
+"12 sorted in 41 s".
+
+**Late answers never move under a thumb.** A preview, OCR or the model can
+re-rank after the dial is up. An untouched dial crossfades to the new order;
+a touched one is frozen, and the newcomer gets a ✨ badge on the ring or an
+"Also likely" chip below it. A tap on the centre within 350 ms of it changing
+files what was showing before the change. On the web a late model answer is
+written back only while the row is still `automatic` and unchanged (the old
+Add dialog lost it), and each row's writes go out one after another.
+
+**The web library follows the phone.** Cards come in three shapes. Media: the
+cover's aspect follows iOS's per-kind heights (7/8 for clips, reels and
+Shorts, 1/1 pins, 6/5 posts, 3/2 videos), at most 340 px, cropped from 50% 30%
+to keep burned-in captions out, with a duration chip when one is known.
+Poster: the topic's tint and clay stamp when there is no picture or it died,
+and no play icon. Text: threads and articles. A cover that fails is
+remembered (`localStorage` `bm.bad-img`, up to 1,500 URLs) so the next load
+draws a poster, not an empty gradient box. Grid, Compact and List take their
+columns from the grid's own width; at 1100 px and up a rail carries the sort
+card, an insight, side quests and top topics, all with their clay art.
+Colours come from `docs/palette.js`, an exact port of `CategoryPalette`: HSB,
+which is not the HSL the old web maths fed the same numbers to. One post
+saved from two platforms groups into one card as a display rule, off in select
+mode and in search. Cards take J/K, the arrows and Enter, and "+ Bork a link"
+sits in the nav with an N hint. No dark theme.
+
+**Deliberately not done.** The model in the extension (it needs a shared
+Keychain, which changes provisioning). OCR in the extension or in search.
+Fixed seats for topics on the ring: the next notch is always the next best
+guess. New tables or columns, ThumbHash placeholders, `grid-lanes` masonry.
+Merging duplicates across URL forms, which is an identity migration. Sound in
+the product. And two subtopic names the web Filer calls generic and the Swift
+does not ("Hotels", "Presets"): fixing either side changes `suggest`'s
+answers, which this round promised not to do, so the parity fixture steers
+clear of them and the gap waits for a round that can regenerate the
+categorizer fixture.
