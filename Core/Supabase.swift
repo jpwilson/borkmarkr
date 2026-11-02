@@ -126,7 +126,12 @@ enum Supabase {
         return try session(from: data)
     }
 
+    #if !SHARE_EXTENSION
     /// Swaps an expiring refresh token for a fresh session.
+    ///
+    /// The app's alone. The Share Extension borrows the app's session
+    /// (`SessionKeychain`), and a refresh there would spend the refresh token
+    /// the app still holds, so it cannot be compiled in.
     static func refresh(_ session: Session) async throws -> Session {
         guard let config = Config.current else { throw Failure.notConfigured }
         let body = ["refresh_token": session.refreshToken]
@@ -134,6 +139,7 @@ enum Supabase {
                                   body: body, config: config, token: nil)
         return try self.session(from: data)
     }
+    #endif
 
     private static func session(from data: Data) throws -> Session {
         guard
