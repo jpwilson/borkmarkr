@@ -6,8 +6,9 @@ import SwiftData
 ///
 /// Runs from the Library screen rather than at save time on purpose: saving must
 /// stay instant and offline (the core product rule), and the Share Extension is
-/// memory-capped and has no business doing network work. So a brk lands
-/// immediately with a slug title, and the card upgrades itself moments later.
+/// memory-capped and gone in seconds — signed in, it reads the page and asks the
+/// model only while its dial is up (`QuickFileShareSession.enrich`). So a brk
+/// lands immediately with a slug title, and the card upgrades itself moments later.
 ///
 /// **Filing after the fact.** A reel shared from Instagram arrives as a bare
 /// URL: the extension's offline pass has only `@reel on Instagram` to go on and

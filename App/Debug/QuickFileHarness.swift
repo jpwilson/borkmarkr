@@ -8,12 +8,14 @@ import UIKit
 /// extension can't be launched from a script.
 ///
 /// It runs the extension's own code — `BookmarkDraft.handedOver`,
-/// `QuickFileShareSession`, `QuickFileShareView` — with two differences: the
-/// inbox writes are printed, not written, so nothing lands in the library;
-/// and topic art falls back to the app's bundled scenes when the App Group
-/// has no thumbnails yet. Memory is the App Group snapshot when the app has
-/// written one, otherwise a small made-up history (@kaylawalks filed under
-/// Fitness three times) so the learned state shows without a seeded library.
+/// `QuickFileShareSession`, `QuickFileShareView` — with three differences:
+/// the inbox writes are printed, not written, so nothing lands in the
+/// library; topic art falls back to the app's bundled scenes when the App
+/// Group has no thumbnails yet; and the page and the model are asked with
+/// the app's own session (refreshed if it must be), not a borrowed one.
+/// Memory is the App Group snapshot when the app has written one, otherwise
+/// a small made-up history (@kaylawalks filed under Fitness three times) so
+/// the learned state shows without a seeded library.
 ///
 ///     -caption "<text>"     what the host app sent along with the link
 ///     -quickFileNoMemory    a first share, with no history at all
@@ -29,6 +31,7 @@ struct QuickFileHarness: View {
 
     @State private var share: Share?
     @State private var outcome: String?
+    @StateObject private var account = Account()
 
     static var launchURL: URL? { argument(after: "-quickFileShare").flatMap { URL(string: $0) } }
 
@@ -74,6 +77,7 @@ struct QuickFileHarness: View {
                 onDone: { close("Filed to \(QuickFileCopy.label($0)) as your pick.") }
             )
             .presentationDetents([.large])
+            .onDisappear { share.session.close() }
         }
         .onAppear { if share == nil, outcome == nil { startShare() } }
         .preferredColorScheme(.light)
@@ -90,9 +94,11 @@ struct QuickFileHarness: View {
         }
         outcome = nil
         share = Share(session: session)
+        Task { session.startEnriching(with: await account.currentSession()) }
     }
 
     private func close(_ line: String) {
+        share?.session.close()
         outcome = line
         share = nil
     }

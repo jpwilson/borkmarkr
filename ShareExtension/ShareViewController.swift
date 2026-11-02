@@ -12,8 +12,10 @@ import UniformTypeIdentifiers
 /// re-enqueues the same inbox file as the person's own filing; "Not now"
 /// keeps the guess. With "Ask where it goes after sharing" turned off in the
 /// app, the one-tap exit below is unchanged. The dial ranks from the
-/// snapshot the app leaves in the App Group: no SwiftData, no network, no
-/// model, no OCR, and topic art only as 240 px thumbnails.
+/// snapshot the app leaves in the App Group: no SwiftData, no OCR, and topic
+/// art only as 240 px thumbnails. Signed in, it also reads the page and asks
+/// the model while it is up (`QuickFileShareSession.enrich`), with a session
+/// borrowed from the app (`SessionKeychain`); the save never waits on either.
 ///
 /// **Engineering deviation.** v1 opened the SwiftData container here and wrote
 /// directly. This queues a JSON draft into the App Group inbox instead and
@@ -201,6 +203,7 @@ final class ShareViewController: UIViewController {
         let session = QuickFileShareSession(saved: draft, snapshot: FilingSnapshot.loadShared(),
                                             enqueue: { try Store.enqueue($0) })
         quickFile = session
+        session.startEnriching(with: SessionKeychain.borrow())
         let dial = UIHostingController(rootView: QuickFileShareView(
             session: session,
             onNotNow: { [weak self] in self?.close() },
@@ -228,12 +231,20 @@ final class ShareViewController: UIViewController {
 
     /// The exit once the dial is up: "Not now", the drain, the cap, or a
     /// filing that has had its moment. The outcome was recorded when the save
-    /// was written; this only hands the host its screen back, once.
+    /// was written; this only hands the host its screen back, once, after
+    /// stopping the page read and the model so nothing lands after it.
     @MainActor
     private func close() {
         guard !done else { return }
         done = true
+        quickFile?.close()
         extensionContext?.completeRequest(returningItems: nil)
+    }
+
+    /// Swiped away: the same stop as `close`.
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        quickFile?.close()
     }
 
     /// The one exit. Whichever of the save, the Cancel, the watchdog or a

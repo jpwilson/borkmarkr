@@ -60,6 +60,11 @@ final class QuickFileModel {
     private(set) var revision = 0
     /// What VoiceOver should say about the latest re-deal, if the centre changed.
     private(set) var updateAnnouncement: String?
+    /// When a re-deal last moved the centre.
+    private(set) var movedAt: Date?
+    /// The model has been asked and hasn't answered. The share sheet waits a
+    /// little for it before closing by itself.
+    var isAsking = false
 
     @ObservationIgnored var onConfirm: (FilingCandidate) -> Void = { _ in }
     @ObservationIgnored var onMore: () -> Void = {}
@@ -217,7 +222,9 @@ final class QuickFileModel {
             sparkle = nil
             let after = centre
             let moved = before?.categoryID != after?.categoryID || before?.subcategory != after?.subcategory
-            centreChange = moved ? (Date(), before) : nil
+            let now = Date()
+            centreChange = moved ? (now, before) : nil
+            if moved { movedAt = now }
             updateAnnouncement = moved ? after.map(QuickFileCopy.updated) : nil
             revision &+= 1
             return

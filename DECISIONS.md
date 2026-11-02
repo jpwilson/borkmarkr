@@ -1613,3 +1613,58 @@ does not ("Hotels", "Presets"): fixing either side changes `suggest`'s
 answers, which this round promised not to do, so the parity fixture steers
 clear of them and the gap waits for a round that can regenerate the
 categorizer fixture.
+
+## The share sheet asks the model after all (feat/quick-file)
+
+**This reverses "the model in the extension"**, which the Quick File round
+left out on purpose because a shared Keychain seemed to mean a provisioning
+change. Keychain sharing needed no provisioning change. Both targets now list
+`$(AppIdentifierPrefix)com.jpwilson.borkmarkr` as their only
+`keychain-access-groups` entry. That is the app's own application identifier,
+which was already its default group and is where the signed-in session has
+always been stored, so the app writes exactly where it did, nothing moves,
+and nobody signed in needs a migration. Every profile for both targets
+already allows any group under the team's prefix (`7RUN765V47.*`). Nothing
+may ever be listed ahead of that entry: the first one is where the app
+writes.
+
+**The extension borrows the session and never refreshes it.**
+`SessionKeychain` (moved out of `Account`, unchanged) lends the extension the
+stored session only while its access token has at least 120 seconds left,
+with the refresh token blanked. `save`, `clear` and `Supabase.refresh` are
+compiled out of the extension (`SHARE_EXTENSION`), because Supabase rotates
+refresh tokens and an extension that refreshed would leave the app holding a
+spent one. Access tokens last an hour and the app refreshes when it opens, so
+the sheet can ask only if bookmarker was opened within about the last hour.
+Otherwise nothing changes: the save keeps the dial's guess, and
+`PreviewFetcher` reads the page and files it when the app next opens.
+
+**The same policy as the Add sheet.** While the dial is up, signed in, with a
+server configured and nothing filed yet, `QuickFileShareSession.enrich` reads
+the page (at most 2.5 seconds, skipped when the share already carried a real
+title and creator) and re-ranks the dial: an untouched dial re-deals and the
+stored guess follows it. Then, while the ranking is still not sure and the
+post has words of its own, it asks the same `categorize` function (at most
+6.5 seconds). The answer is ranked at the AI's weight, offered to the dial,
+and stored as the guess, still automatic, whether the dial was touched or
+not, unless something was filed (or filed and undone) since asking or the
+sheet has closed. When what stays is settled (sure without the model, or the
+model's answer), the page read goes with it under the Add sheet's
+`writePreview` rules, marked as read, so `PreviewFetcher` doesn't read and
+ask again as soon as the app opens. A touched dial's guess that the page has
+since contradicted is not marked, so `PreviewFetcher` can still correct it.
+Both deadlines are raced in code: `Supabase.send` sets every request's own
+timeout to 20 seconds, and losing the race cancels the request.
+
+**The save still never waits.** Tap 1 is unchanged. The drain is still six
+seconds; past it, an untouched sheet whose question is still out waits for
+the answer, but no later than nine seconds after it appeared, and it never
+closes within 1.5 seconds of a re-deal that moved the centre. A touch hands
+over to the 60-second cap; VoiceOver and Switch Control stay untimed. There
+is no new UI and no new copy: the reason line, "Sorted for you" and
+VoiceOver's "Suggestion updated: …" already say it.
+
+**Instagram rarely gets an answer.** Its share sheet usually hands over a bare
+link and its page is a login wall, so there are no words to ask about, and
+those saves are filed when the app next opens, as before. The extension still
+never opens SwiftData, runs OCR or decodes a full-size image.

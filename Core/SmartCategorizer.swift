@@ -97,6 +97,26 @@ enum SmartCategorizer {
         return validated(decoded)
     }
 
+    /// `suggest`, but never longer than `limit`: `nil` when time ran out.
+    ///
+    /// For the share sheet, which closes by itself. The deadline is raced
+    /// here because `Supabase.send` sets every request's own timeout to 20
+    /// seconds; losing the race cancels the request rather than leaving it
+    /// to finish.
+    static func suggest(_ context: Context, session: Supabase.Session?,
+                        within limit: Duration) async -> Categorizer.Suggestion? {
+        await withTaskGroup(of: Categorizer.Suggestion?.self) { group in
+            group.addTask { await suggest(context, session: session) }
+            group.addTask {
+                try? await Task.sleep(for: limit)
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
+    }
+
     // MARK: - Validation
 
     /// Checks the model's answer against the taxonomy this build actually has.

@@ -8,10 +8,12 @@ import UIKit.UIGestureRecognizerSubclass
 /// The save has already happened (tap 1), so nothing here can lose it. The
 /// dial's centre sits a little below the middle, where a thumb rests; one more
 /// tap files it. "Not now" keeps the guess. It drains over six seconds of no
-/// touching; any touch anywhere stops the drain for good; a minute without a
-/// touch closes the sheet anyway. Under VoiceOver or Switch Control nothing is
-/// timed at all, including the moment after filing, which then waits for
-/// Undo or Done.
+/// touching, then closes, unless the model is still answering, which it waits
+/// for until nine seconds after it appeared, or the centre has just changed
+/// by itself, which then stays up for a second and a half. Any touch anywhere
+/// stops the drain for good; a minute without a touch closes the sheet
+/// anyway. Under VoiceOver or Switch Control nothing is timed at all,
+/// including the moment after filing, which then waits for Undo or Done.
 ///
 /// More… swaps the dial for `QuickFileMoreList` in place. The view takes over
 /// `model.onMore` for that; the host keeps `onConfirm` and `onUndo`.
@@ -30,6 +32,13 @@ struct QuickFileShareView: View {
     static let filedHold: Duration = .milliseconds(900)
     /// No touch for this long and the sheet closes, keeping the guess.
     static let hardCap: TimeInterval = 60
+    /// Past the drain, an untouched sheet waits for the model until this long
+    /// after it appeared: the page's 2.5 s and the model's 6.5 s
+    /// (`QuickFileShareSession.enrich`).
+    static let answerWait: TimeInterval = 9
+    /// A centre that changed by itself is up at least this long before the
+    /// drain closes the sheet.
+    static let redealHold: TimeInterval = 1.5
 
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.accessibilitySwitchControlEnabled) private var switchControl
@@ -237,7 +246,12 @@ struct QuickFileShareView: View {
     }
 
     private func runClock() async {
+        let appeared = Date()
         try? await Task.sleep(for: .seconds(idleSeconds))
+        guard !Task.isCancelled else { return }
+        while draining, holdsOpen(since: appeared), !Task.isCancelled {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
         guard !Task.isCancelled else { return }
         if draining, !Self.assistiveTechRunning, !showingMore, model.filed == nil { return notNow() }
         while !Task.isCancelled {
@@ -249,6 +263,16 @@ struct QuickFileShareView: View {
             }
             if Date().timeIntervalSince(clock.last) >= Self.hardCap { return notNow() }
         }
+    }
+
+    /// Past the drain, the sheet stays while the model is still answering
+    /// (until `answerWait` after it appeared) and while a centre that changed
+    /// by itself is newer than `redealHold`.
+    private func holdsOpen(since appeared: Date) -> Bool {
+        let now = Date()
+        if model.isAsking, now.timeIntervalSince(appeared) < Self.answerWait { return true }
+        if let moved = model.movedAt, now.timeIntervalSince(moved) < Self.redealHold { return true }
+        return false
     }
 
     private func notNow() {
