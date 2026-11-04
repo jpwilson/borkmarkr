@@ -4859,7 +4859,7 @@ function saveAdd({ again = false } = {}) {
   const pin = dupe && topicFor(existing.category_id)
     ? { categoryID: existing.category_id, subcategory: existing.subcategory || null, reason: existing.filing_source === "automatic" ? "guess" : "yours" }
     : chosen ? { categoryID: chosen.topic, subcategory: chosen.sub || null, reason: "yours" } : null;
-  const session = { url, title: addTitle || Filer.fallbackTitle(url), preview: dupe ? addPreview : null, ai: null, pin };
+  const session = { url, title: addTitle || Filer.fallbackTitle(url), preview: dupe ? addPreview : null, ai: null, pin, created: !dupe };
   const ranking = quickFileRanking(session);
   const best = ranking.preselect === 0 ? ranking.candidates[0] : null;
   const note = $("add-note-on").checked ? $("add-note").value.trim() : "";
@@ -5024,7 +5024,9 @@ function syncPicksToDial() {
 }
 /* Tap 2 — a segment, the middle, a chip, a digit, or a pick from More…: one
    filing commit that carries everything the sheet holds. The sheet closes as
-   the check lands; the toast offers the undo, and Z works while it shows. */
+   the check lands; the toast offers the undo, and Z works while it shows. The
+   undo takes back everything the sheet did: a bork it made leaves the library,
+   one that was already there gets its filing back. */
 function quickFileConfirm(c, how) {
   const s = qf;
   if (!s || s.filed || s.removed) return;
@@ -5043,11 +5045,20 @@ function quickFileConfirm(c, how) {
   const undo = () => {
     const cur = borks.get(s.id);
     if (!cur || cur.deleted_at) return;
+    if (s.created) {
+      // A tombstone, like any delete, under the guess it was saved with, so
+      // pasting the link again (here or on the phone) starts over.
+      track("bork_removed", { platform: cur.platform, after_save: true });
+      commit({ ...cur, ...before, deleted_at: new Date().toISOString() }, cur);
+      toast("Save removed.");
+      return;
+    }
     commit({ ...cur, ...before }, cur);
     toast(before.filing_source === "automatic" ? "Back to our guess." : "Undone.");
   };
   qfUndo = { until: Date.now() + 8000, run: undo };
-  toast(where ? `Filed to ${where}` : "Left unfiled", "Undo", () => { qfUndo = null; undo(); });
+  const said = where ? `${s.created ? "Saved" : "Filed"} to ${where}` : s.created ? "Saved · not filed" : "Left unfiled";
+  toast(said, "Undo", () => { qfUndo = null; undo(); });
   renderFilingState();
   setTimeout(() => { if (qf === s) closeDlg($("add-dialog")); }, REDUCED() ? 140 : 280);
 }

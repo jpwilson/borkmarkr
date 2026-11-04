@@ -615,7 +615,8 @@ struct ToastAction {
 struct ToastView: View {
     let text: String
     var action: ToastAction? = nil
-    /// After the action runs: the toast goes at once rather than lingering.
+    /// As the action runs: the toast goes at once rather than lingering. It
+    /// runs first, so the action can raise the next toast ("Save removed").
     var onAction: () -> Void = {}
 
     @Environment(\.accent) private var accent
@@ -635,8 +636,8 @@ struct ToastView: View {
                     .padding(.leading, 2)
                 Button {
                     Haptics.tap()
-                    action.perform()
                     onAction()
+                    action.perform()
                 } label: {
                     Text(action.title)
                         .font(Typo.ui(14, .bold))

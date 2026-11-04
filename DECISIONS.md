@@ -1668,3 +1668,22 @@ VoiceOver's "Suggestion updated: …" already say it.
 link and its page is a login wall, so there are no words to ask about, and
 those saves are filed when the app next opens, as before. The extension still
 never opens SwiftData, runs OCR or decodes a full-size image.
+
+## Undo after filing takes the save back (feat/quick-file)
+
+On the phone's Add sheet and in the web's Add dialog, the toast after tap 2
+offered Undo, and Undo only put the guess back. The bork stayed in the
+library, often under the very topic that had just been tapped, so Undo looked
+like it did nothing, and pasting the link again said "Already in your
+library". People read Undo there as "I didn't mean to save that".
+
+Now the Undo takes back everything the sheet did. A bork the sheet made
+leaves the library: it is tombstoned like any delete, under the guess it was
+saved with, so pasting the link again starts over, here or on another
+device. The toast before the Undo says "Saved to Fitness › Running" rather
+than "Filed to …", and the one after it says "Save removed". A save over a
+bork that was already there ("Save again anyway") still only gets its
+filing back, because the bork was in the library before. The share sheet is
+unchanged. Its Undo appears for under a second, the sheet stays up and
+still says "Saved to bookmarker", and Undo there brings the dial back to
+choose again.

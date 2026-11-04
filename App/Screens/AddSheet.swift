@@ -15,7 +15,8 @@ import UIKit
 ///
 /// **Tap 2 files.** The sheet becomes the saved card, the Quick File dial and
 /// its reason line. A tap on the dial files as `"user"`, closes the sheet and
-/// leaves a "Filed to Fitness › Running · Undo" toast. "Done" keeps the guess.
+/// leaves a "Saved to Fitness › Running · Undo" toast, whose Undo takes the
+/// whole save back. "Done" keeps the guess.
 /// The preview, on-screen text and the model's answer arrive while the dial
 /// is up and re-rank it (an untouched dial re-deals, a touched one only gains
 /// a ✨), and update the saved bork through `Store.save`'s merge rules —
@@ -1119,6 +1120,9 @@ struct AddSheet: View {
     /// Tap 2: a key on the dial, its centre, a subtopic chip, the "Also
     /// likely" chip or a pick from More…. Written as yours at once; the sheet
     /// stays just long enough for the check to land, then a toast offers Undo.
+    /// Undo takes back everything the sheet did: a bork it made leaves the
+    /// library ("Save removed"), one that was already there gets its filing
+    /// back.
     private func file(_ candidate: FilingCandidate) {
         guard let bork = saved, !finished else { return }
         finished = true
@@ -1132,19 +1136,25 @@ struct AddSheet: View {
         QuickFileBridge.scheduleSnapshot(context: context)
 
         let store = context
+        let created = createdHere
+        let report = onSaved
         let undo = {
             guard bork.deletedAt == nil else { return }
             bork.categoryID = before.categoryID
             bork.subcategory = before.subcategory
             bork.filingSource = before.source
+            // A tombstone, like any delete, under the guess it was saved
+            // with, so pasting the link again starts over.
+            if created { bork.deletedAt = .now }
             bork.touch()
             try? store.save()
             QuickFileBridge.scheduleSnapshot(context: store)
+            if created { report("Save removed", nil) }
         }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(380))
             dismiss()
-            onSaved(QuickFileCopy.filed(candidate), undo)
+            onSaved(created ? Self.savedLine(for: bork) : QuickFileCopy.filed(candidate), undo)
             ReviewPrompter.reached(.borkSaved, requestReview)
         }
     }
