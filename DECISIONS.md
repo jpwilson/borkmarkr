@@ -1785,3 +1785,43 @@ Store listing ("No tracking") and the privacy page rule out. The image trace
 records the file type and size, never the bytes. `docs/privacy.html` says
 this in a new section, "Checking the AI's work". The privacy page has to be
 live before the secrets are set.
+
+## bookmarker Pro is a link that counts taps, not a shop (feat/quick-file)
+
+**The owner wants to know whether people would pay before building any of
+it, so Pro is shown and nothing is sold.** There is no StoreKit, no product,
+no entitlement, no Stripe and no limit, and nobody is ever stopped from
+saving (`SaveLimit` is unchanged). The intended model, if it goes live, is
+free up to 100 saves and Pro for unlimited. The prices are the owner's:
+Monthly $9.99, Yearly $99.99 (two months free against monthly) and Lifetime
+$199.99.
+
+**The app sends nothing; the website counts.** `ProSheet` lists the three
+plans with an honest footnote ("Pro isn't on sale yet… nothing is charged").
+A tap opens
+`https://bookmarker.lol/pro?plan=<monthly|yearly|lifetime>&from=<app-milestone|app-you>`
+in Safari, not an in-app browser, because the age-rating answers rely on
+there being none. The app's listing promises "No ads. No tracking. No
+analytics.", which stays true. The sheet comes up by itself once each when
+the live library first reaches 100, 250 and 500 borks (`ProNudge`). It uses
+the sign-in sheet's watermark, now shared as `MilestoneLedger` with keys of
+its own, so it never fires on launch or for a library already past a
+milestone. It never goes over another sheet or while the sign-in sheet is
+due: that one is about not losing the library, so it goes first. The other
+way in is a "Plan" row on the You tab. Both are signed in only, because
+signed out, the tab says an account alone makes the library unlimited.
+
+**bookmarker.lol/pro is a waitlist with three prices.**
+- A plan in the link counts as choosing it. Choosing says plainly that Pro
+  isn't on sale and offers to hold that price with an email, which goes into
+  `beta_signups` with `source` set to `pro-<plan>-<from>`.
+- PostHog gets `pro_plan_chosen` and `pro_reserved` with the plan and the
+  source, never the email.
+- The page is `noindex` and out of the sitemap.
+- The web app links to it from the You page and from a one-time toast at 100
+  borks (`from=web-you`, `web-milestone`).
+- /lifetime and its $30 founders' offer are unchanged.
+
+The App Review notes describe the sheet as an interest check, because Apple
+requires every feature to be described there. What's New leaves it out,
+because nothing is for sale.

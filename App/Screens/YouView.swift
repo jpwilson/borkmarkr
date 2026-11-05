@@ -23,6 +23,7 @@ struct YouView: View {
     @State private var showingAuth = false
     @State private var authMode: AuthSheet.Mode = .signUp
     @State private var showingInsights = false
+    @State private var showingPro = false
     @State private var creatingQuestTitle: String?
     @State private var confirmingDelete = false
     @State private var deletingAccount = false
@@ -49,6 +50,7 @@ struct YouView: View {
             VStack(alignment: .leading, spacing: 24) {
                 hero
                 insights
+                pro
                 intake
                 collectionsBlock
                 appearance
@@ -91,6 +93,9 @@ struct YouView: View {
                 creatingQuestTitle = title
             }
             .environment(\.accent, accent)
+        }
+        .sheet(isPresented: $showingPro) {
+            ProSheet(origin: .you).environment(\.accent, accent)
         }
         .sheet(isPresented: Binding(
             get: { creatingQuestTitle != nil },
@@ -306,6 +311,31 @@ struct YouView: View {
             InsightsEntry(bookmarks: live)
         }
         .buttonStyle(PressableStyle())
+    }
+
+    // MARK: Pro
+
+    /// bookmarker Pro, which isn't on sale: the row opens the sheet the
+    /// Library shows at 100 borks, and its plans open bookmarker.lol.
+    ///
+    /// Signed in only. Signed out, the top of this tab says an account alone
+    /// makes the library unlimited, and a paid plan selling the same word
+    /// underneath would contradict it.
+    @ViewBuilder
+    private var pro: some View {
+        if account.isSignedIn {
+            VStack(alignment: .leading, spacing: 8) {
+                YouSectionLabel("Plan")
+                YouRow(
+                    symbol: "infinity",
+                    well: accent.base,
+                    glyph: .white,
+                    title: "bookmarker Pro",
+                    subtitle: "Unlimited borks, for when your library outgrows 100"
+                ) { showingPro = true }
+                .cardSurface(radius: Tokens.cardRadius)
+            }
+        }
     }
 
     // MARK: Intake

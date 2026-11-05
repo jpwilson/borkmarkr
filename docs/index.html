@@ -478,6 +478,21 @@
   .stat { flex: 1; text-align: center; }
   .stat b { display: block; font-size: 22px; font-family: var(--font-head); }
   .stat span { color: var(--meta); font-size: 12px; }
+  /* bookmarker Pro: the sort card's recipe (accent tint, clay, one button) as
+     a row of its own under your name. A link to /pro, where the plans are;
+     nothing is on sale and no save is ever stopped. */
+  #view-you .you-card.you-pro { grid-column: 1 / -1; display: grid; grid-template-columns: 64px minmax(0, 1fr) auto;
+    align-items: center; gap: 14px; padding: 16px 20px 16px 16px; color: var(--ink); background: var(--tint);
+    border-color: color-mix(in srgb, var(--coral) 24%, transparent); box-shadow: none; }
+  .you-pro img { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; display: block; }
+  .you-pro-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .you-pro-text b { font-family: var(--font-head); font-size: 18px; line-height: 1.15; letter-spacing: -.015em; }
+  .you-pro-text span { color: var(--accent-text); font-size: 13px; font-weight: 600; }
+  @media (max-width: 520px) {
+    #view-you .you-card.you-pro { grid-template-columns: 52px minmax(0, 1fr); gap: 12px; padding: 14px; }
+    .you-pro img { width: 52px; height: 52px; border-radius: 14px; }
+    .you-pro .btn-sm { grid-column: 1 / -1; width: 100%; height: 44px; }
+  }
   .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin: 12px 0 5px; }
   .field { width: 100%; height: 46px; border: 1px solid var(--hairline); border-radius: 13px;
     padding: 0 14px; background: var(--surface); outline: none; }
@@ -1404,6 +1419,11 @@
               <div class="stat"><b id="stat-week">0</b><span>this week</span></div>
             </div>
           </div>
+          <a class="you-card you-pro" href="/pro?from=web-you">
+            <img src="/img/hero-bookmark.jpg" alt="" loading="lazy">
+            <span class="you-pro-text"><b>bookmarker Pro</b><span>Unlimited saves, for people who bork a lot.</span></span>
+            <span class="btn-sm btn-coral">See plans</span>
+          </a>
           <div class="you-card">
             <label class="field-label" for="profile-name">Display name</label>
             <input class="field" id="profile-name" placeholder="How should we greet you?" autocomplete="off" maxlength="40">
@@ -3414,6 +3434,24 @@ function renderLibrary(all, s) {
       $("empty-library").textContent = "No borks from that source yet.";
     }
   }
+  proNudge(all);
+}
+/* bookmarker Pro, once: when the library reaches 100 borks, a toast with the
+   way to the plans. Nothing is on sale and no save is ever stopped; /pro
+   counts who would want it. Like the app's Pro sheet, only a crossing this
+   browser saw counts: a library already past 100 the first time this runs is
+   passed over. It waits for a quiet moment (no sheet open, no toast up), so
+   it never covers a save's Undo. */
+function proNudge(all) {
+  if (proNudge.shown || demoMode) return;
+  const state = lsGet("bm.pro-nudge");
+  if (state === "done") return;
+  if (state !== "due") { lsSet("bm.pro-nudge", all.length >= 100 ? "done" : "due"); return; }
+  if (all.length < 100 || $("toast").classList.contains("show") || document.querySelector("dialog[open]")) return;
+  proNudge.shown = true;
+  lsSet("bm.pro-nudge", "done");
+  track("pro_nudge_shown", { borks: all.length });
+  toast(`That's ${all.length} borks. Pro is coming: unlimited saves.`, "See plans", () => { location.href = "/pro?from=web-milestone"; });
 }
 
 function renderBrowse(all) {

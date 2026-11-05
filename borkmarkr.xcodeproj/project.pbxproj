@@ -39,6 +39,7 @@
 		2FC5F0650E179480816242EB /* QuestMotif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7174C9FDE39F5A4909598298 /* QuestMotif.swift */; };
 		35C9DF104B025F63E357375A /* QuickFileShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5D11825DBB0E8B91417DA33 /* QuickFileShareView.swift */; };
 		35D0E97EE8F413EDA2864888 /* SavedContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C294E25F8F0174C03A881C1C /* SavedContent.swift */; };
+		366B7DEF7C7C65EC76B12FDB /* ProSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D99FFE4AF71B59F2745E6CB /* ProSheet.swift */; };
 		3810C029D4340AFDE42A81BA /* Mission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB8BBAF60DC48399905E1C5 /* Mission.swift */; };
 		382158749A4F3E7AEBB8351F /* TopicPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A4C0A7FD18816B0ABDEBE4 /* TopicPickerSheet.swift */; };
 		39DD1D296F161422218AF5A4 /* QuickFileSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CCE9D67F38D35CE654AFBEF /* QuickFileSettings.swift */; };
@@ -256,6 +257,7 @@
 		6576E80EF0E2CEB87D9F5BE4 /* SingleBookmarkShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleBookmarkShare.swift; sourceTree = "<group>"; };
 		659DCCA380B9927587FA608C /* QuestSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestSyncTests.swift; sourceTree = "<group>"; };
 		6CCE9D67F38D35CE654AFBEF /* QuickFileSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFileSettings.swift; sourceTree = "<group>"; };
+		6D99FFE4AF71B59F2745E6CB /* ProSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProSheet.swift; sourceTree = "<group>"; };
 		6FBF6488680E970F8BD800FF /* TopicPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicPage.swift; sourceTree = "<group>"; };
 		7174C9FDE39F5A4909598298 /* QuestMotif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestMotif.swift; sourceTree = "<group>"; };
 		7DB8BBAF60DC48399905E1C5 /* Mission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mission.swift; sourceTree = "<group>"; };
@@ -334,7 +336,7 @@
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
 		FF5B92B1C0E0EC3B07C81F24 /* QuickFileCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFileCopy.swift; sourceTree = "<group>"; };
 		FFFF0A9DC6A3394EDEBC96B6 /* QuickFileDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFileDial.swift; sourceTree = "<group>"; };
-		"TEMP_E4061129-3637-4609-84D4-E7126499F132" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_F07F3553-1471-4032-BDEE-E36CF05DBD94" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -502,6 +504,7 @@
 				1547735EA275A76D8C7A99DD /* LibraryView.swift */,
 				4FA4E66670607199DDC15B32 /* MissionsView.swift */,
 				C28995D31AAC20CABE2409DA /* OnboardingView.swift */,
+				6D99FFE4AF71B59F2745E6CB /* ProSheet.swift */,
 				C63336BBF4F9E400E07A7134 /* RevisitQueueSheet.swift */,
 				3D6AF10CC10308E9BE9C7558 /* RevisitView.swift */,
 				5DD9B359B078417F28B1A70B /* ShareSheetGuide.swift */,
@@ -571,10 +574,10 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		"TEMP_45A3E137-CCF4-496E-83F1-B60A9E08D49C" /* borkmarkr */ = {
+		"TEMP_0B3BC563-9C74-4AFE-84FC-7E3CBED79A2C" /* borkmarkr */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_E4061129-3637-4609-84D4-E7126499F132" /* Config.xcconfig */,
+				"TEMP_F07F3553-1471-4032-BDEE-E36CF05DBD94" /* Config.xcconfig */,
 			);
 			path = borkmarkr;
 			sourceTree = "<group>";
@@ -766,6 +769,7 @@
 				8A3961190102DEA781DA0DE9 /* Platform.swift in Sources */,
 				0FF122E98AF64BA4B59E65C5 /* PlatformMarks.swift in Sources */,
 				E4AD70612CDCF96B4CA5E4AC /* PreviewFetcher.swift in Sources */,
+				366B7DEF7C7C65EC76B12FDB /* ProSheet.swift in Sources */,
 				69EBB89C3E4815571F6C84D7 /* QuestBrief.swift in Sources */,
 				95796B7540B5235A1E4A3ECF /* QuestCard.swift in Sources */,
 				2FC5F0650E179480816242EB /* QuestMotif.swift in Sources */,
@@ -929,7 +933,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_E4061129-3637-4609-84D4-E7126499F132" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_F07F3553-1471-4032-BDEE-E36CF05DBD94" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1016,7 +1020,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_E4061129-3637-4609-84D4-E7126499F132" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_F07F3553-1471-4032-BDEE-E36CF05DBD94" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;

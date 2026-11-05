@@ -134,7 +134,10 @@ struct RootView: View {
                     },
                     onShowWall: { wall = $0 },
                     account: account,
-                    canInterrupt: !showingAdd && wall == nil && hasOnboarded
+                    // Every sheet the root owns, so a milestone sheet never
+                    // goes up behind one of them.
+                    canInterrupt: !showingAdd && wall == nil && !showingWallAuth
+                        && triage == nil && collectionRoute == nil && hasOnboarded
                 )
                 case .browse: BrowseView(
                     interests: interests,

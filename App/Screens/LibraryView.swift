@@ -13,8 +13,10 @@ struct LibraryView: View {
     /// and one sheet with one owner is the only way it never double-presents.
     var onShowWall: (SaveLimitReason) -> Void = { _ in }
     var account: Account? = nil
-    /// False while the Add sheet or the first-run tour is up. A milestone
-    /// nudge waits for a clear screen rather than stacking on top of one.
+    /// False while the root has a sheet up (the Add sheet, the wall and its
+    /// sign-in, Sort your borks, a shared link) or the first-run tour is
+    /// showing. A milestone sheet waits for a clear screen rather than
+    /// stacking on top of one.
     var canInterrupt: Bool = true
 
     @Environment(\.accent) private var accent
@@ -40,6 +42,8 @@ struct LibraryView: View {
     @State private var showingInsights = false
     @State private var showingBackupBanner = false
     @State private var nudge: SignInMilestone?
+    /// The Pro sheet, at 100, 250 and 500 borks. See `ProNudge`.
+    @State private var showingPro = false
     @State private var showingAuth = false
     @State private var authMode: AuthSheet.Mode = .signUp
     /// Select mode: pick borks from any source and share them as one link.
@@ -231,6 +235,10 @@ struct LibraryView: View {
             )
             .environment(\.accent, accent)
         }
+        .sheet(isPresented: $showingPro) {
+            ProSheet(origin: .milestone)
+                .environment(\.accent, accent)
+        }
         .sheet(isPresented: $showingAuth) {
             if let account {
                 AuthSheet(account: account, mode: authMode)
@@ -243,6 +251,9 @@ struct LibraryView: View {
             retireDialHintIfFiled(animated: false)
             markRead()
             readNudgePolicy()
+            #if DEBUG
+            applyDebugProSheet()
+            #endif
         }
         // Counting from the store, not from a counter the app keeps: a bork
         // saved through the Share Extension arrives when the inbox is drained
@@ -497,7 +508,9 @@ struct LibraryView: View {
     }
 
     /// Asks `SignInNudge` what the signed-out cues should be doing, from the
-    /// library as it stands. One call site for both surfaces.
+    /// library as it stands, then `ProNudge` whether the Pro sheet is due.
+    /// One call site for every surface, which is what keeps the two sheets
+    /// from ever stacking.
     private func readNudgePolicy() {
         guard let account else {
             showingBackupBanner = false
@@ -517,12 +530,15 @@ struct LibraryView: View {
             borks: borks, signedIn: signedIn, hasSynced: account.lastSynced != nil
         ) else {
             SignInNudge.recordSeen(borks)
+            // Pro gets a turn only with no sign-in sheet due: that one is
+            // about not losing the library, so it goes first, and a Pro
+            // milestone stays due behind it.
+            readProMilestone(borks: borks, signedIn: signedIn)
             return
         }
         // Nothing goes on top of another sheet. Leaving the watermark alone
         // keeps this milestone due for the next time the Library is clear.
-        guard canInterrupt, nudge == nil, !showingAuth, detail == nil,
-              openJourney == nil, !creatingJourney, !showingInsights else { return }
+        guard screenIsClear else { return }
 
         SignInNudge.recordSheetShown(milestone)
         SignInNudge.recordSeen(borks)
@@ -534,6 +550,35 @@ struct LibraryView: View {
             try? await Task.sleep(for: .milliseconds(600))
             nudge = SignInMilestone(id: milestone)
         }
+    }
+
+    /// The Pro sheet at 100, 250 and 500 borks, on the sign-in sheet's rules:
+    /// a crossing this install saw, never over another sheet, and a
+    /// milestone it could not show stays due. See `ProNudge`.
+    private func readProMilestone(borks: Int, signedIn: Bool) {
+        guard let milestone = ProNudge.dueMilestone(borks: borks, signedIn: signedIn) else {
+            ProNudge.recordSeen(borks)
+            return
+        }
+        guard screenIsClear else { return }
+
+        ProNudge.recordSheetShown(milestone)
+        ProNudge.recordSeen(borks)
+
+        // The 100th bork is usually saved in the Add sheet, which is still
+        // dismissing as this runs — same wait as the sign-in sheet.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
+            showingPro = true
+        }
+    }
+
+    /// Whether a milestone sheet may go up now: nothing from the root, and
+    /// none of the Library's own sheets either.
+    private var screenIsClear: Bool {
+        canInterrupt && nudge == nil && !showingPro && !showingAuth && detail == nil
+            && openJourney == nil && !creatingJourney && !showingInsights
+            && triageDeck == nil && !collecting
     }
 
     /// The hint is for someone who has not met the dial, so it goes for good
@@ -605,6 +650,16 @@ struct LibraryView: View {
         selected = Set(visible.prefix(n).map(\.id))
         selecting = true
         if CollectionsDebug.openCollect { collecting = true }
+    }
+
+    /// `-proSheet` — see `ScreenshotDefaults.openProSheet`.
+    private func applyDebugProSheet() {
+        guard ScreenshotDefaults.openProSheet else { return }
+        Task { @MainActor in
+            // After the seed and the first frame, or the sheet is dropped.
+            try? await Task.sleep(for: .milliseconds(700))
+            showingPro = true
+        }
     }
     #endif
 

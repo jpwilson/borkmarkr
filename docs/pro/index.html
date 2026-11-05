@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bookmarker Pro — unlimited saves</title>
+<meta name="description" content="bookmarker Pro is unlimited saves on iPhone and the web. It isn't on sale yet: pick a plan and leave your email to hold its price.">
+<link rel="canonical" href="https://bookmarker.lol/pro/">
+<!-- A waitlist, not a product page: Pro isn't on sale, so there is nothing
+     here for a search engine to send people to. Kept out of sitemap.xml and
+     llms-full.txt too. The plans in the app and the web app link here as
+     /pro?plan=<monthly|yearly|lifetime>&from=<where>; Pages 301s /pro to
+     /pro/ and keeps the query. -->
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F6F3EE">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="bookmarker">
+<meta property="og:url" content="https://bookmarker.lol/pro/">
+<meta property="og:title" content="bookmarker Pro">
+<meta property="og:description" content="Unlimited saves, for people who bork a lot. Not on sale yet: pick a plan and we'll hold its price.">
+<meta property="og:image" content="https://bookmarker.lol/img/share-v2.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A coral clay bookmark with the Instagram, X, TikTok and YouTube app icons set into it. Every save. One library.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="bookmarker Pro">
+<meta name="twitter:description" content="Unlimited saves, for people who bork a lot. Not on sale yet: pick a plan and we'll hold its price.">
+<meta name="twitter:image" content="https://bookmarker.lol/img/share-v2.jpg">
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  /* PostHog — product analytics + session replay (inputs masked). Public
+     project token by design; the privacy policy discloses this. */
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_o34s8vv6TWjzDemdh39CAW8d4R52qFzVt2RZCnQEEKqx', {api_host: 'https://us.i.posthog.com', defaults: '2025-05-24'});
+  /* Our own devices shouldn't count as traffic: visit /?internal=1 once on a
+     device to opt that browser out forever; /?internal=0 to undo. */
+  try {
+    var _q = new URLSearchParams(location.search);
+    if (_q.get("internal") === "1") localStorage.setItem("bm.internal", "1");
+    if (_q.get("internal") === "0") { localStorage.removeItem("bm.internal"); posthog.opt_in_capturing(); }
+    if (localStorage.getItem("bm.internal")) posthog.opt_out_capturing();
+  } catch (e) {}
+</script>
+<style>
+  /* The web app's tokens (docs/index.html), light paper as always. */
+  :root {
+    --paper: #F6F3EE; --surface: #FFFFFF; --ink: #191510; --ink-2: #5B554D; --meta: #8A8378;
+    --faint: #A39A8D; --hairline: #EAE4DA; --dashed: #D7CDBD;
+    --coral: #FF5A2D; --accent-text: #C93A12; --tint: #FFE9E1; --destructive: #C0392B;
+    --shadow-card: 0 1px 2px rgba(25,21,16,.04), 0 10px 26px -14px rgba(25,21,16,.16);
+    --ease-out: cubic-bezier(.2, .7, .2, 1);
+    --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--font-body);
+    -webkit-tap-highlight-color: transparent; }
+  a { color: var(--accent-text); text-decoration: none; }
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
+  .nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 84%, transparent);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--hairline); }
+  .nav-in { display: flex; align-items: center; height: 60px; max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-family: var(--font-head); font-weight: 800; font-size: 19px; color: var(--ink); }
+  .brand img { width: 28px; height: 28px; border-radius: 8px; }
+  main { max-width: 540px; margin: 0 auto; padding: 26px 20px 48px; }
+
+  /* The name and the promise, beside the clay phone that won't stop borking. */
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; margin: 0 0 22px; }
+  .hero h1 { font-family: var(--font-head); font-size: clamp(28px, 8.6vw, 44px); line-height: 1; letter-spacing: -.035em; margin: 0 0 10px; }
+  .hero h1 span { color: var(--coral); }
+  .lede { color: var(--ink-2); font-size: 16.5px; line-height: 1.45; margin: 0; }
+  .hero-art { width: 108px; height: 108px; border-radius: 26px; object-fit: cover; display: block; }
+
+  /* The three plans: radios dressed as the app's cards. The one you picked
+     (or arrived with) gets the coral edge and the accent tint. */
+  .plans { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .plans legend { padding: 0; margin: 0 0 10px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+  .plan-list { display: grid; gap: 10px; }
+  .plan { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center;
+    align-content: center; column-gap: 12px; row-gap: 2px; min-height: 72px; padding: 12px 16px 12px 14px; background: var(--surface);
+    border: 1.5px solid var(--hairline); border-radius: 18px; box-shadow: var(--shadow-card); cursor: pointer;
+    -webkit-user-select: none; user-select: none; transition: border-color .15s ease, background-color .15s ease; }
+  .plan input { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+  .dot { grid-column: 1; grid-row: 1 / span 2; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--dashed);
+    background: var(--surface); transition: border .15s ease; }
+  .plan-name { grid-column: 2; grid-row: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+    font-family: var(--font-head); font-weight: 800; font-size: 17px; line-height: 1.2; letter-spacing: -.01em; }
+  .badge { font: 700 11px/1 var(--font-body); letter-spacing: .01em; color: var(--accent-text); background: var(--tint);
+    border-radius: 999px; padding: 5px 8px; }
+  .plan-note { grid-column: 2; grid-row: 2; color: var(--meta); font-size: 13px; line-height: 1.35; }
+  .plan-price { grid-column: 3; grid-row: 1 / span 2; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+  .plan-price b { font-family: var(--font-head); font-size: 21px; line-height: 1.1; letter-spacing: -.02em; }
+  .plan-price span { color: var(--meta); font-size: 12.5px; font-weight: 600; }
+  .plan.on { border-color: var(--coral); background: color-mix(in srgb, var(--tint) 60%, var(--surface)); }
+  .plan.on .dot { border: 7px solid var(--coral); }
+  .plan.on .badge { background: var(--surface); }
+  .plan:has(input:focus-visible) { outline: 2px solid var(--coral); outline-offset: 2px; }
+  .plans:disabled .plan { cursor: default; }
+  .plans:disabled .plan:not(.on) { opacity: .5; }
+
+  /* What happens next: the honest part, then the thank-you. */
+  .card { margin: 16px 0 0; background: var(--surface); border: 1px solid var(--hairline); border-radius: 22px;
+    padding: 22px 20px 20px; box-shadow: var(--shadow-card); animation: rise .32s var(--ease-out); }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  .picked { margin: 0 0 4px; color: var(--accent-text); font-size: 13px; font-weight: 700; }
+  .card h2 { font-family: var(--font-head); font-size: 23px; line-height: 1.15; letter-spacing: -.02em; margin: 0 0 6px; }
+  .say { color: var(--ink-2); margin: 0 0 16px; }
+  .say b { color: var(--ink); }
+  .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin: 0 0 6px; }
+  .field { width: 100%; height: 50px; border: 1px solid var(--hairline); border-radius: 14px; padding: 0 14px;
+    background: var(--surface); font: inherit; font-size: 16px; color: var(--ink); outline: none; -webkit-appearance: none; appearance: none; }
+  .field:focus-visible { border-color: var(--coral); box-shadow: 0 0 0 3px var(--tint); }
+  .go { width: 100%; height: 52px; margin-top: 12px; border: 0; border-radius: 14px; background: var(--coral); color: #fff;
+    font: inherit; font-weight: 800; font-size: 16px; cursor: pointer; box-shadow: 0 8px 18px -10px rgba(255,90,45,.8); }
+  .go[disabled] { opacity: .6; cursor: default; }
+  .err { color: var(--destructive); font-size: 13px; min-height: 18px; margin: 8px 0 0; }
+  .fine { color: var(--meta); font-size: 12.5px; line-height: 1.5; margin: 4px 0 0; }
+  .fine a { font-weight: 600; }
+  #done { text-align: center; padding: 26px 22px 22px; }
+  #done h2:focus { outline: none; }
+  #done p { color: var(--ink-2); margin: 0; }
+  #done .fine { margin-top: 12px; }
+  .tick { width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%; background: var(--tint); color: var(--accent-text);
+    display: grid; place-items: center; }
+  .tick svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .back { display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; font-weight: 700; }
+
+  .includes { margin: 28px 0 0; padding: 20px 0 0; border-top: 1px solid var(--hairline); }
+  .includes h2 { font-family: var(--font-head); font-size: 17px; letter-spacing: -.01em; margin: 0 0 4px; }
+  .includes ul { list-style: none; padding: 0; margin: 0; }
+  .includes li { position: relative; padding-left: 26px; margin: 9px 0; font-weight: 500; }
+  .includes li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-text); font-weight: 800; }
+  .includes li span { color: var(--meta); font-weight: 400; }
+
+  footer { border-top: 1px solid var(--hairline); }
+  .foot { max-width: 540px; margin: 0 auto; padding: 18px 20px calc(36px + env(safe-area-inset-bottom));
+    color: var(--faint); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .foot a { color: var(--ink-2); font-weight: 600; }
+
+  @media (max-width: 359px) {
+    .hero { gap: 12px; }
+    .hero-art { width: 84px; height: 84px; border-radius: 22px; }
+  }
+  @media (min-width: 600px) {
+    main { padding-top: 46px; }
+    .hero { gap: 24px; margin-bottom: 28px; }
+    .hero-art { width: 140px; height: 140px; border-radius: 32px; }
+    .card { padding: 26px 26px 22px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; }
+    .plan, .dot { transition: none; }
+  }
+</style>
+</head>
+<body>
+<header class="nav"><div class="nav-in">
+  <a class="brand" href="/"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
+</div></header>
+<main>
+  <header class="hero">
+    <div>
+      <h1>bookmarker <span>Pro</span></h1>
+      <p class="lede">Unlimited saves, for people who bork a lot.</p>
+    </div>
+    <img class="hero-art" src="/img/quests/scroll.jpg" alt="" width="640" height="640">
+  </header>
+
+  <fieldset class="plans" id="plans">
+    <legend>Pick a plan</legend>
+    <div class="plan-list">
+      <label class="plan" data-plan="monthly">
+        <input type="radio" name="plan" value="monthly">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="plan-name">Monthly</span>
+        <span class="plan-note">Billed every month</span>
+        <span class="plan-price"><b>$9.99</b><span>a month</span></span>
+      </label>
+      <label class="plan" data-plan="yearly">
+        <input type="radio" name="plan" value="yearly">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="plan-name">Yearly <span class="badge">2 months free</span></span>
+        <span class="plan-note">$8.33 a month, billed yearly</span>
+        <span class="plan-price"><b>$99.99</b><span>a year</span></span>
+      </label>
+      <label class="plan" data-plan="lifetime">
+        <input type="radio" name="plan" value="lifetime">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="plan-name">Lifetime</span>
+        <span class="plan-note">Pay once, Pro for good</span>
+        <span class="plan-price"><b>$199.99</b><span>once</span></span>
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- Choosing a plan (or arriving with ?plan=) brings this up. Nothing can be
+       bought: the email goes on the beta_signups list, with the plan and
+       where the tap came from in `source`. -->
+  <section class="card" id="reveal" hidden aria-labelledby="reveal-h">
+    <p class="picked" id="picked" aria-live="polite"></p>
+    <h2 id="reveal-h">Pro isn't on sale yet</h2>
+    <p class="say">Leave your email and we'll hold that price for you and email you when Pro opens.
+      <b>No card, nothing charged.</b></p>
+    <form id="reserve" novalidate>
+      <label class="field-label" for="email">Email</label>
+      <input class="field ph-no-capture" id="email" name="email" type="email" inputmode="email" autocomplete="email"
+        autocapitalize="off" spellcheck="false" maxlength="254" placeholder="you@example.com">
+      <button class="go" id="go" type="submit">Hold my price</button>
+      <p class="err" id="err" role="alert"></p>
+    </form>
+    <p class="fine">Nothing is limited today: every save goes through, Pro or not. To come off the list,
+      write to <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>. <a href="/privacy">Privacy</a></p>
+  </section>
+
+  <section class="card" id="done" hidden aria-labelledby="done-h">
+    <div class="tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2 id="done-h" tabindex="-1">You're on the list</h2>
+    <p>We'll email <b id="done-email"></b> when Pro opens, at the price you picked:
+      <span id="done-plan"></span>. Nothing has been charged.</p>
+    <a class="back" id="back-web" href="/">← Back to your library</a>
+    <p class="fine" id="back-app" hidden>You can close this page and carry on borking.</p>
+  </section>
+
+  <section class="includes" aria-labelledby="includes-h">
+    <h2 id="includes-h">What you'd get</h2>
+    <ul>
+      <li>Unlimited saves, on iPhone and the web <span>— the free plan will cover 100</span></li>
+      <li>A one-person indie app, kept going</li>
+    </ul>
+  </section>
+</main>
+<footer><div class="foot">
+  <span>© 2026 bookmarker</span>
+  <a href="/">Open the app</a>
+  <a href="/privacy">Privacy</a>
+  <a href="/terms">Terms of Use</a>
+  <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
+</div></footer>
+<script>
+"use strict";
+const SUPABASE_URL = "https://pcjuxnhqxyfvgagnblzv.supabase.co";
+const ANON_KEY = "sb_publishable_z0wBO4NZrMW3T0ZywSDfJA_UoFRHMKb";
+/* The owner's prices. A plan here is a choice to count and a price to hold;
+   nothing is sold, so there is no checkout to send anyone to. */
+const PLANS = {
+  monthly: { name: "Monthly", price: "$9.99 a month" },
+  yearly: { name: "Yearly", price: "$99.99 a year" },
+  lifetime: { name: "Lifetime", price: "$199.99 once" },
+};
+const $ = (id) => document.getElementById(id);
+const query = new URLSearchParams(location.search);
+/* Where the tap came from: app-milestone, app-you, web-you or web-milestone,
+   and "web" for anyone who just turned up. Cut to what beta_signups.source
+   holds (40) after "pro-lifetime-". */
+const from = (query.get("from") || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 27) || "web";
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let plan = null;
+let sending = false;
+
+/* Events only: never the email, never anything typed. */
+function track(name, props) { try { window.posthog?.capture?.(name, props); } catch (e) { /* analytics never break the page */ } }
+
+function choose(next, { tapped = false } = {}) {
+  if (!PLANS[next] || next === plan) return;
+  plan = next;
+  for (const el of document.querySelectorAll(".plan")) {
+    const on = el.dataset.plan === plan;
+    el.classList.toggle("on", on);
+    el.querySelector("input").checked = on;
+  }
+  $("picked").textContent = `${PLANS[plan].name} · ${PLANS[plan].price}`;
+  $("reveal").hidden = false;
+  track("pro_plan_chosen", { plan, from });
+  if (tapped) $("reveal").scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "nearest" });
+}
+
+function showDone(email) {
+  $("plans").disabled = true;   // the price you held stays lit; the others step back
+  $("reveal").hidden = true;
+  $("done-email").textContent = email;
+  $("done-plan").textContent = `${PLANS[plan].name}, ${PLANS[plan].price}`;
+  // From the iPhone app the library is in the app, not at bookmarker.lol.
+  $("back-web").hidden = from.startsWith("app-");
+  $("back-app").hidden = !from.startsWith("app-");
+  $("done").hidden = false;
+  $("done-h").focus();
+}
+
+for (const input of document.querySelectorAll(".plan input")) {
+  input.addEventListener("change", () => choose(input.value, { tapped: true }));
+}
+
+$("reserve").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!plan || sending) return;
+  const email = $("email").value.trim().toLowerCase();
+  const err = $("err");
+  err.textContent = "";
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = "That doesn't look like an email."; return; }
+  const btn = $("go");
+  sending = true; btn.disabled = true; btn.textContent = "Saving your spot…";
+  try {
+    const res = await fetch(SUPABASE_URL + "/rest/v1/beta_signups", {
+      method: "POST",
+      headers: { apikey: ANON_KEY, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ email, source: `pro-${plan}-${from}` }),
+    });
+    // 409 is the unique index on lower(email): already on the list, and that's fine.
+    if (!res.ok && res.status !== 409) throw new Error("Something hiccuped — try again?");
+    track("pro_reserved", { plan, from });
+    showDone(email);
+  } catch (e) {
+    err.textContent = e instanceof TypeError ? "You look offline — check your connection and try again." : e.message;
+  } finally { sending = false; btn.disabled = false; btn.textContent = "Hold my price"; }
+});
+
+// Arriving with ?plan= counts as choosing it: the tap was made in the app.
+const wanted = (query.get("plan") || "").toLowerCase();
+if (PLANS[wanted]) choose(wanted);
+</script>
+</body>
+</html>
