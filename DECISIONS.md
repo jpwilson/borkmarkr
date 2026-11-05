@@ -1713,3 +1713,15 @@ unread with its page never read. It is asked ahead of the rest, whatever the
 evidence, and its answer is weighed against your filing history the way the
 dial weighs it, not taken as it comes. Imports, syncs, backfills and triage
 keep their old rules.
+
+## A one-time hint for the dial (feat/quick-file)
+
+The dial only appears after a save, so someone who has heard of it can look
+through every tab and not find it. The owner did exactly that. The Library
+now shows one small card, "File every bork in one tap", that says where the
+dial is (+ and paste, or share from any app), with a Try it button that
+opens Add a link. It goes for good after the ×, after Try it, or after the
+first filing on the dial since this build. It never stacks with another card
+(the sort card, the backup banner, waiting borks), and it stays off the empty
+Library, which already explains saving. It borrows the sort card's clay
+compass and shape, since both are about where a bork goes.
