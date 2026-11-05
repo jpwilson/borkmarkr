@@ -1725,3 +1725,23 @@ first filing on the dial since this build. It never stacks with another card
 (the sort card, the backup banner, waiting borks), and it stays off the empty
 Library, which already explains saving. It borrows the sort card's clay
 compass and shape, since both are about where a bork goes.
+
+## Every public page counts its visitors (feat/quick-file)
+
+The written pages, Library Island, the 404 page and /get/ now carry the same
+PostHog block as the home page, so PostHog sees everyone who lands on
+bookmarker.lol, not only people who open the web app. The nine written pages
+get it from `Scripts/seo-pages/tpl.py`, so regenerating them keeps it. Three
+places differ on purpose:
+- The 404 page leaves it out on /c/ links. Those turn into the collection
+  page, which counts its readers with no cookie and no profile, as the
+  privacy policy promises.
+- /get/ sends iPhones to the App Store, which is another site. It now leaves
+  just after PostHog has sent the pageview, and never more than 800 ms after
+  loading (it used to leave after 60 ms).
+- Library Island's CSP now names PostHog's two hosts and the snippet's hash.
+  PostHog's api host accepts events for any project, so that is a deliberate
+  gap in what the CSP fences off.
+
+/web/ goes straight to /, which counts the visit, so it has no snippet of its
+own.
