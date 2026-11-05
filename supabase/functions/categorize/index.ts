@@ -164,7 +164,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   ].filter(Boolean).join("\n");
 
   try {
-    const parsed = await completeJSON(SYSTEM, facts, 400, TEMPERATURE) as {
+    const parsed = await completeJSON("categorize", SYSTEM, facts, 400, TEMPERATURE) as {
       topic?: unknown;
       subtopic?: unknown;
       tags?: unknown;

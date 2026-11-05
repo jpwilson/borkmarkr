@@ -12,7 +12,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ summary:null, steps:[], reason:"quota_or_unavailable" });
   }
   try {
-    const parsed = await completeJSON(SYSTEM, JSON.stringify(input), 650);
+    const parsed = await completeJSON("quest-brief", SYSTEM, JSON.stringify(input), 650);
     const brief = cleanBrief(parsed, input);
     return json(brief ?? { summary:null, steps:[], reason:"unavailable" });
   } catch {

@@ -1745,3 +1745,43 @@ places differ on purpose:
 
 /web/ goes straight to /, which counts the visit, so it has no snippet of its
 own.
+
+## Every AI call is traced in Langfuse (feat/quick-file)
+
+**One trace per model call, named after the feature.** The backend talks to a
+model in exactly two places, `completeJSON` (`_shared/openrouter.ts`) and
+`clayImage` (`_shared/clay.ts`). Each call records one Langfuse generation:
+- the messages sent and the text that came back;
+- the model and its parameters, and the start and end times;
+- the tokens, and the cost OpenRouter reports as `usage.cost`.
+
+The trace is named and tagged `categorize`, `insights`, `name-quest`,
+`quest-brief` or `topic-art`. `feature` is `completeJSON`'s first argument and
+is required, so no caller can leave it out. A failed call goes in as level
+ERROR with its reason: an HTTP error, an empty or unparseable reply (with its
+`finish_reason`), a network error, or an image refusal. Every function
+returns and throws exactly what it did before.
+
+**OTLP, not the ingestion API.** Langfuse Cloud stops taking traces on
+`/api/public/ingestion` on 16 November 2026, so `_shared/langfuse.ts` posts
+OTLP/HTTP JSON to `/api/public/otel/v1/traces`, with Basic auth and
+`x-langfuse-ingestion-version: 4`. There is no SDK and no dependency.
+
+**Tracing can't slow or break a request.** It is configured from the
+environment only:
+- `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`. Both must be set, or
+  tracing is a silent no-op.
+- `LANGFUSE_BASE_URL`. `LANGFUSE_HOST` also works; the default is the EU host.
+- `LANGFUSE_ENVIRONMENT`. The default is `production`.
+
+The span is sent once the answer is in, in the background under
+`EdgeRuntime.waitUntil`, with a three-second timeout, and every error is
+caught.
+
+**Who asked is never sent.** There is no user id (hashed or not), no email and
+no IP. The quota already caps anyone at 200 calls a day, and an identifier
+would turn the log into a record of what each account asked, which the App
+Store listing ("No tracking") and the privacy page rule out. The image trace
+records the file type and size, never the bytes. `docs/privacy.html` says
+this in a new section, "Checking the AI's work". The privacy page has to be
+live before the secrets are set.

@@ -12,8 +12,15 @@
 // Same model, same master, same prompt — so scenes drawn after this switch
 // still match the ones drawn before it, which is the whole point of the
 // locked style in Branding/ILLUSTRATION_STYLE.md.
+//
+// Both calls here are traced to Langfuse as "topic-art", the only feature
+// that draws: the judge through `completeJSON`, the drawing below.
+
+import { Generation } from "./langfuse.ts";
 
 export const IMAGE_MODEL = "openai/gpt-image-1";
+
+const FEATURE = "topic-art";
 
 const IMAGE_ENDPOINT = "https://openrouter.ai/api/v1/images";
 
@@ -187,7 +194,7 @@ export async function judgeSubject(name: string, titles: string[]): Promise<stri
   // One retry: a judge that fails leaves the image model to guess at a bare
   // word, which is the thing this exists to prevent.
   for (let attempt = 0; attempt < 2; attempt++) {
-    const answer = await completeJSON(system, user, 160) as { subject?: unknown } | null;
+    const answer = await completeJSON(FEATURE, system, user, 160) as { subject?: unknown } | null;
     const subject = typeof answer?.subject === "string" ? subjectFrom(answer.subject) : "";
     if (subject.length >= 3) return subject;
   }
@@ -213,6 +220,14 @@ export async function clayImage(name: string, subject: string): Promise<ImageRes
     body.input_references = [{ type: "image_url", image_url: { url: master } }];
   }
 
+  // The trace names the master rather than carrying it: the data URL is the
+  // same megabyte every time and says nothing about this drawing.
+  const generation = new Generation(
+    FEATURE,
+    IMAGE_MODEL,
+    { prompt: body.prompt, reference: master ? REFERENCE_URL : null },
+    { aspect_ratio: body.aspect_ratio, n: body.n },
+  );
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
@@ -231,16 +246,25 @@ export async function clayImage(name: string, subject: string): Promise<ImageRes
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 200);
       console.error("openrouter images", response.status, detail);
+      generation.error = `openrouter ${response.status}: ${detail}`;
       // 401/403 is a key problem and retrying spends nothing but time.
       return { error: response.status === 401 || response.status === 403
         ? "not-authorised"
         : `http-${response.status}` };
     }
 
-    return readImage(await response.json());
+    const payload = await response.json();
+    generation.usage = payload?.usage;
+    const drawn = readImage(payload);
+    if ("error" in drawn) generation.error = drawn.error;
+    else generation.output = { image: drawn.contentType, bytes: drawn.bytes.length };
+    return drawn;
   } catch (e) {
-    return { error: e instanceof Error && e.name === "AbortError" ? "timeout" : "fetch-failed" };
+    const error = e instanceof Error && e.name === "AbortError" ? "timeout" : "fetch-failed";
+    generation.error = e instanceof Error ? `${error}: ${e.message}` : error;
+    return { error };
   } finally {
     clearTimeout(timer);
+    generation.end();
   }
 }
