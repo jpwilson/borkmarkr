@@ -1031,13 +1031,16 @@ struct AddSheet: View {
         }
     }
 
-    /// The model, for links the ranking can't call sure, never waited on.
-    /// Silent on every failure: signed out, offline, quota spent. Its answer
-    /// re-ranks the dial, and becomes the stored guess if the bork's filing
-    /// is still the app's and nothing has touched it since asking — even if
-    /// the sheet has closed, where it used to be lost.
+    /// The model, once for every save, however sure the ranking already is,
+    /// and never waited on; not for a save you have already filed or taken
+    /// back. Silent on every failure: signed out, offline, quota spent. Its
+    /// answer is one more piece of evidence: it re-ranks the dial (sure
+    /// keywords or your history with a creator can still win), and becomes
+    /// the stored guess if the bork's filing is still the app's and nothing
+    /// has touched it since asking — even if the sheet has closed, where it
+    /// used to be lost.
     private func askModel(_ url: URL, bork: Bookmark) async {
-        guard let dial, dial.ranking.evidence != .strong,
+        guard let dial, dial.filed == nil, bork.deletedAt == nil,
               let account, let session = await account.currentSession() else { return }
         let request = SmartCategorizer.Context(url: url, title: title, author: author, description: pageDescription)
         let asked = input(for: url)

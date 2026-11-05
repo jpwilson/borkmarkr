@@ -112,18 +112,20 @@ final class QuickFileShareSession {
         enriching?.cancel()
     }
 
-    /// Behind the dial, signed in: the page (`read`, at most 2.5 seconds,
-    /// skipped when the share already said what it is and who made it),
-    /// then, while the ranking still isn't sure and the post has words of
-    /// its own, the model (`judge`, at most 6.5 seconds). The Add sheet's
-    /// rules: every answer reaches the dial through `offer`; the page changes
-    /// what stays only while the dial is untouched, the model's answer
-    /// touched or not, unless something was filed (or filed and undone)
-    /// since asking. When what stays is settled (sure without the model, or
-    /// the model's answer), the page's findings go with it, so
-    /// `PreviewFetcher` doesn't read and ask again as soon as the app opens.
-    /// No network once filed or with no server configured; signed out, there
-    /// is no session to call this with.
+    /// Behind the dial, signed in: the page (`read`, at most 2.5 seconds),
+    /// then, whenever the post has words of its own, the model (`judge`, at
+    /// most 6.5 seconds), however sure the ranking already is: every save
+    /// made by hand gets its judgement once, as one more piece of evidence.
+    /// The Add sheet's rules: every answer reaches the dial through `offer`;
+    /// the page changes what stays only while the dial is untouched, the
+    /// model's answer touched or not, unless something was filed (or filed
+    /// and undone) since asking. The answer settles the save (so does a page
+    /// that leaves the ranking sure when there are no words to ask about):
+    /// the page's findings go with it, marked as read, so `PreviewFetcher`
+    /// doesn't read and ask again as soon as the app opens. A question the
+    /// sheet closes on leaves the save unsettled, for `PreviewFetcher` to
+    /// ask when the app next opens. No network once filed or with no server
+    /// configured; signed out, there is no session to call this with.
     func enrich(
         session: Supabase.Session,
         read: @Sendable (URL) async -> LinkPreview.Result? = {
@@ -135,26 +137,23 @@ final class QuickFileShareSession {
     ) async {
         guard Supabase.isConfigured, model.filed == nil, !closed else { return }
 
-        var ranking = rank()
-        var page: LinkPreview.Result?
-        if !Self.saysWhatAndWho(saved) {
-            page = await read(saved.url)
-            guard !closed else { return }
-        }
+        let page = await read(saved.url)
+        guard !closed else { return }
         if let page {
             input = Self.input(saved, reading: page)
-            ranking = rank()
+            let ranking = rank()
             reoffer(ranking)
             let guess = model.touched ? nil : Self.refiled(kept, by: ranking)
             let next = guess ?? kept
-            // Sure without the model, and that is what stays: the page goes too.
-            if ranking.evidence == .strong, Self.refiled(next, by: ranking) == nil {
+            // Nothing for the model to read, sure without it, and that is
+            // what stays: settled, and the page goes too.
+            if !Self.hasWords(input), ranking.evidence == .strong, Self.refiled(next, by: ranking) == nil {
                 return keep(Self.reading(page, into: next))
             }
             if let guess { keep(guess) }
         }
 
-        guard ranking.evidence != .strong, model.filed == nil, !closed, Self.hasWords(input) else { return }
+        guard model.filed == nil, !closed, Self.hasWords(input) else { return }
         let request = SmartCategorizer.Context(url: input.url, title: input.title, author: input.author,
                                                text: input.text, description: input.description)
         let asked = generation
@@ -168,6 +167,10 @@ final class QuickFileShareSession {
         var next = Self.refiled(kept, by: answered) ?? kept
         next.tags = Self.merged(next.tags, answer.tags)
         if let page { next = Self.reading(page, into: next) }
+        // Settled even when the page ran out of time, or `PreviewFetcher`
+        // would ask again as soon as the app opens. Its usual retry reads
+        // the page an hour later.
+        next.previewFetched = true
         keep(next)
     }
 
@@ -217,13 +220,6 @@ final class QuickFileShareSession {
         draft.categoryID = best.categoryID
         draft.subcategory = best.subcategory
         return draft
-    }
-
-    /// The share already said what it is and who made it.
-    private static func saysWhatAndWho(_ draft: BookmarkDraft) -> Bool {
-        let platform = draft.platform ?? Platform.detect(from: draft.url)
-        return !Categorizer.isDerivedTitle(draft.title, for: draft.url)
-            && !Bookmark.isPlaceholderAuthor(draft.author, url: draft.url, platform: platform)
     }
 
     /// Words someone wrote about the post (a caption, a post, the page's own

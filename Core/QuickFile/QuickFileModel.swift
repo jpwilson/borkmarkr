@@ -62,8 +62,9 @@ final class QuickFileModel {
     private(set) var updateAnnouncement: String?
     /// When a re-deal last moved the centre.
     private(set) var movedAt: Date?
-    /// The model has been asked and hasn't answered. The share sheet waits a
-    /// little for it before closing by itself.
+    /// The model has been asked and hasn't answered. While the guess isn't
+    /// sure without it, the share sheet waits a little for it before closing
+    /// by itself (`QuickFileShareView.waitsForAnswer`).
     var isAsking = false
 
     @ObservationIgnored var onConfirm: (FilingCandidate) -> Void = { _ in }

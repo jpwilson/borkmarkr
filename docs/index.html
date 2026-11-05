@@ -4732,8 +4732,10 @@ function clearDupe() {
       "automatic". There is nothing to wait for and nothing to spin.
    2. The real page title and description arrive → the row gets them, and the
       dial re-ranks on the caption and its hashtags.
-   3. Unless that ranking is already strong, and you're signed in, ask the
-      categorize function (quota'd at 200 a day) and re-rank with its answer.
+   3. Signed in, ask the categorize function (quota'd at 200 a day) once,
+      however sure that ranking already is, and re-rank with its answer: one
+      more piece of evidence, so sure keywords or your history with a
+      creator can still win.
 
    Each new ranking reaches the dial through offer(): untouched, it crossfades;
    touched, nothing moves under your thumb. A topic you pick yourself
@@ -4801,16 +4803,17 @@ async function fetchPreviewInto(url, seq) {
   suggestTopicFor(url, seq, s);
 }
 
-/* Second-pass filing for the links keyword matching can't settle. Silent on
-   every failure — signed out, offline, quota spent, server down all just leave
-   the offline answer where it is. The function drops low-confidence answers
-   itself, so anything that comes back with a topic is at least a fair guess.
+/* The model's judgement, once for every link saved here, however sure the
+   keywords already are; not for a re-save, a topic you picked first, or a
+   save you have filed or taken back. Silent on every failure — signed out,
+   offline, quota spent, server down all just leave the offline answer where
+   it is. The function drops low-confidence answers itself, so anything that
+   comes back with a topic is at least a fair guess.
    It may answer after the sheet has closed: the row still gets it, as long as
    the row still holds the guess we wrote. */
 async function suggestTopicFor(url, seq, session = qf) {
   const s = session;
   if (!s || s.url !== url || demoMode || !store.session || s.pin || s.filed || s.removed) return;
-  if (quickFileRanking(s).evidence === "strong") return;   // a keyword match settled it
   const offline = addOffline;
   try {
     const d = await api("/functions/v1/categorize", { method: "POST", body: {

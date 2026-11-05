@@ -11,6 +11,9 @@ final class QuickFileShareTests: XCTestCase {
                                                    userID: "user", email: "you@example.test")
     private static let skincare = Categorizer.Suggestion(categoryID: "beauty", subcategory: "Skincare",
                                                          tags: ["skincare"], score: 28)
+    /// The same answer at medium confidence: 13 points, one short of sure.
+    private static let skincareMaybe = Categorizer.Suggestion(categoryID: "beauty", subcategory: "Skincare",
+                                                              tags: ["skincare"], score: 13)
 
     @MainActor func testAnUntouchedDialRedealsAndKeepsTheAnswerOnce() async {
         let (share, probe) = Self.share(caption: Self.vague)
@@ -18,11 +21,13 @@ final class QuickFileShareTests: XCTestCase {
             await probe.read()
             return LinkPreview.Result(imageURL: URL(string: "https://example.com/cover.jpg"))
         }, judge: { _, _ in
-            await probe.ask()
+            await probe.ask(share)
             return Self.skincare
         })
         XCTAssertEqual(probe.reads, 1)
         XCTAssertEqual(probe.asks, 1)
+        // Not sure without it: an untouched sheet waits for the answer.
+        XCTAssertEqual(probe.held, [true])
         XCTAssertEqual(share.model.revision, 1)
         XCTAssertEqual(share.model.centre?.categoryID, "beauty")
         XCTAssertNotNil(share.model.movedAt)
@@ -46,38 +51,53 @@ final class QuickFileShareTests: XCTestCase {
         XCTAssertEqual(touchedProbe.writes.map(\.categoryID), ["beauty"])
     }
 
-    @MainActor func testStrongEvidenceNeverAsksTheModel() async {
-        // Sure from the share's own words.
+    @MainActor func testStrongEvidenceIsAskedAboutWithoutHoldingTheSheet() async {
+        // Sure from the share's own words: asked all the same, but the sheet
+        // closes at its usual time rather than wait for the answer. A medium
+        // answer doesn't outrank sure keywords, and it settles the save even
+        // though the page ran out of time.
         let (sure, sureProbe) = Self.share(caption: "Five hip mobility drills")
         await sure.enrich(session: Self.signedIn, read: { _ in
             await sureProbe.read()
             return nil
         }, judge: { _, _ in
-            await sureProbe.ask()
-            return Self.skincare
+            await sureProbe.ask(sure)
+            return Self.skincareMaybe
         })
         XCTAssertEqual(sureProbe.reads, 1)
-        XCTAssertEqual(sureProbe.asks, 0)
-        XCTAssertTrue(sureProbe.writes.isEmpty)
+        XCTAssertEqual(sureProbe.asks, 1)
+        XCTAssertEqual(sureProbe.held, [false])
+        XCTAssertFalse(sure.model.isAsking)
+        XCTAssertEqual(sure.model.centre?.categoryID, "fitness")
+        XCTAssertEqual(sureProbe.writes.count, 1)
+        let settled = sureProbe.writes.last
+        XCTAssertEqual(settled?.categoryID, "fitness")
+        XCTAssertEqual(settled?.subcategory, "Mobility")
+        XCTAssertNil(settled?.filingSource)
+        XCTAssertEqual(settled?.previewFetched, true)
+    }
 
-        // Sure once the page is read: what stays follows it, and takes the page along.
+    @MainActor func testOnlyTheAnswerSettlesASurePage() async {
+        // Sure once the page is read: what stays follows it at once, still
+        // unsettled, and the answer then settles it and takes the page along.
+        // A medium answer doesn't outrank the page's hashtag.
         let (read, readProbe) = Self.share(caption: Self.vague)
         await read.enrich(session: Self.signedIn, read: { _ in
             LinkPreview.Result(author: "@kaylawalks", description: "Five hip mobility drills #mobility")
         }, judge: { _, _ in
             await readProbe.ask()
-            return Self.skincare
+            return Self.skincareMaybe
         })
-        XCTAssertEqual(readProbe.asks, 0)
-        XCTAssertEqual(read.model.revision, 1)
-        XCTAssertEqual(readProbe.writes.count, 1)
+        XCTAssertEqual(readProbe.asks, 1)
+        XCTAssertEqual(read.model.centre?.categoryID, "fitness")
+        XCTAssertEqual(readProbe.writes.map(\.categoryID), ["fitness", "fitness"])
+        XCTAssertEqual(readProbe.writes.map(\.previewFetched), [false, true])
         let kept = readProbe.writes.last
-        XCTAssertEqual(kept?.categoryID, "fitness")
         XCTAssertEqual(kept?.subcategory, "Mobility")
         XCTAssertEqual(kept?.author, "@kaylawalks")
-        XCTAssertEqual(kept?.previewFetched, true)
 
-        // Sure once the page is read, but the dial was touched: what stays doesn't
+        // Sure once the page is read, but the dial was touched: asked all the
+        // same. With no answer (offline, quota spent), what stays doesn't
         // move, and nothing marks the page read over a guess it contradicts.
         let (touched, touchedProbe) = Self.share(caption: Self.vague)
         touched.model.touch()
@@ -85,9 +105,9 @@ final class QuickFileShareTests: XCTestCase {
             LinkPreview.Result(description: "Five hip mobility drills #mobility")
         }, judge: { _, _ in
             await touchedProbe.ask()
-            return Self.skincare
+            return nil
         })
-        XCTAssertEqual(touchedProbe.asks, 0)
+        XCTAssertEqual(touchedProbe.asks, 1)
         XCTAssertTrue(touchedProbe.writes.isEmpty)
     }
 
@@ -134,6 +154,18 @@ final class QuickFileShareTests: XCTestCase {
         XCTAssertTrue(goneProbe.writes.isEmpty)
         XCTAssertEqual(gone.model.revision, 0)
         XCTAssertFalse(gone.model.isAsking)
+
+        // Sure once the page is read, then closed while it was answering: the
+        // guess the page dealt stays, unsettled, for PreviewFetcher to ask.
+        let (cut, cutProbe) = Self.share(caption: Self.vague)
+        await cut.enrich(session: Self.signedIn, read: { _ in
+            LinkPreview.Result(description: "Five hip mobility drills #mobility")
+        }, judge: { _, _ in
+            await cut.close()
+            return Self.skincare
+        })
+        XCTAssertEqual(cutProbe.writes.map(\.categoryID), ["fitness"])
+        XCTAssertEqual(cutProbe.writes.last?.previewFetched, false)
     }
 
     func testTheExtensionBorrowsOnlyALiveTokenAndNeverTheRefreshToken() {
@@ -163,8 +195,15 @@ final class QuickFileShareTests: XCTestCase {
 private final class Probe {
     var reads = 0
     var asks = 0
+    /// For each `ask(_:)`: whether the sheet, untouched, would wait past its
+    /// drain for that answer.
+    var held: [Bool] = []
     var writes: [BookmarkDraft] = []
 
     func read() { reads += 1 }
     func ask() { asks += 1 }
+    func ask(_ share: QuickFileShareSession) {
+        ask()
+        held.append(QuickFileShareView.waitsForAnswer(share.model))
+    }
 }

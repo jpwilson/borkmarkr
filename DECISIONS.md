@@ -1687,3 +1687,29 @@ filing back, because the bork was in the library before. The share sheet is
 unchanged. Its Undo appears for under a second, the sheet stays up and
 still says "Saved to bookmarker", and Undo there brings the dial back to
 choose again.
+
+## The AI judges every save made by hand (feat/quick-file)
+
+**Every save a person makes gets the model's answer once, however sure the
+phone already is.** The owner's rule is an LLM as a judge: the topic and
+subtopic are there straight away, and you tap only to change them. Until now
+the model was asked only when the on-device ranking wasn't sure. Now the Add
+sheet, the share sheet and the web's Add dialog ask it for every save, when
+signed in and within the 200-a-day quota. The answer is still one more piece
+of evidence (high 28, medium 13), not an override, so sure keywords or your
+history with a creator can still win.
+
+**The share sheet doesn't wait for an answer it doesn't need.** When the
+ranking is already sure, the sheet asks but closes at its usual time. An
+answer that lands first is kept, and one that doesn't leaves the save
+unsettled. The page is now always read first (at most 2.5 seconds), because
+the caption is what the model reads. When the ranking isn't sure, the sheet
+still waits for the answer, for up to nine seconds after it appeared.
+
+**PreviewFetcher asks for the shares the sheet couldn't.** A share can arrive
+unsettled because there was no session to borrow, the sheet closed first,
+Quick File was off, or it came from the Shortcut. It is told apart by being
+unread with its page never read. It is asked ahead of the rest, whatever the
+evidence, and its answer is weighed against your filing history the way the
+dial weighs it, not taken as it comes. Imports, syncs, backfills and triage
+keep their old rules.
