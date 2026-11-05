@@ -1825,3 +1825,34 @@ signed out, the tab says an account alone makes the library unlimited.
 The App Review notes describe the sheet as an interest check, because Apple
 requires every feature to be described there. What's New leaves it out,
 because nothing is for sale.
+
+## The share sheet asks however long since the app was opened (feat/quick-file)
+
+**This lifts the "opened within about the last hour" limit.** The share sheet
+still borrows the app's session first, exactly as before. Once that token has
+run out, it asks `categorize` with a share key instead. The app gets the key
+when it syncs (`share_key_issue`, migration 0018): 32 random bytes tied to
+its own auth session, of which the server keeps only a SHA-256. The key sits
+in the Keychain beside the session, for this device only, so it is never in
+a backup. It can do one thing: have `categorize` spend that account's
+200-a-day quota through `ai_quota_consume_shared`, which only the service
+role may call. Every use checks that the key's session still exists, so the
+key dies on sign-out, when the session is ended somewhere else, and with the
+account. The extension still never refreshes, saves or clears anything.
+Without the server part, the app gets no key and nothing changes.
+
+**Not a refresh in the extension, and not longer tokens.** Supabase rotates
+refresh tokens and ends the whole session when a token two generations old
+comes back. An extension that refreshed could sign the person out without
+telling them, in cases no lock between the two processes can rule out.
+Week-long access tokens would still fail eight days later, and would make
+every token a week-long credential that signing out can't revoke.
+
+**Signing out on the web now ends only that browser's session.** With no
+scope, `/auth/v1/logout` ends every session the account has, so signing out
+on bookmarker.lol also signed the phone out. It now passes `scope=local`, as
+the app does. `categorize` no longer asks the gateway to check a JWT, because
+the share sheet sends none. The gateway let the publishable key through
+anyway, so the quota checks were always the gate. `SessionKeychain.save` now
+updates the session in place instead of deleting and re-adding it, because a
+crash between the two signed the person out.

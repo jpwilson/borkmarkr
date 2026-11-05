@@ -19,6 +19,9 @@ import UIKit
 ///
 ///     -caption "<text>"     what the host app sent along with the link
 ///     -quickFileNoMemory    a first share, with no history at all
+///     -quickFileShareKey    ask with the app's share key, as a share sheet
+///                           does once the token it borrows has run out (the
+///                           app gets one when it syncs, signed in)
 struct QuickFileHarness: View {
     let url: URL
 
@@ -94,7 +97,19 @@ struct QuickFileHarness: View {
         }
         outcome = nil
         share = Share(session: session)
-        Task { session.startEnriching(with: await account.currentSession()) }
+        Task { session.startEnriching(with: await caller()) }
+    }
+
+    /// The app's own session, or with `-quickFileShareKey`, its share key.
+    private func caller() async -> Supabase.Caller? {
+        guard CommandLine.arguments.contains("-quickFileShareKey") else {
+            return await account.currentSession().map(Supabase.Caller.session)
+        }
+        guard let held = SessionKeychain.loadShareKey() else {
+            print("[QuickFileHarness] no share key: sign in, then open the app normally once")
+            return nil
+        }
+        return .shareKey(held.key)
     }
 
     private func close(_ line: String) {

@@ -99,11 +99,11 @@ final class QuickFileShareSession {
 
     // MARK: Late answers
 
-    /// Starts `enrich` behind the dial, once, when there is a session to ask
-    /// with. `close()` stops it.
-    func startEnriching(with session: Supabase.Session?) {
-        guard let session, enriching == nil, !closed else { return }
-        enriching = Task { await enrich(session: session) }
+    /// Starts `enrich` behind the dial, once, when there is someone to ask
+    /// as (`SessionKeychain.caller`). `close()` stops it.
+    func startEnriching(with caller: Supabase.Caller?) {
+        guard let caller, enriching == nil, !closed else { return }
+        enriching = Task { await enrich(caller: caller) }
     }
 
     /// The sheet is going: stop asking, and write nothing more.
@@ -125,14 +125,14 @@ final class QuickFileShareSession {
     /// doesn't read and ask again as soon as the app opens. A question the
     /// sheet closes on leaves the save unsettled, for `PreviewFetcher` to
     /// ask when the app next opens. No network once filed or with no server
-    /// configured; signed out, there is no session to call this with.
+    /// configured; signed out, there is no one to call this as.
     func enrich(
-        session: Supabase.Session,
+        caller: Supabase.Caller,
         read: @Sendable (URL) async -> LinkPreview.Result? = {
             await LinkPreview.fetch(for: $0, within: .milliseconds(2500))
         },
-        judge: @Sendable (SmartCategorizer.Context, Supabase.Session) async -> Categorizer.Suggestion? = {
-            await SmartCategorizer.suggest($0, session: $1, within: .milliseconds(6500))
+        judge: @Sendable (SmartCategorizer.Context, Supabase.Caller) async -> Categorizer.Suggestion? = {
+            await SmartCategorizer.suggest($0, caller: $1, within: .milliseconds(6500))
         }
     ) async {
         guard Supabase.isConfigured, model.filed == nil, !closed else { return }
@@ -158,7 +158,7 @@ final class QuickFileShareSession {
                                                text: input.text, description: input.description)
         let asked = generation
         model.isAsking = true
-        let answer = await judge(request, session)
+        let answer = await judge(request, caller)
         model.isAsking = false
         guard let answer, !closed else { return }
         let answered = rank(ai: answer)

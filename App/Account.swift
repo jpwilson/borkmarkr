@@ -28,6 +28,11 @@ final class Account: ObservableObject {
     /// see `pull(context:session:)` for what that cost us.
     private let lastSyncKey = "lastSyncedAt"
 
+    /// Not before this, after `share_key_issue` failed. Sync runs every 30
+    /// seconds while the app is open, and a server without migration 0018
+    /// would otherwise be asked every time.
+    private var shareKeyRetryAt = Date.distantPast
+
     /// A thousand borks per request; most libraries are one request.
     private static let pullPageSize = 1000
     /// A runaway pull is worse than a short one. 30 pages is 30,000 borks.
@@ -88,11 +93,16 @@ final class Account: ObservableObject {
         signOut()
     }
 
+    /// Signed out here at once; the server ends the session afterwards, and
+    /// the share key with it. Signing out never waits for the network.
     func signOut() {
+        let ending = session
         SessionKeychain.clear()
+        SessionKeychain.clearShareKey()
         session = nil
         lastSynced = nil
         UserDefaults.standard.removeObject(forKey: lastSyncKey)
+        if let ending { Task { await Supabase.endSession(ending) } }
     }
 
     /// A session with a usable access token, or `nil`.
@@ -117,6 +127,25 @@ final class Account: ObservableObject {
         return current
     }
 
+    /// Gives the Share Extension a share key for this session, so the share
+    /// sheet can ask the model however long ago the app was opened
+    /// (`SessionKeychain.ShareKey`). One request when there is none for this
+    /// account or it is 30 days old, and none otherwise. A server without
+    /// migration 0018 refuses, and the sheet asks only while the token it
+    /// borrows is live, as before.
+    private func ensureShareKey(_ current: Supabase.Session) async {
+        if let held = SessionKeychain.loadShareKey(), held.userID == current.userID,
+           held.issuedAt > .now.addingTimeInterval(-30 * 86_400) { return }
+        guard Date.now >= shareKeyRetryAt else { return }
+        guard let key = try? await Supabase.issueShareKey(session: current) else {
+            shareKeyRetryAt = .now.addingTimeInterval(3600)
+            return
+        }
+        // Signed out, or into another account, while it was being issued.
+        guard session?.userID == current.userID else { return }
+        SessionKeychain.saveShareKey(.init(key: key, userID: current.userID, issuedAt: .now))
+    }
+
     // MARK: - Sync
 
     /// Push local changes, then pull remote ones.
@@ -133,6 +162,7 @@ final class Account: ObservableObject {
 
         do {
             let session = try await validSession()
+            await ensureShareKey(session)
             // The borks themselves always back up. Topics, quests and opens
             // live in tables a server may not have yet (migrations 0013–0017),
             // and until it does they sync nothing rather than stopping the

@@ -14,48 +14,88 @@ import Security
 /// extension, and what it borrows has no refresh token: a refresh spends the
 /// refresh token (Supabase rotates them), so an extension that refreshed would
 /// leave the app holding a dead one. `Supabase.refresh` isn't there either.
+///
+/// **Beside it, a share key** (`ShareKey`, migration 0018), for when the token
+/// has run out: it lasts an hour, and the app may not have been opened for
+/// days. The server issues the key for this session, it can do one thing
+/// (have `categorize` spend this account's AI quota), and it dies with the
+/// session. It is a second item, kept on this device only, so it is never in
+/// a backup, and the extension can only read it.
 enum SessionKeychain {
     private static let service = "com.jpwilson.borkmarkr"
     private static let account = "session"
+    private static let shareKeyAccount = "share-key"
+
+    /// What `Supabase.issueShareKey` gave the app, and for whom.
+    struct ShareKey: Codable, Sendable {
+        var key: String
+        var userID: String
+        var issuedAt: Date
+
+        /// 64 lowercase hex characters: how `share_key_issue` writes a key,
+        /// and the only shape `categorize` accepts.
+        static func isWellFormed(_ key: String) -> Bool {
+            let digits = UInt8(ascii: "0")...UInt8(ascii: "9"), letters = UInt8(ascii: "a")...UInt8(ascii: "f")
+            return key.utf8.count == 64 && key.utf8.allSatisfy { digits.contains($0) || letters.contains($0) }
+        }
+    }
 
     #if !SHARE_EXTENSION
     static func save(_ session: Supabase.Session) {
         guard let data = try? JSONEncoder().encode(session) else { return }
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        SecItemDelete(query as CFDictionary)
-
-        var insert = query
-        insert[kSecValueData as String] = data
-        insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-        SecItemAdd(insert as CFDictionary, nil)
+        write(data, account: account, accessible: kSecAttrAccessibleAfterFirstUnlock)
     }
 
     static func clear() {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        SecItemDelete(query as CFDictionary)
+        SecItemDelete(item(account) as CFDictionary)
+    }
+
+    static func saveShareKey(_ key: ShareKey) {
+        guard let data = try? JSONEncoder().encode(key) else { return }
+        write(data, account: shareKeyAccount, accessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
+    }
+
+    static func clearShareKey() {
+        SecItemDelete(item(shareKeyAccount) as CFDictionary)
+    }
+
+    /// Replaces the item's data in place, or adds the item when there is
+    /// none. Never delete-then-add: a crash between the two signed the user
+    /// out, and an extension reading in the gap found nothing to borrow.
+    private static func write(_ data: Data, account: String, accessible: CFString) {
+        let query = item(account)
+        let update = [kSecValueData as String: data] as CFDictionary
+        guard SecItemUpdate(query as CFDictionary, update) == errSecItemNotFound else { return }
+        var insert = query
+        insert[kSecValueData as String] = data
+        insert[kSecAttrAccessible as String] = accessible
+        SecItemAdd(insert as CFDictionary, nil)
     }
     #endif
 
     static func load() -> Supabase.Session? {
-        let query: [String: Any] = [
+        read(account).flatMap { try? JSONDecoder().decode(Supabase.Session.self, from: $0) }
+    }
+
+    static func loadShareKey() -> ShareKey? {
+        read(shareKeyAccount).flatMap { try? JSONDecoder().decode(ShareKey.self, from: $0) }
+    }
+
+    private static func item(_ account: String) -> [String: Any] {
+        [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
         ]
-        var item: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
-              let data = item as? Data else { return nil }
-        return try? JSONDecoder().decode(Supabase.Session.self, from: data)
+    }
+
+    private static func read(_ account: String) -> Data? {
+        var query = item(account)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var found: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &found) == errSecSuccess else { return nil }
+        return found as? Data
     }
 
     /// What the Share Extension may ask with: `session` while its access token
@@ -69,6 +109,17 @@ enum SessionKeychain {
         return session
     }
 
-    /// The stored session, if the Share Extension may borrow it.
-    static func borrow() -> Supabase.Session? { borrowable(load()) }
+    /// Who the share sheet asks as: the stored session while it may be
+    /// borrowed, exactly as before, and once its token has run out, the
+    /// share key, if it was issued to the same account, so a sheet never
+    /// asks as the account before a switch. Nil signed out.
+    static func caller(stored: Supabase.Session?, key: ShareKey?, now: Date = .now) -> Supabase.Caller? {
+        guard let stored else { return nil }
+        if let borrowed = borrowable(stored, now: now) { return .session(borrowed) }
+        guard let key, key.userID == stored.userID else { return nil }
+        return .shareKey(key.key)
+    }
+
+    /// `caller`, from what the Keychain holds.
+    static func shareSheetCaller() -> Supabase.Caller? { caller(stored: load(), key: loadShareKey()) }
 }

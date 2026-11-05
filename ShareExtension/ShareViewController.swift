@@ -15,7 +15,8 @@ import UniformTypeIdentifiers
 /// snapshot the app leaves in the App Group: no SwiftData, no OCR, and topic
 /// art only as 240 px thumbnails. Signed in, it also reads the page and asks
 /// the model while it is up (`QuickFileShareSession.enrich`), with a session
-/// borrowed from the app (`SessionKeychain`); the save never waits on either.
+/// borrowed from the app, or once that has run out, the app's share key
+/// (`SessionKeychain`); the save never waits on either.
 ///
 /// **Engineering deviation.** v1 opened the SwiftData container here and wrote
 /// directly. This queues a JSON draft into the App Group inbox instead and
@@ -203,7 +204,7 @@ final class ShareViewController: UIViewController {
         let session = QuickFileShareSession(saved: draft, snapshot: FilingSnapshot.loadShared(),
                                             enqueue: { try Store.enqueue($0) })
         quickFile = session
-        session.startEnriching(with: SessionKeychain.borrow())
+        session.startEnriching(with: SessionKeychain.shareSheetCaller())
         let dial = UIHostingController(rootView: QuickFileShareView(
             session: session,
             onNotNow: { [weak self] in self?.close() },

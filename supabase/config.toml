@@ -3,6 +3,9 @@
 # one; each checks its own shared token instead. `collection-page` is asked for
 # by a stranger with a link and has no token to check either — its credential
 # is the slug, and `collection_by_slug` (0011) is the only thing that opens.
+# `categorize` is also asked by the share sheet with a share key and no JWT
+# (0018). Its quota checks are the gate, as they always were: the gateway's JWT
+# check lets the publishable key through.
 project_id = "pcjuxnhqxyfvgagnblzv"
 
 [functions.thumb]
@@ -12,4 +15,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.collection-page]
+verify_jwt = false
+
+[functions.categorize]
 verify_jwt = false

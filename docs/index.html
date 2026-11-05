@@ -4244,7 +4244,9 @@ function signInWithGoogle() {
   location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${back}`;
 }
 function signOut(msg) {
-  fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+  // This browser's session only. With no scope, Supabase ends every session
+  // the account has, the phone's included, and with it the phone's share key.
+  fetch(`${SUPABASE_URL}/auth/v1/logout?scope=local`, {
     method: "POST",
     headers: { apikey: ANON_KEY, Authorization: `Bearer ${store.session?.access_token ?? ""}` },
   }).catch(() => {});

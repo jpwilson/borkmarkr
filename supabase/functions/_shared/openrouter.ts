@@ -87,7 +87,8 @@ export async function completeJSON(
 }
 
 // The web app calls these from bookmarker.lol, so the browser's preflight
-// must be answered; the JWT check at the gateway still gates the real call.
+// must be answered. The quota check gates the real call, not the gateway:
+// its JWT check lets the public publishable key through.
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -115,6 +116,38 @@ export async function consumeQuota(authorization: string, dailyLimit: number): P
     return allowed.ok && (await allowed.json()) === true;
   } catch (error) {
     console.error("quota check failed", error);
+    return false;
+  }
+}
+
+// `consumeQuota` for the share sheet, which asks with the app's share key
+// (`x-share-key`, migration 0018) once the token it borrows has run out. The
+// same counter, charged to the key's owner. Only the service role may spend a
+// key, so this holds it, the way topic-art's Backend does. Anything but 64
+// lowercase hex characters is refused without asking.
+export async function consumeSharedQuota(key: string, dailyLimit: number): Promise<boolean> {
+  if (!/^[0-9a-f]{64}$/.test(key)) return false;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!serviceKey) {
+    console.error("SUPABASE_SERVICE_ROLE_KEY is not set");
+    return false;
+  }
+  try {
+    const allowed = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/ai_quota_consume_shared`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ p_key: key, daily_limit: dailyLimit }),
+      },
+    );
+    return allowed.ok && (await allowed.json()) === true;
+  } catch (error) {
+    console.error("shared quota check failed", error);
     return false;
   }
 }

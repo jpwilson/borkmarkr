@@ -73,7 +73,14 @@ enum SmartCategorizer {
     /// - Parameter session: a valid Supabase session. Pass `nil` when signed
     ///   out and this returns immediately without touching the network.
     static func suggest(_ context: Context, session: Supabase.Session?) async -> Categorizer.Suggestion? {
-        guard let session, Supabase.isConfigured else { return nil }
+        await suggest(context, caller: session.map(Supabase.Caller.session))
+    }
+
+    /// `suggest` as `caller`: the app's session, or in the share sheet, the
+    /// app's share key once the borrowed token has run out. `nil` returns
+    /// immediately without touching the network.
+    static func suggest(_ context: Context, caller: Supabase.Caller?) async -> Categorizer.Suggestion? {
+        guard let caller, Supabase.isConfigured else { return nil }
 
         let payload = Request(
             url: context.url.absoluteString,
@@ -89,7 +96,7 @@ enum SmartCategorizer {
         guard
             let body = try? JSONEncoder().encode(payload),
             let data = try? await Supabase.invoke(
-                function: "categorize", bodyJSON: body, session: session
+                function: "categorize", bodyJSON: body, caller: caller
             ),
             let decoded = try? JSONDecoder().decode(Response.self, from: data)
         else { return nil }
@@ -103,10 +110,10 @@ enum SmartCategorizer {
     /// here because `Supabase.send` sets every request's own timeout to 20
     /// seconds; losing the race cancels the request rather than leaving it
     /// to finish.
-    static func suggest(_ context: Context, session: Supabase.Session?,
+    static func suggest(_ context: Context, caller: Supabase.Caller?,
                         within limit: Duration) async -> Categorizer.Suggestion? {
         await withTaskGroup(of: Categorizer.Suggestion?.self) { group in
-            group.addTask { await suggest(context, session: session) }
+            group.addTask { await suggest(context, caller: caller) }
             group.addTask {
                 try? await Task.sleep(for: limit)
                 return nil
