@@ -336,7 +336,7 @@
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
 		FF5B92B1C0E0EC3B07C81F24 /* QuickFileCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFileCopy.swift; sourceTree = "<group>"; };
 		FFFF0A9DC6A3394EDEBC96B6 /* QuickFileDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFileDial.swift; sourceTree = "<group>"; };
-		"TEMP_F07F3553-1471-4032-BDEE-E36CF05DBD94" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_E3918CE5-D2C1-4526-A52D-8DC61CE67C46" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -574,10 +574,10 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		"TEMP_0B3BC563-9C74-4AFE-84FC-7E3CBED79A2C" /* borkmarkr */ = {
+		"TEMP_82924F78-DFC7-44E3-BC39-072A6915E3CA" /* borkmarkr */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_F07F3553-1471-4032-BDEE-E36CF05DBD94" /* Config.xcconfig */,
+				"TEMP_E3918CE5-D2C1-4526-A52D-8DC61CE67C46" /* Config.xcconfig */,
 			);
 			path = borkmarkr;
 			sourceTree = "<group>";
@@ -933,7 +933,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_F07F3553-1471-4032-BDEE-E36CF05DBD94" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_E3918CE5-D2C1-4526-A52D-8DC61CE67C46" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -968,7 +968,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 17;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 7RUN765V47;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -988,7 +988,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1020,7 +1020,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_F07F3553-1471-4032-BDEE-E36CF05DBD94" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_E3918CE5-D2C1-4526-A52D-8DC61CE67C46" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1055,7 +1055,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 17;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 7RUN765V47;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -1069,7 +1069,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
