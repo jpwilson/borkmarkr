@@ -522,3 +522,78 @@ Three practical notes:
 - Upload in the numbered order — the first screenshot is most of the decision.
 - If you change the Library layout, re-run both scripts before submitting; a
   screenshot that doesn't match the build is a legitimate rejection reason.
+
+---
+
+## PROPOSAL — ASO for 1.3 (not yet applied; owner to decide)
+
+> Drafted 6 Nov 2026 on `growth/seo-quick-wins`. Nothing above this block has
+> been changed. Every line is true of build 17 (1.3). Subtitle and Keywords
+> only go live with a new version, so paste them into the **1.3** record
+> before submitting; Promotional Text can change any day.
+
+**Why change anything.** The live subtitle and keywords never say *bookmark*
+or *search*, the two words closest to what people type ("bookmark manager",
+"search saved posts", "save instagram posts"). "Bookmarker" is not guaranteed
+to match "bookmark" in App Store search, so the earlier note that "bookmark" is
+covered by the name is not safe to rely on. And 1.3's one-tap filing appears
+nowhere in the copy a browser sees before tapping "more".
+
+**Subtitle** (30 max)
+```
+Bookmark & search saved posts
+```
+*(29/30. Adds "bookmark" and "search"; keeps "saved posts". "Organize" moves
+to the keyword field as "organizer". Fallback if you would rather keep
+"organize" visible: `Organize & search saved posts` (29), and then swap
+"organizer" for "bookmark" in the keywords.)*
+
+**Keywords** (100 max, comma separated, no spaces, nothing from the name or subtitle)
+```
+instagram,tiktok,youtube,twitter,organizer,collection,favorites,read,later,import,ai,folder,shorts
+```
+*(98/100. Dropped from the live field: "manager" (weak alone, and "bookmark
+manager" now forms from subtitle + this), "library", "tags" and the space in
+"read later" (Apple combines single words across fields, so "read,later" still
+forms "read later"). Added: "favorites" (TikTok's own word for saves),
+"collection" (Instagram's), "twitter" (still what most people type), "ai".
+Platform names were already in the approved 1.0.1 field; if a reviewer ever
+objects to them under guideline 2.3.7, replace them with
+`social,feed,clips,saver` rather than arguing.)*
+
+**Promotional Text** (170 max — can be changed today, no build needed)
+```
+New in 1.3: every save files itself in one tap, and the AI reads the caption to pick the topic. Import your Instagram, TikTok, X and YouTube saves and search the lot.
+```
+*(166/170. "The AI" needs an account; the description says so. Swap it in on
+the day 1.3 is approved, not before — until then the live build has no dial.)*
+
+**Description — new first lines** (the only part most people read before "more")
+```
+Save any post from Instagram, TikTok, X or YouTube in one tap, then find it again in seconds.
+
+bookmarker files every save into a topic for you: one tap on the dial, or leave our best guess. Sign in and the AI reads the caption too. Import the thousands you've already saved, search them all, and open any one straight back in its app. Free on iPhone and at bookmarker.lol.
+```
+Then keep the existing description from "You've saved thousands of things."
+onward, with the **IT FILES ITSELF** section replaced by:
+```
+IT FILES ITSELF, IN ONE TAP
+The moment you save, a dial shows the seven likeliest topics with our best guess in the middle. Tap to file it there, turn the dial to pick another, or just leave it. Signed in, the AI reads the caption and suggests a topic and subtopic, and it learns where you file each creator. Anything still unfiled waits in Sort your borks, one card at a time. Fifty topics, over six hundred subtopics, and room for your own.
+```
+*(Every claim is in 1.3: Quick File dial, AI on every hand-made save when
+signed in, creator memory (`FilingMemory`), Sort your borks.)*
+
+**Screenshots (conversion, not ranking).** The first two screenshots are what
+a searcher sees in the results list. Suggested order and captions:
+1. "Every save. One library." — Library with Instagram, TikTok, X and YouTube cards.
+2. "Filed in one tap." — the Quick File dial over a just-saved reel.
+3. "Find anything you saved." — Search with a result.
+4. "Bring the thousands you already have." — Import.
+5. "Also at bookmarker.lol." — the web library.
+
+**Campaign links.** To see which channel sends installs, generate links in
+App Store Connect → App Analytics → Acquisition → Campaigns (it adds your
+`pt=` provider token) with `ct=` set per channel (`ct=producthunt`,
+`ct=reddit`, `ct=tiktok-ad`). The /get smart link currently sends iPhones to
+the plain store URL; whether /get should forward `utm_campaign` as `ct` is a
+decision for the owner, because it touches /get's redirect.
