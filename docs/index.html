@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-itunes-app" content="app-id=6799805479">
-<title>bookmarker — every save, one library</title>
-<meta name="description" content="Everything you save on Instagram, X, TikTok and YouTube, in one library you can actually search.">
+<title>bookmarker — organize saved Instagram, TikTok, X &amp; YouTube posts</title>
+<meta name="description" content="A free iPhone app and web app that puts everything you save on Instagram, TikTok, X and YouTube in one library: filed by topic in one tap, and searchable.">
 <link rel="canonical" href="https://bookmarker.lol/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="bookmarker">
 <meta property="og:url" content="https://bookmarker.lol/">
-<meta property="og:title" content="bookmarker — every save, one library">
-<meta property="og:description" content="Everything you save on Instagram, X, TikTok and YouTube, in one library you can actually search.">
+<meta property="og:title" content="bookmarker — organize saved Instagram, TikTok, X &amp; YouTube posts">
+<meta property="og:description" content="A free iPhone app and web app that puts everything you save on Instagram, TikTok, X and YouTube in one library: filed by topic in one tap, and searchable.">
 <meta property="og:image" content="https://bookmarker.lol/img/share-v2.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="A coral clay bookmark with the Instagram, X, TikTok and YouTube app icons set into it. Every save. One library.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="bookmarker — every save, one library">
-<meta name="twitter:description" content="Everything you save on Instagram, X, TikTok and YouTube, in one library you can actually search.">
+<meta name="twitter:title" content="bookmarker — organize saved Instagram, TikTok, X &amp; YouTube posts">
+<meta name="twitter:description" content="A free iPhone app and web app that puts everything you save on Instagram, TikTok, X and YouTube in one library: filed by topic in one tap, and searchable.">
 <meta name="twitter:image" content="https://bookmarker.lol/img/share-v2.jpg">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
@@ -522,6 +522,12 @@
   .pitch-sub { color: var(--ink-2); font-size: 16px; line-height: 1.55; margin: 0 0 18px; }
   .pitch-points { list-style: none; padding: 0; margin: 0 0 26px; }
   .pitch-points li { padding-left: 26px; position: relative; margin: 9px 0; color: var(--ink); font-weight: 500; }
+  .pitch-kicker { margin: 0 0 10px; color: var(--accent-text); font-size: 13px; font-weight: 700;
+    letter-spacing: .02em; }
+  .pitch-cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; max-width: 400px; }
+  .pitch-cta .btn { flex: 1 1 150px; width: auto; margin: 0; display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px; text-decoration: none; }
+  .pitch-cta-sub { color: var(--meta); font-size: 12.5px; margin: 0 0 22px; }
   .pitch-points li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-text); font-weight: 800; }
   .pitch-art { width: 100%; max-width: 400px; height: auto; border-radius: 22px; margin: 0 0 20px; display: block;
     box-shadow: 0 1px 2px rgba(25,21,16,.04), 0 14px 34px -18px rgba(25,21,16,.22); }
@@ -545,6 +551,8 @@
     .auth-pitch { max-width: none; }
     .pitch-points { margin-bottom: 4px; }
     .pitch-island { margin: 18px 0 0; max-width: none; }
+    .pitch-cta { margin-top: 20px; max-width: none; }
+    .pitch-cta-sub { margin-bottom: 0; }
     .pitch-art { display: none; }
     .auth-pitch .pitch-links { display: none; }
     .auth-card { width: 100%; }
@@ -1123,6 +1131,7 @@
   <div class="auth-wrap">
     <div class="auth-pitch">
       <a class="brand" href="/app"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
+      <p class="pitch-kicker">Bookmark manager for Instagram, TikTok, X &amp; YouTube saves</p>
       <h1 class="pitch-h1">The folder your feeds never gave you.</h1>
       <p class="pitch-sub">Everything you save on Instagram, X, TikTok and YouTube — reels, threads, clips, articles — in one library you can actually search. Filed by topic, automatically.</p>
       <ul class="pitch-points">
@@ -1131,6 +1140,14 @@
         <li>Search everything you've ever saved</li>
         <li>Free — here on the web and <a href="/app">on iPhone</a></li>
       </ul>
+      <div class="pitch-cta">
+        <a class="btn pitch-store" href="https://apps.apple.com/app/id6799805479" data-store-cta>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
+          Get the iPhone app
+        </a>
+        <button class="btn ghost" data-act="choose-signup">Try it on the web</button>
+      </div>
+      <p class="pitch-cta-sub">Free on the App Store, iOS 17 or later. No account for your first 20 saves.</p>
       <a class="pitch-island" href="/palace">
         <span class="pa-tag">New</span>
         <span><b>Explore Library Island</b><small>Your saves as an island: every topic its own zone, every link a camp</small></span>
@@ -5712,6 +5729,7 @@ document.addEventListener("keydown", (e) => {
 
 document.addEventListener("click", (e) => {
   if (e.target.closest('a[href="/app"]')) track("get_the_app_clicked", { where: tab });
+  if (e.target.closest("[data-store-cta]")) track("get_the_app_clicked", { where: "home-hero" });
   // Going back to the thing is the open that counts — same rule as the app's
   // DetailSheet, and what Revisit's "you keep coming back to" is built on.
   if (e.target.closest("#edit-open")) { track("bork_original_opened"); if (editing) bumpOpen(editing); return; }
