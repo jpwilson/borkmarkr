@@ -69,7 +69,7 @@ enum Categorizer {
         /// `.strong` is "Sorted for you", `.thin` is "Our best guess", `.none`
         /// is "Where does this go?". Derived from `score` so the JS port only
         /// has to agree on one number.
-        enum Evidence: String, Sendable { case none, thin, strong }
+        enum Evidence: String, Sendable, Codable { case none, thin, strong }
 
         var evidence: Evidence {
             guard categoryID != nil else { return .none }
@@ -322,6 +322,50 @@ enum Categorizer {
         hashtags: [String]? = nil,
         author: String? = nil
     ) -> Suggestion {
+        let analysis = analyse(url: url, title: title, text: text, description: description,
+                               hashtags: hashtags, author: author)
+
+        // Ties go to taxonomy order rather than to whatever the hash table felt like.
+        var best: (id: String, score: Int)?
+        for category in Taxonomy.all {
+            guard let score = analysis.categoryScores[category.id], score > (best?.score ?? 0) else { continue }
+            best = (category.id, score)
+        }
+        guard let best, best.score >= 6 else {   // below this it's a coincidental substring, not a signal
+            // Honest "don't know". Uncategorised is a real state and the
+            // Explore screen surfaces it, so nothing is lost.
+            return Suggestion(categoryID: nil, subcategory: nil, tags: [])
+        }
+
+        return Suggestion(
+            categoryID: best.id,
+            subcategory: analysis.subScores[best.id]?.sub,
+            tags: tagList(for: analysis.hits[best.id] ?? [], hashtags: analysis.hashtags),
+            score: best.score
+        )
+    }
+
+    /// Everything `suggest` and `scores` read: each category's matcher hits,
+    /// its score and its heaviest subtopic. One pass with two readers, so the
+    /// single answer and the ranked list can never disagree about what a link
+    /// scored.
+    private struct Analysis {
+        var hits: [String: [Hit]]
+        var categoryScores: [String: Int]
+        var subScores: [String: (sub: String, score: Int)]
+        var hashtags: [String]
+    }
+
+    /// `url` is optional so text with no link of its own (the words read off
+    /// a thumbnail) is scored by exactly the same rules, minus the link.
+    private static func analyse(
+        url: URL?,
+        title: String,
+        text: String?,
+        description: String?,
+        hashtags: [String]?,
+        author: String?
+    ) -> Analysis {
         let unwrapped = SocialTitle.unwrap(title)
         let caption = unwrapped.isSocial ? (unwrapped.caption ?? "") : title
         let body = SocialTitle.caption(fromDescription: description ?? "")
@@ -332,7 +376,7 @@ enum Categorizer {
         // weight: a stray word in a path or a bio must never outvote the
         // caption. Hashtags are the author's own filing and score double.
         let authored = normalise([withoutHook(caption), text ?? "", withoutHook(body)].joined(separator: " "))
-        let fromURL = normaliseURL(url)
+        let fromURL = url.map(normaliseURL) ?? ""
         let authorLine = [author, unwrapped.author, unwrapped.bio].compactMap { $0 }.joined(separator: " ")
         let fromAuthor = normalise(authorLine)
         let fromTags = normalise(tags.joined(separator: " "))
@@ -378,24 +422,7 @@ enum Categorizer {
             categoryScores[categoryID] = score
         }
 
-        // Ties go to taxonomy order rather than to whatever the hash table felt like.
-        var best: (id: String, score: Int)?
-        for category in Taxonomy.all {
-            guard let score = categoryScores[category.id], score > (best?.score ?? 0) else { continue }
-            best = (category.id, score)
-        }
-        guard let best, best.score >= 6 else {   // below this it's a coincidental substring, not a signal
-            // Honest "don't know". Uncategorised is a real state and the
-            // Explore screen surfaces it, so nothing is lost.
-            return Suggestion(categoryID: nil, subcategory: nil, tags: [])
-        }
-
-        return Suggestion(
-            categoryID: best.id,
-            subcategory: subScores[best.id]?.sub,
-            tags: tagList(for: hits[best.id] ?? [], hashtags: tags),
-            score: best.score
-        )
+        return Analysis(hits: hits, categoryScores: categoryScores, subScores: subScores, hashtags: tags)
     }
 
     /// `#\w+` from any of the given strings, lowercased, in order, deduped,
@@ -571,6 +598,63 @@ enum Categorizer {
         }
         return w
     }
+}
+
+// MARK: - Every topic, ranked
+
+extension Categorizer {
+
+    /// One topic's keyword evidence for a link, for Quick File's dial.
+    ///
+    /// `suggest` keeps only the winner and only above 6; the dial needs the
+    /// runners-up too, so this is every topic with at least one specific hit,
+    /// however small. `label` is the human spelling of the heaviest specific
+    /// hit, the word a reason line can quote; `fromHashtag` says whether that
+    /// hit was one of the post's own hashtags.
+    struct CategoryScore: Sendable, Equatable {
+        let categoryID: String
+        let score: Int
+        let subcategory: String?
+        let subWeight: Int
+        let label: String?
+        let fromHashtag: Bool
+    }
+
+    /// Same reading and the same numbers as `suggest`, for every topic that
+    /// matched, highest score first, ties in taxonomy order. `url` may be nil
+    /// to score text that came without a link. Mirrored by `Filer.scores` in
+    /// `docs/import.js`.
+    static func scores(
+        url: URL?,
+        title: String,
+        text: String? = nil,
+        description: String? = nil,
+        hashtags: [String]? = nil,
+        author: String? = nil
+    ) -> [CategoryScore] {
+        let analysis = analyse(url: url, title: title, text: text, description: description,
+                               hashtags: hashtags, author: author)
+        var out: [CategoryScore] = []
+        for (categoryID, score) in analysis.categoryScores {
+            // First heaviest wins, in matcher order: longest phrase first.
+            var top: Hit?
+            for hit in analysis.hits[categoryID] ?? [] where !hit.matcher.generic && hit.weight > (top?.weight ?? 0) {
+                top = hit
+            }
+            let sub = analysis.subScores[categoryID]
+            out.append(CategoryScore(categoryID: categoryID, score: score, subcategory: sub?.sub,
+                                     subWeight: sub?.score ?? 0, label: top?.matcher.label,
+                                     fromHashtag: top?.fromHashtag ?? false))
+        }
+        return out.sorted { a, b in
+            if a.score != b.score { return a.score > b.score }
+            return (taxonomyIndex[a.categoryID] ?? .max) < (taxonomyIndex[b.categoryID] ?? .max)
+        }
+    }
+
+    private static let taxonomyIndex: [String: Int] = Dictionary(
+        uniqueKeysWithValues: Taxonomy.all.enumerated().map { ($1.id, $0) }
+    )
 }
 
 /// Takes apart the titles social platforms publish as `og:title`.

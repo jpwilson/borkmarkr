@@ -58,6 +58,10 @@ enum DebugSeed {
             // written it. Set here rather than passed to `init` so the seed
             // doesn't widen a model initialiser it is the only caller of.
             bookmark.imageURLString = sample.image
+            // Filed by hand, as a real library is: these are the history
+            // Quick File learns creators and habits from. (A guess the app
+            // made would teach it nothing.)
+            bookmark.filingSource = "user"
             // Usage signal. Revisit is built entirely from these two fields, so
             // a seed where nothing was ever opened shows a permanently empty
             // "you keep coming back to" — which is the one section a screenshot
@@ -139,6 +143,43 @@ enum DebugSeed {
                 savedAt: daysAgo(offset * 3 + 2)
             )
             bookmark.imageURLString = sample.image
+            bookmark.filingSource = "user"
+            context.insert(bookmark)
+        }
+
+        // Quick File. Three filings of @kaylawalks, so a new save of hers —
+        // the link the share sheet's harness and the `-add` capture use —
+        // arrives sorted ("You filed @kaylawalks here 3 times").
+        for sample in creatorSamples {
+            guard let url = URL(string: sample.url) else { continue }
+            let bookmark = Bookmark(
+                url: url, title: sample.title, author: sample.author,
+                platform: sample.platform, kind: sample.kind,
+                categoryID: sample.category, subcategory: sample.sub,
+                tags: sample.tags, durationSeconds: sample.duration,
+                savedAt: daysAgo(sample.days ?? 3)
+            )
+            bookmark.imageURLString = sample.image
+            bookmark.filingSource = "user"
+            context.insert(bookmark)
+        }
+
+        // Eight saves with no topic yet, for "Sort your borks". Saved a week
+        // or two back, a day and a half apart: older than the week Highlights
+        // reads (eight unfiled saves would otherwise *be* this week's thread)
+        // and spread through the feed rather than heading it. Two are from
+        // creators filed above (@kaylawalks, @physio.jane), so they arrive
+        // sorted; two are from one creator never filed before
+        // (@sourdough.sam), the newer first, so filing it teaches the other.
+        for (offset, sample) in unfiledSamples.enumerated() {
+            guard let url = URL(string: sample.url) else { continue }
+            let bookmark = Bookmark(
+                url: url, title: sample.title, author: sample.author,
+                platform: sample.platform, kind: sample.kind,
+                text: sample.text, durationSeconds: sample.duration,
+                savedAt: Date.now.addingTimeInterval(-(8 + Double(offset) * 1.5) * 86_400)
+            )
+            bookmark.imageURLString = sample.image
             context.insert(bookmark)
         }
 
@@ -212,6 +253,62 @@ enum DebugSeed {
                author: "@dirt.miles", platform: .shorts, kind: .short,
                category: "", sub: "Ultras", tags: ["downhill", "quads"], duration: 44,
                image: Cover.explainer),
+    ]
+
+    /// A creator filed three times by hand: the history the dial reads.
+    private static let creatorSamples: [Sample] = [
+        Sample(url: "https://www.tiktok.com/@kaylawalks/video/7290001",
+               title: "Hip openers before a long run", author: "@kaylawalks",
+               platform: .tiktok, kind: .clip, category: "fitness", sub: "Mobility",
+               tags: ["hips", "running"], duration: 38, days: 3,
+               image: Cover.mobility),
+        Sample(url: "https://www.tiktok.com/@kaylawalks/video/7290002",
+               title: "Ankle mobility you can do while the kettle boils", author: "@kaylawalks",
+               platform: .tiktok, kind: .clip, category: "fitness", sub: "Mobility",
+               tags: ["ankles"], duration: 44, days: 9,
+               image: Cover.footPain),
+        Sample(url: "https://www.tiktok.com/@kaylawalks/video/7290003",
+               title: "Easy runs should feel embarrassingly easy", author: "@kaylawalks",
+               platform: .tiktok, kind: .clip, category: "fitness", sub: "Running",
+               tags: ["easy runs", "running"], duration: 52, days: 20,
+               image: Cover.talkingHead),
+    ]
+
+    /// Saves the app couldn't file, newest first — what triage deals. The
+    /// `category` and `sub` fields are unused: these have none.
+    private static let unfiledSamples: [Sample] = [
+        Sample(url: "https://www.tiktok.com/@kaylawalks/video/7312340001",
+               title: "The 6am thing nobody talks about", author: "@kaylawalks",
+               platform: .tiktok, kind: .clip, category: "", sub: "", tags: [],
+               duration: 41, image: Cover.mobility),
+        Sample(url: "https://www.tiktok.com/@sourdough.sam/video/5521",
+               title: "Day 1 of my sourdough starter", author: "@sourdough.sam",
+               platform: .tiktok, kind: .clip, category: "", sub: "", tags: [],
+               duration: 58, image: Cover.groceries),
+        Sample(url: "https://www.instagram.com/physio.jane/reel/C14kneeflow",
+               title: "Knee pain on the stairs? Try this", author: "@physio.jane",
+               platform: .instagram, kind: .reel, category: "", sub: "", tags: [],
+               duration: 33, image: Cover.footPain),
+        Sample(url: "https://www.tiktok.com/@sourdough.sam/video/5530",
+               title: "Feeding it twice a day changed everything", author: "@sourdough.sam",
+               platform: .tiktok, kind: .clip, category: "", sub: "", tags: [],
+               duration: 47, image: Cover.explainer),
+        Sample(url: "https://www.instagram.com/wanderwithmia/reel/C15lisbon",
+               title: "48 hours in Lisbon: the full itinerary", author: "@wanderwithmia",
+               platform: .instagram, kind: .reel, category: "", sub: "", tags: [],
+               duration: 59, image: Cover.talkingHead),
+        Sample(url: "https://x.com/catdadclub/status/88213",
+               title: "pov: you tried to give the cat a bath", author: "@catdadclub",
+               platform: .x, kind: .thread, category: "", sub: "", tags: [],
+               text: "pov: you tried to give the cat a bath. He has not forgiven me and he never will. The towel is a crime scene."),
+        Sample(url: "https://www.youtube.com/shorts/claymug",
+               title: "Throwing a mug on the wheel, start to finish", author: "@clayhands",
+               platform: .shorts, kind: .short, category: "", sub: "", tags: [],
+               duration: 55, image: Cover.physiology),
+        Sample(url: "https://www.theverge.com/2026/10/film-cameras-are-back",
+               title: "Why film cameras are back", author: "theverge.com",
+               platform: .web, kind: .article, category: "", sub: "", tags: [],
+               image: Cover.postScreenshot),
     ]
 
     /// Real cover art for the seeded borks.

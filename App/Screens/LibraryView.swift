@@ -13,8 +13,10 @@ struct LibraryView: View {
     /// and one sheet with one owner is the only way it never double-presents.
     var onShowWall: (SaveLimitReason) -> Void = { _ in }
     var account: Account? = nil
-    /// False while the Add sheet or the first-run tour is up. A milestone
-    /// nudge waits for a clear screen rather than stacking on top of one.
+    /// False while the root has a sheet up (the Add sheet, the wall and its
+    /// sign-in, Sort your borks, a shared link) or the first-run tour is
+    /// showing. A milestone sheet waits for a clear screen rather than
+    /// stacking on top of one.
     var canInterrupt: Bool = true
 
     @Environment(\.accent) private var accent
@@ -40,6 +42,8 @@ struct LibraryView: View {
     @State private var showingInsights = false
     @State private var showingBackupBanner = false
     @State private var nudge: SignInMilestone?
+    /// The Pro sheet, at 100, 250 and 500 borks. See `ProNudge`.
+    @State private var showingPro = false
     @State private var showingAuth = false
     @State private var authMode: AuthSheet.Mode = .signUp
     /// Select mode: pick borks from any source and share them as one link.
@@ -47,6 +51,17 @@ struct LibraryView: View {
     @State private var selected: Set<String> = []
     @State private var collecting = false
     @StateObject private var previews = PreviewFetcher()
+    /// "Sort your borks", from the banner.
+    @State private var triageDeck: TriageSheet.Deck?
+    /// The unsorted count when the banner was last waved away. It stays away
+    /// until the count goes above this.
+    @AppStorage("triage.snoozedAt") private var sortSnoozedAt = 0
+    /// The dial hint has done its job: its ×, "Try it", or a first filing on
+    /// the dial put it away for good. See `retireDialHintIfFiled`.
+    @AppStorage("dialHint.done") private var dialHintDone = false
+    /// When this build first opened the Library. Only a filing since then
+    /// counts as having found the dial.
+    @AppStorage("dialHint.since") private var dialHintSince = 0.0
 
     /// Everything that counts. A waiting bork is saved and on screen, but it
     /// is not part of the library yet — not in the stats line, not in
@@ -86,6 +101,12 @@ struct LibraryView: View {
         let waitingCount = bookmarks.count - live.count
         let visible = self.visible
         let platforms = presentPlatforms
+        let unsorted = TriageSheet.unfiled(live).count
+        let sorting = unsorted > sortSnoozedAt && !DialHintScreenshot.forced
+        // One card at a time: the hint waits until no other is up, and stays
+        // off the empty Library, which already says how to save.
+        let showsDialHint = DialHintScreenshot.forced || (!dialHintDone && !bookmarks.isEmpty
+            && waitingCount == 0 && !sorting && !showingBackupBanner)
         GeometryReader { viewport in
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -94,6 +115,15 @@ struct LibraryView: View {
                     WaitingBanner(count: waitingCount) { onShowWall(.waiting) }
                         .padding(.horizontal, 18)
                         .transition(.opacity)
+                }
+                if sorting {
+                    SortBanner(
+                        count: unsorted,
+                        onSort: { triageDeck = .unfiled },
+                        onSnooze: { withAnimation(Motion.gentle) { sortSnoozedAt = unsorted } }
+                    )
+                    .padding(.horizontal, 18)
+                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 }
                 if showingBackupBanner {
                     SignInNudgeBanner(
@@ -113,6 +143,11 @@ struct LibraryView: View {
                     )
                     .padding(.horizontal, 18)
                     .transition(.opacity)
+                }
+                if showsDialHint {
+                    DialHint(onTry: { retireDialHint(); onAdd() }, onDismiss: retireDialHint)
+                        .padding(.horizontal, 18)
+                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 }
                 searchEntry
                 insightsEntry
@@ -144,8 +179,17 @@ struct LibraryView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        // Sorting brings the count down; the banner comes back when it rises
+        // past where it was waved away, not merely back to it.
+        .onChange(of: unsorted) { _, count in
+            if count < sortSnoozedAt { sortSnoozedAt = count }
+        }
         .sheet(item: $detail) { bookmark in
             DetailSheet(bookmark: bookmark)
+                .environment(\.accent, accent)
+        }
+        .sheet(item: $triageDeck) { deck in
+            TriageSheet(deck: deck, account: account)
                 .environment(\.accent, accent)
         }
         .sheet(isPresented: $collecting) {
@@ -191,6 +235,10 @@ struct LibraryView: View {
             )
             .environment(\.accent, accent)
         }
+        .sheet(isPresented: $showingPro) {
+            ProSheet(origin: .milestone)
+                .environment(\.accent, accent)
+        }
         .sheet(isPresented: $showingAuth) {
             if let account {
                 AuthSheet(account: account, mode: authMode)
@@ -198,17 +246,32 @@ struct LibraryView: View {
             }
         }
         .onAppear {
+            // Before `markRead`: a share filed on the dial is still unread.
+            // Unanimated, or the card would fade out as the Library opens.
+            retireDialHintIfFiled(animated: false)
             markRead()
             readNudgePolicy()
+            #if DEBUG
+            applyDebugProSheet()
+            #endif
         }
         // Counting from the store, not from a counter the app keeps: a bork
         // saved through the Share Extension arrives when the inbox is drained
         // and must count exactly as much as one saved in the Add sheet.
-        .onChange(of: bookmarks.count) { _, _ in readNudgePolicy() }
+        .onChange(of: bookmarks.count) { _, _ in
+            readNudgePolicy()
+            retireDialHintIfFiled()
+        }
         .onChange(of: account?.isSignedIn ?? false) { _, _ in readNudgePolicy() }
         // A milestone that had to wait for the Add sheet to close comes back
-        // the moment the screen is clear again.
-        .onChange(of: canInterrupt) { _, clear in if clear { readNudgePolicy() } }
+        // the moment the screen is clear again. The Add sheet files on its
+        // dial without changing the count, so that is checked here too.
+        .onChange(of: canInterrupt) { _, clear in
+            if clear {
+                readNudgePolicy()
+                retireDialHintIfFiled()
+            }
+        }
         // Fill in real titles and thumbnails for anything still missing them.
         // Keyed on count so a fresh batch of brks triggers another pass.
         .task(id: bookmarks.count) {
@@ -445,7 +508,9 @@ struct LibraryView: View {
     }
 
     /// Asks `SignInNudge` what the signed-out cues should be doing, from the
-    /// library as it stands. One call site for both surfaces.
+    /// library as it stands, then `ProNudge` whether the Pro sheet is due.
+    /// One call site for every surface, which is what keeps the two sheets
+    /// from ever stacking.
     private func readNudgePolicy() {
         guard let account else {
             showingBackupBanner = false
@@ -465,12 +530,15 @@ struct LibraryView: View {
             borks: borks, signedIn: signedIn, hasSynced: account.lastSynced != nil
         ) else {
             SignInNudge.recordSeen(borks)
+            // Pro gets a turn only with no sign-in sheet due: that one is
+            // about not losing the library, so it goes first, and a Pro
+            // milestone stays due behind it.
+            readProMilestone(borks: borks, signedIn: signedIn)
             return
         }
         // Nothing goes on top of another sheet. Leaving the watermark alone
         // keeps this milestone due for the next time the Library is clear.
-        guard canInterrupt, nudge == nil, !showingAuth, detail == nil,
-              openJourney == nil, !creatingJourney, !showingInsights else { return }
+        guard screenIsClear else { return }
 
         SignInNudge.recordSheetShown(milestone)
         SignInNudge.recordSeen(borks)
@@ -482,6 +550,55 @@ struct LibraryView: View {
             try? await Task.sleep(for: .milliseconds(600))
             nudge = SignInMilestone(id: milestone)
         }
+    }
+
+    /// The Pro sheet at 100, 250 and 500 borks, on the sign-in sheet's rules:
+    /// a crossing this install saw, never over another sheet, and a
+    /// milestone it could not show stays due. See `ProNudge`.
+    private func readProMilestone(borks: Int, signedIn: Bool) {
+        guard let milestone = ProNudge.dueMilestone(borks: borks, signedIn: signedIn) else {
+            ProNudge.recordSeen(borks)
+            return
+        }
+        guard screenIsClear else { return }
+
+        ProNudge.recordSheetShown(milestone)
+        ProNudge.recordSeen(borks)
+
+        // The 100th bork is usually saved in the Add sheet, which is still
+        // dismissing as this runs — same wait as the sign-in sheet.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
+            showingPro = true
+        }
+    }
+
+    /// Whether a milestone sheet may go up now: nothing from the root, and
+    /// none of the Library's own sheets either.
+    private var screenIsClear: Bool {
+        canInterrupt && nudge == nil && !showingPro && !showingAuth && detail == nil
+            && openJourney == nil && !creatingJourney && !showingInsights
+            && triageDeck == nil && !collecting
+    }
+
+    /// The hint is for someone who has not met the dial, so it goes for good
+    /// once they have filed on it: a `"user"` filing saved since this build
+    /// first opened the Library (the Add sheet's, or the web's after a sync),
+    /// or one still unread (the share sheet's, drained since the Library was
+    /// last open). Older `"user"` filings may be the old picker's, so they
+    /// don't count.
+    private func retireDialHintIfFiled(animated: Bool = true) {
+        guard !dialHintDone else { return }
+        if dialHintSince == 0 { dialHintSince = Date.now.timeIntervalSinceReferenceDate }
+        let since = Date(timeIntervalSinceReferenceDate: dialHintSince)
+        guard bookmarks.contains(where: {
+            $0.filingSource == "user" && ($0.isUnread || $0.savedAt >= since)
+        }) else { return }
+        if animated { retireDialHint() } else { dialHintDone = true }
+    }
+
+    private func retireDialHint() {
+        withAnimation(Motion.gentle) { dialHintDone = true }
     }
 
     /// The sign-up flow is the You tab's `AuthSheet`, reused as-is. When the
@@ -534,6 +651,16 @@ struct LibraryView: View {
         selecting = true
         if CollectionsDebug.openCollect { collecting = true }
     }
+
+    /// `-proSheet` — see `ScreenshotDefaults.openProSheet`.
+    private func applyDebugProSheet() {
+        guard ScreenshotDefaults.openProSheet else { return }
+        Task { @MainActor in
+            // After the seed and the first frame, or the sheet is dropped.
+            try? await Task.sleep(for: .milliseconds(700))
+            showingPro = true
+        }
+    }
     #endif
 
     private func markRead() {
@@ -541,6 +668,146 @@ struct LibraryView: View {
         guard !unread.isEmpty else { return }
         for bookmark in unread { bookmark.isUnread = false }
         try? context.save()
+    }
+}
+
+/// "3 borks to sort": the door into triage, wearing the clay compass. Its ×
+/// snoozes it until the count goes up again.
+private struct SortBanner: View {
+    let count: Int
+    let onSort: () -> Void
+    let onSnooze: () -> Void
+
+    @Environment(\.accent) private var accent
+
+    var body: some View {
+        Button(action: onSort) {
+            HStack(spacing: 13) {
+                QuestArt(motif: .compass)
+                    .frame(width: 62, height: 62)
+                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("\(count) \(Copy.borks(count)) to sort")
+                        .font(Typo.display(17, .bold))
+                        .foregroundStyle(Tokens.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("One tap each · about \(Self.estimate(count))")
+                        .font(Typo.ui(12.5, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 6)
+                Text("Sort")
+                    .font(Typo.ui(13.5, .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .frame(height: 34)
+                    .background(accent.base, in: Capsule())
+                    .shadow(color: accent.base.opacity(0.3), radius: 8, y: 4)
+            }
+            .padding(12)
+            .padding(.trailing, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .cardSurface(radius: 20)
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityLabel("\(count) \(Copy.borks(count)) to sort")
+        .accessibilityHint("Opens Sort your borks, one tap each")
+        .overlay(alignment: .topTrailing) {
+            Button(action: onSnooze) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .heavy))
+                    .foregroundStyle(Tokens.inkSecondary)
+                    .frame(width: 22, height: 22)
+                    .background(Tokens.paper, in: Circle())
+                    .overlay(Circle().stroke(Tokens.hairline, lineWidth: 1))
+                    .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .offset(x: 14, y: -14)
+            .accessibilityLabel("Not now")
+        }
+    }
+
+    /// About three seconds a bork, said the way a person would.
+    static func estimate(_ count: Int) -> String {
+        let seconds = max(5, count * 3)
+        return seconds < 60 ? "\(seconds) seconds" : "\(Int((Double(seconds) / 60).rounded(.up))) min"
+    }
+}
+
+/// Where the dial lives, said once. It only comes up after a save, so
+/// someone who has heard of it can search every tab and not find it. The
+/// sort card's clay compass and shape, since both are about where a bork
+/// goes; unlike that card, only "Try it" is a button, so a tap on the words
+/// opens nothing.
+private struct DialHint: View {
+    let onTry: () -> Void
+    let onDismiss: () -> Void
+
+    @Environment(\.accent) private var accent
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 13) {
+            QuestArt(motif: .compass)
+                .frame(width: 62, height: 62)
+                .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("File every bork in one tap")
+                        .font(Typo.display(17, .bold))
+                        .foregroundStyle(Tokens.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Tap + and paste a link, or share from any app. A dial comes up — tap a topic, or just leave our guess.")
+                        .font(Typo.ui(12.5, .medium))
+                        .foregroundStyle(Tokens.inkMeta)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+                Button(action: onTry) {
+                    Text("Try it")
+                        .font(Typo.ui(13.5, .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .frame(minHeight: 34)
+                        .background(accent.base, in: Capsule())
+                        .shadow(color: accent.base.opacity(0.3), radius: 8, y: 4)
+                        .frame(minHeight: Tokens.minTapTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel("Try it")
+                .accessibilityHint("Opens Add a link")
+            }
+            // Clear of the ×, which sits on the corner.
+            .padding(.trailing, 10)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 12)
+        // The 44pt tap area already reaches 5pt below the pill.
+        .padding(.bottom, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface(radius: 20)
+        .overlay(alignment: .topTrailing) {
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .heavy))
+                    .foregroundStyle(Tokens.inkSecondary)
+                    .frame(width: 22, height: 22)
+                    .background(Tokens.paper, in: Circle())
+                    .overlay(Circle().stroke(Tokens.hairline, lineWidth: 1))
+                    .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .offset(x: 14, y: -14)
+            .accessibilityLabel("Hide this tip")
+        }
     }
 }
 
@@ -582,5 +849,20 @@ private struct EmptyFeedState: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// Screenshot hook. `-dialHint` shows the dial hint on its own, whatever its
+/// state, over a seeded library whose unfiled saves would otherwise keep it
+/// behind the sort card. Always false outside DEBUG. Belongs in
+/// `ScreenshotDefaults`, which this round does not touch; move it when that
+/// file is next edited.
+private enum DialHintScreenshot {
+    static var forced: Bool {
+        #if DEBUG
+        return CommandLine.arguments.contains("-dialHint")
+        #else
+        return false
+        #endif
     }
 }

@@ -85,7 +85,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const user = `Window: last ${window}\nCount: ${items.length}\n\n${lines}`;
 
   try {
-    const parsed = await completeJSON(SYSTEM, user, 700) as {
+    const parsed = await completeJSON("insights", SYSTEM, user, 700) as {
       headline?: unknown;
       summary?: unknown;
       spike?: unknown;

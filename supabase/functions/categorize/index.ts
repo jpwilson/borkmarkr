@@ -11,7 +11,7 @@
 // expert" is the exact failure this exists to stop.
 
 import { TAXONOMY, TOPIC_IDS } from "./taxonomy.ts";
-import { completeJSON, consumeQuota, json } from "../_shared/openrouter.ts";
+import { completeJSON, consumeQuota, consumeSharedQuota, json } from "../_shared/openrouter.ts";
 
 const DAILY_LIMIT = 200;
 const MAX_TITLE = 300;
@@ -140,7 +140,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const title = clamp(payload.title, MAX_TITLE);
   if (!url && !title) return json({ error: "url or title required" }, 400);
 
-  if (!await consumeQuota(authorization, DAILY_LIMIT)) {
+  // Two ways in, and the quota is the gate for both: the user's token, or,
+  // from the share sheet once the token it borrows has run out, the app's
+  // share key (migration 0018). The gateway checks neither (config.toml), and
+  // its JWT check let the publishable key through anyway. With neither, the
+  // model is never asked.
+  const shareKey = req.headers.get("x-share-key");
+  if (shareKey === null && !/^Bearer\s+eyJ/i.test(authorization)) return empty();
+  const allowed = shareKey !== null
+    ? await consumeSharedQuota(shareKey, DAILY_LIMIT)
+    : await consumeQuota(authorization, DAILY_LIMIT);
+  if (!allowed) {
     console.warn("quota denied or unavailable");
     return empty();
   }
@@ -164,7 +174,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   ].filter(Boolean).join("\n");
 
   try {
-    const parsed = await completeJSON(SYSTEM, facts, 400, TEMPERATURE) as {
+    const parsed = await completeJSON("categorize", SYSTEM, facts, 400, TEMPERATURE) as {
       topic?: unknown;
       subtopic?: unknown;
       tags?: unknown;

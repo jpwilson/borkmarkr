@@ -1,6 +1,5 @@
 import Foundation
 import SwiftData
-import Security
 import OSLog
 
 /// Signed-in state and two-way sync.
@@ -29,6 +28,11 @@ final class Account: ObservableObject {
     /// see `pull(context:session:)` for what that cost us.
     private let lastSyncKey = "lastSyncedAt"
 
+    /// Not before this, after `share_key_issue` failed. Sync runs every 30
+    /// seconds while the app is open, and a server without migration 0018
+    /// would otherwise be asked every time.
+    private var shareKeyRetryAt = Date.distantPast
+
     /// A thousand borks per request; most libraries are one request.
     private static let pullPageSize = 1000
     /// A runaway pull is worse than a short one. 30 pages is 30,000 borks.
@@ -51,7 +55,7 @@ final class Account: ObservableObject {
             return
         }
         #endif
-        session = Keychain.loadSession()
+        session = SessionKeychain.load()
         lastSynced = UserDefaults.standard.object(forKey: lastSyncKey) as? Date
     }
 
@@ -67,7 +71,7 @@ final class Account: ObservableObject {
             code.trimmingCharacters(in: .whitespaces),
             email: email.trimmingCharacters(in: .whitespaces).lowercased()
         )
-        Keychain.save(new)
+        SessionKeychain.save(new)
         session = new
     }
 
@@ -77,7 +81,7 @@ final class Account: ObservableObject {
             email: email.trimmingCharacters(in: .whitespaces).lowercased(),
             password: password
         )
-        Keychain.save(new)
+        SessionKeychain.save(new)
         session = new
     }
 
@@ -89,11 +93,16 @@ final class Account: ObservableObject {
         signOut()
     }
 
+    /// Signed out here at once; the server ends the session afterwards, and
+    /// the share key with it. Signing out never waits for the network.
     func signOut() {
-        Keychain.clear()
+        let ending = session
+        SessionKeychain.clear()
+        SessionKeychain.clearShareKey()
         session = nil
         lastSynced = nil
         UserDefaults.standard.removeObject(forKey: lastSyncKey)
+        if let ending { Task { await Supabase.endSession(ending) } }
     }
 
     /// A session with a usable access token, or `nil`.
@@ -112,10 +121,29 @@ final class Account: ObservableObject {
         guard var current = session else { throw Supabase.Failure.notConfigured }
         if current.isExpired {
             current = try await Supabase.refresh(current)
-            Keychain.save(current)
+            SessionKeychain.save(current)
             session = current
         }
         return current
+    }
+
+    /// Gives the Share Extension a share key for this session, so the share
+    /// sheet can ask the model however long ago the app was opened
+    /// (`SessionKeychain.ShareKey`). One request when there is none for this
+    /// account or it is 30 days old, and none otherwise. A server without
+    /// migration 0018 refuses, and the sheet asks only while the token it
+    /// borrows is live, as before.
+    private func ensureShareKey(_ current: Supabase.Session) async {
+        if let held = SessionKeychain.loadShareKey(), held.userID == current.userID,
+           held.issuedAt > .now.addingTimeInterval(-30 * 86_400) { return }
+        guard Date.now >= shareKeyRetryAt else { return }
+        guard let key = try? await Supabase.issueShareKey(session: current) else {
+            shareKeyRetryAt = .now.addingTimeInterval(3600)
+            return
+        }
+        // Signed out, or into another account, while it was being issued.
+        guard session?.userID == current.userID else { return }
+        SessionKeychain.saveShareKey(.init(key: key, userID: current.userID, issuedAt: .now))
     }
 
     // MARK: - Sync
@@ -134,6 +162,7 @@ final class Account: ObservableObject {
 
         do {
             let session = try await validSession()
+            await ensureShareKey(session)
             // The borks themselves always back up. Topics, quests and opens
             // live in tables a server may not have yet (migrations 0013–0017),
             // and until it does they sync nothing rather than stopping the
@@ -372,50 +401,5 @@ final class Account: ObservableObject {
         }
         target.updatedAt = remoteUpdated
         target.rebuildSearchBlob()
-    }
-}
-
-/// Tokens are credentials and belong in the Keychain, not UserDefaults —
-/// UserDefaults is a plist any backup or file-access bug can read.
-private enum Keychain {
-    private static let service = "com.jpwilson.borkmarkr"
-    private static let account = "session"
-
-    static func save(_ session: Supabase.Session) {
-        guard let data = try? JSONEncoder().encode(session) else { return }
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        SecItemDelete(query as CFDictionary)
-
-        var insert = query
-        insert[kSecValueData as String] = data
-        insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-        SecItemAdd(insert as CFDictionary, nil)
-    }
-
-    static func loadSession() -> Supabase.Session? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var item: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
-              let data = item as? Data else { return nil }
-        return try? JSONDecoder().decode(Supabase.Session.self, from: data)
-    }
-
-    static func clear() {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        SecItemDelete(query as CFDictionary)
     }
 }

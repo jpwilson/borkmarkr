@@ -76,7 +76,11 @@ struct RootView: View {
     @State private var showingWallAuth = false
     @State private var wallAuthMode: AuthSheet.Mode = .signUp
     @State private var toast: String?
+    /// "Undo" after a filing, "Sort" after shares arrive.
+    @State private var toastAction: ToastAction?
     @State private var toastToken = UUID()
+    /// "Sort your borks", from the inbox toast (and `-triage`).
+    @State private var triage: TriageSheet.Deck?
     /// Drives the You-tab dot. A count rather than a `@Query` of every
     /// bookmark: the root view re-renders on every tab change and does not
     /// need the rows, only how many there are.
@@ -130,7 +134,10 @@ struct RootView: View {
                     },
                     onShowWall: { wall = $0 },
                     account: account,
-                    canInterrupt: !showingAdd && wall == nil && hasOnboarded
+                    // Every sheet the root owns, so a milestone sheet never
+                    // goes up behind one of them.
+                    canInterrupt: !showingAdd && wall == nil && !showingWallAuth
+                        && triage == nil && collectionRoute == nil && hasOnboarded
                 )
                 case .browse: BrowseView(
                     interests: interests,
@@ -161,9 +168,11 @@ struct RootView: View {
                 .environment(\.accent, accent)
 
             if let toast {
-                ToastView(text: toast)
-                    .padding(.bottom, 96)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                ToastView(text: toast, action: toastAction) {
+                    withAnimation(.easeOut(duration: 0.2)) { self.toast = nil }
+                }
+                .padding(.bottom, 96)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .environment(\.accent, accent)
@@ -172,9 +181,9 @@ struct RootView: View {
         .sheet(isPresented: $showingAdd) {
             AddSheet(
                 initialURL: pendingSave,
-                onSaved: { message in
+                onSaved: { message, undo in
                     pendingSave = nil
-                    showToast(message)
+                    showToast(message, action: undo.map { ToastAction(title: "Undo", perform: $0) })
                     tab = .library
                     refreshBorkCount()
                 },
@@ -192,6 +201,10 @@ struct RootView: View {
                 account: account
             )
             .environment(\.accent, accent)
+        }
+        .sheet(item: $triage, onDismiss: refreshBorkCount) { deck in
+            TriageSheet(deck: deck, account: account)
+                .environment(\.accent, accent)
         }
         .sheet(item: $wall) { _ in
             SaveLimitWall(
@@ -258,6 +271,9 @@ struct RootView: View {
                     .notice("Folded custom topic ids: \(folded, privacy: .public) rows re-keyed")
             }
             _ = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
+            // The Share Extension's dial draws topic art from App Group
+            // thumbnails; this keeps them there (off the main actor).
+            QuickFileBridge.installArtIfNeeded(customTopics: customTopics)
             Store.retryOEmbedPreviews(in: context)
             if let saved = AppTab.resolve(startingTabRaw) {
                 tab = saved
@@ -269,6 +285,9 @@ struct RootView: View {
             if DebugSeed.isRequested {
                 DebugSeed.run(in: context)
                 hasOnboarded = true
+                // The seed's own topic arrived after the install above.
+                let seededTopics = (try? context.fetch(FetchDescriptor<CustomTopic>())) ?? []
+                _ = MergedTaxonomy(topics: seededTopics.filter { $0.deletedAt == nil })
             }
             #endif
             ReviewPrompter.recordLaunch()
@@ -282,6 +301,14 @@ struct RootView: View {
                 hasOnboarded = true
                 collectionRoute = .list
             }
+            if ScreenshotDefaults.openTriage {
+                hasOnboarded = true
+                Task { @MainActor in
+                    // After the seed and the first frame, or the sheet is dropped.
+                    try? await Task.sleep(for: .milliseconds(700))
+                    triage = TriageSheet.Deck(rawValue: ScreenshotDefaults.triageDeck ?? "") ?? .unfiled
+                }
+            }
             if let slug = CollectionsDebug.incomingSlug {
                 hasOnboarded = true
                 pendingCollection = slug
@@ -294,6 +321,11 @@ struct RootView: View {
             Task { await account.sync(context: context) }
         }
         .onChange(of: scenePhase) { _, phase in
+            // Leaving: whatever was filed while we were open reaches the
+            // Share Extension's next dial.
+            if phase == .background {
+                QuickFileBridge.refreshSnapshot(context: context)
+            }
             // The Share Extension queues saves while we're backgrounded; pick
             // them up the moment we're visible again.
             if phase == .active {
@@ -418,8 +450,11 @@ struct RootView: View {
 
     private func drain() {
         let result = Store.drainInbox(into: context, signedIn: account.isSignedIn)
+        // The Share Extension ranks from a snapshot of your filings; the
+        // shares just drained may have been filed on its dial.
+        QuickFileBridge.scheduleSnapshot(context: context)
         if result.saved > 0 {
-            showToast(result.saved == 1 ? "1 new bork" : "\(result.saved) new borks")
+            showToast(result.saved == 1 ? "1 new bork" : "\(result.saved) new borks", action: sortAction())
         } else if result.alreadyHad > 0 {
             showToast(result.alreadyHad == 1 ? "Already in your library" : "\(result.alreadyHad) already in your library")
         }
@@ -438,12 +473,36 @@ struct RootView: View {
         }
     }
 
-    private func showToast(_ message: String) {
+    /// "Sort" on the inbox toast — only when something that just arrived
+    /// still has no topic, or only our guess, and there is a deck to open.
+    /// Shares arrive marked unread until the Library has been seen.
+    private func sortAction() -> ToastAction? {
+        let unread = FetchDescriptor<Bookmark>(predicate: #Predicate {
+            $0.deletedAt == nil && $0.waitingSince == nil && $0.isUnread == true
+        })
+        let arrived = (try? context.fetch(unread)) ?? []
+        guard arrived.contains(where: {
+            Taxonomy.category(id: $0.categoryID) == nil || $0.filingSource == "automatic"
+        }) else { return nil }
+        var everything = FetchDescriptor<Bookmark>(predicate: #Predicate {
+            $0.deletedAt == nil && $0.waitingSince == nil
+        })
+        everything.sortBy = [SortDescriptor(\.savedAt, order: .reverse)]
+        let library = (try? context.fetch(everything)) ?? []
+        guard let deck = TriageSheet.deckWorthSorting(library, customIDs: customTopics.map(\.id)) else { return nil }
+        return ToastAction(title: "Sort") { triage = deck }
+    }
+
+    private func showToast(_ message: String, action: ToastAction? = nil) {
         let token = UUID()
         toastToken = token
-        withAnimation(.spring(response: 0.26, dampingFraction: 0.85)) { toast = message }
+        withAnimation(.spring(response: 0.26, dampingFraction: 0.85)) {
+            toast = message
+            toastAction = action
+        }
         Task {
-            try? await Task.sleep(for: .seconds(2.1))
+            // Long enough to reach for the action when there is one.
+            try? await Task.sleep(for: .seconds(action == nil ? 2.1 : 4.5))
             // Only this toast's own timer may take it down. Without the check,
             // a toast shown a second after another vanished a second later.
             guard toastToken == token else { return }
@@ -550,8 +609,20 @@ struct TabDock: View {
     }
 }
 
+/// A toast's one action, after a hairline: "Undo", "Sort".
+struct ToastAction {
+    let title: String
+    let perform: () -> Void
+}
+
 struct ToastView: View {
     let text: String
+    var action: ToastAction? = nil
+    /// As the action runs: the toast goes at once rather than lingering. It
+    /// runs first, so the action can raise the next toast ("Save removed").
+    var onAction: () -> Void = {}
+
+    @Environment(\.accent) private var accent
 
     var body: some View {
         HStack(spacing: 8) {
@@ -560,9 +631,30 @@ struct ToastView: View {
             Text(text)
                 .font(Typo.ui(14, .semibold))
                 .foregroundStyle(.white)
+                .lineLimit(2)
+            if let action {
+                Rectangle()
+                    .fill(Color.white.opacity(0.22))
+                    .frame(width: 1, height: 18)
+                    .padding(.leading, 2)
+                Button {
+                    Haptics.tap()
+                    onAction()
+                    action.perform()
+                } label: {
+                    Text(action.title)
+                        .font(Typo.ui(14, .bold))
+                        .foregroundStyle(accent.base)
+                        .padding(.horizontal, 6)
+                        .frame(minHeight: Tokens.minTapTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .padding(.leading, 18)
+        .padding(.trailing, action == nil ? 18 : 10)
+        .padding(.vertical, action == nil ? 12 : 0)
         .background(Tokens.toastBG, in: Capsule())
         .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
     }

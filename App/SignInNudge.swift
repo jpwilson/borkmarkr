@@ -68,8 +68,9 @@ enum SignInNudge {
 
     private static let bannerDismissedKey = "signInNudgeBannerDismissedAt"
     private static let lastSheetKey = "signInNudgeLastSheetAt"
-    private static let shownMilestonesKey = "signInNudgeShownMilestones"
-    private static let seenCountKey = "signInNudgeSeenBorkCount"
+    /// The watermark and the spent milestones, under the keys this sheet has
+    /// always used: `signInNudgeSeenBorkCount`, `signInNudgeShownMilestones`.
+    private static let ledger = MilestoneLedger(prefix: "signInNudge")
 
     // MARK: - What to show
 
@@ -107,12 +108,9 @@ enum SignInNudge {
     ///   synced.** These are backup reminders, not sign-up requests. Working
     ///   backups skip them entirely.
     static func dueMilestone(borks: Int, signedIn: Bool, hasSynced: Bool) -> Int? {
-        // No watermark yet means this policy has never looked at this library.
-        // Whatever it has already passed is history, not an achievement.
-        guard let watermark = seenCount, quietIsOver(lastSheetKey) else { return nil }
+        guard quietIsOver(lastSheetKey) else { return nil }
         let eligible = signedIn ? (hasSynced ? [] : backupMilestones) : signUpMilestones
-        let shown = shownMilestones
-        return eligible.last { $0 <= borks && $0 > watermark && !shown.contains($0) }
+        return ledger.due(eligible, borks: borks)
     }
 
     /// The one signed-out moment. Twenty-five is deliberately not here — see
@@ -128,16 +126,15 @@ enum SignInNudge {
     /// crossing this number, which is also why the very first call swallows
     /// everything a long-standing library has already passed.
     static func recordSeen(_ borks: Int) {
-        UserDefaults.standard.set(borks, forKey: seenCountKey)
+        ledger.recordSeen(borks)
     }
 
     /// A milestone sheet went up. Spends that milestone for good and starts
     /// the quiet period, so a bulk import that crosses two of them still only
     /// produces one sheet.
     static func recordSheetShown(_ milestone: Int) {
-        let defaults = UserDefaults.standard
-        defaults.set(Array(Set(shownMilestones + [milestone])).sorted(), forKey: shownMilestonesKey)
-        defaults.set(Date.now.timeIntervalSinceReferenceDate, forKey: lastSheetKey)
+        ledger.recordShown(milestone)
+        UserDefaults.standard.set(Date.now.timeIntervalSinceReferenceDate, forKey: lastSheetKey)
     }
 
     /// "Not now" on the sheet. Quiets the banner too: someone who has just
@@ -158,17 +155,50 @@ enum SignInNudge {
 
     // MARK: - Storage
 
-    private static var seenCount: Int? {
-        UserDefaults.standard.object(forKey: seenCountKey) as? Int
-    }
-
-    private static var shownMilestones: [Int] {
-        UserDefaults.standard.array(forKey: shownMilestonesKey) as? [Int] ?? []
-    }
-
     private static func quietIsOver(_ key: String) -> Bool {
         guard let stamp = UserDefaults.standard.object(forKey: key) as? Double else { return true }
         return Date.now.timeIntervalSinceReferenceDate - stamp >= quietPeriod
+    }
+}
+
+/// What a sheet that comes up once at each of a few library sizes has to
+/// remember: the count the app last looked at (the watermark) and the
+/// milestones already spent. The sign-in sheet keeps one and the Pro sheet
+/// another (`ProNudge`), under different prefixes, so neither can spend the
+/// other's milestones.
+///
+/// Bookkeeping only. Who is eligible, any quiet period and whether the
+/// screen is clear stay with each policy and its caller.
+struct MilestoneLedger {
+    /// Keys are `<prefix>SeenBorkCount` and `<prefix>ShownMilestones`.
+    let prefix: String
+
+    /// The highest of `milestones` (ascending) crossed since the app last
+    /// looked and not yet spent, or `nil`. No watermark yet means this
+    /// ledger has never looked at this library: whatever it has already
+    /// passed is history, not an achievement. A bulk crossing returns only
+    /// the highest; the caller's `recordSeen` then moves the watermark past
+    /// the rest for good.
+    func due(_ milestones: [Int], borks: Int) -> Int? {
+        guard let watermark = UserDefaults.standard.object(forKey: seenKey) as? Int else { return nil }
+        let shown = self.shown
+        return milestones.last { $0 <= borks && $0 > watermark && !shown.contains($0) }
+    }
+
+    func recordSeen(_ borks: Int) {
+        UserDefaults.standard.set(borks, forKey: seenKey)
+    }
+
+    /// Spends a milestone for good.
+    func recordShown(_ milestone: Int) {
+        UserDefaults.standard.set(Array(Set(shown + [milestone])).sorted(), forKey: shownKey)
+    }
+
+    private var seenKey: String { prefix + "SeenBorkCount" }
+    private var shownKey: String { prefix + "ShownMilestones" }
+
+    private var shown: [Int] {
+        UserDefaults.standard.array(forKey: shownKey) as? [Int] ?? []
     }
 }
 

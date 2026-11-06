@@ -1492,3 +1492,367 @@ memory metrics only harvest on a device, so the scroll test times itself.
 Card accessibility frames in a scrolled `LazyVStack` are reported taller than
 drawn, so the layout test checks horizontal containment only and attaches a
 screenshot per pass; decorative covers are hidden from accessibility.
+
+## Quick File: saved first, filed in one more tap (feat/quick-file)
+
+Every save now gets a dial: seven likely topics, the best guess in the
+centre, one more tap to file it. It appears on the share sheet, in the
+iPhone's Add sheet, in the web's Add dialog, and in a triage deck for
+whatever is left unfiled. The save is never part of the decision. It
+happens first, exactly where it happened before, and the dial only ever
+writes a filing onto a save that already exists.
+
+**"Advisory" now means "stored as a guess until you confirm it."** The rule
+was that every caller lets the user override the Categorizer *before
+saving*. Quick File saves before anyone has looked, so the override moves to
+*before it counts*: the best guess is stored with `filingSource:
+"automatic"`, shown as a guess, may be re-filed by enrichment, and never
+replaces `"user"`. Only a tap on the dial, a pick in the full picker or a
+filing in triage writes `"user"`. A save with no valid topic is unfiled; a
+legacy save with no `filingSource` is never nagged about. Nothing waits on
+the ranking, the preview, OCR or the model.
+
+**The Share Extension now asks, which reverses "deliberately unchanged".**
+The Add-sheet section above left it alone: "one tap over someone else's app,
+no screen to ask on". That was right while asking meant waiting. Now
+`Store.enqueue` is still tap 1 and still the first thing that happens, and
+the dial appears over the saved card. Tap 2 re-enqueues the same inbox file
+(named after a hash of the bookmark's id, so it is replaced atomically) with
+`"user"`, which `Store.save` already lets win. "Not now" keeps the guess: it
+drains after 6 seconds without a touch, any touch stops it, 60 seconds is the
+hard cap, and under VoiceOver or Switch Control there is no timer at all.
+There is no "Undo save" in the extension. A setting, "Ask where it goes after
+sharing" (on by default), brings back the old one-tap exit. The extension
+still never opens SwiftData, uses the network, calls the model, runs OCR or
+decodes a full-size image. It ranks from a snapshot the app leaves in the App
+Group (`FilingSnapshot`, `quickfile/snapshot-v1.json`) and draws topic art
+from 240 px thumbnails the app copies there. `project.yml` is unchanged: the
+extension keeps SF Rounded rather than bundling Bricolage.
+
+**One ranking, written twice and held together.** `Core/FilingSuggest.swift`
+and `docs/filing-suggest.js` score each topic as keywords
+(`Categorizer.scores` / `Filer.scores`), plus on-screen text at half weight
+capped at 13, plus the model's answer (high 28, medium 13), plus 12 per
+filing of this creator up to 36, plus 6 per filing of this website up to 18
+(web links only), plus the recency of your filings in that topic up to 6 (3
+a week, 2 a month, 1 a year). Seven distinct topics go on the ring: by score,
+then your most recent filing there, then taxonomy order. A pin (the filing a
+save already has, or its stored guess) leads, and the onboarding interests
+fill empty seats. The centre is preselected only for a reason about this link
+and a score of 6 or more. "Sorted for you" is still 14, the Categorizer's own
+line, but it also needs a reason about the link itself (its words, hashtags,
+creator, site or the model). So on-screen text and habit can lift a guess up
+the ring but never make it strong alone, while a second save from a creator
+you filed a minute ago does arrive strong. Whole numbers, code-point
+ordering, ASCII keys and a `now` passed in make the two ports agree exactly:
+`Scripts/gen_filing_fixture.swift` writes 21 ranking cases, 18 key cases and 9
+OCR cases to `Scripts/fixtures/filing_suggest_cases.json`, and `node
+Scripts/check_filing_parity.mjs` compares the JS field by field. It is a
+script, not CI; making it a test needs the owner's sign-off. `suggest` is
+byte-for-byte unchanged: `scores` is the same analysis read a second way, and
+the 52-case categorizer fixture still matches without being regenerated.
+
+**A creator is a key, not a name.** It is the handle in the URL when the URL
+names one, otherwise the stored author unless that is a placeholder (empty, a
+platform name, the link's own host), folded to `a–z 0–9`. So `@Kayla.Walks` on
+TikTok, `kayla_walks` on X and a "Kayla Walks" channel are one person, with
+the same key on both platforms. Web links have no creator: their author is
+usually the site, which the domain already counts, and counting it twice let
+one website outvote what the page said. The reason line shows the URL's
+handle or the author exactly as stored, never an invented "@".
+
+**No new tables.** History is the bookmarks themselves: topic, subtopic,
+author, URL, `filing_source` and `updated_at` already sync (`filing_source`
+since 0016). Memory is rebuilt on demand (on the web from the live rows, on
+the phone from SwiftData, in the extension from the snapshot) out of your own
+filings from the last 365 days, capped at 400 creators and 200 sites with
+three picks each, and 24 habits. No migration, no server change. On-screen
+text is cached on the device by `stableID` and never synced, and `stableID`
+itself is untouched.
+
+**Triage is "Sort your borks".** Two decks: "Not filed yet" (no valid topic,
+newest first) and "Check our guesses" (automatic saves from the last 30 days
+whose ranking today is not strong), each card showing its current guess
+first. Memory updates as you sort. The model is asked only when signed in,
+never in the demo, only for the next two cards with no evidence at all, and
+at most 12 times a session: the 200-a-day quota is shared with every AI
+feature. The end screen is the clay compass, "Everything has a home." and
+"12 sorted in 41 s".
+
+**Late answers never move under a thumb.** A preview, OCR or the model can
+re-rank after the dial is up. An untouched dial crossfades to the new order;
+a touched one is frozen, and the newcomer gets a ✨ badge on the ring or an
+"Also likely" chip below it. A tap on the centre within 350 ms of it changing
+files what was showing before the change. On the web a late model answer is
+written back only while the row is still `automatic` and unchanged (the old
+Add dialog lost it), and each row's writes go out one after another.
+
+**The web library follows the phone.** Cards come in three shapes. Media: the
+cover's aspect follows iOS's per-kind heights (7/8 for clips, reels and
+Shorts, 1/1 pins, 6/5 posts, 3/2 videos), at most 340 px, cropped from 50% 30%
+to keep burned-in captions out, with a duration chip when one is known.
+Poster: the topic's tint and clay stamp when there is no picture or it died,
+and no play icon. Text: threads and articles. A cover that fails is
+remembered (`localStorage` `bm.bad-img`, up to 1,500 URLs) so the next load
+draws a poster, not an empty gradient box. Grid, Compact and List take their
+columns from the grid's own width; at 1100 px and up a rail carries the sort
+card, an insight, side quests and top topics, all with their clay art.
+Colours come from `docs/palette.js`, an exact port of `CategoryPalette`: HSB,
+which is not the HSL the old web maths fed the same numbers to. One post
+saved from two platforms groups into one card as a display rule, off in select
+mode and in search. Cards take J/K, the arrows and Enter, and "+ Bork a link"
+sits in the nav with an N hint. No dark theme.
+
+**Deliberately not done.** The model in the extension (it needs a shared
+Keychain, which changes provisioning). OCR in the extension or in search.
+Fixed seats for topics on the ring: the next notch is always the next best
+guess. New tables or columns, ThumbHash placeholders, `grid-lanes` masonry.
+Merging duplicates across URL forms, which is an identity migration. Sound in
+the product. And two subtopic names the web Filer calls generic and the Swift
+does not ("Hotels", "Presets"): fixing either side changes `suggest`'s
+answers, which this round promised not to do, so the parity fixture steers
+clear of them and the gap waits for a round that can regenerate the
+categorizer fixture.
+
+## The share sheet asks the model after all (feat/quick-file)
+
+**This reverses "the model in the extension"**, which the Quick File round
+left out on purpose because a shared Keychain seemed to mean a provisioning
+change. Keychain sharing needed no provisioning change. Both targets now list
+`$(AppIdentifierPrefix)com.jpwilson.borkmarkr` as their only
+`keychain-access-groups` entry. That is the app's own application identifier,
+which was already its default group and is where the signed-in session has
+always been stored, so the app writes exactly where it did, nothing moves,
+and nobody signed in needs a migration. Every profile for both targets
+already allows any group under the team's prefix (`7RUN765V47.*`). Nothing
+may ever be listed ahead of that entry: the first one is where the app
+writes.
+
+**The extension borrows the session and never refreshes it.**
+`SessionKeychain` (moved out of `Account`, unchanged) lends the extension the
+stored session only while its access token has at least 120 seconds left,
+with the refresh token blanked. `save`, `clear` and `Supabase.refresh` are
+compiled out of the extension (`SHARE_EXTENSION`), because Supabase rotates
+refresh tokens and an extension that refreshed would leave the app holding a
+spent one. Access tokens last an hour and the app refreshes when it opens, so
+the sheet can ask only if bookmarker was opened within about the last hour.
+Otherwise nothing changes: the save keeps the dial's guess, and
+`PreviewFetcher` reads the page and files it when the app next opens.
+
+**The same policy as the Add sheet.** While the dial is up, signed in, with a
+server configured and nothing filed yet, `QuickFileShareSession.enrich` reads
+the page (at most 2.5 seconds, skipped when the share already carried a real
+title and creator) and re-ranks the dial: an untouched dial re-deals and the
+stored guess follows it. Then, while the ranking is still not sure and the
+post has words of its own, it asks the same `categorize` function (at most
+6.5 seconds). The answer is ranked at the AI's weight, offered to the dial,
+and stored as the guess, still automatic, whether the dial was touched or
+not, unless something was filed (or filed and undone) since asking or the
+sheet has closed. When what stays is settled (sure without the model, or the
+model's answer), the page read goes with it under the Add sheet's
+`writePreview` rules, marked as read, so `PreviewFetcher` doesn't read and
+ask again as soon as the app opens. A touched dial's guess that the page has
+since contradicted is not marked, so `PreviewFetcher` can still correct it.
+Both deadlines are raced in code: `Supabase.send` sets every request's own
+timeout to 20 seconds, and losing the race cancels the request.
+
+**The save still never waits.** Tap 1 is unchanged. The drain is still six
+seconds; past it, an untouched sheet whose question is still out waits for
+the answer, but no later than nine seconds after it appeared, and it never
+closes within 1.5 seconds of a re-deal that moved the centre. A touch hands
+over to the 60-second cap; VoiceOver and Switch Control stay untimed. There
+is no new UI and no new copy: the reason line, "Sorted for you" and
+VoiceOver's "Suggestion updated: …" already say it.
+
+**Instagram rarely gets an answer.** Its share sheet usually hands over a bare
+link and its page is a login wall, so there are no words to ask about, and
+those saves are filed when the app next opens, as before. The extension still
+never opens SwiftData, runs OCR or decodes a full-size image.
+
+## Undo after filing takes the save back (feat/quick-file)
+
+On the phone's Add sheet and in the web's Add dialog, the toast after tap 2
+offered Undo, and Undo only put the guess back. The bork stayed in the
+library, often under the very topic that had just been tapped, so Undo looked
+like it did nothing, and pasting the link again said "Already in your
+library". People read Undo there as "I didn't mean to save that".
+
+Now the Undo takes back everything the sheet did. A bork the sheet made
+leaves the library: it is tombstoned like any delete, under the guess it was
+saved with, so pasting the link again starts over, here or on another
+device. The toast before the Undo says "Saved to Fitness › Running" rather
+than "Filed to …", and the one after it says "Save removed". A save over a
+bork that was already there ("Save again anyway") still only gets its
+filing back, because the bork was in the library before. The share sheet is
+unchanged. Its Undo appears for under a second, the sheet stays up and
+still says "Saved to bookmarker", and Undo there brings the dial back to
+choose again.
+
+## The AI judges every save made by hand (feat/quick-file)
+
+**Every save a person makes gets the model's answer once, however sure the
+phone already is.** The owner's rule is an LLM as a judge: the topic and
+subtopic are there straight away, and you tap only to change them. Until now
+the model was asked only when the on-device ranking wasn't sure. Now the Add
+sheet, the share sheet and the web's Add dialog ask it for every save, when
+signed in and within the 200-a-day quota. The answer is still one more piece
+of evidence (high 28, medium 13), not an override, so sure keywords or your
+history with a creator can still win.
+
+**The share sheet doesn't wait for an answer it doesn't need.** When the
+ranking is already sure, the sheet asks but closes at its usual time. An
+answer that lands first is kept, and one that doesn't leaves the save
+unsettled. The page is now always read first (at most 2.5 seconds), because
+the caption is what the model reads. When the ranking isn't sure, the sheet
+still waits for the answer, for up to nine seconds after it appeared.
+
+**PreviewFetcher asks for the shares the sheet couldn't.** A share can arrive
+unsettled because there was no session to borrow, the sheet closed first,
+Quick File was off, or it came from the Shortcut. It is told apart by being
+unread with its page never read. It is asked ahead of the rest, whatever the
+evidence, and its answer is weighed against your filing history the way the
+dial weighs it, not taken as it comes. Imports, syncs, backfills and triage
+keep their old rules.
+
+## A one-time hint for the dial (feat/quick-file)
+
+The dial only appears after a save, so someone who has heard of it can look
+through every tab and not find it. The owner did exactly that. The Library
+now shows one small card, "File every bork in one tap", that says where the
+dial is (+ and paste, or share from any app), with a Try it button that
+opens Add a link. It goes for good after the ×, after Try it, or after the
+first filing on the dial since this build. It never stacks with another card
+(the sort card, the backup banner, waiting borks), and it stays off the empty
+Library, which already explains saving. It borrows the sort card's clay
+compass and shape, since both are about where a bork goes.
+
+## Every public page counts its visitors (feat/quick-file)
+
+The written pages, Library Island, the 404 page and /get/ now carry the same
+PostHog block as the home page, so PostHog sees everyone who lands on
+bookmarker.lol, not only people who open the web app. The nine written pages
+get it from `Scripts/seo-pages/tpl.py`, so regenerating them keeps it. Three
+places differ on purpose:
+- The 404 page leaves it out on /c/ links. Those turn into the collection
+  page, which counts its readers with no cookie and no profile, as the
+  privacy policy promises.
+- /get/ sends iPhones to the App Store, which is another site. It now leaves
+  just after PostHog has sent the pageview, and never more than 800 ms after
+  loading (it used to leave after 60 ms).
+- Library Island's CSP now names PostHog's two hosts and the snippet's hash.
+  PostHog's api host accepts events for any project, so that is a deliberate
+  gap in what the CSP fences off.
+
+/web/ goes straight to /, which counts the visit, so it has no snippet of its
+own.
+
+## Every AI call is traced in Langfuse (feat/quick-file)
+
+**One trace per model call, named after the feature.** The backend talks to a
+model in exactly two places, `completeJSON` (`_shared/openrouter.ts`) and
+`clayImage` (`_shared/clay.ts`). Each call records one Langfuse generation:
+- the messages sent and the text that came back;
+- the model and its parameters, and the start and end times;
+- the tokens, and the cost OpenRouter reports as `usage.cost`.
+
+The trace is named and tagged `categorize`, `insights`, `name-quest`,
+`quest-brief` or `topic-art`. `feature` is `completeJSON`'s first argument and
+is required, so no caller can leave it out. A failed call goes in as level
+ERROR with its reason: an HTTP error, an empty or unparseable reply (with its
+`finish_reason`), a network error, or an image refusal. Every function
+returns and throws exactly what it did before.
+
+**OTLP, not the ingestion API.** Langfuse Cloud stops taking traces on
+`/api/public/ingestion` on 16 November 2026, so `_shared/langfuse.ts` posts
+OTLP/HTTP JSON to `/api/public/otel/v1/traces`, with Basic auth and
+`x-langfuse-ingestion-version: 4`. There is no SDK and no dependency.
+
+**Tracing can't slow or break a request.** It is configured from the
+environment only:
+- `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`. Both must be set, or
+  tracing is a silent no-op.
+- `LANGFUSE_BASE_URL`. `LANGFUSE_HOST` also works; the default is the EU host.
+- `LANGFUSE_ENVIRONMENT`. The default is `production`.
+
+The span is sent once the answer is in, in the background under
+`EdgeRuntime.waitUntil`, with a three-second timeout, and every error is
+caught.
+
+**Who asked is never sent.** There is no user id (hashed or not), no email and
+no IP. The quota already caps anyone at 200 calls a day, and an identifier
+would turn the log into a record of what each account asked, which the App
+Store listing ("No tracking") and the privacy page rule out. The image trace
+records the file type and size, never the bytes. `docs/privacy.html` says
+this in a new section, "Checking the AI's work". The privacy page has to be
+live before the secrets are set.
+
+## bookmarker Pro is a link that counts taps, not a shop (feat/quick-file)
+
+**The owner wants to know whether people would pay before building any of
+it, so Pro is shown and nothing is sold.** There is no StoreKit, no product,
+no entitlement, no Stripe and no limit, and nobody is ever stopped from
+saving (`SaveLimit` is unchanged). The intended model, if it goes live, is
+free up to 100 saves and Pro for unlimited. The prices are the owner's:
+Monthly $9.99, Yearly $99.99 (two months free against monthly) and Lifetime
+$199.99.
+
+**The app sends nothing; the website counts.** `ProSheet` lists the three
+plans with an honest footnote ("Pro isn't on sale yet… nothing is charged").
+A tap opens
+`https://bookmarker.lol/pro?plan=<monthly|yearly|lifetime>&from=<app-milestone|app-you>`
+in Safari, not an in-app browser, because the age-rating answers rely on
+there being none. The app's listing promises "No ads. No tracking. No
+analytics.", which stays true. The sheet comes up by itself once each when
+the live library first reaches 100, 250 and 500 borks (`ProNudge`). It uses
+the sign-in sheet's watermark, now shared as `MilestoneLedger` with keys of
+its own, so it never fires on launch or for a library already past a
+milestone. It never goes over another sheet or while the sign-in sheet is
+due: that one is about not losing the library, so it goes first. The other
+way in is a "Plan" row on the You tab. Both are signed in only, because
+signed out, the tab says an account alone makes the library unlimited.
+
+**bookmarker.lol/pro is a waitlist with three prices.**
+- A plan in the link counts as choosing it. Choosing says plainly that Pro
+  isn't on sale and offers to hold that price with an email, which goes into
+  `beta_signups` with `source` set to `pro-<plan>-<from>`.
+- PostHog gets `pro_plan_chosen` and `pro_reserved` with the plan and the
+  source, never the email.
+- The page is `noindex` and out of the sitemap.
+- The web app links to it from the You page and from a one-time toast at 100
+  borks (`from=web-you`, `web-milestone`).
+- /lifetime and its $30 founders' offer are unchanged.
+
+The App Review notes describe the sheet as an interest check, because Apple
+requires every feature to be described there. What's New leaves it out,
+because nothing is for sale.
+
+## The share sheet asks however long since the app was opened (feat/quick-file)
+
+**This lifts the "opened within about the last hour" limit.** The share sheet
+still borrows the app's session first, exactly as before. Once that token has
+run out, it asks `categorize` with a share key instead. The app gets the key
+when it syncs (`share_key_issue`, migration 0018): 32 random bytes tied to
+its own auth session, of which the server keeps only a SHA-256. The key sits
+in the Keychain beside the session, for this device only, so it is never in
+a backup. It can do one thing: have `categorize` spend that account's
+200-a-day quota through `ai_quota_consume_shared`, which only the service
+role may call. Every use checks that the key's session still exists, so the
+key dies on sign-out, when the session is ended somewhere else, and with the
+account. The extension still never refreshes, saves or clears anything.
+Without the server part, the app gets no key and nothing changes.
+
+**Not a refresh in the extension, and not longer tokens.** Supabase rotates
+refresh tokens and ends the whole session when a token two generations old
+comes back. An extension that refreshed could sign the person out without
+telling them, in cases no lock between the two processes can rule out.
+Week-long access tokens would still fail eight days later, and would make
+every token a week-long credential that signing out can't revoke.
+
+**Signing out on the web now ends only that browser's session.** With no
+scope, `/auth/v1/logout` ends every session the account has, so signing out
+on bookmarker.lol also signed the phone out. It now passes `scope=local`, as
+the app does. `categorize` no longer asks the gateway to check a JWT, because
+the share sheet sends none. The gateway let the publishable key through
+anyway, so the quota checks were always the gate. `SessionKeychain.save` now
+updates the session in place instead of deleting and re-adding it, because a
+crash between the two signed the person out.

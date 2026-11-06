@@ -62,6 +62,37 @@ enum ScreenshotDefaults {
 
     static var addURL: URL? { value(for: "-add").flatMap { URL(string: $0) } }
 
+    /// `-triage` opens "Sort your borks" on launch; `-triage guesses` opens
+    /// its second deck, "Check our guesses".
+    ///
+    /// Triage sits behind the Library's banner, a toast or a button on the
+    /// "Not filed yet" page, so a capture of it needs a launch state of its
+    /// own. With `-seed` there are eight unfiled saves to sort, two of them
+    /// from creators the seed has filed before.
+    static var openTriage: Bool {
+        #if DEBUG
+        return CommandLine.arguments.contains("-triage")
+        #else
+        return false
+        #endif
+    }
+
+    static var triageDeck: String? { value(for: "-triage") }
+
+    /// `-proSheet` opens the Pro sheet over the Library, as the 100-bork
+    /// milestone would. Run it with `-seed`, which finishes the first-run
+    /// tour and puts a library behind the sheet.
+    ///
+    /// The milestone fires once each at 100, 250 and 500 and never on a
+    /// fresh install, so nothing else reaches it on demand.
+    static var openProSheet: Bool {
+        #if DEBUG
+        return CommandLine.arguments.contains("-proSheet")
+        #else
+        return false
+        #endif
+    }
+
     /// `-picker "runn"` opens the topic picker over the Add sheet with that
     /// already typed, which is the only state where the picker's ordering —
     /// the thing being photographed — exists at all.

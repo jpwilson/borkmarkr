@@ -1,8 +1,22 @@
+import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
 /// The primary way things get into bookmarker: you're in Instagram, you tap
 /// Share, you pick bookmarker, it's saved.
+///
+/// **Then it asks where it goes (Quick File).** The save still happens first
+/// and exactly as before — tap 1 is `Store.enqueue`, nothing waits on a
+/// ranking. Once it is written, the watchdog stands down, the run is recorded
+/// as saved, and the card gives way to the dial (`QuickFileShareView`). Tap 2
+/// re-enqueues the same inbox file as the person's own filing; "Not now"
+/// keeps the guess. With "Ask where it goes after sharing" turned off in the
+/// app, the one-tap exit below is unchanged. The dial ranks from the
+/// snapshot the app leaves in the App Group: no SwiftData, no OCR, and topic
+/// art only as 240 px thumbnails. Signed in, it also reads the page and asks
+/// the model while it is up (`QuickFileShareSession.enrich`), with a session
+/// borrowed from the app, or once that has run out, the app's share key
+/// (`SessionKeychain`); the save never waits on either.
 ///
 /// **Engineering deviation.** v1 opened the SwiftData container here and wrote
 /// directly. This queues a JSON draft into the App Group inbox instead and
@@ -37,11 +51,17 @@ final class ShareViewController: UIViewController {
 
     private let card = StatusCard()
     private var done = false
+    /// Guards only until the save is written. After that Quick File has as
+    /// long as the person needs, under its own drain and cap.
+    private var watchdog: Task<Void, Never>?
+    /// The dial's state, kept alive while it is on screen.
+    private var quickFile: QuickFileShareSession?
 
     private enum Timing {
         /// A host that never calls back costs this much, not the whole share.
         static let perProvider: Duration = .milliseconds(2500)
-        /// The request is completed by this point, no matter what.
+        /// Unless the save is written first, the request is completed by this
+        /// point, no matter what.
         static let watchdog: Duration = .seconds(5)
         static let savedToast: Duration = .milliseconds(600)
         static let failedToast: Duration = .milliseconds(1800)
@@ -58,10 +78,13 @@ final class ShareViewController: UIViewController {
         // iOS presents the extension as a sheet with its own opaque surface,
         // so `.clear` never showed the host through — it showed system grey.
         view.backgroundColor = StatusCard.Palette.paper
+        // Paper and ink whatever the phone's appearance, like the app.
+        overrideUserInterfaceStyle = .light
         showCard()
 
-        Task { @MainActor in
+        watchdog = Task { @MainActor in
             try? await Task.sleep(for: Timing.watchdog)
+            guard !Task.isCancelled else { return }
             finish(.timeout)
         }
         Task { @MainActor in await handleInput() }
@@ -161,10 +184,68 @@ final class ShareViewController: UIViewController {
 
         do {
             try Store.enqueue(draft)
-            finish(.saved)
         } catch {
-            finish(.couldntSave)
+            return finish(.couldntSave)
         }
+        guard QuickFileSettings.askAfterShare else { return finish(.saved) }
+        askWhereItGoes(saved: draft)
+    }
+
+    /// Quick File. The save is already in the inbox, so from here nothing can
+    /// lose it: the watchdog stands down, the run is recorded as saved, and
+    /// the card makes way for the dial for as long as the person needs it.
+    @MainActor
+    private func askWhereItGoes(saved draft: BookmarkDraft) {
+        watchdog?.cancel()
+        ShareOutcome.record(.saved, in: UserDefaults(suiteName: Store.appGroupID))
+        // The save is written: the fading card's Cancel must not undo the share.
+        card.isUserInteractionEnabled = false
+
+        let session = QuickFileShareSession(saved: draft, snapshot: FilingSnapshot.loadShared(),
+                                            enqueue: { try Store.enqueue($0) })
+        quickFile = session
+        session.startEnriching(with: SessionKeychain.shareSheetCaller())
+        let dial = UIHostingController(rootView: QuickFileShareView(
+            session: session,
+            onNotNow: { [weak self] in self?.close() },
+            onDone: { [weak self] _ in self?.close() }
+        ))
+        dial.view.backgroundColor = .clear
+        dial.view.alpha = 0
+        dial.view.translatesAutoresizingMaskIntoConstraints = false
+        addChild(dial)
+        view.addSubview(dial.view)
+        NSLayoutConstraint.activate([
+            dial.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            dial.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            dial.view.topAnchor.constraint(equalTo: view.topAnchor),
+            dial.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        dial.didMove(toParent: self)
+        UIView.animate(withDuration: 0.2) {
+            dial.view.alpha = 1
+            self.card.alpha = 0
+        } completion: { _ in
+            self.card.removeFromSuperview()
+        }
+    }
+
+    /// The exit once the dial is up: "Not now", the drain, the cap, or a
+    /// filing that has had its moment. The outcome was recorded when the save
+    /// was written; this only hands the host its screen back, once, after
+    /// stopping the page read and the model so nothing lands after it.
+    @MainActor
+    private func close() {
+        guard !done else { return }
+        done = true
+        quickFile?.close()
+        extensionContext?.completeRequest(returningItems: nil)
+    }
+
+    /// Swiped away: the same stop as `close`.
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        quickFile?.close()
     }
 
     /// The one exit. Whichever of the save, the Cancel, the watchdog or a

@@ -2329,7 +2329,7 @@ Get the app
 
 ## bookmarker — Privacy Policy
 
-Last updated 7 September 2026
+Last updated 4 November 2026
 
 bookmarker saves links you choose to save. This policy describes what is stored, where, and who can see it.
 
@@ -2365,15 +2365,21 @@ Signing in is how we verify who you are. We store your email address for the sol
 
 bookmarker sorts saved links into topics. Almost all of that happens on your device, offline, by matching words in the title and address.
 
-When that is not enough to place a link and you are signed in, the app may ask a language model instead. In that case the link’s address, its title, the account that posted it, and any tags you typed are sent to our server and from there to a language model provider acting on our behalf, which returns a suggested topic. That provider does not use the request to train models. Your notes and your email address are never sent. If you are signed out, this never happens.
+When that is not enough to place a link and you are signed in, the app may ask a language model instead. In that case the link’s address, its title, the post’s caption or text and hashtags, the account that posted it, and any tags you typed are sent to our server and from there to a language model provider acting on our behalf, which returns a suggested topic. That provider does not use the request to train models. Your notes and your email address are never sent. If you are signed out, this never happens.
 
-The web app at bookmarker.lol works the same way: it files your link in your browser first, offline, and only asks a language model when that comes back with nothing and you are signed in. The same four things are sent, and nothing else.
+The web app at bookmarker.lol works the same way: it files your link in your browser first, offline, and only asks a language model when that comes back with nothing and you are signed in. The same things are sent, and nothing else.
 
 The suggestion is only a suggestion: it is shown to you and you can change it before saving.
 
 ### Library highlights
 
-If you are signed in, the app can summarise what you have been saving lately. To do that, it sends the titles, topics and tags of up to 40 of your recent saves — never the links themselves, never your notes — to that same language model provider, which returns a short summary. This only runs inside the app for you; the result is not stored on our server and is not visible to anyone else. Signed out, this feature is off.
+If you are signed in, the app can summarise what you have been saving lately. To do that, it sends the titles, topics and tags of up to 40 of your recent saves — never the links themselves, never your notes — to that same language model provider, which returns a short summary. This only runs inside the app for you. The result is not stored with your library and is not visible to anyone else; the only copy we keep is in the log of AI requests described below. Signed out, this feature is off.
+
+### Checking the AI’s work
+
+Every request our server sends to an AI model — to file a link, write your library highlights, name or sum up a side quest, or draw a picture for a topic you made — is logged with Langfuse, a service that keeps these logs for us. Each entry holds what was sent, such as the link and its title or caption, and the answer that came back (for a picture, just its file type and size), along with how long it took and what it cost. We use the log to check the quality and the cost of the AI features — whether links are being filed in the right place, for example — and for nothing else.
+
+The log holds no account details: not your email address, not your account ID, and not your IP address, so an entry does not say whose request it was. For the same reason, entries cannot be looked up by account, and deleting your account does not remove ones already logged. The log is not used for advertising, and it is not sold or shared.
 
 ### Shared collections
 
@@ -2401,7 +2407,7 @@ To delete your account and everything stored on the server — your library, thu
 
 ### The website
 
-If you leave your email address on bookmarker.lol to hear about the beta or the launch, it is stored on our servers and used only to email you about bookmarker. No one else can see the list. To be removed, reply to any of those emails or write to hello@bookmarker.lol.
+If you leave your email address on bookmarker.lol to hear about the beta, the launch or bookmarker Pro, it is stored on our servers and used only to email you about bookmarker. For Pro, we also note the plan you picked and where you found it (the app or the website). No one else can see the list. To be removed, reply to any of those emails or write to hello@bookmarker.lol.
 
 The website and web app use PostHog (hosted in the United States) for product analytics and session replay, so we can see where people get stuck and fix it. Replays mask everything you type. There are no advertising trackers, and none of this data is sold or shared.
 

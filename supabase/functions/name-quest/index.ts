@@ -58,7 +58,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }).join("\n\n");
 
   try {
-    const parsed = await completeJSON(SYSTEM, facts, 350) as { names?: unknown } | null;
+    const parsed = await completeJSON("name-quest", SYSTEM, facts, 350) as { names?: unknown } | null;
     const names = Array.isArray(parsed?.names)
       ? parsed.names
         .filter((row: { id?: unknown; title?: unknown }) =>

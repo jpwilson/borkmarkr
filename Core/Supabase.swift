@@ -126,7 +126,12 @@ enum Supabase {
         return try session(from: data)
     }
 
+    #if !SHARE_EXTENSION
     /// Swaps an expiring refresh token for a fresh session.
+    ///
+    /// The app's alone. The Share Extension borrows the app's session
+    /// (`SessionKeychain`), and a refresh there would spend the refresh token
+    /// the app still holds, so it cannot be compiled in.
     static func refresh(_ session: Session) async throws -> Session {
         guard let config = Config.current else { throw Failure.notConfigured }
         let body = ["refresh_token": session.refreshToken]
@@ -134,6 +139,36 @@ enum Supabase {
                                   body: body, config: config, token: nil)
         return try self.session(from: data)
     }
+
+    /// Ends this session on the server, and with it the share key tied to
+    /// it (migration 0018). `scope=local` ends this one only: with no scope,
+    /// Supabase signs the account out everywhere. Logging out needs a live
+    /// access token, so an expired one is refreshed first, and that session
+    /// is never kept. Failures are ignored: the phone has already signed out.
+    static func endSession(_ session: Session) async {
+        guard let config = Config.current else { return }
+        var current = session
+        if current.isExpired {
+            guard let fresh = try? await refresh(current) else { return }
+            current = fresh
+        }
+        _ = try? await post(path: "/auth/v1/logout?scope=local", body: [:],
+                            config: config, token: current.accessToken)
+    }
+
+    /// A share key for this session (migration 0018): what the Share
+    /// Extension asks `categorize` with once the token it borrows has run
+    /// out. 32 random bytes as hex, tied to the session's id on the server,
+    /// which keeps only their hash. A server without 0018 refuses, and the
+    /// share sheet goes on as before.
+    static func issueShareKey(session: Session) async throws -> String {
+        let data = try await rpc("share_key_issue", bodyJSON: Data("{}".utf8), session: session)
+        guard let key = (try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)) as? String,
+              isShareKey(key)
+        else { throw Failure.decoding }
+        return key
+    }
+    #endif
 
     private static func session(from data: Data) throws -> Session {
         guard
@@ -274,6 +309,25 @@ enum Supabase {
 
     // MARK: - Edge Functions
 
+    /// Who an Edge Function is called as.
+    enum Caller: Sendable {
+        /// The signed-in user, with their access token.
+        case session(Session)
+        /// The Share Extension, with the app's share key once the token it
+        /// borrows has run out (`SessionKeychain.ShareKey`). Only
+        /// `categorize` accepts one, and only to spend the key owner's quota.
+        case shareKey(String)
+    }
+
+    /// 64 lowercase hex characters: how `share_key_issue` writes a share
+    /// key, and the only shape `categorize` accepts. Here rather than beside
+    /// the Keychain item, so this file still compiles on its own for the
+    /// standalone checks.
+    static func isShareKey(_ key: String) -> Bool {
+        let digits = UInt8(ascii: "0")...UInt8(ascii: "9"), letters = UInt8(ascii: "a")...UInt8(ascii: "f")
+        return key.utf8.count == 64 && key.utf8.allSatisfy { digits.contains($0) || letters.contains($0) }
+    }
+
     /// Calls an Edge Function as the signed-in user.
     ///
     /// Functions are where anything needing a secret lives — the app never
@@ -281,12 +335,25 @@ enum Supabase {
     /// reason as `upsert`.
     static func invoke(function: String, bodyJSON: Data,
                        session: Session, timeout: TimeInterval = 12) async throws -> Data {
+        try await invoke(function: function, bodyJSON: bodyJSON, caller: .session(session), timeout: timeout)
+    }
+
+    /// `invoke` as `caller`. A share key goes in its own header, with no
+    /// `Authorization`: it is not a token, and nothing but `categorize`
+    /// reads it.
+    static func invoke(function: String, bodyJSON: Data,
+                       caller: Caller, timeout: TimeInterval = 12) async throws -> Data {
         guard let config = Config.current else { throw Failure.notConfigured }
 
         var request = URLRequest(url: config.url.appendingPathComponent("functions/v1/\(function)"))
         request.httpMethod = "POST"
         request.setValue(config.anonKey, forHTTPHeaderField: "apikey")
-        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        switch caller {
+        case .session(let session):
+            request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        case .shareKey(let key):
+            request.setValue(key, forHTTPHeaderField: "x-share-key")
+        }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = bodyJSON
         request.timeoutInterval = timeout

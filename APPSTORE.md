@@ -64,6 +64,38 @@ names the web app — which 1.0's promo text never mentioned.)*
 
 ---
 
+## What's New in 1.3 (4,000 char max — release notes, per version)
+
+```
+Every save now files itself in one more tap — or none at all.
+
+ONE TAP TO FILE
+Save a link with + or from any app's Share button and a dial comes up: the seven likeliest topics, with our best guess in the middle. Tap to file it there, turn the dial to pick another, or just leave it and it's filed under the guess. Subtopics sit underneath, one tap each.
+
+THE AI READS THE POST
+Signed in, every save gets a second opinion from the AI. It reads the caption, picks a topic and a subtopic, and moves the dial when it answers — you only tap if it's wrong. Your own habits count too: file a creator's posts somewhere and the next one goes there by itself.
+
+SORT YOUR BORKS
+Anything not filed yet, and any guess worth a second look, waits in Sort your borks: one card at a time, one tap each.
+
+UNDO MEANS UNDO
+Saved something by mistake? The Undo after saving now takes the whole save back, not just the topic.
+
+THE WEB LIBRARY, REBUILT
+bookmarker.lol now looks and works like the app: covers, topic colours, the same dial when you add a link, and keyboard shortcuts.
+
+Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
+```
+*(Every line is in 1.3. "Signed in" because the AI needs an account, and it
+answers within the 200-a-day quota; on a share, the answer reaches the dial
+while the sheet is still up when bookmarker can ask from the share sheet, and
+otherwise when the app next opens, so the notes promise "when it answers", not
+"instantly". The Pro preview on the You tab is left out on purpose: Pro isn't
+on sale, and listing it here would invite a reviewer to look for an in-app
+purchase that doesn't exist.)*
+
+---
+
 ## What's New in 1.1 (4,000 char max — release notes, per version)
 
 ```
@@ -234,7 +266,7 @@ rather Apple call a different one.
 **Notes** (paste the block below; keep it under 4,000 characters)
 ```
 DEMO ACCOUNT
-Use the sign-in details above (review@bookmarker.lol). You tab → Sign in → enter the email → the app asks for the password. This is the one address that uses a password: every other user receives a six-digit code by email, and a review address can't receive mail. Every feature can be tested signed out; tapping "Not now" works. The one thing an account changes is the number of saves: a signed-out library holds 20 borks (free, no trial, no purchase), and signing up makes it unlimited and backs it up. There is no paid tier and nothing in the app costs money.
+Use the sign-in details above (review@bookmarker.lol). You tab → Sign in → enter the email → the app asks for the password. This is the one address that uses a password: every other user receives a six-digit code by email, and a review address can't receive mail. Every feature can be tested signed out; tapping "Not now" works. The one thing an account changes is the number of saves: a signed-out library holds 20 borks (free, no trial, no purchase), and signing up makes it unlimited and backs it up. There is no paid tier and nothing in the app costs money. The You tab's "bookmarker Pro" row (signed in), and a sheet that comes up once when a library reaches 100, 250 and 500 saves, are an interest check: no in-app purchases are configured and nothing is sold in the app or on the web. Each plan opens bookmarker.lol/pro in Safari, which says Pro isn't on sale yet and offers an optional email list; nothing limits saving. New in 1.3: after a save, a dial suggests the topic (one tap files it), and signed in, the AI reads the caption to suggest a topic and subtopic.
 
 WHAT THE APP IS, AND FOR WHOM
 bookmarker is a personal bookmark manager for people who save reels, threads, videos and articles across several apps and can't find them again. Users save links they chose — via the Share sheet or by pasting — into one library. Each save is filed under a topic, tagged, searchable, and can carry a note. "Side quests" group saves into a small to-do (recipes to cook, places to visit). Audience: general, rated 4+; typical users are adults who save a lot on social apps.

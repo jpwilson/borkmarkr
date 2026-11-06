@@ -6,8 +6,9 @@ import SwiftData
 ///
 /// Runs from the Library screen rather than at save time on purpose: saving must
 /// stay instant and offline (the core product rule), and the Share Extension is
-/// memory-capped and has no business doing network work. So a brk lands
-/// immediately with a slug title, and the card upgrades itself moments later.
+/// memory-capped and gone in seconds — signed in, it reads the page and asks the
+/// model only while its dial is up (`QuickFileShareSession.enrich`). So a brk
+/// lands immediately with a slug title, and the card upgrades itself moments later.
 ///
 /// **Filing after the fact.** A reel shared from Instagram arrives as a bare
 /// URL: the extension's offline pass has only `@reel on Instagram` to go on and
@@ -18,6 +19,18 @@ import SwiftData
 /// signed in, and only for brks whose filing is still the machine's. A topic
 /// the user picked in the meantime wins: the brk's `updatedAt` is snapshotted
 /// before the request and the answer is dropped if it moved.
+///
+/// **A share made by hand is asked whatever the evidence.** Every save made
+/// by hand gets the model's judgement once. A share the share sheet didn't
+/// settle (no session to borrow, Quick File turned off, the Shortcut, or a
+/// question the sheet closed on) is asked here instead, however confident
+/// the offline pass is, ahead of the rest, and its answer is weighed the way
+/// the sheet's dial weighs it: one more piece of evidence (`FilingSuggest`),
+/// so sure keywords or your history with the creator can still win. It is
+/// told apart by `isUnread`, which only the share sheet and the Shortcut set,
+/// and by nothing having read its page yet. Imports, syncs and backfills
+/// never carry that, and keep the rule above; so does a share the Library
+/// has already marked read.
 ///
 /// Concurrency is capped and results are written on the main actor, because
 /// SwiftData contexts are not safe to touch from arbitrary threads.
@@ -33,14 +46,24 @@ final class PreviewFetcher: ObservableObject {
     /// shared with every other AI feature, and a big import must not spend it
     /// in one scroll: the rest stay on their offline answer.
     private let maxModelCalls = 8
+    /// Thumbnails read for on-screen text per pass: a download (usually from
+    /// the cover cache) and a quick Vision pass each. Four keeps up with a
+    /// normal day's saves without making a pass feel heavy.
+    private let maxThumbnailReads = 4
 
-    /// A brk whose metadata just landed and whose filing is still in doubt.
+    /// A brk whose metadata just landed and that the model is asked about:
+    /// its filing is still in doubt, or it is a share the share sheet didn't
+    /// settle.
     private struct Candidate {
         let id: String
         let context: SmartCategorizer.Context
         /// `updatedAt` after the metadata write. Any change after this is the
         /// user's, and the model's answer must not overwrite it.
         let stamp: Date
+        /// A share the share sheet didn't settle: asked whatever the
+        /// evidence, ahead of the rest, and its answer weighed like the
+        /// sheet's.
+        let share: Bool
     }
 
     /// - Parameter account: for the second-pass filing. `nil` (signed out,
@@ -50,7 +73,10 @@ final class PreviewFetcher: ObservableObject {
             .filter { $0.needsPreview && !inFlight.contains($0.id) }
             .prefix(24)
 
-        guard !pending.isEmpty else { return }
+        guard !pending.isEmpty else {
+            await readThumbnails(of: bookmarks)
+            return
+        }
 
         var candidates: [Candidate] = []
 
@@ -84,12 +110,42 @@ final class PreviewFetcher: ObservableObject {
 
         try? context.save()
 
-        guard !candidates.isEmpty, let account, let session = await account.currentSession() else { return }
-        for candidate in candidates.prefix(maxModelCalls) {
-            guard let better = await SmartCategorizer.suggest(candidate.context, session: session) else { continue }
-            file(better, on: candidate, in: context)
+        if !candidates.isEmpty, let account, let session = await account.currentSession() {
+            // Shares first: each is one save made by hand, and the cap is
+            // there for imports.
+            let queue = candidates.filter(\.share) + candidates.filter { !$0.share }
+            // What a share's answer is weighed against, as on the dial.
+            let weighing = queue.contains(where: \.share)
+                ? (memory: QuickFileBridge.memory(bookmarks), order: Self.taxonomyOrder(in: context))
+                : nil
+            for candidate in queue.prefix(maxModelCalls) {
+                guard let better = await SmartCategorizer.suggest(candidate.context, session: session) else { continue }
+                file(better, on: candidate, in: context, weighing: weighing)
+            }
+            try? context.save()
         }
-        try? context.save()
+
+        await readThumbnails(of: bookmarks)
+    }
+
+    /// On-screen text for the saves still waiting on a topic — none yet, or
+    /// only the app's guess — so the Quick File dial and triage have it to
+    /// hand. Read quickly (`.fast`), newest first, a few a pass, and never for
+    /// a filing that is someone's decision. It stays on this device
+    /// (`ThumbnailText`), is never synced and never sent anywhere.
+    private func readThumbnails(of bookmarks: [Bookmark]) async {
+        var due: [(id: String, image: URL)] = []
+        for bookmark in bookmarks {
+            if due.count == maxThumbnailReads { break }
+            guard bookmark.deletedAt == nil, !bookmark.isWaiting, let image = bookmark.imageURL,
+                  Taxonomy.category(id: bookmark.categoryID) == nil
+                    || EnrichmentPolicy.mayFile(source: bookmark.filingSource),
+                  !ThumbnailText.hasRead(bookmark.id, accurate: false) else { continue }
+            due.append((bookmark.id, image))
+        }
+        for entry in due {
+            _ = await ThumbnailText.read(entry.id, imageURL: entry.image, accurate: false)
+        }
     }
 
     /// Writes the metadata and says whether the brk still needs filing.
@@ -106,6 +162,9 @@ final class PreviewFetcher: ObservableObject {
         // Explicit provenance only. Legacy choices cannot safely be inferred
         // by rerunning a categorizer whose rules may since have changed.
         let machineFiled = EnrichmentPolicy.mayFile(source: bookmark.filingSource)
+        // A share the share sheet didn't settle: still unread, and nothing
+        // has read its page. Noted before the attempt is stamped below.
+        let share = bookmark.isUnread && bookmark.previewFetchedAt == nil && (bookmark.enrichmentAttempts ?? 0) == 0
 
         // Always stamp the attempt, so a page with no metadata isn't retried
         // on every single scroll.
@@ -160,23 +219,29 @@ final class PreviewFetcher: ObservableObject {
             description: result.description, author: result.author
         )
         if after.isConfident {
-            // The caption and hashtags settle it; no model needed.
+            // The caption and hashtags settle it; no model needed, except
+            // for a share's judgement.
             bookmark.categoryID = after.categoryID
             bookmark.subcategory = after.subcategory
             if bookmark.tagsEdited == false { bookmark.tags = Self.merged(bookmark.tags, after.tags) }
             bookmark.touch()
-            return nil
+            guard share else { return nil }
         }
         return Candidate(
             id: id,
             context: .init(url: url, title: bookmark.title, author: result.author ?? bookmark.author,
                            text: bookmark.text, description: result.description),
-            stamp: bookmark.updatedAt
+            stamp: bookmark.updatedAt,
+            share: share
         )
     }
 
     /// Applies the model's answer, unless the brk moved since it was asked.
-    private func file(_ better: Categorizer.Suggestion, on candidate: Candidate, in context: ModelContext) {
+    /// A share's answer is weighed as the share sheet's dial would have
+    /// weighed it, so sure keywords or your history with the creator can
+    /// still win; the rest take the answer as it comes.
+    private func file(_ better: Categorizer.Suggestion, on candidate: Candidate, in context: ModelContext,
+                      weighing: (memory: FilingMemory, order: [String])?) {
         let id = candidate.id
         var descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate { $0.id == id })
         descriptor.fetchLimit = 1
@@ -186,10 +251,25 @@ final class PreviewFetcher: ObservableObject {
               bookmark.deletedAt == nil
         else { return }
 
-        bookmark.categoryID = better.categoryID
-        bookmark.subcategory = better.subcategory
+        var filing = (categoryID: better.categoryID, subcategory: better.subcategory)
+        if candidate.share, let weighing {
+            let input = FilingInput(url: candidate.context.url, title: bookmark.title, text: bookmark.text,
+                                    description: candidate.context.description, author: bookmark.author,
+                                    ocrText: ThumbnailText.cached(id))
+            let ranking = FilingSuggest.rank(input, memory: weighing.memory, ai: better, taxonomyOrder: weighing.order)
+            guard ranking.preselect != nil, let best = ranking.candidates.first else { return }
+            filing = (best.categoryID, best.subcategory)
+        }
+        bookmark.categoryID = filing.categoryID
+        bookmark.subcategory = filing.subcategory
         if bookmark.tagsEdited == false { bookmark.tags = Self.merged(bookmark.tags, better.tags) }
         bookmark.touch()
+    }
+
+    /// The dial's topic order: the built-ins, then yours by id.
+    private static func taxonomyOrder(in context: ModelContext) -> [String] {
+        let yours = (try? context.fetch(FetchDescriptor<CustomTopic>(predicate: #Predicate { $0.deletedAt == nil }))) ?? []
+        return QuickFileBridge.taxonomyOrder(customIDs: yours.map(\.id))
     }
 
     /// Existing tags stay; new ones join. Nothing the user typed is dropped.

@@ -3,17 +3,29 @@ import SwiftData
 import StoreKit
 import UIKit
 
-/// Three steps: paste → reading → details.
+/// Two taps: paste, then file (Quick File).
 ///
-/// **Engineering deviation.** The prototype fakes a 950ms delay to make the
-/// categoriser look like it's thinking. Ours is genuinely instant, so there is
-/// nothing to wait for — a fabricated spinner is a lie that costs a second of
-/// the user's time on every single save. The reading step stays in the flow
-/// because real link unfurling (fetching title/thumbnail/duration) will need
-/// it; until that ships it passes straight through.
+/// **Tap 1 saves.** A paste (the paste card, or a paste-sized jump in the
+/// field), Return, or a link handed in (`initialURL`) writes the bork at once,
+/// with the best offline guess stored as `"automatic"`, before the page has
+/// been read. There is no "Reading the link…" step any more: nothing waits on
+/// the network. A link that is being *typed* is different — when it pauses,
+/// its page is read and a "Bork it" button is offered, and nothing is saved
+/// until that is tapped, so a half-typed link never becomes a bork.
+///
+/// **Tap 2 files.** The sheet becomes the saved card, the Quick File dial and
+/// its reason line. A tap on the dial files as `"user"`, closes the sheet and
+/// leaves a "Saved to Fitness › Running · Undo" toast, whose Undo takes the
+/// whole save back. "Done" keeps the guess.
+/// The preview, on-screen text and the model's answer arrive while the dial
+/// is up and re-rank it (an untouched dial re-deals, a touched one only gains
+/// a ✨), and update the saved bork through `Store.save`'s merge rules —
+/// while its filing is still the app's, never over yours.
 struct AddSheet: View {
     var initialURL: URL?
-    let onSaved: (String) -> Void
+    /// What to say once the sheet has gone, and how to take it back (the
+    /// toast's Undo), when it can be taken back.
+    let onSaved: (String, (() -> Void)?) -> Void
     /// The signed-out limit was reached before this save could land. Hands the
     /// link back so the wall can raise and, after sign-up, the sheet can reopen
     /// with it already pasted. See `SaveLimit`.
@@ -37,22 +49,26 @@ struct AddSheet: View {
     )
     private var journeys: [Mission]
 
-    enum Step { case paste, reading, details }
+    /// Your own topics, for the order the dial breaks ties in.
+    @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
+    private var customTopics: [CustomTopic]
+
+    enum Step { case paste, details }
 
     @State private var step = Step.paste
     @State private var urlText = ""
     @State private var title = ""
     @State private var author: String?
-    @State private var categoryID: String?
-    @State private var subcategory: String?
     @State private var tags: [String] = []
-    @State private var userFiled = false
     @State private var userTagsEdited = false
     @State private var tagDraft = ""
     @State private var noteOpen = false
     @State private var note = ""
     @State private var noteDate = Date.now
+    /// The full topic list, from the dial's More…. A pick there files.
     @State private var showingPicker = false
+    @State private var pickedTopic: String?
+    @State private var pickedSub: String?
     @State private var error: String?
     @State private var imageURL: URL?
     @State private var duration: Int?
@@ -63,6 +79,9 @@ struct AddSheet: View {
     /// The preview ran out of time. The bork saves without one, and
     /// enrichment fills it in afterwards.
     @State private var previewTimedOut = false
+    /// The page has been read: before tap 1 for a typed link, after it for
+    /// everything else.
+    @State private var previewFetched = false
     /// This sheet has just saved its link. It is on its way out, and the
     /// bork it made must not read, mid-dismissal, as "Already in your
     /// library" — which it did, for the half second the sheet slid away.
@@ -70,12 +89,6 @@ struct AddSheet: View {
     /// `og:description` — the full caption on Instagram and TikTok. Read for
     /// filing, shown nowhere, saved nowhere.
     @State private var pageDescription: String?
-    /// How sure the filing is, and what it was, so the header above the topic
-    /// chip can say "Sorted for you" only when that is true — and can tell a
-    /// topic the user picked from one we suggested.
-    @State private var evidence: Categorizer.Suggestion.Evidence = .none
-    @State private var suggestedCategoryID: String?
-    @State private var suggestedSubcategory: String?
     @State private var editingTitle = false
     @State private var selectedJourneyIDs: Set<String> = []
     @State private var showingNewJourney = false
@@ -90,6 +103,32 @@ struct AddSheet: View {
     /// The bork the duplicate card's "Open it" is showing.
     @State private var openingDuplicate: Bookmark?
     @FocusState private var urlFocused: Bool
+
+    // MARK: Quick File
+
+    /// The bork tap 1 wrote. Everything after it edits a save that exists.
+    @State private var saved: Bookmark?
+    /// Tap 1 made it, so "Remove this save" may delete it. False when it
+    /// re-saved a bork that was already in the library.
+    @State private var createdHere = false
+    /// The dial: ranked at tap 1 from the link alone, re-ranked as the
+    /// preview, the on-screen text and the model's answer land.
+    @State private var dial: QuickFileModel?
+    @State private var memory = FilingMemory.empty
+    @State private var order: [String] = []
+    /// A re-saved bork's own filing, which leads its ring.
+    @State private var pin: FilingPin?
+    @State private var aiAnswer: Categorizer.Suggestion?
+    @State private var onScreenText: String?
+    /// A typed link has paused: its page is being read and "Bork it" is on
+    /// offer. Nothing is saved until it is tapped.
+    @State private var typedReady = false
+    @State private var extrasOpen = false
+    /// Filed, done, removed or swiped away: the sheet has had its say.
+    @State private var finished = false
+
+    private var style: QuickFileStyle { .app(accent) }
+    private static let savedGreen = Color(hex: "1D8A50")
 
     /// Borks that count against the signed-out limit. `allBookmarks` also
     /// feeds tag suggestions, where a waiting bork's tags are perfectly good
@@ -111,16 +150,38 @@ struct AddSheet: View {
             Group {
                 switch step {
                 case .paste: pasteStep
-                case .reading: readingStep
                 case .details: detailsStep
                 }
             }
             .background(Tokens.paper)
-            .navigationTitle(step == .details ? "Save to bookmarker" : "Add a link")
+            .navigationTitle(saved != nil ? "Saved to bookmarker" : "Add a link")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                if saved != nil {
+                    // Saved already, so there is nothing to cancel: "Done"
+                    // keeps it (and the guess), and the one way back is a
+                    // deliberate "Remove this save".
+                    if createdHere {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Menu {
+                                Button(role: .destructive, action: removeSave) {
+                                    Label("Remove this save", systemImage: "trash")
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis.circle")
+                                    .font(.system(size: 17, weight: .semibold))
+                            }
+                            .accessibilityLabel("More")
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", action: done)
+                            .fontWeight(.semibold)
+                    }
+                } else {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
+                    }
                 }
             }
             .alert("Couldn't save", isPresented: .constant(error != nil)) {
@@ -131,9 +192,10 @@ struct AddSheet: View {
         }
         .presentationDetents([.large])
         .presentationCornerRadius(Tokens.sheetRadius)
-        .sheet(isPresented: $showingPicker) {
-            TopicPickerSheet(categoryID: Binding(get: { categoryID }, set: { categoryID = $0; userFiled = true }),
-                subcategory: Binding(get: { subcategory }, set: { subcategory = $0; userFiled = true }))
+        // More… on the dial. It opens with nothing picked, so closing it
+        // (Cancel, or swiping it away) files nothing; a pick files.
+        .sheet(isPresented: $showingPicker, onDismiss: filePick) {
+            TopicPickerSheet(categoryID: $pickedTopic, subcategory: $pickedSub)
                 .environment(\.accent, accent)
         }
         .sheet(isPresented: $showingNewJourney) {
@@ -145,9 +207,10 @@ struct AddSheet: View {
             DetailSheet(bookmark: bork).environment(\.accent, accent)
         }
         .onAppear {
+            prepare()
             if let initialURL, urlText.isEmpty {
                 urlText = initialURL.absoluteString
-                submit()
+                saveNow()
             }
             #if DEBUG
             // Let this sheet finish presenting first; SwiftUI drops a
@@ -160,6 +223,8 @@ struct AddSheet: View {
             }
             #endif
         }
+        // Swiped away after tap 1: the same as "Done".
+        .onDisappear(perform: finishIfNeeded)
     }
 
     // MARK: Step 1 — paste
@@ -188,6 +253,8 @@ struct AddSheet: View {
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
                     .focused($urlFocused)
+                    .submitLabel(.go)
+                    .onSubmit(saveNow)
                     .padding(14)
                     .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(
@@ -222,6 +289,25 @@ struct AddSheet: View {
                     .cardSurface(radius: 16)
                 }
 
+                // A typed link that has paused: what it is, and the button
+                // that saves it. Typing never saves on its own.
+                if typedReady, let url = parsedURL {
+                    VStack(spacing: 12) {
+                        linkRow(url, saved: false)
+                        Button(action: saveTyped) {
+                            Text(Copy.saveVerb)
+                                .font(Typo.ui(15, .bold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
+                                .shadow(color: accent.base.opacity(0.34), radius: 16, y: 8)
+                        }
+                        .buttonStyle(PressableStyle(scale: 0.97))
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
                 HStack(spacing: 6) {
                     Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))
                     Text("Saving from another app? Use the share sheet.")
@@ -230,6 +316,7 @@ struct AddSheet: View {
                 .foregroundStyle(Tokens.inkSecondary)
             }
             .padding(18)
+            .animation(.easeOut(duration: 0.2), value: typedReady)
         }
         .task {
             try? await Task.sleep(for: .milliseconds(250))
@@ -246,13 +333,28 @@ struct AddSheet: View {
         .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
             refreshClipboard()
         }
-        // Debounced so it fires once you've finished pasting, not on every
-        // character of a typed URL.
+        // Tap 1 by paste or Return. A jump of eight or more characters at
+        // once is a paste, never typing; a newline is the Return key, which
+        // a vertical field types rather than submits. Both save at once — but
+        // only a real link (`PastedLink`), never a fragment.
+        .onChange(of: urlText) { old, new in
+            guard step == .paste, saved == nil else { return }
+            if new.contains(where: \.isNewline) {
+                urlText = new.filter { !$0.isNewline }
+                saveNow()
+            } else if new.count - old.count >= 8 {
+                saveNow()
+            } else if parsedURL == nil, typedReady {
+                typedReady = false
+            }
+        }
+        // A typed link that pauses only reads its page and offers "Bork it".
+        // Debounced so it fires once you've stopped, not on every character.
         .task(id: urlText) {
             guard parsedURL != nil, step == .paste else { return }
             try? await Task.sleep(for: .milliseconds(350))
             guard !Task.isCancelled, step == .paste else { return }
-            submit()
+            await peek()
         }
     }
 
@@ -309,42 +411,38 @@ struct AddSheet: View {
         }
     }
 
+    /// The paste card is tap 1: the link goes in and is saved.
     private func applyPasted(_ link: PastedLink?) {
         guard let url = link?.url else { return }
         urlText = url.absoluteString
+        saveNow()
     }
 
-    // MARK: Step 2 — reading
+    // MARK: Step 2 — saved, where does it go?
 
-    private var readingStep: some View {
-        VStack(spacing: 12) {
-            ProgressView().controlSize(.large)
-            Text("Reading the link…")
-                .font(Typo.ui(14, .semibold))
-                .foregroundStyle(Tokens.inkSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: Step 3 — details
-
+    /// The saved card, the dial and its reason line, and the extras folded
+    /// away. Fits a phone without scrolling, so a drag on the dial is always
+    /// a turn and never a scroll.
     private var detailsStep: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(spacing: 14) {
                 if let duplicate {
                     duplicateCard(duplicate)
-                } else {
-                    previewRow
-                    sortedForYou
-                    journeyAttach
-                    titleField
-                    noteSection
-                    saveButton
+                } else if let dial, let url = parsedURL {
+                    linkRow(url, saved: true)
+                    QuickFileHeader(model: dial, style: style)
+                        .padding(.top, 10)
+                    QuickFileDial(model: dial, style: style, diameter: 300)
+                    QuickFileDialFooter(model: dial, style: style)
+                    extras
+                        .padding(.top, 8)
                 }
             }
             .padding(18)
             .padding(.bottom, 30)
         }
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     // MARK: Already saved
@@ -374,12 +472,9 @@ struct AddSheet: View {
     /// whole card exists for. Everything else — a title that reads now, a
     /// cover, a duration, new tags — enriches exactly as it always has.
     private func saveAgain(over bork: Bookmark) {
-        if let existing = bork.categoryID {
-            categoryID = existing
-            subcategory = bork.subcategory
-        }
+        guard let url = parsedURL else { return }
         saveAnyway = true
-        save()
+        commit(url, over: bork)
     }
 
     /// Not a warning and not a wall — a fact and two ways forward.
@@ -461,121 +556,104 @@ struct AddSheet: View {
         .cardSurface(radius: 18)
     }
 
-    /// The actual card you're about to save — thumbnail, real title, author.
-    /// This is the confirmation: you see the thing, not a form about the thing.
-    @ViewBuilder
-    private var previewRow: some View {
-        if let url = parsedURL {
-            let platform = Platform.detect(from: url)
-            let palette = Taxonomy.category(id: categoryID)?.palette ?? NeutralPalette.value
+    /// The thing itself, compact: cover, who made it, the title, and — once
+    /// tap 1 has happened — a green "Saved". This is the confirmation: you see
+    /// the post, not a form about it. Compact so the dial fits under it.
+    private func linkRow(_ url: URL, saved isSaved: Bool) -> some View {
+        let platform = Platform.detect(from: url)
+        let palette = Taxonomy.category(id: saved?.categoryID)?.palette ?? NeutralPalette.value
+        let creator = (Bookmark.isPlaceholderAuthor(author, url: url, platform: platform)
+                       ? Platform.handle(in: url) : author) ?? url.host ?? platform.name
 
-            VStack(alignment: .leading, spacing: 0) {
-                ZStack(alignment: .topLeading) {
-                    CoverImage(url: imageURL, palette: palette)
-                        .frame(height: 150)
-                        .clipped()
-                    HStack(alignment: .top) {
-                        PlatformBadge(platform: platform, size: 24, pageURL: url)
-                        Spacer()
-                        if let duration {
-                            let label = String(format: "%d:%02d", duration / 60, duration % 60)
-                            HStack(spacing: 3) {
-                                Image(systemName: "play.fill").font(.system(size: 7, weight: .black))
-                                Text(label).font(Typo.ui(10.5, .bold))
-                            }
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 7).padding(.vertical, 4)
-                            .background(.ultraThinMaterial, in: Capsule())
-                            .environment(\.colorScheme, .dark)
-                        }
-                    }
-                    .padding(10)
-                }
+        return HStack(alignment: .center, spacing: 12) {
+            ZStack(alignment: .topLeading) {
+                CoverImage(url: imageURL, palette: palette)
+                PlatformBadge(platform: platform, size: 18, pageURL: url)
+                    .padding(5)
+            }
+            .frame(width: 64, height: 64)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title.isEmpty ? "Untitled" : title)
-                        .font(Typo.display(15, .semibold))
-                        .foregroundStyle(Tokens.ink)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.leading)
-                    HStack(spacing: 5) {
-                        Text((Bookmark.isPlaceholderAuthor(author, url: url, platform: platform)
-                              ? Platform.handle(in: url) : author) ?? url.host ?? platform.name)
-                            .font(Typo.ui(11.5, .medium))
-                            .foregroundStyle(Tokens.inkMeta)
-                            .lineLimit(1)
-                        if !titleWasFetched {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(creator == platform.name ? creator : "\(creator) · \(platform.name)")
+                    .font(Typo.ui(11.5, .semibold))
+                    .foregroundStyle(Tokens.inkMeta)
+                    .lineLimit(1)
+                Text(title.isEmpty ? Categorizer.fallbackTitle(for: url) : title)
+                    .font(Typo.display(15, .semibold))
+                    .foregroundStyle(Tokens.ink)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .animation(.easeOut(duration: 0.2), value: title)
+                if isSaved {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .bold))
+                        Text("Saved")
+                            .font(Typo.ui(12, .bold))
+                        if previewFetched && !titleWasFetched {
                             Text("· couldn't read the page")
-                                .font(Typo.ui(11))
-                                .foregroundStyle(Tokens.inkFaint)
+                                .font(Typo.ui(11, .medium))
+                                .foregroundStyle(Tokens.inkMeta)
                         }
                     }
+                    .foregroundStyle(Self.savedGreen)
                 }
-                .padding(13)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .cardSurface(radius: 18)
+            Spacer(minLength: 0)
         }
+        .padding(11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface(radius: 18)
+        .accessibilityElement(children: .combine)
     }
 
-    /// What the header above the topic chip should claim.
-    ///
-    /// Seb's two saves were shown as "✨ Sorted for you" over a wrong topic.
-    /// The block now says exactly as much as the evidence supports: a real
-    /// match is sorted, a thin one is a guess and says so, nothing is a
-    /// question, and a topic you picked yourself is yours.
-    private enum FilingState { case sorted, guess, unknown, yours }
-
-    private var filingState: FilingState {
-        if let categoryID, categoryID != suggestedCategoryID || subcategory != suggestedSubcategory {
-            return .yours
-        }
-        switch evidence {
-        case .strong: return .sorted
-        case .thin: return .guess
-        case .none: return .unknown
-        }
-    }
-
-    private var filingHeader: (icon: String, copy: String) {
-        switch filingState {
-        case .sorted: ("sparkles", "Sorted for you")
-        case .guess: ("sparkle", "Our best guess — tap to change")
-        case .unknown: ("questionmark.circle", "Where does this go?")
-        case .yours: ("checkmark.circle", "Filed by you")
-        }
-    }
-
-    private var sortedForYou: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            HStack(spacing: 6) {
-                Image(systemName: filingHeader.icon).font(.system(size: 12, weight: .bold))
-                Text(filingHeader.copy)
-                    .font(Typo.ui(13, .bold))
-                Spacer()
-            }
-            .foregroundStyle(accent.deep)
-            .animation(.easeOut(duration: 0.2), value: filingHeader.copy)
-
-            Button { showingPicker = true } label: {
-                HStack(spacing: 6) {
-                    if let category = Taxonomy.category(id: categoryID) {
-                        Text(subcategory.map { "\(category.name) › \($0)" } ?? category.name)
-                            .font(Typo.ui(13.5, .semibold))
-                            .foregroundStyle(category.palette.deep)
-                    } else {
-                        Text("Pick a topic")
-                            .font(Typo.ui(13.5, .semibold))
-                            .foregroundStyle(Tokens.inkSecondary)
-                    }
-                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(Tokens.inkMeta)
+    /// "Tags, note, side quest", folded away under the dial. The whole point
+    /// is that you don't type, so these are one tap away rather than in the
+    /// way; whatever is set here is written to the bork as the sheet closes.
+    private var extras: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { extrasOpen.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 12, weight: .bold))
+                    Text("Tags, note, side quest")
+                        .font(Typo.ui(13.5, .semibold))
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .bold))
+                        .rotationEffect(.degrees(extrasOpen ? 180 : 0))
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(Taxonomy.category(id: categoryID)?.palette.tint ?? Tokens.mutedControl, in: Capsule())
+                .foregroundStyle(Tokens.inkSecondary)
+                .padding(.horizontal, 14)
+                .frame(height: 46)
+                .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Tokens.hairline, lineWidth: 1)
+                )
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityValue(extrasOpen ? "Open" : "Closed")
+
+            if extrasOpen {
+                tagsEditor
+                journeyAttach
+                titleField
+                noteSection
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var tagsEditor: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            Text("TAGS")
+                .font(Typo.ui(10, .heavy)).tracking(0.6)
+                .foregroundStyle(Tokens.mutedHeading)
 
             if !tags.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -634,37 +712,8 @@ struct AddSheet: View {
                     }
                 }
             }
-
-            // When a tag clearly belongs somewhere in the taxonomy and nothing
-            // is chosen yet, offer it rather than silently filing it.
-            if let placement = tagPlacement {
-                Button {
-                    categoryID = placement.categoryID
-                    userFiled = true
-                    subcategory = placement.subcategory
-                    Haptics.tap()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.turn.down.right").font(.system(size: 10, weight: .bold))
-                        Text("File under \(placement.label)?")
-                            .font(Typo.ui(12, .semibold))
-                        Spacer()
-                    }
-                    .foregroundStyle(accent.deep)
-                }
-                .buttonStyle(.plain)
-            }
         }
-        .padding(15)
         .frame(maxWidth: .infinity, alignment: .leading)
-        // Same tinted card in every state; only a settled answer gets the
-        // full tint. A guess and a question sit a shade quieter.
-        .background(accent.tint.opacity(filingState == .sorted || filingState == .yours ? 0.55 : 0.4),
-                    in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(accent.base.opacity(0.25), lineWidth: 1)
-        )
     }
 
     private var journeyAttach: some View {
@@ -772,129 +821,290 @@ struct AddSheet: View {
         }
     }
 
-    private var saveButton: some View {
-        Button(action: save) {
-            Text(Copy.saveVerb)
-                .font(Typo.ui(15, .bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                .shadow(color: accent.base.opacity(0.34), radius: 16, y: 8)
-        }
-        .buttonStyle(.plain)
+    // MARK: Tap 1 — save
+
+    /// Memory and topic order, ready before tap 1 so ranking then is free.
+    private func prepare() {
+        _ = MergedTaxonomy(topics: customTopics)
+        memory = QuickFileBridge.memory(allBookmarks)
+        order = QuickFileBridge.taxonomyOrder(customIDs: customTopics.map(\.id))
     }
 
-    // MARK: Actions
+    /// Tap 1 by paste, Return or a link handed in: saves at once — but only a
+    /// real link (`PastedLink`, which wants a host with a real TLD), and once.
+    private func saveNow() {
+        guard step == .paste, saved == nil, let link = PastedLink.firstURL(in: urlText) else { return }
+        if link.absoluteString != urlText { urlText = link.absoluteString }
+        save(link)
+    }
 
-    /// One tap. Paste the link, we read the page, everything comes back filled
-    /// in — you only touch it if you disagree.
-    private func submit() {
-        guard let url = parsedURL else { return }
-        step = .reading
+    /// Tap 1 by "Bork it", under a typed link whose page has been read.
+    private func saveTyped() {
+        guard step == .paste, saved == nil, let url = parsedURL else { return }
+        save(url)
+    }
 
-        Task { @MainActor in
-            // Real fetch: oEmbed for YouTube, TikTok and X, Open Graph for
-            // most of the web — but never more than three seconds of it.
-            let fetched = await LinkPreview.fetch(for: url, within: .seconds(3))
-            previewTimedOut = fetched == nil
-            let preview = fetched ?? LinkPreview.Result()
-
-            imageURL = preview.imageURL
-            duration = preview.durationSeconds
-            postedAt = preview.publishedAt
-            author = preview.author ?? Categorizer.fallbackAuthor(for: url)
-            pageDescription = preview.description
-
-            // A real page title, or nothing — never a routing word dressed up
-            // as a description.
-            let fetchedTitle = preview.title
-            title = fetchedTitle ?? Categorizer.fallbackTitle(for: url)
-            titleWasFetched = fetchedTitle != nil
-
-            // Categorise against the real title when we have one; a genuine
-            // headline is a far better signal than a URL slug. The description
-            // carries the caption and its hashtags — the author's own filing.
-            let suggestion = Categorizer.suggest(
-                url: url, title: title, description: preview.description, author: preview.author
-            )
-            categoryID = suggestion.categoryID
-            subcategory = suggestion.subcategory
-            tags = suggestion.tags
-            evidence = suggestion.evidence
-            suggestedCategoryID = suggestion.categoryID
-            suggestedSubcategory = suggestion.subcategory
-
+    private func save(_ url: URL) {
+        urlFocused = false
+        // Already in the library: the card that says so, never a silent merge.
+        guard duplicate == nil else {
             withAnimation(.easeOut(duration: 0.22)) { step = .details }
+            return
+        }
+        commit(url)
+    }
 
-            // The offline answer is already on screen and editable. If it came
-            // back empty or thin, ask the model — but never make the user wait
-            // for it, and never let it overwrite a choice they've since made.
-            await refineCategory(url: url, offline: suggestion)
+    /// Writes the bork with what is known so far and the best guess as
+    /// `"automatic"`, then shows the dial at once and reads the page behind
+    /// it. Re-saving over a bork that is already there keeps its filing.
+    private func commit(_ url: URL, over existing: Bookmark? = nil) {
+        // The + button raises the wall before the sheet ever opens; this is
+        // the last line of defence, for a limit reached while the sheet was
+        // up (a share draining behind it, another device syncing). Nothing
+        // typed is lost: the link goes back to `RootView`, and after sign-up
+        // the sheet reopens with it already in the field.
+        if SaveLimit.shouldWall(liveCount: liveCount, signedIn: account?.isSignedIn ?? false) {
+            onLimitReached(url)
+            dismiss()
+            return
+        }
+
+        if title.isEmpty { title = Categorizer.fallbackTitle(for: url) }
+        if author == nil { author = Categorizer.fallbackAuthor(for: url) }
+        let offline = Categorizer.suggest(url: url, title: title, description: pageDescription, author: author)
+        tags = offline.tags
+        pin = existing.flatMap { QuickFileBridge.pin(for: $0) }
+        let ranking = rank(url)
+
+        // What stays if nothing is confirmed: the dial's own guess (your
+        // history can outrank the keywords), else the Categorizer's.
+        var categoryID = offline.categoryID
+        var subcategory = offline.subcategory
+        if ranking.preselect != nil, let best = ranking.candidates.first {
+            categoryID = best.categoryID
+            subcategory = best.subcategory
+        }
+        if let existing, let kept = existing.categoryID {
+            categoryID = kept
+            subcategory = existing.subcategory
+        }
+
+        var draft = BookmarkDraft(
+            url: url, title: title, author: author,
+            platform: Platform.detect(from: url), kind: nil,
+            categoryID: categoryID, subcategory: subcategory, tags: tags,
+            text: SavedContent.excerpt(pageDescription),
+            durationSeconds: duration
+        )
+        draft.imageURLString = imageURL?.absoluteString
+        draft.postedAt = postedAt
+        draft.previewFetched = previewFetched
+        draft.filingSource = "automatic"
+
+        do {
+            didSave = true
+            let bork = try Store.save(draft, in: context)
+            saved = bork
+            createdHere = existing == nil
+            dial = makeDial(ranking, url: url)
+            Haptics.tap()
+            withAnimation(.easeOut(duration: 0.22)) { step = .details }
+            Task { await enrich(url, bork: bork) }
+        } catch {
+            didSave = false
+            self.error = error.localizedDescription
         }
     }
 
-    /// Second-pass categorisation for the links keyword matching can't place.
-    ///
-    /// Runs after the sheet is already interactive, so the cost is a chip
-    /// changing under a thumb that hasn't moved yet rather than a spinner.
-    /// Silent on every failure: signed out, offline, quota spent, server down —
-    /// all of them just leave the offline answer where it is.
-    private func refineCategory(url: URL, offline: Categorizer.Suggestion) async {
-        guard !offline.isConfident else { return }
-        guard let account, let session = await account.currentSession() else { return }
+    private func makeDial(_ ranking: FilingRanking, url: URL) -> QuickFileModel {
+        let model = QuickFileModel(ranking: ranking, input: input(for: url))
+        model.onConfirm = { candidate in file(candidate) }
+        model.onMore = {
+            pickedTopic = nil
+            pickedSub = nil
+            showingPicker = true
+        }
+        QuickFileAppArt.preload(model.candidates.map(\.categoryID))
+        return model
+    }
 
-        let context = SmartCategorizer.Context(
-            url: url,
-            title: title,
-            author: author,
-            description: pageDescription,
-            userTags: tags.filter { !offline.tags.contains($0) }
-        )
-        guard let better = await SmartCategorizer.suggest(context, session: session) else { return }
+    private func input(for url: URL) -> FilingInput {
+        FilingInput(url: url, title: title, text: nil, description: pageDescription,
+                    author: author, ocrText: onScreenText)
+    }
 
-        // The user may have picked a topic themselves while this was in
-        // flight. Their choice wins — always.
-        guard !userFiled, categoryID == offline.categoryID, subcategory == offline.subcategory else { return }
+    private func rank(_ url: URL) -> FilingRanking {
+        FilingSuggest.rank(input(for: url), memory: memory, ai: aiAnswer, pinned: pin, taxonomyOrder: order)
+    }
 
-        withAnimation(.easeOut(duration: 0.2)) {
-            categoryID = better.categoryID
-            subcategory = better.subcategory
-            evidence = better.evidence
-            suggestedCategoryID = better.categoryID
-            suggestedSubcategory = better.subcategory
-            // Merge rather than replace: tags the user typed in the meantime stay.
-            for tag in better.tags where !userTagsEdited && !tags.contains(tag) && !Platform.isSiteName(tag) {
-                tags.append(tag)
+    // MARK: Reading the page
+
+    /// A typed link has paused: read its page and offer "Bork it". Never
+    /// saves — a half-typed link must not become a bork.
+    private func peek() async {
+        guard let url = parsedURL else { return }
+        resetPreview()
+        typedReady = true
+        let fetched = await LinkPreview.fetch(for: url, within: .seconds(3))
+        guard !Task.isCancelled, step == .paste, saved == nil, parsedURL == url else { return }
+        apply(fetched, for: url)
+    }
+
+    private func resetPreview() {
+        title = ""
+        author = nil
+        imageURL = nil
+        duration = nil
+        postedAt = nil
+        pageDescription = nil
+        titleWasFetched = false
+        previewFetched = false
+        previewTimedOut = false
+    }
+
+    /// What the page said, into the sheet. A real page title, or the one
+    /// made from the link — never a routing word dressed up as a description
+    /// — and never over a title you are editing.
+    private func apply(_ fetched: LinkPreview.Result?, for url: URL) {
+        previewTimedOut = fetched == nil
+        previewFetched = fetched != nil
+        if let preview = fetched {
+            if let image = preview.imageURL { imageURL = image }
+            if let seconds = preview.durationSeconds { duration = seconds }
+            if let posted = preview.publishedAt { postedAt = posted }
+            if let description = preview.description { pageDescription = description }
+            if let name = preview.author { author = name }
+            if let fetchedTitle = preview.title, !editingTitle {
+                title = fetchedTitle
+                titleWasFetched = true
             }
         }
+        if title.isEmpty { title = Categorizer.fallbackTitle(for: url) }
+        if author == nil { author = Categorizer.fallbackAuthor(for: url) }
+    }
+
+    /// After tap 1, behind a sheet that is already useful: the page (oEmbed
+    /// for YouTube, TikTok and X, Open Graph for the web, never more than
+    /// three seconds), then on-screen text and the model side by side. Each
+    /// re-ranks the dial. Store writes go through the bork itself, so they
+    /// still land if the sheet has closed in the meantime.
+    private func enrich(_ url: URL, bork: Bookmark) async {
+        if !previewFetched {
+            let fetched = await LinkPreview.fetch(for: url, within: .seconds(3))
+            Self.writePreview(fetched, url: url, to: bork)
+            apply(fetched, for: url)
+            if !userTagsEdited {
+                let offline = Categorizer.suggest(url: url, title: title, description: pageDescription, author: author)
+                tags = Self.merged(tags, offline.tags)
+            }
+            rerank(url)
+        }
+        readOnScreenText(bork)
+        await askModel(url, bork: bork)
+    }
+
+    /// The page's findings, through `Store.save`'s merge rules: a fetched
+    /// title replaces only the one made from the link, a real creator only a
+    /// placeholder, and the filing is untouched (the draft carries no topic).
+    private static func writePreview(_ fetched: LinkPreview.Result?, url: URL, to bork: Bookmark) {
+        guard let fetched, bork.deletedAt == nil, let context = bork.modelContext else { return }
+        var draft = BookmarkDraft(
+            url: url, title: fetched.title ?? "", author: fetched.author,
+            platform: bork.platform, kind: nil, categoryID: nil, subcategory: nil,
+            text: SavedContent.excerpt(fetched.description),
+            durationSeconds: fetched.durationSeconds
+        )
+        draft.imageURLString = fetched.imageURL?.absoluteString
+        draft.postedAt = fetched.publishedAt
+        draft.previewFetched = true
+        _ = try? Store.save(draft, in: context)
+    }
+
+    /// The words on the cover, read quickly, as one more (weak) hint.
+    private func readOnScreenText(_ bork: Bookmark) {
+        guard let image = imageURL ?? bork.imageURL else { return }
+        let id = bork.id
+        Task { @MainActor in
+            guard let text = await ThumbnailText.read(id, imageURL: image, accurate: false) else { return }
+            onScreenText = text
+            if let url = parsedURL { rerank(url) }
+        }
+    }
+
+    /// The model, once for every save, however sure the ranking already is,
+    /// and never waited on; not for a save you have already filed or taken
+    /// back. Silent on every failure: signed out, offline, quota spent. Its
+    /// answer is one more piece of evidence: it re-ranks the dial (sure
+    /// keywords or your history with a creator can still win), and becomes
+    /// the stored guess if the bork's filing is still the app's and nothing
+    /// has touched it since asking — even if the sheet has closed, where it
+    /// used to be lost.
+    private func askModel(_ url: URL, bork: Bookmark) async {
+        guard let dial, dial.filed == nil, bork.deletedAt == nil,
+              let account, let session = await account.currentSession() else { return }
+        let request = SmartCategorizer.Context(url: url, title: title, author: author, description: pageDescription)
+        let asked = input(for: url)
+        let known = memory
+        let topics = order
+        let lead = pin
+        let stamp = bork.updatedAt
+        guard let answer = await SmartCategorizer.suggest(request, session: session) else { return }
+        aiAnswer = answer
+        if !userTagsEdited { tags = Self.merged(tags, answer.tags) }
+        rerank(url)
+        let ranking = FilingSuggest.rank(asked, memory: known, ai: answer, pinned: lead, taxonomyOrder: topics)
+        Self.keepGuess(ranking, on: bork, unchangedSince: stamp)
+    }
+
+    /// A late answer reaches the dial through `offer` (an untouched dial
+    /// re-deals, a touched one only gains a ✨ or an "Also likely" chip) and,
+    /// while the dial is untouched, the stored guess follows what it shows.
+    private func rerank(_ url: URL) {
+        guard let dial, dial.filed == nil else { return }
+        let latest = input(for: url)
+        let ranking = FilingSuggest.rank(latest, memory: memory, ai: aiAnswer, pinned: pin, taxonomyOrder: order)
+        QuickFileAppArt.preload(ranking.candidates.map(\.categoryID))
+        dial.offer(ranking, input: latest)
+        if !dial.touched, !finished, let bork = saved {
+            Self.keepGuess(ranking, on: bork)
+        }
+    }
+
+    /// The ranking's guess becomes the bork's stored filing — only while that
+    /// filing is still the app's to change, and, given a `stamp`, only if
+    /// nothing has touched the bork since.
+    private static func keepGuess(_ ranking: FilingRanking, on bork: Bookmark, unchangedSince stamp: Date? = nil) {
+        guard bork.deletedAt == nil, EnrichmentPolicy.mayFile(source: bork.filingSource),
+              ranking.preselect != nil, let best = ranking.candidates.first else { return }
+        if let stamp, bork.updatedAt != stamp { return }
+        guard best.categoryID != bork.categoryID || best.subcategory != bork.subcategory else { return }
+        bork.categoryID = best.categoryID
+        bork.subcategory = best.subcategory
+        bork.touch()
+        try? bork.modelContext?.save()
+    }
+
+    /// Existing tags stay; new ones join. Platform names stay out.
+    private static func merged(_ existing: [String], _ incoming: [String]) -> [String] {
+        var out = existing
+        for tag in incoming where !out.contains(tag) && !Platform.isSiteName(tag) { out.append(tag) }
+        return out
     }
 
     /// Tags you've used on this category + subcategory, newest first — not
     /// the library's global greatest hits. Platform names stay out because
     /// the source is already on the card.
     private var tagSuggestions: [String] {
-        TagRecency.suggestions(
+        let filing = dial?.filed ?? dial?.centre
+        return TagRecency.suggestions(
             in: allBookmarks.map {
                 .init(categoryID: $0.categoryID, subcategory: $0.subcategory, tags: $0.tags, at: $0.updatedAt)
             },
-            categoryID: categoryID,
-            subcategory: subcategory,
+            categoryID: filing?.categoryID,
+            subcategory: filing?.subcategory,
             excluding: Set(tags),
             prefix: tagDraft
         )
-    }
-
-    /// Where the tags you've added would place this in the taxonomy — e.g.
-    /// "fighting" lands on Sports › Combat sports. Uses the same offline
-    /// classifier as the URL, run over the tag words instead.
-    private var tagPlacement: (categoryID: String, subcategory: String?, label: String)? {
-        guard categoryID == nil, !tags.isEmpty else { return nil }
-        guard let url = parsedURL else { return nil }
-        let suggestion = Categorizer.suggest(url: url, title: tags.joined(separator: " "))
-        guard let id = suggestion.categoryID, let topic = Taxonomy.category(id: id) else { return nil }
-        let label = suggestion.subcategory.map { "\(topic.name) › \($0)" } ?? topic.name
-        return (id, suggestion.subcategory, label)
     }
 
     private func commitTag() {
@@ -908,66 +1118,131 @@ struct AddSheet: View {
         tagDraft = ""
     }
 
-    private func save() {
-        guard let url = parsedURL else { return }
+    // MARK: Tap 2 — file, or leave
 
-        // The button still works — it just does something else. Disabling it
-        // would leave someone tapping a dead control with no idea why, which
-        // is the one outcome worse than a sheet. Nothing typed is lost: the
-        // URL goes back to `RootView`, and after sign-up the sheet reopens
-        // with it already in the field.
-        //
-        // This is the last line of defence rather than the usual path — the +
-        // button raises the wall before the sheet ever opens. It fires when
-        // the limit is reached *while* this sheet is up: a share draining in
-        // the background, or a second device syncing.
-        if SaveLimit.shouldWall(liveCount: liveCount, signedIn: account?.isSignedIn ?? false) {
-            onLimitReached(url)
-            dismiss()
-            return
+    /// Tap 2: a key on the dial, its centre, a subtopic chip, the "Also
+    /// likely" chip or a pick from More…. Written as yours at once; the sheet
+    /// stays just long enough for the check to land, then a toast offers Undo.
+    /// Undo takes back everything the sheet did: a bork it made leaves the
+    /// library ("Save removed"), one that was already there gets its filing
+    /// back.
+    private func file(_ candidate: FilingCandidate) {
+        guard let bork = saved, !finished else { return }
+        finished = true
+        let before = (categoryID: bork.categoryID, subcategory: bork.subcategory, source: bork.filingSource)
+        bork.categoryID = candidate.categoryID
+        bork.subcategory = candidate.subcategory
+        bork.filingSource = "user"
+        writeExtras(to: bork)
+        bork.touch()
+        try? context.save()
+        QuickFileBridge.scheduleSnapshot(context: context)
+
+        let store = context
+        let created = createdHere
+        let report = onSaved
+        let undo = {
+            guard bork.deletedAt == nil else { return }
+            bork.categoryID = before.categoryID
+            bork.subcategory = before.subcategory
+            bork.filingSource = before.source
+            // A tombstone, like any delete, under the guess it was saved
+            // with, so pasting the link again starts over.
+            if created { bork.deletedAt = .now }
+            bork.touch()
+            try? store.save()
+            QuickFileBridge.scheduleSnapshot(context: store)
+            if created { report("Save removed", nil) }
         }
-
-        let finalTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? Categorizer.fallbackTitle(for: url)
-            : title
-
-        var draft = BookmarkDraft(
-            url: url, title: finalTitle, author: author,
-            platform: Platform.detect(from: url), kind: nil,
-            categoryID: categoryID, subcategory: subcategory, tags: tags,
-            text: SavedContent.excerpt(pageDescription),
-            durationSeconds: duration,
-            noteText: noteOpen && !note.isEmpty ? note : nil,
-            noteDate: noteOpen && !note.isEmpty ? noteDate : nil
-        )
-
-        draft.imageURLString = imageURL?.absoluteString
-        draft.postedAt = postedAt
-        // Timed out: leave it for enrichment, which runs as soon as the
-        // Library sees the new bork.
-        draft.previewFetched = !previewTimedOut
-        draft.filingSource = userFiled ? "user" : "automatic"
-        draft.tagsEdited = userTagsEdited
-        draft.titleEdited = editingTitle
-
-        do {
-            didSave = true
-            let saved = try Store.save(draft, in: context)
-            if !selectedJourneyIDs.isEmpty {
-                for journey in journeys where selectedJourneyIDs.contains(journey.id) {
-                    journey.attach(saved.id)
-                }
-                try? context.save()
-            }
-            let where_ = Taxonomy.category(id: categoryID).map { category in
-                subcategory.map { "\(category.name) › \($0)" } ?? category.name
-            } ?? "your library"
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(380))
             dismiss()
-            onSaved("Saved to \(where_)")
+            onSaved(created ? Self.savedLine(for: bork) : QuickFileCopy.filed(candidate), undo)
             ReviewPrompter.reached(.borkSaved, requestReview)
-        } catch {
-            didSave = false
-            self.error = error.localizedDescription
         }
+    }
+
+    /// "Done": the bork stays as saved, filed under our guess, plus whatever
+    /// the extras say.
+    private func done() {
+        guard let bork = saved, !finished else { return dismiss() }
+        finished = true
+        if writeExtras(to: bork) { bork.touch() }
+        try? context.save()
+        dismiss()
+        onSaved(Self.savedLine(for: bork), nil)
+        ReviewPrompter.reached(.borkSaved, requestReview)
+    }
+
+    /// Swiped away after tap 1: the same as "Done".
+    private func finishIfNeeded() {
+        guard let bork = saved, !finished else { return }
+        finished = true
+        if writeExtras(to: bork) { bork.touch() }
+        try? context.save()
+        onSaved(Self.savedLine(for: bork), nil)
+    }
+
+    /// The one way back from tap 1, and it can itself be undone.
+    private func removeSave() {
+        guard let bork = saved, createdHere, !finished else { return }
+        finished = true
+        bork.deletedAt = .now
+        bork.touch()
+        try? context.save()
+        let store = context
+        dismiss()
+        onSaved("Save removed", {
+            bork.deletedAt = nil
+            bork.touch()
+            try? store.save()
+        })
+    }
+
+    /// A pick from More… is tap 2.
+    private func filePick() {
+        guard let topic = pickedTopic, let dial, dial.filed == nil else { return }
+        dial.file(dial.candidate(topicID: topic, subcategory: pickedSub))
+    }
+
+    /// The extras, written through to the bork as the sheet closes. Says
+    /// whether anything changed, so an untouched bork isn't restamped.
+    @discardableResult
+    private func writeExtras(to bork: Bookmark) -> Bool {
+        var changed = false
+        if userTagsEdited {
+            if bork.tags != tags || bork.tagsEdited != true {
+                bork.tags = tags
+                bork.tagsEdited = true
+                changed = true
+            }
+        } else if bork.tagsEdited != true {
+            let added = tags.filter { !bork.tags.contains($0) }
+            if !added.isEmpty {
+                bork.tags = Array(Set(bork.tags + added)).sorted()
+                changed = true
+            }
+        }
+        let typed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if editingTitle, !typed.isEmpty, typed != bork.title {
+            bork.title = typed
+            bork.titleEdited = true
+            changed = true
+        }
+        if noteOpen, !note.isEmpty, bork.noteText != note || bork.noteDate != noteDate {
+            bork.noteText = note
+            bork.noteDate = noteDate
+            changed = true
+        }
+        for journey in journeys where selectedJourneyIDs.contains(journey.id) && !journey.contains(bork.id) {
+            journey.attach(bork.id)
+        }
+        return changed
+    }
+
+    /// "Saved to Fitness › Running" — where it is, guess or not.
+    private static func savedLine(for bork: Bookmark) -> String {
+        guard let topic = Taxonomy.category(id: bork.categoryID) else { return "Saved to your library" }
+        return "Saved to " + (bork.subcategory.map { "\(topic.name) › \($0)" } ?? topic.name)
     }
 }

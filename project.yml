@@ -27,8 +27,8 @@ settings:
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "1.2"
-    CURRENT_PROJECT_VERSION: "15"
+    MARKETING_VERSION: "1.3"
+    CURRENT_PROJECT_VERSION: "17"
 
 targets:
   borkmarkr:
@@ -54,6 +54,13 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.jpwilson.borkmarkr
+        # The app's own application identifier: already its default keychain
+        # group and where the signed-in session has always been written, now
+        # listed so the Share Extension can borrow it (Core/SessionKeychain.swift).
+        # Nothing may ever be listed ahead of it. The first entry is where the
+        # app writes, and anything else there moves the session.
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)com.jpwilson.borkmarkr
     info:
       path: App/Info.plist
       properties:
@@ -125,11 +132,18 @@ targets:
         # Must nest under the app's identifier or the embed step fails.
         PRODUCT_BUNDLE_IDENTIFIER: com.jpwilson.borkmarkr.ShareExtension
         TARGETED_DEVICE_FAMILY: "1"
+        # `#if !SHARE_EXTENSION` keeps refreshing, saving and clearing the
+        # signed-in session out of the extension, which only borrows it.
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SHARE_EXTENSION"
     entitlements:
       path: ShareExtension/ShareExtension.entitlements
       properties:
         com.apple.security.application-groups:
           - group.com.jpwilson.borkmarkr
+        # The app's group, the only entry, never anything ahead of it (see the
+        # app's entitlements): the extension reads the session from there.
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)com.jpwilson.borkmarkr
     info:
       path: ShareExtension/Info.plist
       properties:
@@ -140,6 +154,9 @@ targets:
         # every single upload.
         ITSAppUsesNonExemptEncryption: false
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # The same server as the app, for asking the AI while the dial is up.
+        SupabaseURL: $(SUPABASE_URL)
+        SupabaseAnonKey: $(SUPABASE_ANON_KEY)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: ShareViewController
