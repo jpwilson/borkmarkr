@@ -164,7 +164,7 @@ enum Supabase {
     static func issueShareKey(session: Session) async throws -> String {
         let data = try await rpc("share_key_issue", bodyJSON: Data("{}".utf8), session: session)
         guard let key = (try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)) as? String,
-              SessionKeychain.ShareKey.isWellFormed(key)
+              isShareKey(key)
         else { throw Failure.decoding }
         return key
     }
@@ -317,6 +317,15 @@ enum Supabase {
         /// borrows has run out (`SessionKeychain.ShareKey`). Only
         /// `categorize` accepts one, and only to spend the key owner's quota.
         case shareKey(String)
+    }
+
+    /// 64 lowercase hex characters: how `share_key_issue` writes a share
+    /// key, and the only shape `categorize` accepts. Here rather than beside
+    /// the Keychain item, so this file still compiles on its own for the
+    /// standalone checks.
+    static func isShareKey(_ key: String) -> Bool {
+        let digits = UInt8(ascii: "0")...UInt8(ascii: "9"), letters = UInt8(ascii: "a")...UInt8(ascii: "f")
+        return key.utf8.count == 64 && key.utf8.allSatisfy { digits.contains($0) || letters.contains($0) }
     }
 
     /// Calls an Edge Function as the signed-in user.

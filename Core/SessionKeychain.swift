@@ -32,12 +32,8 @@ enum SessionKeychain {
         var userID: String
         var issuedAt: Date
 
-        /// 64 lowercase hex characters: how `share_key_issue` writes a key,
-        /// and the only shape `categorize` accepts.
-        static func isWellFormed(_ key: String) -> Bool {
-            let digits = UInt8(ascii: "0")...UInt8(ascii: "9"), letters = UInt8(ascii: "a")...UInt8(ascii: "f")
-            return key.utf8.count == 64 && key.utf8.allSatisfy { digits.contains($0) || letters.contains($0) }
-        }
+        /// 64 lowercase hex characters (`Supabase.isShareKey`).
+        static func isWellFormed(_ key: String) -> Bool { Supabase.isShareKey(key) }
     }
 
     #if !SHARE_EXTENSION
