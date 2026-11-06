@@ -2426,8 +2426,8 @@ updated; if a label has moved, the same option is usually close by.
 
 Tap the bookmark icon on a video and it goes into Favorites on your profile. You can make
 collections there and move videos into them by hand. That is the whole system: no topics unless you
-make them, and no way to type a word and see only the videos you saved. With a few dozen favourites, scrolling
-works. With a few hundred it does not.
+make them, and finding one video usually means scrolling covers. With a few dozen favourites, that works. With a
+few hundred it does not.
 
 ### Method 1: download your data and search the file
 

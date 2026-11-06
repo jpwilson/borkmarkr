@@ -359,8 +359,8 @@ updated; if a label has moved, the same option is usually close by.</p></div>
 <h2>What TikTok gives you</h2>
 <p>Tap the bookmark icon on a video and it goes into <strong>Favorites</strong> on your profile. You can make
 <strong>collections</strong> there and move videos into them by hand. That is the whole system: no topics unless you
-make them, and no way to type a word and see only the videos you saved. With a few dozen favourites, scrolling
-works. With a few hundred it does not.</p>
+make them, and finding one video usually means scrolling covers. With a few dozen favourites, that works. With a
+few hundred it does not.</p>
 
 <h2>Method 1: download your data and search the file</h2>
 <ol>
