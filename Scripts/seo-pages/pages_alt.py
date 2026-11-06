@@ -81,8 +81,8 @@ your Instagram reel and your X thread about the same marathon belong in the same
 a library of a few thousand saves is usable without you organising anything.</p>
 <p><strong>Weakest at:</strong> depth per platform and depth per page. It stores links, not copies, so it cannot
 show you a post that has been deleted, and search covers only the text that came with a save — never the article,
-PDF or transcript behind the link. Thumbnails and titles are frequently missing for Instagram, TikTok and X saves
-because those platforms do not publish metadata to unauthenticated requests. There is no Android app and no
+PDF or transcript behind the link. Instagram saves frequently arrive with no thumbnail and a plain title, because
+Instagram publishes nothing to a request that is not logged in, and X saves usually have text but no image. There is no Android app and no
 browser extension, though the web app runs in an Android or desktop browser. It cannot reach into X and pull your
 existing bookmark list down — for that you import X's data export.</p>
 <p><strong>Price:</strong> free on the App Store; first 20 saves with no account, then a free email sign-in for

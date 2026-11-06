@@ -12,11 +12,12 @@ Generated from the committed HTML in docs/ by Scripts/gen_llms_full.py. Last upd
 
 # https://bookmarker.lol/
 
-Title: bookmarker — every save, one library
-Description: Everything you save on Instagram, X, TikTok and YouTube, in one library you can actually search.
+Title: bookmarker — organize saved Instagram, TikTok, X & YouTube posts
+Description: A free iPhone app and web app that puts everything you save on Instagram, TikTok, X and YouTube in one library: filed by topic in one tap, and searchable.
 Page type: Home and web app
 
 bookmarker
+Bookmark manager for Instagram, TikTok, X & YouTube saves
 
 ## The folder your feeds never gave you.
 
@@ -29,6 +30,12 @@ Everything you save on Instagram, X, TikTok and YouTube — reels, threads, clip
 - Search everything you've ever saved
 
 - Free — here on the web and on iPhone
+
+Get the iPhone app
+
+Try it on the web
+
+Free on the App Store, iOS 17 or later. No account for your first 20 saves.
 
 New
 Explore Library IslandYour saves as an island: every topic its own zone, every link a camp
@@ -91,12 +98,12 @@ meant to come back to. bookmarker is the layer above all of them. A saved item i
 Tap Share in any iPhone app and pick bookmarker, or paste a link here on the web. The title, the
 account that posted it and a thumbnail come along where the platform publishes them.
 
-#### It files itself
+#### It files itself, in one tap
 
-Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. Fifty
-topics, 612 subtopics, your own subtopics on top, and every suggestion is overridable. Keyword matching
-does it on the spot and offline; signed in, the links it cannot place go to our server, which asks a
-language model.
+Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. The
+moment you save, a dial offers the seven likeliest topics with the best guess in the middle: one tap
+files it, or leave it and the guess stands. Signed in, an AI model reads the caption and suggests the
+topic and subtopic too. Fifty topics, 612 subtopics, and your own on top.
 
 #### Browse two ways
 
@@ -116,8 +123,9 @@ have gone back to it — the signal platform bookmarks throw away.
 
 #### Bring what you already saved
 
-Import your browser bookmarks, or the data export from X, Instagram, TikTok or YouTube, and thousands
-of old saves become a filed, searchable library in one step.
+Import your browser bookmarks, or the data export from Instagram, TikTok, X, YouTube or Pinterest —
+drop the whole .zip in — and thousands of old saves become one searchable library in one step. Anything
+that needs a topic waits in Sort your borks, one card at a time.
 
 ### How it works
 
@@ -160,9 +168,10 @@ these must appear”.
 
 #### Will I get thumbnails for Instagram, TikTok and X?
 
-Often not. YouTube and most web pages publish the metadata bookmarker reads; Instagram, TikTok and X
-usually do not publish it to an unauthenticated request, so those saves often arrive with a plain title
-and no image. The save, the filing and the search still work.
+It depends on the platform. YouTube and most web pages publish a title and an image. TikTok and X publish
+the caption or post text through embed endpoints the iPhone app reads — TikTok with a cover, X usually
+without. Instagram usually returns nothing to a request that is not logged in, so Instagram saves often
+arrive with a plain title and no image. The save, the filing and the search still work.
 
 #### Is there an Android app?
 
@@ -231,7 +240,7 @@ bookmarker › What is bookmarker?
 
 ## What is bookmarker?
 
-Last updated: 21 October 2026
+Last updated: 6 November 2026
 
 bookmarker is a free bookmark manager for iPhone and the web that collects everything you save on
 Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a topic
@@ -252,22 +261,26 @@ bookmarker is the layer above all of them. One library, every app, filed and sea
 - Saves from anywhere. Tap Share in any iPhone app and pick bookmarker, or paste a link into
 the app, or paste it into the web app at bookmarker.lol.
 
-- Files itself. Every save lands in a topic and a subtopic — Fitness › Mobility,
-Recipes › Meal prep. There are 50 topics and 612 subtopics, and you can add your own subtopics. The
-filing is a suggestion: you can change it before or after saving.
+- Files itself, in one tap. Every save lands in a topic and a subtopic — Fitness ›
+Mobility, Recipes › Meal prep. Straight after you save, a dial shows the seven likeliest of 50 topics
+with the best guess in the middle: tap to file it there, turn the dial to pick another, or leave it and the
+guess stands. Signed in, an AI model also reads the caption and suggests the topic and subtopic. There are 612
+subtopics, you can add topics and subtopics of your own, and anything unfiled or uncertain waits in
+Sort your borks, one card at a time.
 
 - Browses two ways. By topic, to see everything about running wherever it came from; or by
 source app, to see everything you kept from TikTok. Each view filters the other.
 
-- Finds things again. Search covers the title, the account that posted it, your tags, your
-notes, the topic and subtopic, the source app and the link itself. You can narrow a search to topics,
-subtopics or tags only.
+- Finds things again. Search covers the title, the account that posted it, any post text
+that came with the save, your tags, your notes, the topic and subtopic, the source app and the link itself.
+You can narrow a search to topics, subtopics or tags only.
 
 - Remembers why. Add a dated note to any save, and bookmarker counts how often you have
 gone back to something — the signal platform bookmarks throw away.
 
-- Imports what you already saved. Browser bookmarks, or the data export from X, Instagram,
-TikTok or YouTube. Thousands of old saves become a filed, searchable library in one step.
+- Imports what you already saved. Browser bookmarks, or the data export from Instagram
+(saved posts), TikTok (favourites and likes), X (bookmarks and likes), YouTube (playlists, including Watch
+later), plus Pinterest in the web app. Thousands of old saves become one library in a single step.
 
 - Shares a set. Pick some saves and bookmarker turns them into a page at
 bookmarker.lol/c/… that you can send to anyone, with an expiry of never, one day or ten days, and a
@@ -292,8 +305,10 @@ thumbnail where one is published. Opening a save sends you to the original post 
 is not an archive — if the original is deleted, the link dies with it.
 
 - Thumbnails and titles are only as good as the platform allows. YouTube and most ordinary
-web pages publish the metadata bookmarker needs. Instagram, TikTok and X usually do not publish it to an
-unauthenticated request, so saves from those apps often arrive with a plain title and no image.
+web pages publish a title and an image. TikTok and X publish the caption or post text through their embed
+endpoints, which the iPhone app reads (TikTok with a cover image, X usually without). Instagram usually
+returns nothing to a request that is not logged in, so Instagram saves often arrive with a plain title and
+no image.
 
 - Search does not reach into the page behind the link. It matches what bookmarker holds:
 titles, accounts, tags, notes, topics, source and link, plus whatever post text came with the save — the
@@ -303,10 +318,10 @@ operator — multiple words are treated as "all of these must appear".
 
 - No Android app. There is an iPhone app and a web app that runs in any modern browser.
 
-- Filing is keyword-first; a language model is the backup, not the engine. The pass that
-runs on your device is a keyword score, so it does well on descriptive links and captions and leaves an
-opaque link unfiled rather than guessing. When you are signed in, those leftovers go to our server, which
-asks a language model — so filing is only entirely on-device when you are signed out.
+- Filing is only entirely on-device when you are signed out. The first pass runs on your
+phone and works offline. Signed in, every save you make by hand is also sent once to our server, which asks
+a language model for a topic — so the link, its title or caption, the account, hashtags and your tags leave
+the device. Your notes never do.
 
 ### What it costs
 
@@ -433,9 +448,9 @@ Saving is instant. Organising is optional — bookmarker does most of it for you
 
 Tap Share in any app and pick bookmarker, or paste a link. The title, the account that posted it and a thumbnail come along automatically. Pin bookmarker to the front of your share sheet once (More → Edit → add to Favorites) and it's the first icon every time.
 
-#### It files itself
+#### It files itself, in one tap
 
-Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. Fifty topics, six hundred subtopics, and you can add your own.
+Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. The moment you save, a dial offers the seven likeliest topics: one tap files it, or leave it and our best guess stands. Signed in, the AI reads the caption and suggests one too. Fifty topics, six hundred subtopics, and your own.
 
 #### Browse two ways
 
@@ -479,7 +494,7 @@ Import
 
 ### Bring what you already saved.
 
-Import your browser bookmarks, or the data export from X, Instagram, TikTok or YouTube. Thousands of old saves become a sorted, searchable library in one step.
+Import your browser bookmarks, or the data export from Instagram, TikTok, X or YouTube (and Pinterest, in the web app). Thousands of old saves become one searchable library in one step, and anything that needs a topic waits in Sort your borks, one tap each.
 
 From
 
@@ -526,7 +541,7 @@ Stay in the loop
 
 ### Hear what ships next
 
-Leave your email and we’ll write when something big ships — bulk import, new platforms. Nothing else, ever.
+Leave your email and we’ll write when something big ships — new platforms, new features. Nothing else, ever.
 
 Email address
 
@@ -592,7 +607,7 @@ bookmarker › FAQ
 
 ## bookmarker FAQ
 
-Last updated: 21 October 2026
+Last updated: 6 November 2026
 
 Straight answers about bookmarker — the free bookmark manager for iPhone and the web that puts
 everything you save on Instagram, X, TikTok and YouTube into one searchable library. If something you need is
@@ -633,18 +648,25 @@ There is no password to invent — you get a six-digit code by email.
 
 ### How does the automatic filing work?
 
-In two passes. The first scores the words in the link and the title or caption against the topic list and
-files the save into the best of 50 topics and 612 subtopics — you can add your own subtopics too. That pass
-runs on your device, instantly and offline, and it settles most links.
+The save always happens first; filing never holds it up. Then, on your device, bookmarker ranks its 50
+topics against the words in the link and the title or caption, and against where you have filed that creator
+or website before. That is instant and works offline and signed out.
 
-It is keyword matching, so an opaque link ("she does this every morning and it changed my skin") comes back
-with nothing rather than a wild guess. For those leftovers — and only when you are signed in —
-bookmarker sends the link, its title or caption, the account, the hashtags and any tags you typed to its own
-server, which asks a language model where the save belongs. Answers the model is not confident about are
-thrown away rather than shown. Signed out, offline, or if that request fails, you keep the offline answer; your
-notes are never sent. The privacy policy sets this out in full.
+Straight after you save — from the share sheet, the + button, a pasted link or the web app's Add
+dialog — a dial shows the seven likeliest topics with the best guess in the middle. Tap one to file the
+save there, turn the dial to pick another, or leave it and the save is filed under the guess. Subtopics are
+one more tap.
 
-Either way the topic is a suggestion you can override, and saving is never blocked by filing.
+When you are signed in, every save you make by hand also gets an AI model's opinion once: bookmarker sends
+the link, its title or caption, the account, the hashtags and any tags you typed to its own server, which asks
+the model for a topic and subtopic and moves the dial when it answers. Its answer is weighed alongside the
+rest rather than taking over, low-confidence answers are dropped, and there is a daily allowance. Imported
+saves keep the older rule: only the ones the on-device pass is unsure about are sent, a few at a time. Signed
+out or offline you keep the on-device answer; your notes are never sent. The privacy
+policy sets this out in full.
+
+Anything unfiled, and any guess worth a second look, waits in Sort your borks: one card at a time,
+one tap each.
 
 ### What exactly can I search?
 
@@ -661,8 +683,8 @@ be found.
 ### Does bookmarker work offline?
 
 Yes. The iPhone library lives on your iPhone, and browsing, searching, saving a pasted link and the keyword
-filing all work with no connection. Fetching a title or a thumbnail needs the network, as does the model that
-files the links keyword matching cannot place, so those parts fill in when you are back online.
+filing all work with no connection. Fetching a title or a thumbnail needs the network, as does the AI model's
+opinion on where a save belongs, so those parts fill in when you are back online.
 
 ### Does bookmarker copy the posts I save?
 
@@ -672,16 +694,22 @@ original is deleted, the link stops working.
 
 ### Will I get thumbnails for Instagram, TikTok and X saves?
 
-Often not, and it is worth being straight about why. YouTube and most ordinary web pages publish the
-title, author and image that bookmarker reads. Instagram, TikTok and X generally do not publish that metadata
-to an unauthenticated request, so saves from those apps frequently arrive with a plain title taken from the
-share sheet caption or the link, and no image. The save, the filing and the search all still work.
+It depends on the platform, and it is worth being straight about why. YouTube and most ordinary web pages
+publish the title, author and image that bookmarker reads. TikTok and X publish the caption or post text and
+the creator through documented embed endpoints, which the iPhone app reads — TikTok with a cover image, X
+usually without. Instagram generally returns nothing to a request that is not logged in, so Instagram saves
+often arrive with a plain title taken from the link, and no image. The save, the filing and the search all
+still work.
 
 ### Can I import the saves I already have?
 
-Yes. bookmarker imports browser bookmarks and the data export files from X, Instagram, TikTok and
-YouTube. Every platform is obliged to hand your data over, so a few thousand old saves can become a filed,
-searchable library in one pass instead of being re-saved one at a time.
+Yes. bookmarker imports browser bookmarks and the data export files from Instagram (your saved posts and
+collections), TikTok (favourites and likes), X (bookmarks and likes), YouTube (playlists, including Watch later,
+from Google Takeout), and in the web app Pinterest too. On a computer, drop the whole .zip into the web app's importer; you do not
+need to unzip it. A few thousand old saves become one library in a single pass instead of being re-saved one at
+a time. An export carries the link and usually the date you saved it; Instagram's also names the account, and X's likes
+file carries the post text. Titles, captions and thumbnails fill in afterwards where the platform publishes
+them.
 
 ### What happens if I save the same link twice?
 
@@ -785,7 +813,7 @@ bookmarker › Alternatives
 
 ## Best bookmark managers for saved posts and X bookmarks
 
-Last updated: 21 October 2026 · written by the team that makes bookmarker
+Last updated: 6 November 2026 · written by the team that makes bookmarker
 
 If you save a lot on X, Instagram, TikTok and YouTube and can never find any of it again, there
 are about five serious options, and they are built for genuinely different jobs. This page says what each one is
@@ -847,8 +875,8 @@ a library of a few thousand saves is usable without you organising anything.
 
 Weakest at: depth per platform and depth per page. It stores links, not copies, so it cannot
 show you a post that has been deleted, and search covers only the text that came with a save — never the article,
-PDF or transcript behind the link. Thumbnails and titles are frequently missing for Instagram, TikTok and X saves
-because those platforms do not publish metadata to unauthenticated requests. There is no Android app and no
+PDF or transcript behind the link. Instagram saves frequently arrive with no thumbnail and a plain title, because
+Instagram publishes nothing to a request that is not logged in, and X saves usually have text but no image. There is no Android app and no
 browser extension, though the web app runs in an Android or desktop browser. It cannot reach into X and pull your
 existing bookmark list down — for that you import X's data export.
 
@@ -1018,7 +1046,7 @@ bookmarker › bookmarker vs X bookmarks
 
 ## bookmarker vs X (Twitter) built-in bookmarks
 
-Last updated: 21 October 2026
+Last updated: 6 November 2026
 
 X has a bookmark button, it is free, and it is one tap. So why add anything? The short answer:
 X's bookmarks only ever hold X, and they tell you nothing about what you saved or whether you ever went back to
@@ -1239,7 +1267,7 @@ bookmarker › bookmarker vs Raindrop.io
 
 ## bookmarker vs Raindrop.io
 
-Last updated: 21 October 2026
+Last updated: 6 November 2026
 
 Both are bookmark managers, and they are built for different halves of the problem.
 Raindrop.io is a mature, cross-platform
@@ -1448,7 +1476,7 @@ bookmarker › bookmarker vs Twillot
 
 ## bookmarker vs Twillot
 
-Last updated: 21 October 2026
+Last updated: 6 November 2026
 
 Both tools exist because X's bookmark list becomes useless once it is long. They attack it from
 opposite ends. Twillot is a
@@ -1651,7 +1679,7 @@ bookmarker › bookmarker vs mymind
 
 ## bookmarker vs mymind
 
-Last updated: 21 October 2026
+Last updated: 6 November 2026
 
 bookmarker and mymind start from the same good idea — you should not have to file the things you
 save — and then build two different products on it. bookmarker is a free iPhone and web library for posts you
@@ -1835,7 +1863,7 @@ bookmarker › How to organise your X bookmarks
 
 ## How to organise your X (Twitter) bookmarks
 
-Last updated: 21 October 2026
+Last updated: 6 November 2026
 
 If you have saved hundreds of posts on X and cannot find any of them, the problem is not you —
 it is that a reverse-chronological list with no titles and no subjects is not an organisational system. This page
@@ -1882,7 +1910,7 @@ the method below.
 
 - Save a post from X. In X, tap Share on the post, then “Share via…” to reach the iOS share sheet, and pick bookmarker. Pin bookmarker to the front of the share sheet once — More → Edit → add to Favourites — and it is the first icon from then on.
 
-- Let it file the save. bookmarker scores the words in the link and the title or caption against its topic list and files the save into a topic and subtopic, such as Fitness › Mobility. Change it there and then if it guessed wrong; saving is never blocked by filing.
+- File it in one tap. The save happens at once. Then a dial shows the seven likeliest topics, with the best guess in the middle: tap to file it there, such as Fitness › Mobility, turn the dial to pick another, or leave it and the guess stands. Signed in, an AI model also reads the post and suggests a topic and subtopic. Saving is never blocked by filing.
 
 - Bring your existing bookmarks in. Request your X data archive (X Settings → Your account → Download an archive of your data), then import the file into bookmarker so your old saves are filed too.
 
@@ -1890,16 +1918,18 @@ the method below.
 
 ### Why topics beat folders
 
-Folders are a decision per save. Topics are a decision you never make: bookmarker picks one of 50 topics and
-612 subtopics from the words in the link and the caption, and you only intervene when it is wrong. With a couple
-of thousand saves that is the difference between a system you keep up with and one you abandon in week two.
+Folders are a decision per save, made from a blank list. Topics are a decision made for you: bookmarker
+ranks its 50 topics and 612 subtopics against the words in the link and the post, and against where you filed
+that account before, and offers the best seven on a dial the moment you save. Confirming takes one tap; ignoring
+it keeps the guess. With a couple of thousand saves that is the difference between a system you keep up with and
+one you abandon in week two.
 
-The pass that does the work is keyword matching against the topic list, which runs on your device, instantly
-and offline. That has one honest consequence: it is good on descriptive links and captions, and it deliberately
-leaves a save unfiled rather than guessing wildly when a link is opaque. X links are often opaque, so expect to
-correct some of them — it takes one tap, and corrections stick. When you are signed in, the links keyword
-matching could not place are sent on to bookmarker's server, which asks a language model where they belong and
-discards answers it is not confident about; signed out or offline, the keyword answer is the only answer.
+The first pass runs on your device, instantly and offline. When you are signed in, every save you make by hand
+also goes once to bookmarker's server, which asks a language model to read the post text and suggest a topic and
+subtopic; its answer is weighed with the rest, and answers it is not confident about are dropped. Signed out or
+offline, the on-device answer is the only answer. X posts with very little text are the hard case, so expect to
+correct some — it takes one tap, and bookmarker remembers where you file each account. Anything left unfiled
+waits in Sort your borks, one card at a time.
 
 ### Tags for the things topics cannot know
 
@@ -1915,9 +1945,9 @@ app it came from, so you can filter by source when you want to.
 
 ### What this will not fix
 
-bookmarker stores links, not copies: if a post is deleted, the link dies. And many X saves arrive with a plain
-title and no thumbnail, because X does not publish that metadata to unauthenticated requests. The filing, the
-notes and the search all still work; the card just looks plainer than a YouTube one.
+bookmarker stores links, not copies: if a post is deleted, the link dies. And X saves usually arrive with the
+post text but no thumbnail, because X's embed endpoint, which the iPhone app reads, does not include an image. The filing, the notes and the
+search all still work; the card just looks plainer than a YouTube one.
 
 Get bookmarker — free
 
@@ -1994,7 +2024,7 @@ bookmarker › How to search your X bookmarks
 
 ## How to search your X (Twitter) bookmarks
 
-Last updated: 21 October 2026
+Last updated: 6 November 2026
 
 Saved a good post weeks ago and cannot find it? The reason is that X's search box searches X, not
 your saves, and scrolling a long bookmark list is not searching. This page covers the two methods that actually
@@ -2059,8 +2089,9 @@ at:
 
 - the link itself;
 
-- and whatever post text bookmarker holds — the description a page published, which Instagram, TikTok and X
-usually do not provide, or the full post body when the save arrived in an X data export.
+- and whatever post text bookmarker holds — the caption or post text TikTok and X publish through their embed
+endpoints (read by the iPhone app), the description an ordinary page published, or the full post body when the
+save arrived in an X likes export. Instagram usually provides none.
 
 What it does not do is open the page behind the link. The body of an article, a PDF or a
 video transcript is never fetched, so none of it is searchable, and there is no quoted-phrase or operator syntax:

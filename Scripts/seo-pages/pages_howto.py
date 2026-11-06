@@ -24,7 +24,7 @@ method below does not depend on which tier you are on.</p></div>"""
 ORG_STEPS = [
  ("Get bookmarker", "Install bookmarker free from the App Store (iOS 17 or later), or open the web app at bookmarker.lol. Your first 20 saves work with no account."),
  ("Save a post from X", "In X, tap Share on the post, then “Share via…” to reach the iOS share sheet, and pick bookmarker. Pin bookmarker to the front of the share sheet once — More → Edit → add to Favourites — and it is the first icon from then on."),
- ("Let it file the save", "bookmarker scores the words in the link and the title or caption against its topic list and files the save into a topic and subtopic, such as Fitness › Mobility. Change it there and then if it guessed wrong; saving is never blocked by filing."),
+ ("File it in one tap", "The save happens at once. Then a dial shows the seven likeliest topics, with the best guess in the middle: tap to file it there, such as Fitness › Mobility, turn the dial to pick another, or leave it and the guess stands. Signed in, an AI model also reads the post and suggests a topic and subtopic. Saving is never blocked by filing."),
  ("Bring your existing bookmarks in", "Request your X data archive (X Settings → Your account → Download an archive of your data), then import the file into bookmarker so your old saves are filed too."),
  ("Browse by topic instead of scrolling", "Open Browse and pick a topic to see everything on that subject from every app, or switch the axis to browse by source app. Add tags for one-off projects, and a dated note when you want to remember why you kept something."),
 ]
@@ -83,15 +83,17 @@ the method below.</p>
 </ol>
 
 <h2>Why topics beat folders</h2>
-<p>Folders are a decision per save. Topics are a decision you never make: bookmarker picks one of 50 topics and
-612 subtopics from the words in the link and the caption, and you only intervene when it is wrong. With a couple
-of thousand saves that is the difference between a system you keep up with and one you abandon in week two.</p>
-<p>The pass that does the work is keyword matching against the topic list, which runs on your device, instantly
-and offline. That has one honest consequence: it is good on descriptive links and captions, and it deliberately
-leaves a save unfiled rather than guessing wildly when a link is opaque. X links are often opaque, so expect to
-correct some of them — it takes one tap, and corrections stick. When you are signed in, the links keyword
-matching could not place are sent on to bookmarker's server, which asks a language model where they belong and
-discards answers it is not confident about; signed out or offline, the keyword answer is the only answer.</p>
+<p>Folders are a decision per save, made from a blank list. Topics are a decision made for you: bookmarker
+ranks its 50 topics and 612 subtopics against the words in the link and the post, and against where you filed
+that account before, and offers the best seven on a dial the moment you save. Confirming takes one tap; ignoring
+it keeps the guess. With a couple of thousand saves that is the difference between a system you keep up with and
+one you abandon in week two.</p>
+<p>The first pass runs on your device, instantly and offline. When you are signed in, every save you make by hand
+also goes once to bookmarker's server, which asks a language model to read the post text and suggest a topic and
+subtopic; its answer is weighed with the rest, and answers it is not confident about are dropped. Signed out or
+offline, the on-device answer is the only answer. X posts with very little text are the hard case, so expect to
+correct some — it takes one tap, and bookmarker remembers where you file each account. Anything left unfiled
+waits in <em>Sort your borks</em>, one card at a time.</p>
 
 <h2>Tags for the things topics cannot know</h2>
 <p>Topics handle subjects. Tags handle projects: tag everything you save for a specific conference, trip or client
@@ -104,9 +106,9 @@ recipe thread belong in the same place, and in bookmarker they are both in Recip
 app it came from, so you can filter by source when you want to.</p>
 
 <h2>What this will not fix</h2>
-<p>bookmarker stores links, not copies: if a post is deleted, the link dies. And many X saves arrive with a plain
-title and no thumbnail, because X does not publish that metadata to unauthenticated requests. The filing, the
-notes and the search all still work; the card just looks plainer than a YouTube one.</p>
+<p>bookmarker stores links, not copies: if a post is deleted, the link dies. And X saves usually arrive with the
+post text but no thumbnail, because X's embed endpoint, which the iPhone app reads, does not include an image. The filing, the notes and the
+search all still work; the card just looks plainer than a YouTube one.</p>
 
 <p><a class="cta" href="/get/">Get bookmarker — free</a></p>
 <span class="cta-sub">Next: <a href="/how-to-search-twitter-bookmarks">how to search your X bookmarks</a>, or
@@ -183,8 +185,9 @@ at:</p>
   <li>the topic and subtopic it was filed into;</li>
   <li>the source app;</li>
   <li>the link itself;</li>
-  <li>and whatever post text bookmarker holds — the description a page published, which Instagram, TikTok and X
-    usually do not provide, or the full post body when the save arrived in an X data export.</li>
+  <li>and whatever post text bookmarker holds — the caption or post text TikTok and X publish through their embed
+    endpoints (read by the iPhone app), the description an ordinary page published, or the full post body when the
+    save arrived in an X likes export. Instagram usually provides none.</li>
 </ul>
 <p>What it does <strong>not</strong> do is open the page behind the link. The body of an article, a PDF or a
 video transcript is never fetched, so none of it is searchable, and there is no quoted-phrase or operator syntax:
