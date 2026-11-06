@@ -56,6 +56,8 @@ FOOT = """<footer class="site-foot">
       <ul>
         <li><a href="/how-to-organize-twitter-bookmarks">Organise your X bookmarks</a></li>
         <li><a href="/how-to-search-twitter-bookmarks">Search your X bookmarks</a></li>
+        <li><a href="/how-to-organize-instagram-saved-posts">Organise Instagram saved posts</a></li>
+        <li><a href="/how-to-search-tiktok-favorites">Search TikTok favourites</a></li>
         <li><a href="/llms.txt">llms.txt</a></li>
       </ul>
     </div>

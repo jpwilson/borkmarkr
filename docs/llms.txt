@@ -106,6 +106,8 @@ discloses. Saves are private unless you deliberately share a collection.
 - https://bookmarker.lol/vs-mymind — bookmarker vs mymind
 - https://bookmarker.lol/how-to-organize-twitter-bookmarks — organising saved X posts by topic
 - https://bookmarker.lol/how-to-search-twitter-bookmarks — making saved X posts searchable
+- https://bookmarker.lol/how-to-organize-instagram-saved-posts — organising Instagram saved posts and reels by topic, and importing the ones you already have
+- https://bookmarker.lol/how-to-search-tiktok-favorites — making saved TikToks searchable by caption, creator and topic
 - https://bookmarker.lol/lifetime — the founding-member reservation
 - https://bookmarker.lol/press/ — press kit
 - https://bookmarker.lol/privacy — privacy policy

@@ -38,6 +38,8 @@ const PAGES = [
   { file: "vs-mymind.html", path: "/vs-mymind" },
   { file: "how-to-organize-twitter-bookmarks.html", path: "/how-to-organize-twitter-bookmarks" },
   { file: "how-to-search-twitter-bookmarks.html", path: "/how-to-search-twitter-bookmarks" },
+  { file: "how-to-organize-instagram-saved-posts.html", path: "/how-to-organize-instagram-saved-posts" },
+  { file: "how-to-search-tiktok-favorites.html", path: "/how-to-search-tiktok-favorites" },
   { file: "lifetime.html", path: "/lifetime" },
   { file: "palace/index.html", path: "/palace/" },
   { file: "press/index.html", path: "/press/" },
@@ -51,6 +53,7 @@ const MARKETING = new Set([
   "/", "/what-is-bookmarker", "/app/", "/faq", "/alternatives",
   "/vs-twitter-bookmarks", "/vs-raindrop", "/vs-twillot", "/vs-mymind",
   "/how-to-organize-twitter-bookmarks", "/how-to-search-twitter-bookmarks",
+  "/how-to-organize-instagram-saved-posts", "/how-to-search-tiktok-favorites",
 ]);
 
 let failures = 0;
@@ -157,6 +160,14 @@ for (const { file, path } of PAGES) {
   if (isMarketing) {
     for (const href of ["/faq", "/alternatives"]) {
       ok(html.includes(`href="${href}"`), `links to ${href}`);
+    }
+    // Safari on iPhone offers the app from any page someone lands on.
+    ok(/<meta\s+name="apple-itunes-app"\s+content="app-id=6799805479"/i.test(html), "has the Smart App Banner");
+    // The home page is the strongest page on the site; it must pass that on.
+    if (path === "/") {
+      for (const target of MARKETING) {
+        if (target !== "/") ok(html.includes(`href="${target}"`), `home links to ${target}`);
+      }
     }
   }
 

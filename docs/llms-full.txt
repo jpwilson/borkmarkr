@@ -202,6 +202,10 @@ Ten more answers in the full FAQ →
 
 - How to search your X bookmarks
 
+- How to organise your Instagram saved posts
+
+- How to search your TikTok favourites
+
 - Library Island
 
 - Press kit
@@ -378,6 +382,10 @@ Free on the App Store, iOS 17 or later. Or use it in a browser at bookmarker.lol
 - Organise your X bookmarks
 
 - Search your X bookmarks
+
+- Organise Instagram saved posts
+
+- Search TikTok favourites
 
 - llms.txt
 
@@ -572,6 +580,8 @@ vs Twillot
 vs mymind
 Organise X bookmarks
 Search X bookmarks
+Organise Instagram saved posts
+Search TikTok favourites
 Library Island
 Press
 Privacy
@@ -772,6 +782,10 @@ alternatives, and how it compares to X bookmarks.
 - Organise your X bookmarks
 
 - Search your X bookmarks
+
+- Organise Instagram saved posts
+
+- Search TikTok favourites
 
 - llms.txt
 
@@ -1006,6 +1020,10 @@ Free on the App Store, iOS 17 or later, or in a browser at bookmarker.lol.
 
 - Search your X bookmarks
 
+- Organise Instagram saved posts
+
+- Search TikTok favourites
+
 - llms.txt
 
 ### Company
@@ -1227,6 +1245,10 @@ the alternatives.
 
 - Search your X bookmarks
 
+- Organise Instagram saved posts
+
+- Search TikTok favourites
+
 - llms.txt
 
 ### Company
@@ -1436,6 +1458,10 @@ vs Twillot and the FAQ.
 
 - Search your X bookmarks
 
+- Organise Instagram saved posts
+
+- Search TikTok favourites
+
 - llms.txt
 
 ### Company
@@ -1639,6 +1665,10 @@ all the alternatives and the FAQ.
 
 - Search your X bookmarks
 
+- Organise Instagram saved posts
+
+- Search TikTok favourites
+
 - llms.txt
 
 ### Company
@@ -1823,6 +1853,10 @@ FAQ.
 
 - Search your X bookmarks
 
+- Organise Instagram saved posts
+
+- Search TikTok favourites
+
 - llms.txt
 
 ### Company
@@ -1983,6 +2017,10 @@ how a library compares to X's own bookmarks.
 - Organise your X bookmarks
 
 - Search your X bookmarks
+
+- Organise Instagram saved posts
+
+- Search TikTok favourites
 
 - llms.txt
 
@@ -2161,6 +2199,348 @@ read the FAQ.
 - Organise your X bookmarks
 
 - Search your X bookmarks
+
+- Organise Instagram saved posts
+
+- Search TikTok favourites
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/how-to-organize-instagram-saved-posts
+
+Title: How to organise your Instagram saved posts (and find them again)
+Description: Instagram's Saved tab is one long grid plus collections you sort by hand. Here is how to file saved posts and reels by topic, import the ones you already have, and search them.
+Page type: Guide
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › How to organise your Instagram saved posts
+
+## How to organise your Instagram saved posts
+
+Last updated: 6 November 2026
+
+If you tap the bookmark icon on Instagram several times a day, your Saved tab is probably hundreds
+of reels and posts deep, and finding the one recipe or workout you meant to come back to means scrolling. This page
+covers what Instagram's own collections do well, where they stop, and a method that files each save by topic as you
+make it — including the posts you saved years ago.
+
+Instagram changes its menus often. The paths below were right when this page was updated;
+if a label has moved, the same option is usually one screen away.
+
+### What Instagram gives you: Saved and collections
+
+Every post you bookmark goes into Saved (your profile → the menu → Saved), ordered by
+when you saved it. You can create collections and add posts to them, either as you save or
+afterwards. For a handful of broad buckets — "Recipes", "Trips" — that works, it costs nothing, and the posts stay
+inside Instagram where they play best.
+
+Where it stops:
+
+- Every post is a manual decision. Collections only fill when you file into them, so most
+people stop after the first week and the "All posts" grid keeps growing.
+
+- It only holds Instagram. The TikTok, YouTube and X saves about the same subject live in three
+other apps.
+
+- It is built for scrolling, not finding. The grid shows covers, and you remember what a post
+was about, not when you saved it.
+
+### The method: file by topic as you save
+
+The approach with the least ongoing effort is to save through something that suggests the subject at save time,
+so the organising has already happened when you come looking. bookmarker is free, takes posts from Instagram's share
+button, and keeps them next to everything you save from other apps.
+
+- Get bookmarker. Install bookmarker free from the App Store (iOS 17 or later), or open the web app at bookmarker.lol. Your first 20 saves work with no account.
+
+- Share a post from Instagram. On the post or reel, tap the Share (paper plane) button and choose the option that opens the iPhone share sheet, then pick bookmarker. Or tap Copy link and paste it into bookmarker. Pin bookmarker to the front of the share sheet once — More → Edit → add to Favorites — and it is the first icon from then on.
+
+- File it in one tap. The save happens at once. A dial then offers the seven likeliest topics with the best guess in the middle: tap to file it, turn the dial to pick another, or leave it and the guess stands. Signed in, an AI model also suggests a topic and subtopic.
+
+- Bring in the posts you already saved. Request your Instagram data (Settings → Accounts Centre → Your information and permissions → Download your information, in JSON format), then drop the .zip into the web app's importer, or import the saved_posts.json inside it on iPhone.
+
+- Sort the imported pile. Imported Instagram saves arrive with the account and the date but no caption, so many need a topic. Open Sort your borks and file them one card at a time; bookmarker remembers where you put each account, so the next post from them is suggested first.
+
+### Importing years of saved posts
+
+Instagram will hand you a copy of your data. Ask for it in JSON, not HTML: the email can take
+anywhere from a few minutes to a couple of days, and the download link expires after a few days, so grab it when it
+lands. In the bookmarker web app on a computer you can drop the whole .zip in without unzipping it; the importer
+finds saved_posts.json (and your collections) inside. On iPhone, unzip it and import saved_posts.json from the app.
+
+Be clear about what the export contains: the link to each post, the account that posted it and the date you
+saved it. It does not contain captions or images, and Instagram does not publish them to an app that is not logged
+in, so imported posts arrive as plain cards with the account name. That is why the last step above matters:
+Sort your borks shows anything without a topic one card at a time, and because bookmarker learns where you
+file each account, a creator you have filed three times is suggested first from then on.
+
+### Finding a saved post again
+
+Once a post is in bookmarker you can find it by:
+
+- the topic and subtopic it is filed under — Recipes › Meal prep, Fitness › Mobility;
+
+- the account that posted it;
+
+- any tag or dated note you added — the single best habit, because those are your own words;
+
+- the source app, to see only what came from Instagram;
+
+- and the link and title.
+
+Search does not see inside the post. For Instagram that matters more than for other apps: there is usually no
+caption to search, so the topic, the account and your own tags do the work. If you want the words of a reel to be
+searchable, add a short note when you save it.
+
+### Topics beat collections across apps
+
+The reason to organise outside Instagram is that your interests are not split by app. A mobility routine saved
+on Instagram, a stretching video on YouTube and a thread on X all belong in Fitness › Mobility. In bookmarker
+they sit together, each still labelled with the app it came from, and opening one sends you straight back to the
+original post in Instagram.
+
+### What this will not do
+
+bookmarker stores links, not copies. If a creator deletes a post or makes their account private, the link stops
+working — it is a library, not an archive. It does not download reels, and it cannot reach into Instagram and pull
+your Saved list down by itself; the data export is the way to bring that across. There is no Android app, though
+the web app runs in any browser.
+
+Get bookmarker — free
+
+Next: how to search your TikTok favourites, the
+FAQ, or the alternatives.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- Organise Instagram saved posts
+
+- Search TikTok favourites
+
+- llms.txt
+
+### Company
+
+- Press kit
+
+- Privacy policy
+
+- Terms of use
+
+- hello@bookmarker.lol
+
+© 2026 bookmarker. Made by JP. bookmarker is free on the App Store and on the web.
+
+
+==============================================================================
+
+# https://bookmarker.lol/how-to-search-tiktok-favorites
+
+Title: How to search your TikTok favourites (saved videos)
+Description: TikTok's Favorites tab is a grid you scroll, and its search box searches all of TikTok. Here is how to make saved TikToks searchable by caption, creator and topic, and import the favourites you already have.
+Page type: Guide
+
+bookmarker
+
+What it is
+iPhone app
+FAQ
+Alternatives
+vs X bookmarks
+vs Raindrop
+vs Twillot
+vs mymind
+
+Get the app
+
+bookmarker › How to search your TikTok favourites
+
+## How to search your TikTok favourites
+
+Last updated: 6 November 2026
+
+You saved the video — the pasta recipe, the shoulder exercise, the tip about renting a car abroad —
+and now you cannot find it. TikTok's Favorites tab is a grid of covers ordered by when you saved them, and the search
+bar at the top of the app searches all of TikTok, not your saves. This page covers what TikTok offers, the export
+route, and a way to keep saved TikToks somewhere you can actually search.
+
+TikTok's menus change between versions. The paths below were right when this page was
+updated; if a label has moved, the same option is usually close by.
+
+### What TikTok gives you
+
+Tap the bookmark icon on a video and it goes into Favorites on your profile. You can make
+collections there and move videos into them by hand. That is the whole system: no topics unless you
+make them, and no way to type a word and see only the videos you saved. With a few dozen favourites, scrolling
+works. With a few hundred it does not.
+
+### Method 1: download your data and search the file
+
+- In TikTok, go to Settings → Account → Download your data.
+
+- Choose JSON and request the file; TikTok tells you when it is ready.
+
+- Open user_data.json and look under your activity for the favourite videos list.
+
+What you get: a link and a date for every favourite and liked video. What you do not
+get: captions, titles or creators — so you can find "something I saved on 3 May", but not "the pasta one".
+It is a snapshot, too, and does not update.
+
+### Method 2: keep saved TikToks in a library you can search
+
+bookmarker is free and takes TikToks from the share button. On iPhone it reads each video's caption and creator
+from TikTok's public embed endpoint — no login, nothing scraped — so the words people actually write in a caption,
+hashtags included, become searchable, and the video's cover becomes the card.
+
+- Get bookmarker. Install bookmarker free from the App Store (iOS 17 or later), or open the web app at bookmarker.lol.
+
+- Share TikToks to bookmarker. On a video, tap Share, then the option that opens the iPhone share sheet, and pick bookmarker. Or tap Copy link and paste it in. On iPhone, bookmarker reads the caption and the creator from TikTok's public embed endpoint, so the caption, hashtags included, becomes searchable.
+
+- File it in one tap. A dial offers the seven likeliest topics with the best guess in the middle; one tap files it, or leave it and the guess stands. Signed in, an AI model reads the caption and suggests a topic and subtopic.
+
+- Import your existing favourites. Request your TikTok data (Settings → Account → Download your data, in JSON format), then drop the .zip into the web app's importer, or import the user_data.json inside it on iPhone. Favourites and liked videos both come across, with the date you saved each one.
+
+- Search. Type a word from the caption, a hashtag, the creator, a tag or a note, or pick a topic. Tap the Topics, Subtopics or Tags chips to narrow a common word, and filter by source to see only TikTok.
+
+### What you can search, exactly
+
+- the caption, which becomes the save's title, hashtags included (videos shared from the iPhone app);
+
+- the creator;
+
+- the topic and subtopic the video is filed under;
+
+- your tags and dated notes;
+
+- the source app and the link.
+
+Several words mean "all of these must appear". What search does not cover is what is said or
+shown in the video: bookmarker never fetches a transcript and does not download videos.
+
+### A word on imported favourites
+
+An imported favourite arrives with what TikTok's export holds: the link and the date. Many export links are short
+share links with no creator in them, so imported favourites usually start as plain cards with no caption. They are
+still in your library and open straight in TikTok — and Sort your borks walks you through anything
+without a topic, one tap per card. For the ones you care about, a quick tag or note makes them as findable as a
+fresh save.
+
+### Tips that make the difference
+
+#### Search the subject, not the words you half-remember
+
+Because every save is filed into a topic, searching "mobility" finds videos filed under Fitness ›
+Mobility even when the caption was a string of emoji.
+
+#### Put TikTok next to everything else
+
+The recipe you saved on TikTok and the one you saved on Instagram belong in the same place. In bookmarker both
+sit in Recipes, each labelled with its app, and opening either sends you back to the original.
+
+#### Add a note for the ones that matter
+
+A one-line dated note — "the garlic one", "do this before runs" — is the most reliable thing you can search
+for later, because it is in your words.
+
+### What this will not do
+
+bookmarker keeps links, not copies: if a video is deleted or made private, the link stops working. It does not
+download TikToks or remove watermarks, and it cannot read your Favorites list on its own — the export is the way to
+bring that across. There is no Android app, but the web app runs in any browser.
+
+Get bookmarker — free
+
+Next: how to organise your Instagram saved
+posts, the FAQ, or the alternatives.
+
+### bookmarker
+
+- Web app
+
+- iPhone app
+
+- What is bookmarker?
+
+- FAQ
+
+- Library Island
+
+### Compare
+
+- Best bookmark managers for saved posts
+
+- vs X (Twitter) bookmarks
+
+- vs Raindrop.io
+
+- vs Twillot
+
+- vs mymind
+
+### Guides
+
+- Organise your X bookmarks
+
+- Search your X bookmarks
+
+- Organise Instagram saved posts
+
+- Search TikTok favourites
 
 - llms.txt
 

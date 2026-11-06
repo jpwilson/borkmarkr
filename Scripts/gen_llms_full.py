@@ -32,6 +32,8 @@ PAGES = [
     ("/vs-mymind", "vs-mymind.html", "Comparison"),
     ("/how-to-organize-twitter-bookmarks", "how-to-organize-twitter-bookmarks.html", "Guide"),
     ("/how-to-search-twitter-bookmarks", "how-to-search-twitter-bookmarks.html", "Guide"),
+    ("/how-to-organize-instagram-saved-posts", "how-to-organize-instagram-saved-posts.html", "Guide"),
+    ("/how-to-search-tiktok-favorites", "how-to-search-tiktok-favorites.html", "Guide"),
     ("/lifetime", "lifetime.html", "Founding-member reservation"),
     ("/palace/", "palace/index.html", "Library Island"),
     ("/press/", "press/index.html", "Press kit"),
