@@ -284,6 +284,15 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
 .qf.is-filed .qf-ev { stroke: var(--qf-filled, var(--ink)) !important; stroke-dasharray: none; stroke-width: 3.4; }
 .qf.is-filed .qf-chips, .qf.is-filed .qf-also-row, .qf.is-filed .qf-help { visibility: hidden; }
 .qf.is-filed .qf-list { cursor: default; }
+/* Chosen (the Add sheet's refine): nothing folds. The ring stays live for a
+   re-choice, a coral tick sits on the middle's shoulder while it shows the
+   choice, and the host's panel takes the place of the line and the chips. */
+.qf-hub-check { position: absolute; left: 64.8%; top: 35.2%; z-index: 3; width: clamp(20px, 7.5cqw, 26px); aspect-ratio: 1;
+  transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center; pointer-events: none;
+  background: var(--coral, #FF5A2D); color: #fff; box-shadow: 0 0 0 2.5px var(--qf-white), 0 3px 8px -3px rgba(25,21,16,.45); }
+.qf-hub-check[hidden] { display: none; }
+.qf-hub-check svg { width: 62%; height: auto; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.qf.is-chosen .qf-reason, .qf.is-chosen .qf-chips, .qf.is-chosen .qf-also-row, .qf.is-chosen .qf-help { display: none; }
 @keyframes qf-check { to { stroke-dashoffset: 0; } }
 @keyframes qf-seg-in { from { transform: scale(.9); opacity: 0; } }
 @keyframes qf-hub-in { from { transform: scale(.92); opacity: 0; } }
@@ -366,6 +375,38 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
   border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-2px, -2px); transition: transform .16s ease; }
 .add-more[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
 .add-more .sorted { margin-top: 4px; }
+/* Refine: under the dial once a topic is chosen. "Filed to …", the topic's
+   subtopics and the tags, each one row that scrolls sideways. The chips are
+   the dial's own (.qf-chip) and the sheet's tag chips. */
+.add-refine { --qf-rest: 56%; --qf-white: #FFFCF7; margin-top: 16px; text-align: left; }
+.add-refine-h { margin: 0; color: #1F7A4D; font-size: 13.5px; font-weight: 700; line-height: 1.45; text-align: center;
+  overflow-wrap: anywhere; }
+.refine-row { display: flex; flex-wrap: nowrap; gap: 7px; margin: 10px -4px 0; padding: 2px 4px; overflow-x: auto;
+  scrollbar-width: none; overscroll-behavior-x: contain; }
+.refine-row::-webkit-scrollbar { display: none; }
+.refine-row[hidden] { display: none; }
+.refine-row .qf-chip, .refine-row .tag-chip, .refine-row input { flex: 0 0 auto; }
+.refine-row .qf-chip { max-width: 70vw; }
+.refine-row .qf-chip.is-on { background: var(--qf-on, var(--ink, #191510)); color: #fff !important; }
+.refine-row .tag-chip { height: 34px; cursor: pointer; }
+.refine-row .tag-chip.on { background: var(--tint, #FFE9E1); color: var(--accent-text, #C93A12); }
+.refine-row .tag-chip:focus-visible, .refine-row .qf-chip:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
+.refine-plus { background: none !important; color: var(--accent-text, #C93A12) !important;
+  box-shadow: inset 0 0 0 1.5px var(--dashed, #D7CDBD); }
+.refine-row input { width: 9.5em; height: 34px; padding: 0 12px; border: 1px solid var(--hairline, #EAE4DA); border-radius: 999px;
+  background: var(--surface, #fff); color: var(--ink, #191510); font: 600 13px/1 var(--font-body); outline: none; }
+.refine-row input:focus { border-color: var(--coral, #FF5A2D); }
+.refine-row input[hidden] { display: none; }
+/* Done drains: a lighter band across the button shrinks to nothing over the
+   six seconds before the sheet closes by itself. A transition, never an
+   animation: closeDlg waits on the dialog's animationend, and those bubble. */
+#add-done { position: relative; overflow: hidden; isolation: isolate; }
+/* At rest the band is full and invisible, so stopping a drain changes where
+   the transform ends and the running transition is dropped, not finished. */
+#add-done::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: rgba(255,255,255,.26); opacity: 0; transform: scaleX(1); transform-origin: left center; }
+#add-done.is-full::before { opacity: 1; }
+#add-done.is-full.is-draining::before { transform: scaleX(0); transition: transform 6s linear; }
 #add-remove { background: var(--surface, #fff); color: var(--destructive, #C0392B); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
 
 /* ── "Drop to bork it": a link dragged over the page ──────────────────── */
@@ -3621,8 +3662,9 @@ if (typeof module === "object" && module.exports) module.exports = { FilingKeys,
  * 1–7 file by rank; 8 or / opens every topic; Esc keeps the guess.
  *
  *   QuickFileDial.mount(host, { ranking, topic, mode, onConfirm, onMore,
- *                               onLater, input })
- *     → { offer(r), turn(n), confirm(), focus(), destroy(), touched, highlighted }
+ *                               onLater, input, refine, chosen })
+ *     → { offer(r), turn(n), confirm(), focus(), destroy(), touched, highlighted,
+ *         choose(c, how), setSub(sub), suggestedSubs(id), chosen }
  *
  *   ranking      FilingSuggest.rank()'s answer
  *   topic(id)    → { id, name, hue, art, subs? }; art is a URL, a list of URLs
@@ -3632,6 +3674,12 @@ if (typeof module === "object" && module.exports) module.exports = { FilingKeys,
  *                       when a chip was used); how says which gesture filed it
  *   input        optional, the FilingInput the ranking came from; the reason
  *                line needs its URL to name a website
+ *   refine       the Add sheet's "pick, refine, done": a tap chooses and the
+ *                ring stays live, so another topic re-chooses and the host's
+ *                panel sets the subtopic. Off (triage, the lab) a tap files
+ *                and the ring folds, exactly as before.
+ *   chosen       refine only: a candidate that is already yours (a re-save of
+ *                a bork you filed). The dial opens chosen, and says nothing.
  *
  * Late answers (the preview, the model) arrive through offer(). A dial nobody
  * has touched crossfades to the new order; a touched one never moves under the
@@ -3783,6 +3831,7 @@ const QuickFileDial = (() => {
       </span>
       <span class="qf-hub-done" aria-hidden="true">${CHECK}<b>Filed</b></span>
     </button>
+    <span class="qf-hub-check" aria-hidden="true" hidden>${CHECK}</span>
   </div>
   <p class="qf-reason"></p>
   <div class="qf-chips" role="group" aria-label="Or pick a subtopic"></div>
@@ -3800,7 +3849,12 @@ const QuickFileDial = (() => {
     const input = opts.input || null;
 
     let ranking = { candidates: [], preselect: null, evidence: "none" }, cands = [];
-    let committed = null, hover = null, touched = false, filed = null, destroyed = false;
+    // `chosen` is what was filed. Without refine that ends the dial (folded);
+    // with it the ring stays live and a later tap re-chooses.
+    const refine = !!opts.refine;
+    let committed = null, hover = null, touched = false, chosen = null, destroyed = false;
+    let latest = null;   // the newest ranking offered, after a choice too
+    const folded = () => !!chosen && !refine;
     let badge = null, also = null, guard = null, gesture = null, hoverFrom = null;
     let beadAngle = 0, lastSlide = 0, lastBuzz = 0;
     const wheel = { acc: 0, last: 0, lockUntil: 0 };
@@ -3812,7 +3866,7 @@ const QuickFileDial = (() => {
     const q = (sel) => root.querySelector(sel);
     const dial = q(".qf-dial"), list = q(".qf-list"), hub = q(".qf-hub"), hubIn = q(".qf-hub-in");
     const ring = q(".qf-ring"), labelsEl = q(".qf-labels"), ev = q(".qf-ev"), beadArm = q(".qf-bead-arm");
-    const art = q(".qf-art"), artImg = art.querySelector("img"), ini = q(".qf-ini");
+    const art = q(".qf-art"), artImg = art.querySelector("img"), ini = q(".qf-ini"), hubCheck = q(".qf-hub-check");
     const hubName = q(".qf-hub-name"), hubSub = q(".qf-hub-sub"), hubTip = q(".qf-hub-tip");
     const reasonEl = q(".qf-reason"), chipsEl = q(".qf-chips"), alsoEl = q(".qf-also-row");
     const helpEl = q(".qf-help"), liveEl = q(".qf-sr");
@@ -3843,8 +3897,11 @@ const QuickFileDial = (() => {
 
     /* ── Painting ── */
     function shown() {
-      if (filed) return { kind: "filed", c: filed };
+      if (folded()) return { kind: "filed", c: chosen };
       const h = highlighted();
+      // Chosen: the middle shows the choice unless you are pointing at
+      // another topic, which a tap would choose instead.
+      if (chosen && (h === null || (h !== MORE && cands[h]?.categoryID === chosen.categoryID))) return { kind: "chosen", c: chosen, slot: h };
       if (h === null) return { kind: "none" };
       if (h === MORE) return { kind: "more" };
       return { kind: "cand", c: cands[h], slot: h };
@@ -3925,18 +3982,19 @@ const QuickFileDial = (() => {
       hub.classList.toggle("is-more", view.kind === "more");
       hub.classList.toggle("is-none", view.kind === "none");
       ev.classList.remove("is-strong", "is-thin", "is-none");
-      if (view.kind === "cand") {
+      hubCheck.hidden = view.kind !== "chosen";
+      if (view.kind === "cand" || view.kind === "chosen") {
         const t = topicOf(view.c.categoryID) || { name: view.c.categoryID, hue: 40 };
         setArt(t);
         hubName.textContent = t.name;
         hubName.classList.toggle("is-long", (t.name || "").length > 11);
         hubSub.textContent = view.c.subcategory || "";
         hubSub.hidden = !view.c.subcategory;
-        hubTip.hidden = !showTip;
+        hubTip.hidden = !showTip || view.kind === "chosen";
         const state = evidenceOf(view.c, view.slot, ranking);
         ev.classList.add(`is-${state}`);
         ev.style.stroke = state === "none" ? "" : P.solid(t.hue ?? 40);
-        hub.setAttribute("aria-label", `File under ${label(view.c, t)}`);
+        hub.setAttribute("aria-label", `${view.kind === "chosen" ? "Filed under" : "File under"} ${label(view.c, t)}`);
       } else if (view.kind === "more") {
         art.classList.add("is-more"); artImg.hidden = true; ini.textContent = "";
         art.style.setProperty("--qf-art-bg", "var(--control, #EEE8DE)");
@@ -3971,6 +4029,7 @@ const QuickFileDial = (() => {
         return;
       }
       reasonEl.classList.remove("is-filed");
+      if (chosen) { reasonEl.textContent = ""; return; }   // the host's panel says where it went
       if (view.kind === "more") reasonEl.textContent = "Every topic, and the ones you made";
       else if (view.kind === "none") reasonEl.textContent = "";   // the middle already says "Turn to choose"
       else reasonEl.textContent = reasonFor(view.c);
@@ -4029,7 +4088,7 @@ const QuickFileDial = (() => {
       return from;
     }
     function stepBy(n, how) {
-      if (filed || !n) return;
+      if (folded() || !n) return;
       touch();
       const dir = n > 0 ? 1 : -1;
       const before = highlighted();
@@ -4043,7 +4102,7 @@ const QuickFileDial = (() => {
       emit("quickfile:turn", { highlighted: s, how });
     }
     function jump(slot, how) {
-      if (filed || slot === null || !exists(slot)) return;
+      if (folded() || slot === null || !exists(slot)) return;
       touch();
       const before = highlighted();
       hover = null; hoverFrom = null; guard = null;
@@ -4067,15 +4126,16 @@ const QuickFileDial = (() => {
 
     /* ── Filing ── */
     function more() {
-      if (filed) return;
+      if (folded()) return;
       touch();
       if (highlighted() !== MORE) { committed = MORE; hover = null; paintHighlight(0, { animate: false }); }
       opts.onMore?.();
     }
     function confirm(c, how) {
-      if (filed || destroyed || !c) return;
+      if (folded() || destroyed || !c) return;
+      if (refine) { choose(c, how); return; }
       const t = topicOf(c.categoryID);
-      filed = c; gesture = null; hover = null; guard = null;
+      chosen = c; gesture = null; hover = null; guard = null;
       root.classList.add("is-filed");
       root.style.setProperty("--qf-filled", palette().deep(t?.hue ?? 40));
       if (reduced()) root.classList.add("is-instant");
@@ -4087,16 +4147,58 @@ const QuickFileDial = (() => {
       emit("quickfile:confirm", { candidate: c, how });
       opts.onConfirm?.(c, how);
     }
+    /* Refine: written at once and nothing folds. The same topic and subtopic
+       again is nothing; the ring's highlight goes to the chosen topic, or
+       nowhere for a More… or "Also likely" pick that isn't on it. */
+    function choose(c, how) {
+      if (destroyed || !c) return;
+      if (chosen && chosen.categoryID === c.categoryID && (chosen.subcategory ?? null) === (c.subcategory ?? null)) return;
+      const first = !chosen, t = topicOf(c.categoryID);
+      chosen = c; gesture = null; hover = null; guard = null; also = null;
+      const slot = cands.findIndex((x) => x.categoryID === c.categoryID);
+      committed = slot >= 0 ? slot : null;
+      root.classList.add("is-chosen");
+      paintHighlight(0, { animate: false });
+      announce(`Filed under ${label(c, t)}. Subtopics and tags below.`);
+      buzz(first ? 12 : 6);
+      if (first) bumpUses();
+      emit("quickfile:confirm", { candidate: c, how });
+      opts.onConfirm?.(c, how);
+    }
+    /* Refine: a subtopic chip under the dial. The chosen one again clears it. */
+    function setSub(sub) {
+      if (!refine || !chosen) return;
+      const next = sub && sub !== chosen.subcategory ? sub : null;
+      choose({ ...chosen, subcategory: next }, "sub");
+    }
+    /* The subtopics the ring suggested for a topic, then any a later answer
+       adds. Never reordered, so chips drawn from it don't jump. */
+    const subMemo = new Map();
+    function suggestedSubs(topicID) {
+      const out = subMemo.get(topicID) || [];
+      const add = (x) => { if (x && !out.some((y) => y.toLowerCase() === x.toLowerCase())) out.push(x); };
+      for (const r of [ranking, latest]) {
+        const c = r?.candidates?.find((x) => x.categoryID === topicID);
+        if (c) { add(c.subcategory); (c.altSubs || []).forEach(add); }
+      }
+      subMemo.set(topicID, out);
+      return out.slice();
+    }
     function fileSlot(slot, how) {
-      if (filed) return;
+      if (folded()) return;
       if (slot === MORE) { more(); return; }
       const c = cands[slot];
       if (!c) return;
+      // The chosen topic's own segment keeps the subtopic a chip set.
+      if (chosen && c.categoryID === chosen.categoryID) {
+        if (committed !== slot || hover !== null) { committed = slot; hover = null; paintHighlight(0, { animate: false }); }
+        return;
+      }
       if (committed !== slot || hover !== null) { committed = slot; hover = null; paintHighlight(0, { animate: false }); }
       confirm(c, how);
     }
     function fileMiddle(how, guarded) {
-      if (filed) return;
+      if (folded()) return;
       if (guarded && guard && now() - guard.at < GUARD_MS) {
         const before = guard.view;
         guard = null;
@@ -4105,13 +4207,26 @@ const QuickFileDial = (() => {
         return;
       }
       const view = shown();
+      if (view.kind === "chosen") return;   // what it already is
       if (view.kind === "cand") confirm(view.c, how); else more();
     }
 
     /* ── Late answers ── */
     function offer(r) {
-      if (filed || destroyed || !r || !Array.isArray(r.candidates) || !r.candidates.length) return;
+      if (folded() || destroyed || !r || !Array.isArray(r.candidates) || !r.candidates.length) return;
+      latest = r;
       const oldBest = cands[0], best = r.candidates[0];
+      // Chosen: a late answer never moves the choice. A topic it prefers that
+      // is on the ring gets the badge; the host takes its subtopics and tags.
+      if (chosen) {
+        const slot = best ? cands.findIndex((c) => c.categoryID === best.categoryID) : -1;
+        const next = slot >= 0 && best.categoryID !== chosen.categoryID ? slot : null;
+        if (next === badge) return;
+        badge = next;
+        paintRing();
+        paintHighlight(0, { animate: false, instant: true });
+        return;
+      }
       const sameBest = oldBest && best && oldBest.categoryID === best.categoryID
         && (oldBest.subcategory ?? null) === (best.subcategory ?? null);
       if (!touched) {
@@ -4155,7 +4270,7 @@ const QuickFileDial = (() => {
       if (seg) seg.classList.toggle("is-pressed", on);
     }
     list.addEventListener("pointerdown", (e) => {
-      if (filed || e.button > 0 || isList()) return;
+      if (folded() || e.button > 0 || isList()) return;
       const p = polar(e);
       if (p.r > R.outer + 2 || p.r < R.hub) return;
       if (e.pointerType === "mouse") { e.preventDefault(); list.focus({ preventScroll: true }); }
@@ -4181,7 +4296,7 @@ const QuickFileDial = (() => {
         while (turned < (g.notches - 0.5) * NOTCH - HYSTERESIS) { g.notches--; stepBy(-1, "drag"); }
         return;
       }
-      if (e.pointerType !== "mouse" || filed || isList()) return;
+      if (e.pointerType !== "mouse" || folded() || isList()) return;
       const p = polar(e);
       if (p.r < R.inner - 2 || p.r > R.outer + 2) { hoverFrom = null; setHover(null); return; }
       if (!hoverFrom) { hoverFrom = { x: p.x, y: p.y }; return; }
@@ -4202,7 +4317,7 @@ const QuickFileDial = (() => {
     list.addEventListener("pointercancel", (e) => endGesture(e, true));
     list.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse" && !gesture) { hoverFrom = null; setHover(null); } });
     list.addEventListener("click", (e) => {   // the narrow list layout: rows are taps
-      if (!isList() || filed) return;
+      if (!isList() || folded()) return;
       const opt = e.target.closest("[role=option]");
       if (opt) fileSlot(Number(opt.dataset.slot), "list");
     });
@@ -4218,7 +4333,7 @@ const QuickFileDial = (() => {
 
     /* ── Input: wheel and trackpad (only while the pointer is over the dial) ── */
     dial.addEventListener("wheel", (e) => {
-      if (filed || isList()) return;
+      if (folded() || isList()) return;
       e.preventDefault();
       const t = now();
       if (t - wheel.last > WHEEL.idle) wheel.acc = 0;
@@ -4242,7 +4357,7 @@ const QuickFileDial = (() => {
 
     /* ── Input: keys (focus on the dial) ── */
     list.addEventListener("keydown", (e) => {
-      if (filed || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (folded() || e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key;
       let handled = true;
       if (k === "ArrowRight" || k === "ArrowDown" || k === "j" || k === "J") stepBy(1, "key");
@@ -4259,6 +4374,12 @@ const QuickFileDial = (() => {
 
     /* ── Go ── */
     setRanking(opts.ranking);
+    if (refine && opts.chosen && opts.chosen.categoryID) {
+      chosen = opts.chosen;
+      const slot = cands.findIndex((x) => x.categoryID === chosen.categoryID);
+      committed = slot >= 0 ? slot : null;
+      root.classList.add("is-chosen");
+    }
     root.classList.add("is-in");
     if (reduced()) root.classList.add("is-reduced-in");
     paintHighlight(0, { animate: false, instant: true });
@@ -4276,12 +4397,59 @@ const QuickFileDial = (() => {
         timers.clear();
         host.innerHTML = "";
       },
+      choose(c, how) { if (refine) choose(c, how || "api"); else confirm(c, how || "api"); },
+      setSub,
+      suggestedSubs,
       get touched() { return touched; },
       get highlighted() { return highlighted(); },
+      get chosen() { return chosen; },
     };
   }
 
-  return Object.freeze({ mount, header, label, evidenceOf, HEADER, SLOTS, MORE });
+  /* ── The refine panel's order (Core/QuickFile/QuickFileRefine.swift) ──
+     Pure, and checked against the iPhone by Scripts/test_quick_file_refine.mjs
+     over the shared fixture. */
+  const key = (x) => String(x ?? "").trim().toLowerCase();
+  const siteName = (t) => { try { return typeof Filer === "object" && !!Filer && Filer.isSiteName(t); } catch { return false; } };
+  /** Subtopic chips: the suggested ones (only names in `all`, spelt as `all`
+      spells them), then your most-used, then the rest of `all` in its order. */
+  function subtopicChips(all, suggested = [], used = []) {
+    const canon = new Map();
+    for (const name of all || []) if (key(name) && !canon.has(key(name))) canon.set(key(name), name);
+    const out = [], seen = new Set();
+    for (const name of [...(suggested || []), ...(used || []), ...(all || [])]) {
+      const k = key(name);
+      if (!canon.has(k) || seen.has(k)) continue;
+      seen.add(k);
+      out.push(canon.get(k));
+    }
+    return out;
+  }
+  /** Tag chips, lowercased, each once: tags already on it that nothing
+      offers (typed, or there before), then this link's suggestions, then
+      your recent ones. A site name is never offered; one you have stays. */
+  function tagChips(chosen = [], suggested = [], recent = []) {
+    const on = new Set((chosen || []).map(key).filter(Boolean));
+    const offered = [...(suggested || []), ...(recent || [])].map(key).filter((t) => t && !siteName(t));
+    const offeredSet = new Set(offered);
+    const own = (chosen || []).map(key).filter((t) => t && !offeredSet.has(t));
+    const out = [], seen = new Set();
+    for (const tag of [...own, ...offered]) {
+      if (seen.has(tag)) continue;
+      seen.add(tag);
+      out.push({ tag, on: on.has(tag) });
+    }
+    return out;
+  }
+  /** "#Morning  Run " → "morning run": no #, trimmed, lowercase, single
+      spaces, at most 30 characters. Nothing left is null. */
+  function cleanTag(raw) {
+    const tag = String(raw ?? "").replace(/#/g, "").trim().toLowerCase().replace(/\s+/g, " ").slice(0, 30).trim();
+    return tag || null;
+  }
+
+  return Object.freeze({ mount, header, label, evidenceOf, HEADER, SLOTS, MORE,
+    refine: Object.freeze({ subtopicChips, tagChips, cleanTag }) });
 })();
 
 if (typeof globalThis === "object") globalThis.QuickFileDial = QuickFileDial;

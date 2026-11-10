@@ -1532,7 +1532,8 @@
   </div>
 
   <!-- Saved — then where it goes: the bork that now exists, the Quick File
-       dial, and the tags, note and side quest folded away underneath. -->
+       dial, once a topic is chosen its subtopics and tags, and the note and
+       side quest folded away underneath. -->
   <div id="add-details" hidden>
     <article class="add-card add-saved">
       <div class="cover" id="add-cover">
@@ -1550,10 +1551,21 @@
 
     <div class="add-filing-h" id="add-filing-h"><span id="add-sorted-icon" aria-hidden="true">✨</span><span id="add-sorted-h">Sorted for you</span></div>
     <div id="add-dial"></div>
+    <section class="add-refine" id="add-refine" aria-labelledby="add-refine-h" hidden>
+      <p class="add-refine-h" id="add-refine-h" aria-live="polite"></p>
+      <div class="refine-row" id="add-refine-subs" role="group" aria-label="Subtopic"></div>
+      <div class="refine-row" id="add-refine-tags" role="group" aria-label="Tags">
+        <button type="button" class="tag-chip refine-plus" id="add-refine-plus" aria-expanded="false">+ Tag</button>
+        <input id="add-refine-tag" placeholder="New tag" aria-label="New tag" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30" enterkeyhint="done" hidden>
+        <span id="add-refine-tag-list" style="display:contents"></span>
+      </div>
+    </section>
 
     <details class="add-more" id="add-more">
-      <summary>Tags, note, side quest</summary>
-      <section class="sorted">
+      <summary>Note, side quest</summary>
+      <!-- Tags moved up to the refine panel; this stays (hidden) because
+           renderTags and renderPlacement still draw into it. -->
+      <section class="sorted" hidden>
         <div class="mini-h">Tags</div>
         <button type="button" class="topic-trigger" id="add-topic" data-act="pick-topic" data-for="add" aria-haspopup="dialog" hidden></button>
         <p class="hint" id="add-suggest" hidden style="margin:7px 0 0"></p>
@@ -4707,10 +4719,11 @@ function renderAdd() {
   $("add-details").hidden = !saved;
   $("add-save").hidden = saved || !!twin;   // with a twin there is nothing to bork; there are two other things to do
   $("add-cancel").hidden = saved;
-  $("add-remove").hidden = !saved;
+  $("add-remove").hidden = !saved || !!qf.filed;   // chosen, the toast's Undo is the way back
   $("add-done").hidden = !saved;
   if (twin) { renderDupe(twin); return; }
   if (!saved) return;
+  quickFileRenderRefine();
   if (!addTitleTouched) $("add-title-input").value = addTitle;
   renderAddQuests();
   $("add-title-edit").textContent = `✎ ${addTitleFetched ? "Edit title" : "Write a title"}`;
@@ -4802,11 +4815,15 @@ function renderFilingState() {
 }
 new MutationObserver(renderFilingState).observe($("add-topic"), { childList: true });
 /* Automatic tags join what you typed; they never replace it, and a tag you
-   took off stays off. */
+   took off stays off. Once you have touched the tags in the refine panel they
+   only join its chips, switched off. */
 function mergeTags(tags) {
+  const s = qf;
   for (const raw of tags || []) {
     const tag = cleanTag(raw);
-    if (!tag || addDropped.has(tag) || sheetTags.add.includes(tag) || Filer.isSiteName(tag)) continue;
+    if (!tag || Filer.isSiteName(tag)) continue;
+    if (s && s.sugTags && !s.sugTags.includes(tag)) s.sugTags.push(tag);
+    if (addDropped.has(tag) || sheetTags.add.includes(tag) || (s && s.tagsEdited)) continue;
     sheetTags.add.push(tag);
   }
 }
@@ -4837,6 +4854,7 @@ async function fetchPreviewInto(url, seq) {
     addTitleFetched = !!s.preview?.title;
     addReading = false;
     fileOffline(url);            // again, now with the real headline: its tags
+    quickFileLateTags(s);
     renderAdd();
   }
   quickFileRerank(s);
@@ -4853,7 +4871,7 @@ async function fetchPreviewInto(url, seq) {
    the row still holds the guess we wrote. */
 async function suggestTopicFor(url, seq, session = qf) {
   const s = session;
-  if (!s || s.url !== url || demoMode || !store.session || s.pin || s.filed || s.removed) return;
+  if (!s || s.url !== url || demoMode || !store.session || s.pin || s.removed) return;
   const offline = addOffline;
   try {
     const d = await api("/functions/v1/categorize", { method: "POST", body: {
@@ -4863,11 +4881,11 @@ async function suggestTopicFor(url, seq, session = qf) {
       tags: qf === s ? sheetTags.add.filter(t => !(offline?.tags || []).includes(t)) : [],
       platform: detectPlatform(url),
     } });
-    if (s.filed || s.removed) return;
+    if (s.removed) return;
     const answer = aiAnswer(d);
     if (!answer) return;
     s.ai = answer;
-    if (qf === s) mergeTags(Array.isArray(d.tags) ? d.tags.slice(0, 4) : []);
+    if (qf === s) { mergeTags(Array.isArray(d.tags) ? d.tags.slice(0, 4) : []); quickFileLateTags(s); }
     quickFileRerank(s);
   } catch { /* filing is a bonus; the person can always pick */ }
 }
@@ -4948,8 +4966,16 @@ function saveAdd({ again = false } = {}) {
 function quickFileStart(id, session, ranking) {
   const row = borks.get(id);
   if (!row) return;
+  // A re-save of a bork you filed, or a topic you picked before pasting, is
+  // already chosen: the panel shows at once, nothing is written and nothing
+  // drains until you change something.
+  const pin = session.pin, mine = pin && pin.reason === "yours"
+    ? ranking.candidates.find(c => c.categoryID === pin.categoryID) : null;
   qf = Object.assign(session, {
-    id, ranking, shown: ranking, filed: null, removed: false, more: false, dial: null,
+    id, ranking, shown: ranking, removed: false, more: false, dial: null,
+    filed: mine ? { ...mine, subcategory: pin.subcategory ?? null } : null,
+    before: null, drainTimer: null, drainStopped: !!mine, tagsEdited: false,
+    sugTags: (addOffline?.tags || []).map(cleanTag).filter(t => t && !Filer.isSiteName(t)),
     guess: { categoryID: row.category_id ?? null, subcategory: row.subcategory ?? null },
   });
   addVia = null;
@@ -4958,12 +4984,14 @@ function quickFileStart(id, session, ranking) {
   renderAdd();
   qf.dial = QuickFileDial.mount($("add-dial"), {
     ranking, topic: quickFileTopic, mode: "sheet", input: quickFileInput(qf),
-    onConfirm: (c, how) => quickFileConfirm(c, how),
+    refine: true, chosen: qf.filed,
+    onConfirm: (c, how) => quickFileChoose(c, how),
     onMore: () => quickFileMore(),
     onLater: () => closeDlg($("add-dialog")),
   });
   syncPicksToDial();
   renderFilingState();
+  quickFileRenderRefine();
   qf.dial.focus();
   if (!session.preview) fetchPreviewInto(qf.url, addSeq);
 }
@@ -5013,10 +5041,11 @@ function quickFileRerank(s) {
   if (s.removed) return;
   const ranking = quickFileRanking(s);
   s.ranking = ranking;
-  if (qf === s && s.dial && !s.filed) {
-    const fresh = !s.dial.touched;
-    s.dial.offer(ranking);
+  if (qf === s && s.dial) {
+    const fresh = !s.dial.touched && !s.filed;
+    s.dial.offer(ranking);   // chosen, the dial only badges; the choice never moves
     if (fresh) { s.shown = ranking; syncPicksToDial(); renderFilingState(); }
+    if (s.filed) quickFileRenderRefine();
   }
   if (s.pin || s.filed) return;
   const best = ranking.preselect === 0 ? ranking.candidates[0] : null;
@@ -5065,67 +5094,214 @@ function syncPicksToDial() {
   picks.add = { topic: c ? c.categoryID : null, sub: c ? c.subcategory ?? null : null, source: "dial" };
   renderTrigger("add");
 }
-/* Tap 2 — a segment, the middle, a chip, a digit, or a pick from More…: one
-   filing commit that carries everything the sheet holds. The sheet closes as
-   the check lands; the toast offers the undo, and Z works while it shows. The
-   undo takes back everything the sheet did: a bork it made leaves the library,
-   one that was already there gets its filing back. */
-function quickFileConfirm(c, how) {
+/* Tap 2 — a segment, the middle, a chip, a digit, or a pick from More… —
+   chooses, and the sheet stays: the choice is written at once as yours, the
+   ring stays live for a re-choice, and the refine panel under it sets the
+   subtopic and the tags. Done (or six untouched seconds after a pointer
+   choice, or Esc, or the backdrop) closes it, and the toast offers the undo.
+   `before` is the bork as it was before the first choice, tags included:
+   Undo takes a bork this sheet made out of the library, and puts one that was
+   already there back the way it was. */
+function quickFileChoose(c, how) {
   const s = qf;
-  if (!s || s.filed || s.removed) return;
+  if (!s || s.removed) return;
   const row = borks.get(s.id);
-  if (!row) return;
-  s.filed = c || { categoryID: null };
-  const before = { category_id: row.category_id ?? null, subcategory: row.subcategory ?? null, filing_source: row.filing_source ?? null };
-  commit({ ...row, ...quickFileDetails(), category_id: c ? c.categoryID : null,
-    subcategory: c ? c.subcategory ?? null : null, filing_source: "user" }, row);
-  quickFileQuests(s.id);
-  const t = c && topicFor(c.categoryID);
-  const where = t ? SavedContent.breadcrumb(t.name, c.subcategory) : null;
-  const shown = s.shown || s.ranking;
-  track("bork_filed", { how, evidence: shown.evidence, rank: c ? shown.candidates.findIndex(x => x.categoryID === c.categoryID) + 1 : 0 });
-  if (c) askTopicArt([c.categoryID]);
-  const undo = () => {
-    const cur = borks.get(s.id);
-    if (!cur || cur.deleted_at) return;
-    if (s.created) {
-      // A tombstone, like any delete, under the guess it was saved with, so
-      // pasting the link again (here or on the phone) starts over.
-      track("bork_removed", { platform: cur.platform, after_save: true });
-      commit({ ...cur, ...before, deleted_at: new Date().toISOString() }, cur);
-      toast("Save removed.");
-      return;
-    }
-    commit({ ...cur, ...before }, cur);
-    toast(before.filing_source === "automatic" ? "Back to our guess." : "Undone.");
-  };
-  qfUndo = { until: Date.now() + 8000, run: undo };
-  const said = where ? `${s.created ? "Saved" : "Filed"} to ${where}` : s.created ? "Saved · not filed" : "Left unfiled";
-  toast(said, "Undo", () => { qfUndo = null; undo(); });
-  renderFilingState();
-  setTimeout(() => { if (qf === s) closeDlg($("add-dialog")); }, REDUCED() ? 140 : 280);
+  if (!row || row.deleted_at) return;
+  const first = !s.before, was = s.filed;
+  if (first) s.before = { category_id: row.category_id ?? null, subcategory: row.subcategory ?? null,
+    filing_source: row.filing_source ?? null, tags: (row.tags || []).slice(), tags_edited: row.tags_edited ?? null };
+  s.filed = c ? { ...c, subcategory: c.subcategory ?? null } : { categoryID: null, subcategory: null };
+  quickFileWrite(s, () => ({ category_id: c ? c.categoryID : null, subcategory: c ? c.subcategory ?? null : null,
+    filing_source: "user", tags: sheetTags.add.slice(), tags_edited: true }));
+  if (first) {
+    const shown = s.shown || s.ranking;
+    track("bork_filed", { how, evidence: shown.evidence, rank: c ? shown.candidates.findIndex(x => x.categoryID === c.categoryID) + 1 : 0 });
+  } else {
+    track("bork_refined", { what: (was?.categoryID ?? null) !== (c?.categoryID ?? null) ? "topic" : "subtopic" });
+  }
+  if (c && (was?.categoryID ?? null) !== c.categoryID) askTopicArt([c.categoryID]);
+  picks.add = { topic: c ? c.categoryID : null, sub: c ? c.subcategory ?? null : null, source: "dial" };
+  renderAdd();   // the topic chip (and with it the header and cover), Remove, the panel
+  if (first) quickFileArmDone(how);
 }
-/* More…: the full picker over the sheet. A pick there files it as yours, "Not
-   filed — no topic" included; cancelling comes back to the dial. */
+/* A subtopic chip: the dial re-chooses with it, or without it when it was the
+   one already set. */
+function quickFileSetSub(sub) {
+  const s = qf;
+  if (s && s.dial && s.filed && s.filed.categoryID) s.dial.setSub(sub);
+}
+/* Tag chips toggle; "+ Tag" adds. Either is yours from then on: the row's
+   tags are replaced (tags_edited), and the model's later tags no longer join
+   them, only the chips. */
+function quickFileToggleTag(tag) {
+  const s = qf;
+  if (!s || !s.filed || !tag) return;
+  if (sheetTags.add.includes(tag)) { sheetTags.add = sheetTags.add.filter(t => t !== tag); addDropped.add(tag); }
+  else { sheetTags.add.push(tag); addDropped.delete(tag); }
+  quickFileTagsChanged(s);
+}
+function quickFileAddTag(raw) {
+  const s = qf;
+  if (!s || !s.filed) return false;
+  let added = false;
+  for (const part of String(raw ?? "").split(",")) {
+    const tag = QuickFileDial.refine.cleanTag(part);
+    if (!tag) continue;
+    addDropped.delete(tag);
+    if (!sheetTags.add.includes(tag)) { sheetTags.add.push(tag); added = true; }
+  }
+  if (added) quickFileTagsChanged(s);
+  return added;
+}
+function quickFileTagsChanged(s) {
+  s.tagsEdited = true;
+  quickFileWrite(s, () => ({ tags: sheetTags.add.slice(), tags_edited: true }));
+  track("bork_refined", { what: "tag" });
+  quickFileRenderRefine();
+}
+/* Tags that arrived late (the page, the model) for a bork already chosen. */
+function quickFileLateTags(s) {
+  if (qf !== s || !s.filed) return;
+  quickFileWrite(s, () => ({ tags: sheetTags.add.slice(), tags_edited: true }));
+  quickFileRenderRefine();
+}
+/* The panel under the dial: "Filed to Fitness › Running", the topic's
+   subtopics (this link's suggestions, then the ones you use most, then the
+   rest A–Z) and the tags (yours, this link's, then the ones you used lately
+   on this filing). Both rows only ever grow while the sheet is up, so a chip
+   never moves out from under the pointer. */
+function quickFileRenderRefine() {
+  const s = qf, panel = $("add-refine");
+  if (!s || !s.filed) { panel.hidden = true; return; }
+  panel.hidden = false;
+  const c = s.filed, t = c.categoryID ? topicFor(c.categoryID) : null;
+  const line = t ? `Filed to ${SavedContent.breadcrumb(t.name, c.subcategory)}` : "Left unfiled";
+  if ($("add-refine-h").textContent !== line) $("add-refine-h").textContent = line;
+  const subsEl = $("add-refine-subs");
+  const subs = t ? quickFileSubOrder(s, t.id) : [];
+  subsEl.hidden = !subs.length;
+  const P = typeof Palette === "object" && Palette, hue = t ? t.hue ?? 40 : 40;
+  const look = P ? `--qf-c:${P.tint(hue)};--qf-on:${P.deep(hue)};color:${P.deep(hue)}` : "";
+  subsEl.innerHTML = subs.map(name => {
+    const on = name === c.subcategory;
+    return `<button type="button" class="qf-chip${on ? " is-on" : ""}" data-refine-sub="${esc(name)}" aria-pressed="${on}" style="${look}"`
+      + ` title="${esc(on ? `Just ${t.name}` : `${t.name} › ${name}`)}">${esc(name)}</button>`;
+  }).join("");
+  $("add-refine-tag-list").innerHTML = quickFileTagOrder(s, c).map(({ tag, on }) =>
+    `<button type="button" class="tag-chip${on ? " on" : ""}" data-refine-tag="${esc(tag)}" aria-pressed="${on}">#${esc(tag)}</button>`).join("");
+  const picked = subsEl.querySelector(".is-on");
+  if (picked && typeof picked.scrollIntoView === "function") picked.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+function quickFileSubOrder(s, topicID) {
+  const all = allSubs(topicID).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  const fresh = QuickFileDial.refine.subtopicChips(all, s.dial ? s.dial.suggestedSubs(topicID) : [], quickFileUsedSubs(s, topicID));
+  s.subOrder = s.subOrder || new Map();
+  const kept = s.subOrder.get(topicID) || [];
+  const order = kept.concat(fresh.filter(x => !kept.includes(x)));
+  const sub = s.filed.subcategory;
+  if (sub && !order.includes(sub)) order.unshift(sub);
+  s.subOrder.set(topicID, order);
+  return order.slice();
+}
+/* Your most-used subtopics of a topic: the filings you made, most first,
+   then the newest, then A–Z (QuickFileRefine.subUse). */
+function quickFileUsedSubs(s, topicID) {
+  const tally = new Map();
+  for (const r of live()) {
+    if (r.id === s.id || r.category_id !== topicID || !r.subcategory || r.filing_source !== "user") continue;
+    const was = tally.get(r.subcategory) || { n: 0, at: "" };
+    tally.set(r.subcategory, { n: was.n + 1, at: (r.updated_at || "") > was.at ? r.updated_at || "" : was.at });
+  }
+  return [...tally.entries()]
+    .sort((a, b) => b[1].n - a[1].n || (a[1].at < b[1].at ? 1 : a[1].at > b[1].at ? -1 : 0) || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+    .slice(0, 8).map(([name]) => name);
+}
+function quickFileTagOrder(s, c) {
+  const recent = c.categoryID ? TagRecency.suggestions(
+    live().filter(r => r.id !== s.id).map(r => ({ categoryID: r.category_id, subcategory: r.subcategory, tags: r.tags || [], at: r.updated_at })),
+    { categoryID: c.categoryID, subcategory: c.subcategory, limit: 12 }) : [];
+  const fresh = QuickFileDial.refine.tagChips(sheetTags.add, s.sugTags || [], recent).map(x => x.tag);
+  const key = `${c.categoryID}\u001F${c.subcategory || ""}`;
+  // A tag you just typed goes in front, beside "+ Tag", where you can see it;
+  // anything else new joins the end.
+  const kept = s.tagOrder && s.tagOrder.key === key ? s.tagOrder.list : null;
+  const order = kept
+    ? fresh.filter(t => !kept.includes(t) && sheetTags.add.includes(t)).concat(kept, fresh.filter(t => !kept.includes(t) && !sheetTags.add.includes(t)))
+    : fresh;
+  s.tagOrder = { key, list: order };
+  return order.map(tag => ({ tag, on: sheetTags.add.includes(tag) }));
+}
+/* "+ Tag" swaps itself for a field. Enter adds and stays; Enter on nothing,
+   Esc or leaving it closes it, and a tag still in it when it closes counts. */
+function quickFileOpenTagField() {
+  const field = $("add-refine-tag");
+  $("add-refine-plus").hidden = true;
+  $("add-refine-plus").setAttribute("aria-expanded", "true");
+  field.hidden = false;
+  field.focus();
+}
+function quickFileCloseTagField(refocus) {
+  const field = $("add-refine-tag"), plus = $("add-refine-plus");
+  if (field.hidden) return;
+  if (field.value.trim()) quickFileAddTag(field.value);
+  field.value = "";
+  field.hidden = true;
+  plus.hidden = false;
+  plus.setAttribute("aria-expanded", "false");
+  if (refocus) plus.focus();
+}
+/* Done drains for six seconds after the first choice made with a pointer,
+   then the sheet closes by itself. A choice made from the keyboard or the
+   list never starts it (the web can't tell a screen reader is running, so
+   anyone choosing without a pointer is never timed), and any touch after the
+   choice stops it for good. A JS timer and a CSS transition, never an
+   animation: closeDlg listens for the dialog's animationend. */
+function quickFileArmDone(how) {
+  const s = qf;
+  if (!s || s.drainStopped || s.drainTimer || how === "key" || how === "list" || how === "api") return;
+  const done = $("add-done");
+  done.classList.add("is-full");
+  void done.offsetWidth;   // start the transition from full
+  done.classList.add("is-draining");
+  s.drainTimer = setTimeout(quickFileDrained, 6000, s);
+}
+function quickFileDrained(s) {
+  s.drainTimer = null;
+  if (qf === s && !s.drainStopped) closeDlg($("add-dialog"));
+}
+function quickFileStopDrain() {
+  const s = qf;
+  if (!s || !s.filed) return;
+  s.drainStopped = true;
+  if (s.drainTimer) { clearTimeout(s.drainTimer); s.drainTimer = null; }
+  $("add-done").classList.remove("is-full", "is-draining");
+}
+/* More…: the full picker over the sheet. A pick there chooses, "Not filed —
+   no topic" included; cancelling comes back to the dial. */
 function quickFileMore() {
   const s = qf;
-  if (!s || s.filed || s.more) return;
+  if (!s || s.more) return;
   const slot = s.dial ? s.dial.highlighted : null, shown = s.shown || s.ranking;
-  const c = slot !== null && slot < 7 ? shown.candidates[slot] : shown.candidates[0];
+  const c = s.filed ? (s.filed.categoryID ? s.filed : null) : slot !== null && slot < 7 ? shown.candidates[slot] : shown.candidates[0];
   picks.add = { topic: c ? c.categoryID : null, sub: c ? c.subcategory ?? null : null, source: "dial" };
   s.more = true;
   $("topic-dialog").addEventListener("close", () => {
     s.more = false;
-    if (qf !== s || s.filed) return;
+    if (qf !== s) return;
     const p = picks.add;
     if (p.source === "user") {
-      quickFileConfirm(p.topic ? { categoryID: p.topic, subcategory: p.sub || null, score: 0, reasons: ["yours"], altSubs: [], creator: null, creatorPicks: 0, matched: null } : null, "more");
+      const pick = p.topic ? { categoryID: p.topic, subcategory: p.sub || null, score: 0, reasons: ["yours"], altSubs: [], creator: null, creatorPicks: 0, matched: null } : null;
+      if (pick && s.dial) s.dial.choose(pick, "more"); else quickFileChoose(pick, "more");
+    } else if (s.filed) {
+      picks.add = { topic: s.filed.categoryID, sub: s.filed.subcategory ?? null, source: "dial" };
+      renderTrigger("add");
+      if (s.dial) s.dial.focus();
     } else { syncPicksToDial(); if (s.dial) s.dial.focus(); }
   }, { once: true });
   openPicker("add");
 }
 /* Remove: the save was the mistake. A tombstone like any delete, with the
-   undo in the toast. */
+   undo in the toast. Once something is chosen, the toast's Undo does this. */
 function quickFileRemove() {
   const s = qf;
   if (!s || s.removed || s.filed) return;
@@ -5138,18 +5314,24 @@ function quickFileRemove() {
   commit(gone, row);
   toast("Removed.", "Undo", () => { justAdded.add(row.id); commit({ ...row, deleted_at: null }, gone); toast("Back where it was."); });
 }
-/* The sheet closed: Done, Esc, the backdrop, or another sheet starting. A
-   filing or a removal has already written what it had to. Otherwise the guess
-   stays a guess, the folded-away half is written through, and the toast says
-   where it went — with Sort, when there is something to sort. */
+/* The sheet closed: Done, the drain, Esc, the backdrop, or another sheet
+   starting. A tag still in the field counts. A choice says where it went,
+   with the undo; a removal has said its piece. Otherwise the guess stays a
+   guess, the folded-away half is written through, and the toast says where
+   it went — with Sort, when there is something to sort. */
 function quickFileFinish() {
   const s = qf;
   if (!s) return;
+  if (s.filed && !s.removed) quickFileCloseTagField(false);
+  quickFileStopDrain();
   qf = null;
+  $("add-refine").hidden = true;
+  $("add-refine-tag").value = ""; $("add-refine-tag").hidden = true; $("add-refine-plus").hidden = false;
   if (s.dial) { s.dial.destroy(); s.dial = null; }
-  if (s.filed || s.removed) return;
+  if (s.removed) return;
   const row = borks.get(s.id);
   if (!row || row.deleted_at) return;
+  if (s.filed) { quickFileFinishChosen(s); return; }
   const changes = quickFileDetails();
   const next = { ...row, ...changes };
   if (Object.keys(changes).some(k => JSON.stringify(next[k] ?? null) !== JSON.stringify(row[k] ?? null))) commit(next, row);
@@ -5161,6 +5343,34 @@ function quickFileFinish() {
   track("bork_kept_guess", { filed: !!where });
   if (waiting) toast(where ? `Saved · our guess: ${where}` : "Saved · not filed yet", "Sort", () => Triage.open({ deck }));
   else toast(where ? `Saved · our guess: ${where}` : "Saved · not filed yet");
+}
+/* A chosen sheet closing. The toast says where it went; Undo (or Z while the
+   toast shows) takes back everything since the first choice. A bork whose
+   filing was already yours and that nothing changed has nothing to undo. */
+function quickFileFinishChosen(s) {
+  quickFileWrite(s, () => quickFileDetails());
+  quickFileQuests(s.id);
+  const c = s.filed, t = c.categoryID ? topicFor(c.categoryID) : null;
+  const where = t ? SavedContent.breadcrumb(t.name, c.subcategory) : null;
+  if (!s.before) { toast(where ? `Saved to ${where}` : "Saved · not filed"); return; }
+  const before = s.before;
+  const undo = () => {
+    const cur = borks.get(s.id);
+    if (!cur || cur.deleted_at) return;
+    if (s.created) {
+      // A tombstone, like any delete, under what it was saved with, so
+      // pasting the link again (here or on the phone) starts over.
+      track("bork_removed", { platform: cur.platform, after_save: true });
+      commit({ ...cur, ...before, deleted_at: new Date().toISOString() }, cur);
+      toast("Save removed.");
+      return;
+    }
+    commit({ ...cur, ...before }, cur);
+    toast(before.filing_source === "automatic" ? "Back to our guess." : "Undone.");
+  };
+  qfUndo = { until: Date.now() + 8000, run: undo };
+  const said = where ? `${s.created ? "Saved" : "Filed"} to ${where}` : s.created ? "Saved · not filed" : "Left unfiled";
+  toast(said, "Undo", () => { qfUndo = null; undo(); });
 }
 /* The link field changed. A paste is tap 1, the save; typing waits for Enter
    or "Bork it", so half a link is never saved. A link you already have shows
@@ -5957,6 +6167,33 @@ $("add-url").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.pre
 $("add-done").addEventListener("click", () => closeDlg($("add-dialog")));
 $("add-remove").addEventListener("click", quickFileRemove);
 $("add-dialog").addEventListener("close", quickFileFinish);
+// Refine: the panel's chips and the "+ Tag" field. Any touch inside the sheet
+// after a choice — a pointer, a key, the wheel — stops Done's drain for good;
+// the touch that makes the choice lands before it, so it doesn't count.
+for (const type of ["pointerdown", "keydown", "wheel"]) {
+  $("add-dialog").addEventListener(type, () => { if (qf && qf.filed) quickFileStopDrain(); }, { capture: true, passive: true });
+}
+$("add-refine").addEventListener("click", (e) => {
+  const sub = e.target.closest("[data-refine-sub]");
+  if (sub) { quickFileSetSub(sub.dataset.refineSub); return; }
+  const tag = e.target.closest("[data-refine-tag]");
+  if (tag) { quickFileToggleTag(tag.dataset.refineTag); return; }
+  if (e.target.closest("#add-refine-plus")) quickFileOpenTagField();
+});
+$("add-refine-tag").addEventListener("keydown", (e) => {
+  const field = e.currentTarget;
+  if (e.key === "Enter") {
+    e.preventDefault();
+    if (!field.value.trim()) { quickFileCloseTagField(true); return; }
+    quickFileAddTag(field.value);
+    field.value = "";
+  } else if (e.key === "Escape") {
+    // Closes the field, not the sheet.
+    e.preventDefault(); e.stopPropagation();
+    quickFileCloseTagField(true);
+  }
+});
+$("add-refine-tag").addEventListener("blur", () => { if (qf) quickFileCloseTagField(false); });
 {
   // Tag suggestions follow the topic the dial is on, once it stops turning.
   let settle = null;

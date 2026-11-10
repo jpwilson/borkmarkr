@@ -142,6 +142,15 @@
 .qf.is-filed .qf-ev { stroke: var(--qf-filled, var(--ink)) !important; stroke-dasharray: none; stroke-width: 3.4; }
 .qf.is-filed .qf-chips, .qf.is-filed .qf-also-row, .qf.is-filed .qf-help { visibility: hidden; }
 .qf.is-filed .qf-list { cursor: default; }
+/* Chosen (the Add sheet's refine): nothing folds. The ring stays live for a
+   re-choice, a coral tick sits on the middle's shoulder while it shows the
+   choice, and the host's panel takes the place of the line and the chips. */
+.qf-hub-check { position: absolute; left: 64.8%; top: 35.2%; z-index: 3; width: clamp(20px, 7.5cqw, 26px); aspect-ratio: 1;
+  transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center; pointer-events: none;
+  background: var(--coral, #FF5A2D); color: #fff; box-shadow: 0 0 0 2.5px var(--qf-white), 0 3px 8px -3px rgba(25,21,16,.45); }
+.qf-hub-check[hidden] { display: none; }
+.qf-hub-check svg { width: 62%; height: auto; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.qf.is-chosen .qf-reason, .qf.is-chosen .qf-chips, .qf.is-chosen .qf-also-row, .qf.is-chosen .qf-help { display: none; }
 @keyframes qf-check { to { stroke-dashoffset: 0; } }
 @keyframes qf-seg-in { from { transform: scale(.9); opacity: 0; } }
 @keyframes qf-hub-in { from { transform: scale(.92); opacity: 0; } }
@@ -224,6 +233,38 @@
   border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-2px, -2px); transition: transform .16s ease; }
 .add-more[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
 .add-more .sorted { margin-top: 4px; }
+/* Refine: under the dial once a topic is chosen. "Filed to …", the topic's
+   subtopics and the tags, each one row that scrolls sideways. The chips are
+   the dial's own (.qf-chip) and the sheet's tag chips. */
+.add-refine { --qf-rest: 56%; --qf-white: #FFFCF7; margin-top: 16px; text-align: left; }
+.add-refine-h { margin: 0; color: #1F7A4D; font-size: 13.5px; font-weight: 700; line-height: 1.45; text-align: center;
+  overflow-wrap: anywhere; }
+.refine-row { display: flex; flex-wrap: nowrap; gap: 7px; margin: 10px -4px 0; padding: 2px 4px; overflow-x: auto;
+  scrollbar-width: none; overscroll-behavior-x: contain; }
+.refine-row::-webkit-scrollbar { display: none; }
+.refine-row[hidden] { display: none; }
+.refine-row .qf-chip, .refine-row .tag-chip, .refine-row input { flex: 0 0 auto; }
+.refine-row .qf-chip { max-width: 70vw; }
+.refine-row .qf-chip.is-on { background: var(--qf-on, var(--ink, #191510)); color: #fff !important; }
+.refine-row .tag-chip { height: 34px; cursor: pointer; }
+.refine-row .tag-chip.on { background: var(--tint, #FFE9E1); color: var(--accent-text, #C93A12); }
+.refine-row .tag-chip:focus-visible, .refine-row .qf-chip:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
+.refine-plus { background: none !important; color: var(--accent-text, #C93A12) !important;
+  box-shadow: inset 0 0 0 1.5px var(--dashed, #D7CDBD); }
+.refine-row input { width: 9.5em; height: 34px; padding: 0 12px; border: 1px solid var(--hairline, #EAE4DA); border-radius: 999px;
+  background: var(--surface, #fff); color: var(--ink, #191510); font: 600 13px/1 var(--font-body); outline: none; }
+.refine-row input:focus { border-color: var(--coral, #FF5A2D); }
+.refine-row input[hidden] { display: none; }
+/* Done drains: a lighter band across the button shrinks to nothing over the
+   six seconds before the sheet closes by itself. A transition, never an
+   animation: closeDlg waits on the dialog's animationend, and those bubble. */
+#add-done { position: relative; overflow: hidden; isolation: isolate; }
+/* At rest the band is full and invisible, so stopping a drain changes where
+   the transform ends and the running transition is dropped, not finished. */
+#add-done::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: rgba(255,255,255,.26); opacity: 0; transform: scaleX(1); transform-origin: left center; }
+#add-done.is-full::before { opacity: 1; }
+#add-done.is-full.is-draining::before { transform: scaleX(0); transition: transform 6s linear; }
 #add-remove { background: var(--surface, #fff); color: var(--destructive, #C0392B); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
 
 /* ── "Drop to bork it": a link dragged over the page ──────────────────── */
