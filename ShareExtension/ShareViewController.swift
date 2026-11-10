@@ -9,8 +9,9 @@ import UniformTypeIdentifiers
 /// and exactly as before — tap 1 is `Store.enqueue`, nothing waits on a
 /// ranking. Once it is written, the watchdog stands down, the run is recorded
 /// as saved, and the card gives way to the dial (`QuickFileShareView`). Tap 2
-/// re-enqueues the same inbox file as the person's own filing; "Not now"
-/// keeps the guess. With "Ask where it goes after sharing" turned off in the
+/// re-enqueues the same inbox file as the person's own filing and the sheet
+/// stays for subtopics and tags, each re-enqueued as it changes, until Done
+/// (or its drain); there is no Undo. "Not now" keeps the guess. With "Ask where it goes after sharing" turned off in the
 /// app, the one-tap exit below is unchanged. The dial ranks from the
 /// snapshot the app leaves in the App Group: no SwiftData, no OCR, and topic
 /// art only as 240 px thumbnails. Signed in, it also reads the page and asks
@@ -230,10 +231,11 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    /// The exit once the dial is up: "Not now", the drain, the cap, or a
-    /// filing that has had its moment. The outcome was recorded when the save
-    /// was written; this only hands the host its screen back, once, after
-    /// stopping the page read and the model so nothing lands after it.
+    /// The exit once the dial is up: "Not now", Done, either drain, or the
+    /// cap. The outcome was recorded when the save was written; this only
+    /// hands the host its screen back, once, after keeping a tag still being
+    /// typed and stopping the page read and the model so nothing lands after
+    /// it.
     @MainActor
     private func close() {
         guard !done else { return }
@@ -242,7 +244,7 @@ final class ShareViewController: UIViewController {
         extensionContext?.completeRequest(returningItems: nil)
     }
 
-    /// Swiped away: the same stop as `close`.
+    /// Swiped away: the same stop as `close`, typed tag included.
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         quickFile?.close()

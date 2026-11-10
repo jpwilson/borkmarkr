@@ -1856,3 +1856,46 @@ the share sheet sends none. The gateway let the publishable key through
 anyway, so the quota checks were always the gate. `SessionKeychain.save` now
 updates the session in place instead of deleting and re-adding it, because a
 crash between the two signed the person out.
+
+## Quick File: pick, refine, done (feat/quick-file-refine)
+
+**A tap on the dial now chooses, and the sheet stays.** The owner, after
+using Quick File: "if you select, you can't select the subtopic. Also you
+can't add tags." This reverses "files and leaves". Tap 1 is unchanged: the
+link is saved at once with the best guess. A tap on a topic (a ring key, the
+centre, a subtopic chip, "Also likely", More…) is written as `"user"` at
+once, as before, but the Add sheet, the share sheet and the web's Add dialog
+stay up. The ring stays live, and another topic re-chooses. Under the dial a
+refine panel replaces the reason line: "Filed to Fitness › Running", one
+sideways row of that topic's subtopics (tap sets, tap again clears), and one
+of tags (tap toggles, "+ Tag" types one in place). Every change is written
+as it happens. Triage keeps one tap per card (`QuickFileModel.Mode.once`).
+
+**Done closes, and drains by itself only if nothing is touched.** After the
+first choice, Done drains over six seconds and closes the sheet. Any touch
+after that choice stops the drain for good. The share sheet's minute-long
+cap still closes an idle sheet. Under VoiceOver or Switch Control nothing is
+timed. On the Add sheet, Done is pinned to the bottom so it rides above the
+keyboard, and a tag still in the field is kept.
+
+**The share sheet's Undo is gone.** It appeared for under a second and
+brought the dial back; now the dial never goes away, so changing the choice
+is just another tap. The Add sheet and the web keep the toast's Undo, which
+now also puts back the tags as they were before the first choice. A bork the
+sheet created is still tombstoned.
+
+**Late answers never move a choice.** The page, the on-screen text and the
+model are still asked after a quick choice while the sheet is up. They can
+add a ✨, new subtopic chips (only appended, so the row never reorders under
+a thumb) and tags, which join only until the person touches a tag.
+
+**The share sheet takes tags off with a list.** The extension can't see a
+bork's existing tags, so a tag turned off there travels as
+`BookmarkDraft.tagsRemoved`, and `Store.save` takes it off the bork's own.
+The snapshot gains your most-used subtopics and recent tags per filing
+(`subUse`, `recentTags`, both optional, so it stays version 1).
+
+**One fixture for both platforms.** The chip order and the tag cleaning are
+pinned by `Scripts/fixtures/quick_file_refine_cases.json`, which
+`Scripts/test_quick_file_refine.swift` and `Scripts/test_quick_file_refine.mjs`
+both read (workflow `quick-file-refine-tests.yml`).

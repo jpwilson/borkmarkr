@@ -22,6 +22,13 @@ enum QuickFileCopy {
     static let chooseHint = "Turn the dial, or tap a topic"
     static let allTopics = "All topics"
     static let searchPrompt = "Search topics and subtopics"
+    static let addTag = "+ Tag"
+    static let newTag = "New tag"
+    static let subtopicsLabel = "Subtopic"
+    static let tagsLabel = "Tags"
+    static let doneHint = "Closes. It stays filed here."
+    static let fileHereInstead = "double-tap to file here instead"
+    static let clearSubtopic = "Double-tap to clear"
 
     static func topicName(_ topicID: String) -> String {
         Taxonomy.category(id: topicID)?.name ?? topicID
@@ -97,6 +104,14 @@ enum QuickFileCopy {
     }
 
     static func filed(_ candidate: FilingCandidate) -> String { "Filed to \(label(candidate))" }
+
+    /// What VoiceOver says as a choice lands on the Add or share sheet.
+    static func chosen(_ candidate: FilingCandidate) -> String {
+        "\(filed(candidate)). Subtopics and tags below."
+    }
+
+    /// "#run, tag": a tag chip as VoiceOver reads it; on or off is its trait.
+    static func tagChip(_ tag: String) -> String { "#\(tag), tag" }
 
     static func alsoLikely(_ candidate: FilingCandidate) -> String { "Also likely: \(label(candidate))" }
 

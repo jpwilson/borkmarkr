@@ -19,28 +19,37 @@ import UIKit
 /// Reduce Motion everything is a short crossfade; at accessibility text sizes
 /// the dial becomes a ranked list; under VoiceOver it is one adjustable
 /// element (swipe up or down to turn, double-tap to file).
+///
+/// On the Add and share sheets (`QuickFileModel.Mode.refine`) a filing
+/// chooses rather than folds: the ring stays live, the chosen topic's key
+/// wears a small check, and the hub shows the choice with its check whenever
+/// the light is on it. Turning away shows another topic, which a tap files
+/// instead.
 struct QuickFileDial: View {
     let model: QuickFileModel
     var style: QuickFileStyle
     var diameter: CGFloat
     /// VoiceOver's "Not now" action. Nil leaves it out.
     var onLater: (() -> Void)?
+    /// VoiceOver's "Done" action once something is chosen. Nil leaves it out.
+    var onDone: (() -> Void)?
 
     @Environment(\.dynamicTypeSize) private var typeSize
 
     init(model: QuickFileModel, style: QuickFileStyle = .system, diameter: CGFloat = 300,
-         onLater: (() -> Void)? = nil) {
+         onLater: (() -> Void)? = nil, onDone: (() -> Void)? = nil) {
         self.model = model
         self.style = style
         self.diameter = diameter
         self.onLater = onLater
+        self.onDone = onDone
     }
 
     var body: some View {
         if typeSize.isAccessibilitySize {
             QuickFileRankedList(model: model, style: style)
         } else {
-            QuickFileRing(model: model, style: style, diameter: diameter, onLater: onLater)
+            QuickFileRing(model: model, style: style, diameter: diameter, onLater: onLater, onDone: onDone)
                 // Fixed geometry: the keys can't grow with the text.
                 .dynamicTypeSize(...DynamicTypeSize.large)
         }
@@ -269,6 +278,7 @@ private struct QuickFileRing: View {
     let style: QuickFileStyle
     let diameter: CGFloat
     let onLater: (() -> Void)?
+    let onDone: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
@@ -306,7 +316,11 @@ private struct QuickFileRing: View {
         .gesture(drag(g))
         .onAppear { appear() }
         .onChange(of: model.highlighted) { _, seat in moveBead(to: seat) }
-        .onChange(of: model.filed) { _, filed in filedChanged(filed) }
+        .onChange(of: model.confirmations) { _, _ in landCheck() }
+        .onChange(of: model.showsCheck) { _, shows in checkShown(shows) }
+        .onChange(of: model.refinements) { _, _ in
+            if let filed = model.filed { UIAccessibility.post(notification: .announcement, argument: QuickFileCopy.filed(filed)) }
+        }
         .onChange(of: model.revision) { _, _ in
             if let line = model.updateAnnouncement {
                 UIAccessibility.post(notification: .announcement, argument: line)
@@ -315,6 +329,7 @@ private struct QuickFileRing: View {
         .sensoryFeedback(.selection, trigger: model.tick)
         .sensoryFeedback(.impact(weight: .medium), trigger: model.confirmations)
         .sensoryFeedback(.selection, trigger: model.undos)
+        .sensoryFeedback(.selection, trigger: model.refinements)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(QuickFileCopy.dialLabel)
         .accessibilityValue(model.spokenValue)
@@ -328,8 +343,13 @@ private struct QuickFileRing: View {
         }
         .accessibilityAction { model.confirm() }
         .accessibilityActions {
-            if model.filed != nil {
+            if model.isFolded {
                 Button(QuickFileCopy.undo) { model.undo() }
+            } else if model.isChosen {
+                if let onDone {
+                    Button(QuickFileCopy.done) { onDone() }
+                }
+                Button(QuickFileCopy.moreTopics) { model.more() }
             } else {
                 Button(QuickFileCopy.moreTopics) { model.more() }
                 if let onLater {
@@ -345,8 +365,10 @@ private struct QuickFileRing: View {
     private func key(_ seat: Int, _ g: QuickFileDialGeometry) -> some View {
         let candidate = model.candidate(at: seat)
         let isMore = seat == QuickFileModel.moreSlot
-        let folded = model.filed != nil
+        let folded = model.isFolded
         let lit = !folded && model.highlighted == seat
+        // Lit, the hub wears the check; turned away, the key does.
+        let chosenHere = model.isChosen && !lit && candidate != nil && model.filed?.categoryID == candidate?.categoryID
         let pressed = held == .seat(seat)
         let palette = candidate.map { QuickFileStyle.palette(for: $0.categoryID) } ?? NeutralPalette.value
         let shape = QuickFileRingKey(seat: seat, inner: g.inner, outer: g.outer, gap: g.gap, corner: g.corner)
@@ -369,7 +391,11 @@ private struct QuickFileRing: View {
             label(seat, candidate: candidate, palette: palette, lit: lit, g: g)
                 .id("\(seat)-\(model.revision)")
                 .transition(.opacity)
-            if let candidate, !folded, model.sparkle == candidate.categoryID {
+            if chosenHere {
+                keyCheck(g)
+                    .position(g.point(degrees: Double(seat) * 45 + 13, radius: g.outer - 13 * g.scale))
+                    .transition(.scale.combined(with: .opacity))
+            } else if let candidate, !folded, model.sparkle == candidate.categoryID {
                 Text("✨")
                     .font(.system(size: 11 * g.scale))
                     .frame(width: 20 * g.scale, height: 20 * g.scale)
@@ -387,6 +413,7 @@ private struct QuickFileRing: View {
         .animation(.easeOut(duration: 0.1), value: pressed)
         .animation(.easeInOut(duration: 0.16), value: model.revision)
         .animation(.easeOut(duration: 0.2), value: model.sparkle)
+        .animation(.easeOut(duration: 0.18), value: chosenHere)
         .zIndex(lit ? 1 : 0)
         .scaleEffect(reduceMotion ? 1 : (folded ? 0.82 : (appeared ? 1 : 0.9)))
         .opacity(folded ? 0 : (appeared ? 1 : 0))
@@ -431,11 +458,25 @@ private struct QuickFileRing: View {
         .position(g.point(degrees: Double(seat) * 45, radius: g.labelRadius))
     }
 
+    /// The small coral check on the chosen topic's key, where a ✨ sits,
+    /// once the light has turned away from it.
+    private func keyCheck(_ g: QuickFileDialGeometry) -> some View {
+        ZStack {
+            Circle().fill(style.accent)
+            Circle().strokeBorder(Color.white, lineWidth: 1.5 * g.scale)
+            QuickFileCheck()
+                .stroke(Color.white, style: StrokeStyle(lineWidth: 2 * g.scale, lineCap: .round, lineJoin: .round))
+                .frame(width: 9 * g.scale, height: 9 * g.scale)
+        }
+        .frame(width: 20 * g.scale, height: 20 * g.scale)
+        .shadow(color: QuickFileStyle.ink.opacity(0.18), radius: 3, y: 1)
+    }
+
     // MARK: Bead
 
     private func bead(_ g: QuickFileDialGeometry) -> some View {
         let size = 10 * g.scale
-        let visible = model.highlighted != nil && model.filed == nil
+        let visible = model.highlighted != nil && !model.isFolded
         return Circle()
             .fill(style.accent)
             .overlay(Circle().stroke(Color.white, lineWidth: 2 * g.scale))
@@ -460,8 +501,8 @@ private struct QuickFileRing: View {
     // MARK: Hub
 
     private var hubKey: String {
-        let shown = model.filed ?? model.centre
-        let seat = model.filed == nil ? (model.highlighted.map(String.init) ?? "none") : "filed"
+        let shown = model.shown
+        let seat = model.showsCheck ? "filed" : (model.highlighted.map(String.init) ?? "none")
         return "\(seat)|\(shown?.categoryID ?? "")|\(shown?.subcategory ?? "")|\(model.revision)"
     }
 
@@ -473,8 +514,8 @@ private struct QuickFileRing: View {
     }
 
     private func hub(_ g: QuickFileDialGeometry) -> some View {
-        let shown = model.filed ?? model.centre
-        let onMore = model.filed == nil && model.isOnMore
+        let shown = model.shown
+        let onMore = shown == nil && model.isOnMore && !model.isFolded
         return ZStack {
             Circle()
                 .fill(LinearGradient(colors: [Color.white, QuickFileStyle.paper], startPoint: .top, endPoint: .bottom))
@@ -485,7 +526,7 @@ private struct QuickFileRing: View {
             hubContent(g, shown: shown, onMore: onMore)
                 .id(hubKey)
                 .transition(hubTransition)
-            if model.filed != nil {
+            if model.showsCheck {
                 checkBadge(g)
                     .transition(.scale(scale: 0.4).combined(with: .opacity))
             }
@@ -493,7 +534,7 @@ private struct QuickFileRing: View {
         .frame(width: g.hub * 2, height: g.hub * 2)
         .animation(.easeOut(duration: reduceMotion ? 0.12 : 0.14), value: hubKey)
         .animation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.3, dampingFraction: 0.62),
-                   value: model.filed != nil)
+                   value: model.showsCheck)
         .scaleEffect(held == .hub && !reduceMotion ? 0.95 : bump)
         .animation(.easeOut(duration: 0.1), value: held == .hub)
         .scaleEffect(appeared || reduceMotion ? 1 : 0.92)
@@ -506,7 +547,7 @@ private struct QuickFileRing: View {
 
     private func ringLook(_ shown: FilingCandidate?, onMore: Bool) -> RingLook {
         guard let shown, !onMore else { return .faint }
-        if model.filed != nil || shown.reasons.first == .yours { return .solid }
+        if model.showsCheck || shown.reasons.first == .yours { return .solid }
         return model.showsBestGuess && model.ranking.evidence == .strong ? .solid : .dashed
     }
 
@@ -650,7 +691,7 @@ private struct QuickFileRing: View {
                 if !tracker.active {
                     tracker.begin(at: value.startLocation, geometry: g)
                     model.touch()
-                    if tracker.region != .outside, model.filed == nil { held = tracker.region }
+                    if tracker.region != .outside, !model.isFolded { held = tracker.region }
                 }
                 if !tracker.turning,
                    hypot(value.translation.width, value.translation.height) >= QuickFileDragTracker.tapTravel {
@@ -686,18 +727,27 @@ private struct QuickFileRing: View {
         still.disablesAnimations = true
         withTransaction(still) {
             beadAngle = Double(model.highlighted ?? 0) * 45
-            if model.filed != nil { ringClosed = 1; checkDrawn = 1 }
+            if model.showsCheck { ringClosed = 1; checkDrawn = 1 }
         }
         appeared = true
     }
 
-    private func filedChanged(_ filed: FilingCandidate?) {
-        guard filed != nil else {
-            withAnimation(.easeOut(duration: 0.18)) {
-                ringClosed = 0
-                checkDrawn = 0
-            }
-            return
+    /// The check comes and goes with what the hub shows: in `.refine`,
+    /// turning off the chosen topic takes it away and turning back brings it.
+    private func checkShown(_ shows: Bool) {
+        guard !shows || ringClosed == 0 else { return }
+        withAnimation(.easeOut(duration: 0.18)) {
+            ringClosed = shows ? 1 : 0
+            checkDrawn = shows ? 1 : 0
+        }
+    }
+
+    /// A filing, or a choice of a new topic: the hub presses in and the
+    /// check draws.
+    private func landCheck() {
+        guard model.filed != nil else { return }
+        if model.mode == .refine, let filed = model.filed {
+            UIAccessibility.post(notification: .announcement, argument: QuickFileCopy.chosen(filed))
         }
         if reduceMotion {
             ringClosed = 1
@@ -898,8 +948,9 @@ private struct QuickFileRankedList: View {
             ForEach(Array(model.candidates.enumerated()), id: \.element.id) { seat, candidate in
                 Button { model.tap(seat) } label: { row(candidate, seat: seat) }
                     .buttonStyle(QuickFilePressStyle())
-                    .disabled(model.filed != nil)
-                    .accessibilityAddTraits(model.highlighted == seat ? .isSelected : [])
+                    .disabled(model.isFolded)
+                    .accessibilityAddTraits(model.highlighted == seat || model.filed?.categoryID == candidate.categoryID
+                                            ? .isSelected : [])
             }
             Button { model.more() } label: {
                 HStack(spacing: 12) {
@@ -915,7 +966,7 @@ private struct QuickFileRankedList: View {
                 .background(QuickFileStyle.mutedControl, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
             .buttonStyle(QuickFilePressStyle())
-            .disabled(model.filed != nil)
+            .disabled(model.isFolded)
         }
     }
 

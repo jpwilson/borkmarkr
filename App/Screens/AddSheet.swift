@@ -13,10 +13,14 @@ import UIKit
 /// its page is read and a "Bork it" button is offered, and nothing is saved
 /// until that is tapped, so a half-typed link never becomes a bork.
 ///
-/// **Tap 2 files.** The sheet becomes the saved card, the Quick File dial and
-/// its reason line. A tap on the dial files as `"user"`, closes the sheet and
-/// leaves a "Saved to Fitness › Running · Undo" toast, whose Undo takes the
-/// whole save back. "Done" keeps the guess.
+/// **Tap 2 chooses.** The sheet becomes the saved card, the Quick File dial and
+/// its reason line. A tap on the dial is written as `"user"` at once and the
+/// sheet stays: the refine panel takes the reason line's place (subtopic
+/// chips, tag chips, "+ Tag") and Done is pinned at the bottom. Another
+/// topic on the dial re-chooses. Done, its six-second drain (stopped for
+/// good by any touch after the choice) or a swipe closes the sheet with a
+/// "Saved to Fitness › Running · Undo" toast, whose Undo takes the whole
+/// save back. Before a choice, the toolbar's "Done" keeps the guess.
 /// The preview, on-screen text and the model's answer arrive while the dial
 /// is up and re-rank it (an untouched dial re-deals, a touched one only gains
 /// a ✨), and update the saved bork through `Store.save`'s merge rules —
@@ -53,15 +57,16 @@ struct AddSheet: View {
     @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
     private var customTopics: [CustomTopic]
 
+    /// Your own subtopics, for the refine panel's chips.
+    @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
+    private var customSubtopics: [CustomSubtopic]
+
     enum Step { case paste, details }
 
     @State private var step = Step.paste
     @State private var urlText = ""
     @State private var title = ""
     @State private var author: String?
-    @State private var tags: [String] = []
-    @State private var userTagsEdited = false
-    @State private var tagDraft = ""
     @State private var noteOpen = false
     @State private var note = ""
     @State private var noteDate = Date.now
@@ -126,6 +131,24 @@ struct AddSheet: View {
     @State private var extrasOpen = false
     /// Filed, done, removed or swiped away: the sheet has had its say.
     @State private var finished = false
+    /// The bork's tags from tap 1 on: the Categorizer's, the page's and the
+    /// model's as they land, and the refine panel's toggles. Written as they
+    /// change (`writeTags`).
+    @State private var tagState: QuickFileTags?
+    /// Where the refine panel's subtopic and tag lists come from.
+    @State private var refineSource = QuickFileRefineSource.none
+    /// The bork as it was before the first choice on this sheet, for Undo.
+    @State private var beforeChoice: BeforeChoice?
+    /// Done's drain after the first choice.
+    @State private var drain = QuickFileDrain()
+
+    struct BeforeChoice {
+        var categoryID: String?
+        var subcategory: String?
+        var source: String?
+        var tags: [String]
+        var tagsEdited: Bool?
+    }
 
     private var style: QuickFileStyle { .app(accent) }
     private static let savedGreen = Color(hex: "1D8A50")
@@ -174,9 +197,12 @@ struct AddSheet: View {
                             .accessibilityLabel("More")
                         }
                     }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done", action: done)
-                            .fontWeight(.semibold)
+                    // Once something is chosen, Done is pinned under the panel.
+                    if dial?.isChosen != true {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done", action: done)
+                                .fontWeight(.semibold)
+                        }
                     }
                 } else {
                     ToolbarItem(placement: .cancellationAction) {
@@ -424,26 +450,66 @@ struct AddSheet: View {
     /// away. Fits a phone without scrolling, so a drag on the dial is always
     /// a turn and never a scroll.
     private var detailsStep: some View {
-        ScrollView {
-            VStack(spacing: 14) {
-                if let duplicate {
-                    duplicateCard(duplicate)
-                } else if let dial, let url = parsedURL {
-                    linkRow(url, saved: true)
-                    QuickFileHeader(model: dial, style: style)
-                        .padding(.top, 10)
-                    QuickFileDial(model: dial, style: style, diameter: 300)
-                    QuickFileDialFooter(model: dial, style: style)
-                    extras
-                        .padding(.top, 8)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 14) {
+                    if let duplicate {
+                        duplicateCard(duplicate)
+                    } else if let dial, let url = parsedURL {
+                        linkRow(url, saved: true)
+                        QuickFileHeader(model: dial, style: style)
+                            .padding(.top, 10)
+                        QuickFileDial(model: dial, style: style, diameter: 300,
+                                      onDone: dial.isChosen ? { finishChosen() } : nil)
+                        if dial.isChosen, let tagState {
+                            QuickFileRefinePanel(model: dial, tags: tagState, source: refineSource, style: style,
+                                                 onEditingTag: { editing in
+                                                     guard editing else { return }
+                                                     Task { @MainActor in
+                                                         try? await Task.sleep(for: .milliseconds(300))
+                                                         withAnimation(.easeOut(duration: 0.2)) {
+                                                             proxy.scrollTo(Self.refineID, anchor: .bottom)
+                                                         }
+                                                     }
+                                                 })
+                                .id(Self.refineID)
+                                .transition(.opacity)
+                        } else {
+                            QuickFileDialFooter(model: dial, style: style)
+                        }
+                        extras
+                            .padding(.top, 8)
+                    }
                 }
+                .padding(18)
+                .padding(.bottom, 30)
+                .animation(.easeOut(duration: 0.18), value: dial?.isChosen)
             }
-            .padding(18)
-            .padding(.bottom, 30)
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDismissesKeyboard(.interactively)
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .scrollDismissesKeyboard(.interactively)
+        // Pinned, so it is always in reach and rides above the keyboard.
+        .safeAreaInset(edge: .bottom) {
+            if duplicate == nil, dial?.isChosen == true {
+                QuickFileDoneButton(draining: drain.isDraining, style: style) { finishChosen() }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Tokens.paper)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .background(QuickFileTouchWatcher { drain.touched() })
+        // Typing doesn't reach the window's watcher.
+        .onChange(of: tagState?.draft) { _, _ in drain.touched() }
+        .task(id: drain.startedAt) {
+            guard drain.isDraining else { return }
+            try? await Task.sleep(for: .seconds(QuickFileDrain.seconds))
+            guard !Task.isCancelled, drain.isDue(at: .now) else { return }
+            finishChosen()
+        }
     }
+
+    private static let refineID = "refine"
 
     // MARK: Already saved
 
@@ -608,9 +674,10 @@ struct AddSheet: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// "Tags, note, side quest", folded away under the dial. The whole point
+    /// "Note, side quest, title", folded away under the dial. The whole point
     /// is that you don't type, so these are one tap away rather than in the
     /// way; whatever is set here is written to the bork as the sheet closes.
+    /// Tags live in the refine panel.
     private var extras: some View {
         VStack(alignment: .leading, spacing: 16) {
             Button {
@@ -619,7 +686,7 @@ struct AddSheet: View {
                 HStack(spacing: 8) {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 12, weight: .bold))
-                    Text("Tags, note, side quest")
+                    Text("Note, side quest, title")
                         .font(Typo.ui(13.5, .semibold))
                     Spacer()
                     Image(systemName: "chevron.down")
@@ -640,77 +707,9 @@ struct AddSheet: View {
             .accessibilityValue(extrasOpen ? "Open" : "Closed")
 
             if extrasOpen {
-                tagsEditor
                 journeyAttach
                 titleField
                 noteSection
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var tagsEditor: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            Text("TAGS")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
-
-            if !tags.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(tags, id: \.self) { tag in
-                            Button {
-                                tags.removeAll { $0 == tag }
-                                userTagsEdited = true
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Text("#\(tag)").font(Typo.ui(11.5, .semibold))
-                                    Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
-                                }
-                                .foregroundStyle(accent.deep)
-                                .padding(.horizontal, 9)
-                                .padding(.vertical, 5)
-                                .background(accent.tint, in: Capsule())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-
-            HStack(spacing: 8) {
-                TextField("+ tag", text: $tagDraft)
-                    .font(Typo.ui(13))
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .onSubmit(commitTag)
-                Button("Add", action: commitTag)
-                    .font(Typo.ui(12.5, .semibold))
-                    .disabled(tagDraft.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(Tokens.surface, in: Capsule())
-            .overlay(Capsule().stroke(Tokens.hairline, lineWidth: 1))
-
-            if !tagSuggestions.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(tagSuggestions, id: \.self) { suggestion in
-                            Button {
-                                tagDraft = suggestion
-                                commitTag()
-                            } label: {
-                                Text("#\(suggestion)")
-                                    .font(Typo.ui(11.5, .semibold))
-                                    .foregroundStyle(Tokens.inkSecondary)
-                                    .padding(.horizontal, 9).padding(.vertical, 5)
-                                    .background(Tokens.mutedControl, in: Capsule())
-                            }
-                            .buttonStyle(ChipStyle())
-                        }
-                    }
-                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -872,7 +871,6 @@ struct AddSheet: View {
         if title.isEmpty { title = Categorizer.fallbackTitle(for: url) }
         if author == nil { author = Categorizer.fallbackAuthor(for: url) }
         let offline = Categorizer.suggest(url: url, title: title, description: pageDescription, author: author)
-        tags = offline.tags
         pin = existing.flatMap { QuickFileBridge.pin(for: $0) }
         let ranking = rank(url)
 
@@ -892,7 +890,7 @@ struct AddSheet: View {
         var draft = BookmarkDraft(
             url: url, title: title, author: author,
             platform: Platform.detect(from: url), kind: nil,
-            categoryID: categoryID, subcategory: subcategory, tags: tags,
+            categoryID: categoryID, subcategory: subcategory, tags: offline.tags,
             text: SavedContent.excerpt(pageDescription),
             durationSeconds: duration
         )
@@ -906,7 +904,22 @@ struct AddSheet: View {
             let bork = try Store.save(draft, in: context)
             saved = bork
             createdHere = existing == nil
+            let tagState = QuickFileTags(chosen: bork.tags, suggested: offline.tags, edited: bork.tagsEdited == true)
+            tagState.onChange = { writeTags(to: bork) }
+            self.tagState = tagState
+            refineSource = makeRefineSource()
             dial = makeDial(ranking, url: url)
+            #if DEBUG
+            // `-quickFileChosen`: as if the top candidate had been tapped and
+            // then the screen touched, so the sheet holds still for a capture.
+            if ScreenshotDefaults.quickFileChosen, let dial, !dial.isChosen, let top = dial.candidates.first {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(700))
+                    dial.file(top)
+                    drain.touched()
+                }
+            }
+            #endif
             Haptics.tap()
             withAnimation(.easeOut(duration: 0.22)) { step = .details }
             Task { await enrich(url, bork: bork) }
@@ -916,9 +929,17 @@ struct AddSheet: View {
         }
     }
 
+    /// A save you had already filed opens chosen on that filing: the panel
+    /// at once, nothing written, nothing draining.
     private func makeDial(_ ranking: FilingRanking, url: URL) -> QuickFileModel {
-        let model = QuickFileModel(ranking: ranking, input: input(for: url))
-        model.onConfirm = { candidate in file(candidate) }
+        var yours: FilingCandidate?
+        if let pin, pin.reason == .yours, var lead = ranking.candidates.first(where: { $0.categoryID == pin.categoryID }) {
+            lead.subcategory = pin.subcategory
+            yours = lead
+        }
+        let model = QuickFileModel(ranking: ranking, input: input(for: url), mode: .refine, chosen: yours)
+        drain = QuickFileDrain(alreadyChosen: yours != nil)
+        model.onConfirm = { candidate in choose(candidate) }
         model.onMore = {
             pickedTopic = nil
             pickedSub = nil
@@ -993,10 +1014,8 @@ struct AddSheet: View {
             let fetched = await LinkPreview.fetch(for: url, within: .seconds(3))
             Self.writePreview(fetched, url: url, to: bork)
             apply(fetched, for: url)
-            if !userTagsEdited {
-                let offline = Categorizer.suggest(url: url, title: title, description: pageDescription, author: author)
-                tags = Self.merged(tags, offline.tags)
-            }
+            let offline = Categorizer.suggest(url: url, title: title, description: pageDescription, author: author)
+            if tagState?.suggest(offline.tags) == true { writeTags(to: bork) }
             rerank(url)
         }
         readOnScreenText(bork)
@@ -1032,15 +1051,15 @@ struct AddSheet: View {
     }
 
     /// The model, once for every save, however sure the ranking already is,
-    /// and never waited on; not for a save you have already filed or taken
-    /// back. Silent on every failure: signed out, offline, quota spent. Its
+    /// and never waited on, also after a choice (its subtopic and tags feed
+    /// the refine panel; it never moves the choice). Silent on every failure: signed out, offline, quota spent. Its
     /// answer is one more piece of evidence: it re-ranks the dial (sure
     /// keywords or your history with a creator can still win), and becomes
     /// the stored guess if the bork's filing is still the app's and nothing
     /// has touched it since asking — even if the sheet has closed, where it
     /// used to be lost.
     private func askModel(_ url: URL, bork: Bookmark) async {
-        guard let dial, dial.filed == nil, bork.deletedAt == nil,
+        guard dial != nil, bork.deletedAt == nil,
               let account, let session = await account.currentSession() else { return }
         let request = SmartCategorizer.Context(url: url, title: title, author: author, description: pageDescription)
         let asked = input(for: url)
@@ -1050,17 +1069,18 @@ struct AddSheet: View {
         let stamp = bork.updatedAt
         guard let answer = await SmartCategorizer.suggest(request, session: session) else { return }
         aiAnswer = answer
-        if !userTagsEdited { tags = Self.merged(tags, answer.tags) }
         rerank(url)
         let ranking = FilingSuggest.rank(asked, memory: known, ai: answer, pinned: lead, taxonomyOrder: topics)
         Self.keepGuess(ranking, on: bork, unchangedSince: stamp)
+        // After the guess, whose stamp check a tag write would spoil.
+        if tagState?.suggest(answer.tags) == true { writeTags(to: bork) }
     }
 
     /// A late answer reaches the dial through `offer` (an untouched dial
     /// re-deals, a touched one only gains a ✨ or an "Also likely" chip) and,
     /// while the dial is untouched, the stored guess follows what it shows.
     private func rerank(_ url: URL) {
-        guard let dial, dial.filed == nil else { return }
+        guard let dial else { return }
         let latest = input(for: url)
         let ranking = FilingSuggest.rank(latest, memory: memory, ai: aiAnswer, pinned: pin, taxonomyOrder: order)
         QuickFileAppArt.preload(ranking.candidates.map(\.categoryID))
@@ -1084,59 +1104,84 @@ struct AddSheet: View {
         try? bork.modelContext?.save()
     }
 
-    /// Existing tags stay; new ones join. Platform names stay out.
-    private static func merged(_ existing: [String], _ incoming: [String]) -> [String] {
-        var out = existing
-        for tag in incoming where !out.contains(tag) && !Platform.isSiteName(tag) { out.append(tag) }
-        return out
+    /// The tags as `tagState` has them, by `Store.save`'s rules: once you
+    /// have touched them they replace the bork's, before that they only join.
+    private func writeTags(to bork: Bookmark) {
+        guard let tagState, bork.deletedAt == nil else { return }
+        var changed = false
+        if tagState.edited {
+            if bork.tags != tagState.chosen || bork.tagsEdited != true {
+                bork.tags = tagState.chosen
+                bork.tagsEdited = true
+                changed = true
+            }
+        } else if bork.tagsEdited != true {
+            let added = tagState.chosen.filter { !bork.tags.contains($0) }
+            if !added.isEmpty {
+                bork.tags = Array(Set(bork.tags + added)).sorted()
+                changed = true
+            }
+        }
+        guard changed else { return }
+        bork.touch()
+        try? bork.modelContext?.save()
     }
 
-    /// Tags you've used on this category + subcategory, newest first — not
-    /// the library's global greatest hits. Platform names stay out because
-    /// the source is already on the card.
-    private var tagSuggestions: [String] {
-        let filing = dial?.filed ?? dial?.centre
-        return TagRecency.suggestions(
-            in: allBookmarks.map {
-                .init(categoryID: $0.categoryID, subcategory: $0.subcategory, tags: $0.tags, at: $0.updatedAt)
-            },
-            categoryID: filing?.categoryID,
-            subcategory: filing?.subcategory,
-            excluding: Set(tags),
-            prefix: tagDraft
+    /// The refine panel's lists, from the library as it is at tap 1: every
+    /// subtopic (built-in and yours), your most-used ones, and the tags you
+    /// used lately on a filing (`TagRecency`, as the old tag field had them).
+    private func makeRefineSource() -> QuickFileRefineSource {
+        let merged = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
+        let uses: [QuickFileRefine.Use] = allBookmarks.compactMap { bork in
+            guard bork.filingSource == "user", let id = bork.categoryID else { return nil }
+            return QuickFileRefine.Use(categoryID: id, subcategory: bork.subcategory, at: bork.updatedAt)
+        }
+        let used = QuickFileRefine.subUse(uses)
+        let items = allBookmarks.map {
+            TagRecency.Item(categoryID: $0.categoryID, subcategory: $0.subcategory, tags: $0.tags, at: $0.updatedAt)
+        }
+        return QuickFileRefineSource(
+            subs: { id in merged.topic(id: id).map { merged.subs(for: $0) } ?? [] },
+            used: { used[$0] ?? [] },
+            recentTags: { TagRecency.suggestions(in: items, categoryID: $0, subcategory: $1, limit: 12) }
         )
     }
 
-    private func commitTag() {
-        let cleaned = tagDraft
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "#", with: "")
-            .lowercased()
-        guard !cleaned.isEmpty, !tags.contains(cleaned) else { tagDraft = ""; return }
-        tags.append(cleaned)
-        userTagsEdited = true
-        tagDraft = ""
-    }
+    // MARK: Tap 2 — choose, refine, done
 
-    // MARK: Tap 2 — file, or leave
-
-    /// Tap 2: a key on the dial, its centre, a subtopic chip, the "Also
-    /// likely" chip or a pick from More…. Written as yours at once; the sheet
-    /// stays just long enough for the check to land, then a toast offers Undo.
-    /// Undo takes back everything the sheet did: a bork it made leaves the
-    /// library ("Save removed"), one that was already there gets its filing
-    /// back.
-    private func file(_ candidate: FilingCandidate) {
+    /// Tap 2, and every change after it: a key on the dial, its centre, a
+    /// subtopic chip, the "Also likely" chip or a pick from More…. Written as
+    /// yours at once, and the sheet stays for the refine panel. The bork as
+    /// it was before the first choice is kept for Undo; the first choice
+    /// starts Done's drain.
+    private func choose(_ candidate: FilingCandidate) {
         guard let bork = saved, !finished else { return }
-        finished = true
-        let before = (categoryID: bork.categoryID, subcategory: bork.subcategory, source: bork.filingSource)
+        if beforeChoice == nil {
+            beforeChoice = BeforeChoice(categoryID: bork.categoryID, subcategory: bork.subcategory,
+                                        source: bork.filingSource, tags: bork.tags, tagsEdited: bork.tagsEdited)
+        }
         bork.categoryID = candidate.categoryID
         bork.subcategory = candidate.subcategory
         bork.filingSource = "user"
-        writeExtras(to: bork)
         bork.touch()
         try? context.save()
         QuickFileBridge.scheduleSnapshot(context: context)
+        drain.chose(at: .now, assistive: UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning)
+    }
+
+    /// Done, its drain, or a swipe after a choice: the extras are written and
+    /// a toast offers Undo. Undo takes back everything the sheet did: a bork
+    /// it made leaves the library ("Save removed"), one that was already
+    /// there gets its filing and tags back.
+    private func finishChosen(dismissing: Bool = true) {
+        guard let bork = saved, !finished, let before = beforeChoice else {
+            if dismissing, !finished { done() }
+            return
+        }
+        tagState?.commitDraft()
+        finished = true
+        if writeExtras(to: bork) { bork.touch() }
+        try? context.save()
 
         let store = context
         let created = createdHere
@@ -1146,6 +1191,8 @@ struct AddSheet: View {
             bork.categoryID = before.categoryID
             bork.subcategory = before.subcategory
             bork.filingSource = before.source
+            bork.tags = before.tags
+            bork.tagsEdited = before.tagsEdited
             // A tombstone, like any delete, under the guess it was saved
             // with, so pasting the link again starts over.
             if created { bork.deletedAt = .now }
@@ -1154,18 +1201,18 @@ struct AddSheet: View {
             QuickFileBridge.scheduleSnapshot(context: store)
             if created { report("Save removed", nil) }
         }
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(380))
-            dismiss()
-            onSaved(created ? Self.savedLine(for: bork) : QuickFileCopy.filed(candidate), undo)
-            ReviewPrompter.reached(.borkSaved, requestReview)
-        }
+        if dismissing { dismiss() }
+        let line = created ? nil : dial?.filed.map(QuickFileCopy.filed)
+        onSaved(line ?? Self.savedLine(for: bork), undo)
+        ReviewPrompter.reached(.borkSaved, requestReview)
     }
 
     /// "Done": the bork stays as saved, filed under our guess, plus whatever
     /// the extras say.
     private func done() {
         guard let bork = saved, !finished else { return dismiss() }
+        if beforeChoice != nil { return finishChosen() }
+        tagState?.commitDraft()
         finished = true
         if writeExtras(to: bork) { bork.touch() }
         try? context.save()
@@ -1177,6 +1224,8 @@ struct AddSheet: View {
     /// Swiped away after tap 1: the same as "Done".
     private func finishIfNeeded() {
         guard let bork = saved, !finished else { return }
+        if beforeChoice != nil { return finishChosen(dismissing: false) }
+        tagState?.commitDraft()
         finished = true
         if writeExtras(to: bork) { bork.touch() }
         try? context.save()
@@ -1199,30 +1248,18 @@ struct AddSheet: View {
         })
     }
 
-    /// A pick from More… is tap 2.
+    /// A pick from More… chooses, or re-chooses.
     private func filePick() {
-        guard let topic = pickedTopic, let dial, dial.filed == nil else { return }
+        guard let topic = pickedTopic, let dial else { return }
         dial.file(dial.candidate(topicID: topic, subcategory: pickedSub))
     }
 
     /// The extras, written through to the bork as the sheet closes. Says
-    /// whether anything changed, so an untouched bork isn't restamped.
+    /// whether anything changed, so an untouched bork isn't restamped. Tags
+    /// are written as they change (`writeTags`).
     @discardableResult
     private func writeExtras(to bork: Bookmark) -> Bool {
         var changed = false
-        if userTagsEdited {
-            if bork.tags != tags || bork.tagsEdited != true {
-                bork.tags = tags
-                bork.tagsEdited = true
-                changed = true
-            }
-        } else if bork.tagsEdited != true {
-            let added = tags.filter { !bork.tags.contains($0) }
-            if !added.isEmpty {
-                bork.tags = Array(Set(bork.tags + added)).sorted()
-                changed = true
-            }
-        }
         let typed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         if editingTitle, !typed.isEmpty, typed != bork.title {
             bork.title = typed

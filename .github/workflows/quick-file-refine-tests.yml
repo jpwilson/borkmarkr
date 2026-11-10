@@ -1,0 +1,48 @@
+name: Quick File refine tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/QuickFile/QuickFileRefine.swift"
+      - "Core/TagRecency.swift"
+      - "Core/Platform.swift"
+      - "Scripts/test_quick_file_refine.swift"
+      - "Scripts/test_quick_file_refine.mjs"
+      - "Scripts/fixtures/quick_file_refine_cases.json"
+      - "docs/quick-file.js"
+      - ".github/workflows/quick-file-refine-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/QuickFile/QuickFileRefine.swift"
+      - "Core/TagRecency.swift"
+      - "Core/Platform.swift"
+      - "Scripts/test_quick_file_refine.swift"
+      - "Scripts/test_quick_file_refine.mjs"
+      - "Scripts/fixtures/quick_file_refine_cases.json"
+      - "docs/quick-file.js"
+      - ".github/workflows/quick-file-refine-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run the refine panel's ordering checks
+        run: |
+          swiftc -parse-as-library -o /tmp/quick-file-refine-tests \
+            Core/Platform.swift Core/TagRecency.swift Core/QuickFile/QuickFileRefine.swift \
+            Scripts/test_quick_file_refine.swift
+          /tmp/quick-file-refine-tests
+
+  # The web half. Both read Scripts/fixtures/quick_file_refine_cases.json, so
+  # the chips come out in the same order on both platforms.
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run the refine panel's ordering checks
+        run: node Scripts/test_quick_file_refine.mjs

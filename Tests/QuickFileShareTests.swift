@@ -39,6 +39,7 @@ final class QuickFileShareTests: XCTestCase {
         XCTAssertEqual(kept?.subcategory, "Skincare")
         XCTAssertNil(kept?.filingSource)
         XCTAssertEqual(kept?.tags, ["skincare"])
+        XCTAssertNil(kept?.tagsEdited)
         XCTAssertEqual(kept?.previewFetched, true)
         XCTAssertEqual(kept?.imageURLString, "https://example.com/cover.jpg")
 
@@ -112,39 +113,47 @@ final class QuickFileShareTests: XCTestCase {
         XCTAssertTrue(touchedProbe.writes.isEmpty)
     }
 
-    @MainActor func testNothingIsKeptOverAFilingOrAfterTheSheetCloses() async {
-        // Filed before anything was asked: no network at all.
-        let (filed, filedProbe) = Self.share(caption: Self.vague)
-        filed.model.file(filed.model.candidate(topicID: "fitness", subcategory: nil))
-        await filed.enrich(caller: .session(Self.signedIn), read: { _ in
-            await filedProbe.read()
+    @MainActor func testALateAnswerNeverMovesAChoice() async {
+        // Chosen before anything was asked: the page is still read and the
+        // model still asked, for the refine panel's subtopics and tags, and
+        // every write keeps the choice.
+        let (chosen, chosenProbe) = Self.share(caption: Self.vague)
+        chosen.model.file(chosen.model.candidate(topicID: "fitness", subcategory: nil))
+        await chosen.enrich(caller: .session(Self.signedIn), read: { _ in
+            await chosenProbe.read()
             return nil
         }, judge: { _, _ in
-            await filedProbe.ask()
+            await chosenProbe.ask()
             return Self.skincare
         })
-        XCTAssertEqual(filedProbe.reads + filedProbe.asks, 0)
-        XCTAssertEqual(filedProbe.writes.map(\.filingSource), ["user"])
+        XCTAssertEqual(chosenProbe.reads, 1)
+        XCTAssertEqual(chosenProbe.asks, 1)
+        XCTAssertEqual(chosenProbe.writes.map(\.filingSource), ["user", "user"])
+        XCTAssertEqual(Set(chosenProbe.writes.map(\.categoryID)), ["fitness"])
+        XCTAssertEqual(chosenProbe.writes.last?.tags, ["skincare"])
+        XCTAssertNil(chosenProbe.writes.last?.tagsEdited)
+        XCTAssertEqual(chosenProbe.writes.last?.previewFetched, true)
+        XCTAssertEqual(chosen.model.filed?.categoryID, "fitness")
+        XCTAssertEqual(chosen.model.suggestedSubs(for: "beauty").first, "Skincare")
 
-        // Filed while the model was answering.
+        // Chosen while the model was answering.
         let (late, lateProbe) = Self.share(caption: Self.vague)
         await late.enrich(caller: .session(Self.signedIn), read: { _ in nil }, judge: { _, _ in
             await MainActor.run { late.model.file(late.model.candidate(topicID: "fitness", subcategory: nil)) }
             return Self.skincare
         })
-        XCTAssertEqual(lateProbe.writes.map(\.filingSource), ["user"])
+        XCTAssertEqual(lateProbe.writes.map(\.filingSource), ["user", "user"])
+        XCTAssertEqual(lateProbe.writes.last?.categoryID, "fitness")
 
-        // Filed and undone while it was answering: the guess put back stays.
-        let (undone, undoneProbe) = Self.share(caption: Self.vague)
-        await undone.enrich(caller: .session(Self.signedIn), read: { _ in nil }, judge: { _, _ in
-            await MainActor.run {
-                undone.model.file(undone.model.candidate(topicID: "fitness", subcategory: nil))
-                undone.model.undo()
-            }
+        // Chosen, then re-chosen while it was answering: the last choice stays.
+        let (again, againProbe) = Self.share(caption: Self.vague)
+        again.model.file(again.model.candidate(topicID: "fitness", subcategory: nil))
+        await again.enrich(caller: .session(Self.signedIn), read: { _ in nil }, judge: { _, _ in
+            await MainActor.run { again.model.file(again.model.candidate(topicID: "recipes", subcategory: nil)) }
             return Self.skincare
         })
-        XCTAssertEqual(undoneProbe.writes.map(\.filingSource), ["user", nil])
-        XCTAssertNil(undoneProbe.writes.last?.categoryID)
+        XCTAssertEqual(Set(againProbe.writes.map(\.filingSource)), ["user"])
+        XCTAssertEqual(againProbe.writes.last?.categoryID, "recipes")
 
         // Closed while it was answering.
         let (gone, goneProbe) = Self.share(caption: Self.vague)

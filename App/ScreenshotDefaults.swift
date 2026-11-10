@@ -111,6 +111,17 @@ enum ScreenshotDefaults {
             .filter { !$0.isEmpty }
     }
 
+    /// `-quickFileChosen` starts the Add sheet's dial and the Quick File
+    /// harness already chosen on the top candidate, as a tap would leave
+    /// them, so the refine panel can be photographed; `simctl` can't tap.
+    static var quickFileChosen: Bool {
+        #if DEBUG
+        return CommandLine.arguments.contains("-quickFileChosen")
+        #else
+        return false
+        #endif
+    }
+
     /// `-dumpShareCard <path>` writes the rendered share card to a PNG.
     ///
     /// The card is an `ImageRenderer` product, not a screen: nothing exists

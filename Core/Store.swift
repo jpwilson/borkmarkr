@@ -67,7 +67,12 @@ enum Store {
                 existing.categoryID = draft.categoryID; existing.subcategory = draft.subcategory
                 existing.filingSource = draft.filingSource ?? "automatic"
             }
-            if draft.tagsEdited == true { existing.tags = draft.tags; existing.tagsEdited = true }
+            // From the share sheet's refine panel, which can't see the bork's
+            // own tags: yours stay, less the ones turned off there.
+            if draft.tagsEdited == true, let removed = draft.tagsRemoved {
+                existing.tags = Array(Set(existing.tags + draft.tags).subtracting(removed)).sorted()
+                existing.tagsEdited = true
+            } else if draft.tagsEdited == true { existing.tags = draft.tags; existing.tagsEdited = true }
             else if existing.tagsEdited == false && !draft.tags.isEmpty {
                 existing.tags = Array(Set(existing.tags + draft.tags)).sorted()
             }
@@ -507,6 +512,9 @@ struct BookmarkDraft: Codable, Sendable {
     var previewFetched: Bool = false
     var filingSource: String? = nil
     var tagsEdited: Bool? = nil
+    /// Tags turned off on the share sheet, taken off the bork's own when it
+    /// is drained. Nil from everywhere else, and in older inbox files.
+    var tagsRemoved: [String]? = nil
     var titleEdited: Bool? = nil
 }
 
