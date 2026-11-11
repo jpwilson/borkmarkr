@@ -110,12 +110,9 @@ struct BrowseView: View {
     var body: some View {
         NavigationStack(path: $path) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Browse")
-                    .font(Typo.display(34, .heavy))
-                    .tracking(-1.0)
-                    .foregroundStyle(Tokens.ink)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 12)
+                ScreenHeader("Browse")
+                    .padding(.horizontal, Tokens.gutter)
+                    .padding(.top, 4)
 
                 BrowseSearchBar(
                     query: $query,
@@ -124,7 +121,7 @@ struct BrowseView: View {
                     isSearching: isSearching,
                     onCancel: clearSearch
                 )
-                .padding(.top, 14)
+                .padding(.top, 16)
 
                 if isSearching {
                     ScrollView {
@@ -138,27 +135,25 @@ struct BrowseView: View {
                             onOpen: open,
                             onClearScopes: { scopes = [] }
                         )
-                        .padding(.top, 14)
-                        .padding(.bottom, 120)
+                        .padding(.top, 6)
+                        .padding(.bottom, Tokens.sectionGap)
                     }
                     .scrollDismissesKeyboard(.immediately)
                 } else {
                     segmented
-                        .padding(.top, 16)
-
-                    sortRow
-                        .padding(.top, 10)
-                        .padding(.bottom, 12)
+                        .padding(.top, 12)
 
                     ScrollView {
-                        Group {
+                        VStack(alignment: .leading, spacing: 12) {
+                            listHeader
                             switch axis {
                             case .topics: topicsGrid
                             case .sources: sourcesList
                             case .journeys: MissionsView(account: account, sort: sort)
                             }
                         }
-                        .padding(.bottom, 120)
+                        .padding(.top, 14)
+                        .padding(.bottom, Tokens.sectionGap)
                     }
                 }
             }
@@ -290,12 +285,25 @@ struct BrowseView: View {
     /// `-topic <id>` lands straight on a topic page. Screenshots only: there
     /// is no other way to capture the topic page reproducibly, since getting
     /// there otherwise means a person tapping a tile.
+    ///
+    /// `-topic unfiled` opens "Not filed yet"; `-source tiktok` opens that
+    /// platform's Source page.
     private func consumeLaunchTopic() {
-        guard !openedLaunchTopic, let id = ScreenshotDefaults.openTopic else { return }
-        openedLaunchTopic = true
-        axis = .topics
-        path.append(Route.topic(id))
+        guard !openedLaunchTopic else { return }
+        if let id = ScreenshotDefaults.openTopic {
+            openedLaunchTopic = true
+            axis = .topics
+            path.append(Route.topic(id == "unfiled" ? Self.unfiledRoute : id))
+        } else if let raw = ScreenshotDefaults.openSource,
+                  let platform = Platform(rawValue: raw.lowercased()) {
+            openedLaunchTopic = true
+            axis = .sources
+            path.append(Route.source(platform))
+        }
     }
+
+    /// The "Not filed yet" page's route id.
+    private static let unfiledRoute = "__uncategorised__"
 
     private func open(_ bookmark: Bookmark) {
         detail = bookmark
@@ -322,51 +330,82 @@ struct BrowseView: View {
         related = semantic.search(needle, in: bookmarks, limit: 8)
     }
 
+    /// Topics / Sources / Side quests — the one segmented control.
     private var segmented: some View {
-        HStack(spacing: 3) {
-            ForEach(Axis.allCases, id: \.self) { option in
-                Button {
+        ClaySegmented(
+            selection: Binding(
+                get: { axis },
+                set: { option in
                     path = NavigationPath()
-                    withAnimation(.easeOut(duration: 0.18)) { axis = option }
-                } label: {
-                    Text(option.title)
-                        .font(Typo.ui(13.5, .semibold))
-                        .foregroundStyle(axis == option ? Tokens.ink : Tokens.inkMeta)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 34)
-                        .contentShape(Rectangle())
-                        .background(axis == option ? Tokens.surface : .clear, in: Capsule())
+                    axis = option
                 }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(3)
-        .background(Tokens.segmentTrack, in: Capsule())
-        .padding(.horizontal, 18)
+            ),
+            options: Axis.allCases.map { ($0, $0.title) }
+        )
+        .padding(.horizontal, Tokens.gutter)
         .zIndex(1)
     }
 
-    /// Most borks · Most recent · A–Z, under the segmented control and above
-    /// whatever it is ordering.
+    /// The list's header: what is listed, and how it is ordered.
     ///
-    /// The same three on every segment, in the same chip the search scopes
-    /// use, because "how is this list ordered" is one question and answering
-    /// it three different ways would make Browse look like three screens.
-    /// Horizontally scrollable so the largest Dynamic Type sizes push the row
-    /// sideways instead of truncating an option out of existence.
-    private var sortRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
+    /// The order (Most borks · Most recent · A–Z) is a small menu at the
+    /// right of the header (1.4), not a row of pills above the list: one
+    /// control where there were three, and the same menu on every segment,
+    /// because "how is this list ordered" is one question.
+    @ViewBuilder
+    private var listHeader: some View {
+        // An empty grid has its own heading in the empty state.
+        if !(axis == .topics && usedCategories.isEmpty && uncategorisedCount == 0) {
+            SectionHeader(listTitle) {
+                // Nothing to order on an empty segment.
+                if listIsSortable { sortMenu }
+            }
+            .padding(.horizontal, Tokens.gutter)
+        }
+    }
+
+    private var listIsSortable: Bool {
+        switch axis {
+        case .topics: usedCategories.count > 1
+        case .sources: true
+        case .journeys: journeys.count > 1
+        }
+    }
+
+    private var listTitle: String {
+        switch axis {
+        case .topics:
+            let n = usedCategories.count
+            return n == 0 ? "Your topics" : "\(n) topic\(n == 1 ? "" : "s")"
+        case .sources:
+            return "Where you save from"
+        case .journeys:
+            let n = journeys.count
+            return n == 0 ? "Side quests" : Copy.countedSideQuests(n)
+        }
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            Picker("Sort \(axis.title.lowercased())", selection: Binding(
+                get: { sort },
+                set: { sort = $0 }
+            )) {
                 ForEach(BrowseSort.allCases, id: \.rawValue) { option in
-                    SearchChip(label: option.title, active: sort == option) {
-                        sort = option
-                    }
+                    Text(option.title).tag(option)
                 }
             }
-            .padding(.horizontal, 18)
+        } label: {
+            HStack(spacing: 3) {
+                Text(sort.title)
+                Image(systemName: "chevron.down").font(.system(size: 11, weight: .semibold))
+            }
+            .font(.custom("Instrument Sans", size: 15, relativeTo: .subheadline).weight(.semibold))
+            .foregroundStyle(accent.deep)
+            .frame(minHeight: Tokens.minTapTarget)
+            .contentShape(Rectangle())
         }
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        .accessibilityLabel("Sort \(axis.title.lowercased())")
+        .accessibilityLabel("Sort \(axis.title.lowercased()), \(sort.title)")
     }
 
     // MARK: Topics
@@ -426,62 +465,21 @@ struct BrowseView: View {
     @ViewBuilder
     private var topicsGrid: some View {
         if usedCategories.isEmpty && uncategorisedCount == 0 {
-            VStack(spacing: 18) {
-                emptyAxis(symbol: "square.grid.2x2", text: "Topics appear as you save")
-                Button {
-                    pickerCategory = nil
-                    pickerSub = nil
-                    showingPicker = true
-                } label: {
-                    Text("Or add a topic now")
-                        .font(Typo.ui(14, .semibold))
-                        .foregroundStyle(accent.deep)
-                }
-                .buttonStyle(.plain)
-            }
+            emptyTopics
         } else {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
-                      spacing: 12) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: Tokens.gridGap, alignment: .top),
+                                GridItem(.flexible(), spacing: Tokens.gridGap, alignment: .top)],
+                      spacing: Tokens.gridGap) {
                 // First, not last. At the end of the grid it was one scroll
-                // away, and the first outside tester never scrolled. A topic
-                // tile's own shape — the plus standing where the clay art
-                // goes, the accent tint, the suggested-quest card's dashed
-                // edge — so the grid reads as your topics plus a slot for
-                // the next one.
-                Button {
-                    pickerCategory = nil
-                    pickerSub = nil
-                    showingPicker = true
-                } label: {
-                    VStack(spacing: 0) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(accent.base, in: Circle())
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 92)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("New topic")
-                                .font(Typo.ui(14.5, .bold))
-                                .foregroundStyle(Tokens.ink)
-                            Text("Anything you like")
-                                .font(Typo.ui(11, .medium))
-                                .foregroundStyle(Tokens.inkMeta)
-                        }
-                        .padding(11)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                // away, and the first outside tester never scrolled. A dashed
+                // tile exactly the size of a topic tile (it is laid out on an
+                // invisible one), so the grid reads as your topics plus a slot
+                // for the next one.
+                TopicTile.skeleton
+                    .hidden()
+                    .overlay {
+                        DashedTile(title: "New topic", symbol: "plus", action: newTopic)
                     }
-                    .frame(height: 168, alignment: .top)
-                    .background(accent.tint)
-                    .clipShape(RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous)
-                            .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                    )
-                }
-                .buttonStyle(PressableStyle())
 
                 ForEach(usedCategories) { category in
                     Button {
@@ -490,34 +488,75 @@ struct BrowseView: View {
                         TopicTile(category: category, count: topicCounts[category.id] ?? 0,
                                   artURL: topicArt[category.id])
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressableStyle())
                     .zoomSource(id: category.id, in: tileZoom)
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
 
             if uncategorisedCount > 0 {
                 Button {
-                    path.append(Route.topic("__uncategorised__"))
+                    path.append(Route.topic(Self.unfiledRoute))
                 } label: {
-                    HStack(spacing: 10) {
+                    HStack(spacing: 12) {
                         Image(systemName: "tray")
-                            .font(.system(size: 14, weight: .semibold))
-                        Text("Not filed yet")
-                            .font(Typo.ui(14, .semibold))
-                        Spacer()
-                        Text("\(uncategorisedCount)")
-                            .font(Typo.ui(13, .bold))
-                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Tokens.sandInk)
+                            .frame(width: 36, height: 36)
+                            .background(Tokens.sand, in: RoundedRectangle(cornerRadius: Tokens.thumbRadius, style: .continuous))
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Not filed yet").textRole(.cardTitle, color: Tokens.ink)
+                            Text(Copy.countedBorks(uncategorisedCount)).textRole(.meta)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Tokens.inkSecondary)
                     }
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .padding(15)
-                    .cardSurface(radius: 18)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(minHeight: Tokens.slimRowHeight)
+                    .cardSurface()
+                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 18)
+                .buttonStyle(PressableStyle(scale: 0.99))
+                .accessibilityElement(children: .combine)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 4)
             }
         }
+    }
+
+    private func newTopic() {
+        pickerCategory = nil
+        pickerSub = nil
+        showingPicker = true
+    }
+
+    /// No topics yet: the clay art a first topic would wear, and the way to
+    /// make one now.
+    private var emptyTopics: some View {
+        VStack(spacing: 0) {
+            ClayArtImage(source: .quest(.compass))
+                .frame(width: 112, height: 112)
+                .clipShape(RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous))
+                .padding(.bottom, 18)
+            Text("Topics appear as you save")
+                .textRole(.sectionTitle, color: Tokens.ink)
+                .multilineTextAlignment(.center)
+            Text("Every bork is filed under one. You can make your own, too.")
+                .textRole(.body, color: Tokens.inkSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.top, 6)
+                .padding(.horizontal, 24)
+            Button("Add a topic", action: newTopic)
+                .buttonStyle(.claySecondary)
+                .fixedSize()
+                .padding(.top, 18)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Tokens.gutter)
+        .padding(.top, 36)
     }
 
     // MARK: Sources
@@ -550,7 +589,7 @@ struct BrowseView: View {
     @ViewBuilder
     private var sourcesList: some View {
         let counts = sourceCounts
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             ForEach(sortedSources, id: \.self) { platform in
                 let count = counts[platform] ?? 0
                 Button {
@@ -564,10 +603,10 @@ struct BrowseView: View {
                         empty: count == 0
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableStyle(scale: 0.99))
             }
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, Tokens.gutter)
     }
 
     private func topCategories(for platform: Platform) -> String {
@@ -579,23 +618,13 @@ struct BrowseView: View {
         return names.isEmpty ? "No topics yet" : names.joined(separator: ", ")
     }
 
+    /// The topics of the newest few borks from this app, one dot each.
     private func swatches(for platform: Platform) -> [CategoryPalette] {
-        bookmarks.filter { $0.platform == platform }
+        var seen = Set<String>()
+        return bookmarks.filter { $0.platform == platform }
+            .filter { seen.insert($0.categoryID ?? "").inserted }
             .prefix(3)
             .map { $0.category?.palette ?? NeutralPalette.value }
-    }
-
-    private func emptyAxis(symbol: String, text: String) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: symbol)
-                .font(.system(size: 36, weight: .light))
-                .foregroundStyle(Tokens.inkFaint)
-            Text(text)
-                .font(Typo.ui(14.5, .semibold))
-                .foregroundStyle(Tokens.inkSecondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 70)
     }
 }
 
@@ -606,32 +635,50 @@ private struct TopicTile: View {
     /// imageset and never consult this.
     var artURL: URL? = nil
 
+    /// SYSTEM.md's topic tile: the clay art 4:3 on its own sand ground, then
+    /// on white the 8 pt dot, the name 15/600 and "10 borks". No colour block.
     var body: some View {
-        VStack(spacing: 0) {
-            TopicClayArt(categoryID: category.id, remote: artURL)
-                .frame(maxWidth: .infinity)
-                .frame(height: 92)
+        VStack(alignment: .leading, spacing: 0) {
+            Tokens.clayGround
+                .aspectRatio(4 / 3, contentMode: .fit)
+                .overlay { TopicClayArt(categoryID: category.id, remote: artURL) }
                 .clipped()
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(category.name)
-                    .font(Typo.ui(14.5, .bold))
-                    .foregroundStyle(Tokens.ink)
-                    .lineLimit(2)
-                Text(Copy.countedBorks(count))
-                    .font(Typo.ui(11, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
-            }
-            .padding(11)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(category.palette.tint)
+            Self.footer(name: category.name, count: count, palette: category.palette)
         }
-        .frame(height: 168, alignment: .top)
-        .clipShape(RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Tokens.tileRadius, style: .continuous)
-                .stroke(category.palette.deep.opacity(0.08), lineWidth: 1)
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(category.name), \(Copy.countedBorks(count))")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private static func footer(name: String, count: Int, palette: CategoryPalette) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                TopicDot(palette: palette)
+                Text(name)
+                    .textRole(.cardTitle, color: Tokens.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+            Text(Copy.countedBorks(count))
+                .textRole(.meta)
+                .lineLimit(1)
+        }
+        .padding(.top, 9)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// A tile's exact shape with nothing in it, for the "New topic" slot to
+    /// be laid out on, so the two are the same size at every text size.
+    static var skeleton: some View {
+        VStack(spacing: 0) {
+            Color.clear.aspectRatio(4 / 3, contentMode: .fit)
+            footer(name: "New topic", count: 0, palette: NeutralPalette.value)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -642,45 +689,41 @@ private struct SourceRow: View {
     let swatches: [CategoryPalette]
     var empty: Bool = false
 
+    /// A flat row: the platform's mark, its name and what you save from it,
+    /// a dot per topic, a chevron.
     var body: some View {
         HStack(spacing: 12) {
-            PlatformBadge(platform: platform, size: 44)
-                .opacity(empty ? 0.55 : 1)
+            PlatformBadge(platform: platform, size: 36)
+                .opacity(empty ? 0.5 : 1)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(platform.name)
-                    .font(Typo.ui(15, .bold))
-                    .foregroundStyle(empty ? Tokens.inkSecondary : Tokens.ink)
+                    .textRole(.cardTitle, color: empty ? Tokens.inkSecondary : Tokens.ink)
                 Text(empty ? "Nothing saved yet" : "\(Copy.countedBorks(count)) · \(topCategories)")
-                    .font(Typo.ui(11.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
                     .lineLimit(1)
             }
 
             Spacer(minLength: 6)
 
             if !empty {
-                HStack(spacing: -6) {
+                HStack(spacing: 4) {
                     ForEach(Array(swatches.enumerated()), id: \.offset) { _, palette in
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(LinearGradient(colors: [palette.coverTop, palette.coverBottom],
-                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 22, height: 28)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .stroke(.white, lineWidth: 1.5)
-                            )
+                        TopicDot(palette: palette)
                     }
                 }
             }
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Tokens.inkFaint)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Tokens.inkSecondary)
         }
-        .padding(13)
-        .cardSurface(radius: 18)
-        .opacity(empty ? 0.92 : 1)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(minHeight: Tokens.slimRowHeight)
+        .cardSurface()
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
 

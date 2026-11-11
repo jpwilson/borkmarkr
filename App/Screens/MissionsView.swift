@@ -80,38 +80,40 @@ struct MissionsView: View {
             }
 
             if !seeds.isEmpty {
-                Text("FROM YOUR LIBRARY")
-                    .font(Typo.ui(10, .heavy)).tracking(0.6)
-                    .foregroundStyle(Tokens.mutedHeading)
-                    .padding(.top, missions.isEmpty ? 4 : 8)
+                Text(Copy.fromYourLibrary)
+                    .textRole(.label, color: Tokens.inkSecondary)
+                    .accessibilityAddTraits(.isHeader)
+                    .padding(.top, missions.isEmpty ? 8 : 16)
 
                 ForEach(seeds) { seed in
                     Button { accept(seed) } label: {
                         QuestSeedRow(seed: seed)
                     }
-                    .buttonStyle(PressableStyle())
+                    .buttonStyle(PressableStyle(scale: 0.99))
                 }
             }
 
             // The guide above already says all this when there are no quests.
-            if !missions.isEmpty { howRow }
+            if !missions.isEmpty {
+                howRow.padding(.top, seeds.isEmpty ? 4 : 8)
+            }
 
             Button { creating = true } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: "plus")
-                    Text(Copy.newSideQuest).font(Typo.ui(13.5, .semibold))
+                HStack(spacing: 6) {
+                    Image(systemName: "plus").font(.system(size: 14, weight: .semibold))
+                    Text(Copy.newSideQuest).textRole(.cardTitle)
                 }
                 .foregroundStyle(Tokens.inkSecondary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, minHeight: Tokens.slimRowHeight)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
                         .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                 )
+                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableStyle(scale: 0.99))
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, Tokens.gutter)
         .sheet(isPresented: $creating) {
             NewMissionSheet(seed: pendingSeed)
                 .environment(\.accent, accent)
@@ -135,6 +137,18 @@ struct MissionsView: View {
             .environment(\.accent, accent)
         }
         .onAppear {
+            #if DEBUG
+            // `-newQuest`: the create form, for its screenshot. After the
+            // first frame, or the sheet is dropped.
+            if ScreenshotDefaults.openNewQuest {
+                explainerSeen = true
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(700))
+                    creating = true
+                }
+                return
+            }
+            #endif
             if !explainerSeen && missions.isEmpty {
                 explainerSeen = true
                 showingExplainer = true
@@ -223,14 +237,12 @@ struct MissionsView: View {
     /// be making is on screen before you make it.
     private var guide: some View {
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(Copy.whatWorkingOn)
-                    .font(Typo.display(20, .heavy))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.sectionTitle, color: Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(Copy.sideQuestOneLiner)
-                    .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.body, color: Tokens.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -241,11 +253,10 @@ struct MissionsView: View {
             }
 
             Text(Copy.tryOneOfThese)
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
+                .textRole(.label, color: Tokens.inkSecondary)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
+                HStack(alignment: .top, spacing: Tokens.gridGap) {
                     ForEach(Mission.starters, id: \.title) { starter in
                         Button { start(starter) } label: {
                             QuestCard(
@@ -268,51 +279,42 @@ struct MissionsView: View {
             // under them rather than stopping short inside the padding.
             .padding(.horizontal, -16)
 
-            Button { creating = true } label: {
-                Text(Copy.startSideQuest)
-                    .font(Typo.ui(14.5, .bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                    .shadow(color: accent.base.opacity(0.3), radius: 14, y: 7)
-            }
-            .buttonStyle(.plain)
+            Button(Copy.startSideQuest) { creating = true }
+                .buttonStyle(.clayPrimary)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.tint.opacity(0.5), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(accent.base.opacity(0.2), lineWidth: 1)
-        )
+        .cardSurface()
     }
 
-    /// `InsightsEntry`'s compact row: a small clay scene, two lines, a chevron.
+    /// A row in the save row's shape: a small clay scene, two lines, a
+    /// chevron. It opens the explainer; it is a link, not a nudge.
     private var howRow: some View {
         Button { showingExplainer = true } label: {
-            HStack(spacing: 11) {
+            HStack(spacing: 12) {
                 QuestArt(motif: .scroll)
-                    .frame(width: 44, height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
+                    .frame(width: 36, height: 36)
+                    .clipShape(RoundedRectangle(cornerRadius: Tokens.thumbRadius, style: .continuous))
+                VStack(alignment: .leading, spacing: 0) {
                     Text(Copy.howSideQuestsWork)
-                        .font(Typo.ui(14, .bold))
-                        .foregroundStyle(Tokens.ink)
+                        .textRole(.cardTitle, color: Tokens.ink)
                     Text(Copy.sideQuestCoachLine)
-                        .font(Typo.ui(12, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .textRole(.meta)
                         .lineLimit(2)
                 }
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Tokens.inkFaint)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Tokens.inkSecondary)
             }
-            .padding(12)
-            .cardSurface(radius: 16)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(minHeight: Tokens.slimRowHeight)
+            .cardSurface()
+            .contentShape(Rectangle())
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(PressableStyle(scale: 0.99))
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -326,17 +328,16 @@ private struct GuideStep: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(number)")
-                .font(Typo.ui(12, .heavy))
-                .foregroundStyle(.white)
+                .font(Typo.ui(12, .bold))
+                .foregroundStyle(Tokens.sandInk)
                 .frame(width: 24, height: 24)
-                .background(Tokens.ink, in: Circle())
-            VStack(alignment: .leading, spacing: 3) {
+                .background(Tokens.sand, in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(Typo.ui(14, .bold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: Tokens.ink)
                 Text(detail)
-                    .font(Typo.ui(12.5))
-                    .foregroundStyle(Tokens.inkSecondary)
+                    .textRole(.meta)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
@@ -360,19 +361,16 @@ struct SideQuestExplainerSheet: View {
                 VStack(spacing: 22) {
                     QuestArt(motif: .run)
                         .frame(width: 148, height: 148)
-                        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: Tokens.slabRadius, style: .continuous))
 
-                    VStack(spacing: 10) {
+                    VStack(spacing: 8) {
                         Text(Copy.sideQuestExplainerHeading)
-                            .font(Typo.display(29, .heavy))
-                            .tracking(-0.6)
+                            .textRole(.screenTitle, color: Tokens.ink)
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(Tokens.ink)
                         Text(Copy.sideQuestExplainerBody)
-                            .font(Typo.ui(14.5))
+                            .textRole(.body, color: Tokens.inkSecondary)
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(Tokens.inkSecondary)
-                            .padding(.horizontal, 34)
+                            .padding(.horizontal, 30)
                     }
 
                     VStack(alignment: .leading, spacing: 14) {
@@ -380,42 +378,34 @@ struct SideQuestExplainerSheet: View {
                             GuideStep(number: index + 1, title: step.title, detail: step.detail)
                         }
                     }
-                    .padding(15)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(accent.tint.opacity(0.5), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .padding(.horizontal, 22)
+                    .cardSurface()
+                    .padding(.horizontal, Tokens.gutter)
                 }
                 .padding(.top, 34)
                 .padding(.bottom, 16)
             }
 
-            VStack(spacing: 6) {
-                Button(action: onStart) {
-                    Text(Copy.startSideQuest)
-                        .font(Typo.ui(15.5, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(accent.base, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-                        .shadow(color: accent.base.opacity(0.34), radius: 18, y: 9)
-                }
-                .buttonStyle(.plain)
+            VStack(spacing: 4) {
+                Button(Copy.startSideQuest, action: onStart)
+                    .buttonStyle(.clayPrimary)
 
                 Button { dismiss() } label: {
                     Text(Copy.notNow)
-                        .font(Typo.ui(13.5, .semibold))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .textRole(.button, color: Tokens.inkSecondary)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 40)
+                        .frame(minHeight: Tokens.minTapTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 22)
-            .padding(.bottom, 10)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.bottom, 8)
         }
         .background(Tokens.paper.ignoresSafeArea())
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
     }
 }
 
@@ -433,53 +423,58 @@ private struct MissionCard: View {
         mission.topic?.palette ?? NeutralPalette.value
     }
 
+    /// One flat card: the quest row, and for a habit quest a hairline, the
+    /// streak, the week and the daily tick inside the same card.
     var body: some View {
-        Button(action: onOpen) {
-            VStack(alignment: .leading, spacing: 0) {
-                ZStack(alignment: .topTrailing) {
-                    QuestCard(
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: onOpen) {
+                QuestCard(
+                    title: mission.title,
+                    count: mission.bookmarkIDs.count,
+                    palette: palette,
+                    cover: QuestCover.resolve(
                         title: mission.title,
-                        count: mission.bookmarkIDs.count,
-                        palette: palette,
-                        cover: QuestCover.resolve(
-                            title: mission.title,
-                            categoryID: mission.categoryID,
-                            subcategory: subcategory
-                        ),
-                        layout: .row,
-                        quiet: false,
-                        habit: mission.hasHabit,
-                        topicName: mission.topic?.name
-                    )
-                    if mission.hasHabit {
-                        TickButton(done: mission.isDone(), tint: accent.base, action: onTick)
-                            .padding(12)
-                    }
-                }
+                        categoryID: mission.categoryID,
+                        subcategory: subcategory
+                    ),
+                    layout: .row,
+                    quiet: false,
+                    habit: mission.hasHabit,
+                    topicName: mission.topic?.name,
+                    framed: !mission.hasHabit
+                )
+            }
+            .buttonStyle(PressableStyle(scale: 0.99))
 
-                if mission.hasHabit {
+            if mission.hasHabit {
+                Tokens.hairline.frame(height: 1).padding(.horizontal, 12)
+                HStack(alignment: .center, spacing: 12) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 10) {
                             if mission.streak() > 0 {
                                 Label("\(mission.streak()) day streak", systemImage: "flame.fill")
-                                    .font(Typo.ui(11.5, .bold))
-                                    .foregroundStyle(accent.deep)
+                                    .textRole(.meta, color: accent.deep)
                             }
                             Text("\(mission.completions(inLast: 30))/30 days")
-                                .font(Typo.ui(11.5, .medium))
-                                .foregroundStyle(Tokens.inkMeta)
-                            Spacer()
+                                .textRole(.meta)
                         }
                         WeekStrip(mission: mission, tint: accent.base)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 14)
-                    .background(palette.tint)
+                    TickButton(done: mission.isDone(), tint: accent.base, action: onTick)
                 }
+                .padding(12)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
-        .buttonStyle(PressableStyle())
+        .background {
+            if mission.hasHabit {
+                RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
+                    .fill(Tokens.surface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
+                            .strokeBorder(Tokens.hairline, lineWidth: 1)
+                    )
+            }
+        }
     }
 }
 
@@ -501,7 +496,8 @@ private struct TickButton: View {
                     .foregroundStyle(done ? .white : Tokens.inkFaint)
             }
             .scaleEffect(done ? 1.0 : 0.94)
-            .shadow(color: done ? tint.opacity(0.4) : .clear, radius: 10, y: 5)
+            .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(done ? "Done today" : "Mark done today")
@@ -522,8 +518,8 @@ private struct WeekStrip: View {
                         .fill(done ? tint : Tokens.mutedControl)
                         .frame(height: 22)
                     Text(letter(for: day))
-                        .font(Typo.ui(9, .semibold))
-                        .foregroundStyle(Tokens.inkFaint)
+                        .font(.custom("Instrument Sans", size: 10, relativeTo: .caption2).weight(.semibold))
+                        .foregroundStyle(Tokens.inkSecondary)
                 }
             }
         }
@@ -564,45 +560,44 @@ struct NewMissionSheet: View {
                     field(label: "WORKING ON", placeholder: "Become a faster runner · Which minivan · Learn pottery", text: $title)
                     field(label: "DAILY HABIT — ONLY IF IT NEEDS ONE", placeholder: "Leave blank for research or exploring", text: $habit)
 
-                    Button { showingPicker = true } label: {
-                        HStack {
-                            Text(Taxonomy.category(id: categoryID)?.name ?? "Link a topic")
-                                .font(Typo.ui(13.5, .semibold))
-                                .foregroundStyle(Taxonomy.category(id: categoryID)?.palette.deep ?? Tokens.inkSecondary)
-                            Spacer()
-                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Tokens.inkFaint)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Topic").textRole(.label, color: Tokens.inkSecondary)
+                        Button { showingPicker = true } label: {
+                            HStack(spacing: 10) {
+                                let topic = Taxonomy.category(id: categoryID)
+                                if let topic { TopicDot(palette: topic.palette) }
+                                Text(topic?.name ?? "Link a topic")
+                                    .textRole(.body, color: topic == nil ? Tokens.inkSecondary : Tokens.ink)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Tokens.inkSecondary)
+                            }
+                            .searchFieldSurface()
+                            .contentShape(Rectangle())
                         }
-                        .padding(14)
-                        .cardSurface(radius: 16)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
 
-                    Text("OR PICK ONE")
-                        .font(Typo.ui(10, .heavy)).tracking(0.6)
-                        .foregroundStyle(Tokens.mutedHeading)
+                    Text("Or pick one")
+                        .textRole(.label, color: Tokens.inkSecondary)
+                        .padding(.top, 4)
 
-                    FlowLayout(spacing: 7) {
+                    FlowLayout(spacing: Tokens.chipGap) {
                         ForEach(Mission.templates, id: \.title) { template in
-                            Button {
+                            TopicChip(
+                                template.title,
+                                palette: Taxonomy.category(id: template.categoryID)?.palette ?? NeutralPalette.value,
+                                isOn: title == template.title
+                            ) {
                                 title = template.title
                                 habit = template.habit
                                 categoryID = template.categoryID
-                            } label: {
-                                Text(template.title)
-                                    .font(Typo.ui(12.5, .semibold))
-                                    .foregroundStyle(Taxonomy.category(id: template.categoryID)?.palette.deep ?? Tokens.inkSecondary)
-                                    .padding(.horizontal, 11).padding(.vertical, 8)
-                                    .background(
-                                        Taxonomy.category(id: template.categoryID)?.palette.tint ?? Tokens.mutedControl,
-                                        in: Capsule()
-                                    )
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
-                .padding(18)
+                .padding(Tokens.gutter)
             }
             .background(Tokens.paper)
             .navigationTitle(Copy.newSideQuest)
@@ -628,18 +623,16 @@ struct NewMissionSheet: View {
             }
         }
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
     }
 
     private func field(label: String, placeholder: String, text: Binding<String>) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
+                .textRole(.label, color: Tokens.inkSecondary)
             TextField(placeholder, text: text)
-                .font(Typo.ui(15))
-                .padding(14)
-                .cardSurface(radius: 16)
+                .textRole(.body, color: Tokens.ink)
+                .searchFieldSurface()
         }
     }
 
@@ -738,15 +731,13 @@ struct MissionDetailSheet: View {
                             Button(reordering ? "Done" : "Reorder") {
                                 withAnimation(.easeOut(duration: 0.18)) { reordering.toggle() }
                             }
-                            .font(Typo.ui(12, .semibold))
-                            .foregroundStyle(accent.deep)
+                            .buttonStyle(.clayQuiet)
                         }
                     }
 
                     if attached.isEmpty {
                         Text("Nothing attached yet. Pull in the borks that actually help.")
-                            .font(Typo.ui(13))
-                            .foregroundStyle(Tokens.inkSecondary)
+                            .textRole(.body, color: Tokens.inkSecondary)
                     } else {
                         ForEach(Array(attached.enumerated()), id: \.element.id) { index, bookmark in
                             HStack(spacing: 8) {
@@ -804,7 +795,7 @@ struct MissionDetailSheet: View {
                         }
                     }
                 }
-                .padding(18)
+                .padding(Tokens.gutter)
                 .padding(.bottom, 30)
             }
             .background(Tokens.paper)
@@ -870,7 +861,7 @@ struct MissionDetailSheet: View {
             .task(id: briefInputKey) { await refreshBrief() }
         }
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
     }
 
     /// Refreshes stale inputs without blocking the quest. The previous draft
@@ -915,7 +906,7 @@ struct MissionDetailSheet: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 5) {
                 Text("THE THREAD")
-                    .font(Typo.ui(10, .heavy)).tracking(0.6)
+                    .textRole(.label)
                     .foregroundStyle(Tokens.mutedHeading)
                 if brief != nil {
                     Image(systemName: "sparkles")
@@ -924,39 +915,47 @@ struct MissionDetailSheet: View {
                 }
             }
             Text(brief?.summary ?? mission.summary(from: allBookmarks))
-                .font(Typo.ui(14.5))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.body, color: Tokens.ink)
                 .fixedSize(horizontal: false, vertical: true)
 
             if let brief {
                 Text(brief.basis == "saved_text" ? "AI draft from saved excerpts — check the originals."
                      : brief.basis == "goal_only" ? "AI draft from your goal, not saved evidence."
                      : "AI draft from titles only — source details may be missing.")
-                    .font(Typo.ui(11)).foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
                 ForEach((brief.source_ids ?? []).compactMap { id in attached.first { $0.id == id } }) { source in
                     Button { detail = source } label: {
-                        Label(source.displayTitle, systemImage: "link").font(Typo.ui(12)).lineLimit(2)
-                    }.buttonStyle(.plain).foregroundStyle(accent.deep)
+                        Label(source.displayTitle, systemImage: "link").textRole(.meta, color: accent.deep).lineLimit(2)
+                    }.buttonStyle(.plain)
                 }
             }
-            if briefBusy { ProgressView("Reading saved excerpts…").font(Typo.ui(12)) }
-            if let briefError { Text(briefError).font(Typo.ui(12)).foregroundStyle(Tokens.inkSecondary).accessibilityAddTraits(.updatesFrequently) }
-            Button(briefError != nil ? "Retry summary" : brief == nil ? "Generate summary" : "Refresh summary") {
+            if briefBusy { ProgressView("Reading saved excerpts…").textRole(.meta) }
+            // A draft on screen is the answer; a failed refresh under it read
+            // as the draft being wrong (FINDINGS, 18). Shown only when there
+            // is no brief at all. `QuestBrief`'s messages are already plain.
+            if brief == nil, let briefError {
+                Text(briefError)
+                    .textRole(.meta)
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
+            Button(brief == nil && briefError != nil ? "Retry summary" : brief == nil ? "Generate summary" : "Refresh summary") {
                 Task { await refreshBrief(force: true) }
-            }.font(Typo.ui(12, .semibold)).disabled(briefBusy)
+            }
+            .buttonStyle(.clayQuiet)
+            .disabled(briefBusy)
+            .padding(.vertical, -6)
             Text("Uses up to 12 saved posts. Your private notes are not sent.")
-                .font(Typo.ui(10)).foregroundStyle(Tokens.inkMeta)
+                .textRole(.meta)
 
             if !pending.isEmpty {
                 Text(Copy.suggestedSteps)
-                    .font(Typo.ui(10, .heavy)).tracking(0.6)
+                    .textRole(.label)
                     .foregroundStyle(Tokens.mutedHeading)
                     .padding(.top, 4)
                 ForEach(pending, id: \.self) { step in
                     HStack(spacing: 10) {
                         Text(step)
-                            .font(Typo.ui(13.5, .medium))
-                            .foregroundStyle(Tokens.ink)
+                            .textRole(.body, color: Tokens.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 4)
                         Button { adopt(step) } label: {
@@ -967,18 +966,18 @@ struct MissionDetailSheet: View {
                         .buttonStyle(.plain)
                         .accessibilityLabel("Add “\(step)” to your to-do list")
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Tokens.surface.opacity(0.7), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .padding(.leading, 12)
+                    .padding(.trailing, 8)
+                    .padding(.vertical, 6)
+                    .background(Tokens.paper, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 Text(Copy.suggestedStepsHint)
-                    .font(Typo.ui(11, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.tint.opacity(0.45), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .cardSurface()
     }
 
     private func adopt(_ step: String) {
@@ -992,7 +991,7 @@ struct MissionDetailSheet: View {
     private var thoughtsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("YOUR THOUGHTS")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
+                .textRole(.label)
                 .foregroundStyle(Tokens.mutedHeading)
             TextField("What are you noticing? What do you want to try?", text: $draftThoughts, axis: .vertical)
                 .font(Typo.ui(14.5))
@@ -1005,13 +1004,13 @@ struct MissionDetailSheet: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(radius: 18)
+        .cardSurface()
     }
 
     private var todoCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("TO-DO")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
+                .textRole(.label)
                 .foregroundStyle(Tokens.mutedHeading)
 
             ForEach(mission.todos) { item in
@@ -1064,7 +1063,7 @@ struct MissionDetailSheet: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(radius: 18)
+        .cardSurface()
     }
 
     private func addTodo() {
@@ -1121,17 +1120,16 @@ struct MissionDetailSheet: View {
         }
         .padding(15)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.tint.opacity(0.5), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .cardSurface()
     }
 
     private func section(_ label: String, count: Int) -> some View {
         HStack {
             Text(label)
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
+                .textRole(.label)
                 .foregroundStyle(Tokens.mutedHeading)
             Text("\(count)")
-                .font(Typo.ui(10, .heavy))
-                .foregroundStyle(Tokens.inkFaint)
+                .textRole(.label, color: Tokens.inkSecondary)
             Spacer()
         }
         .padding(.top, 6)

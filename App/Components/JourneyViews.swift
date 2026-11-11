@@ -1,7 +1,10 @@
 import SwiftUI
 import SwiftData
 
-/// Horizontal rail of side quests for Library.
+/// The Library's side-quest rail, after the first two rows of saves: a
+/// section header, then the quest cards (clay art on top, the topic's clay
+/// tint underneath), suggested quests, and a dashed "New side quest" slot of
+/// the same size.
 struct JourneyRail: View {
     let journeys: [Mission]
     let bookmarks: [Bookmark]
@@ -20,31 +23,27 @@ struct JourneyRail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(Copy.sideQuestsHeading)
-                    .font(Typo.display(18, .bold))
-                    .foregroundStyle(Tokens.ink)
-                Spacer()
-                Button(journeys.isEmpty ? Copy.startSideQuest : "See all", action: journeys.isEmpty ? onStart : onSeeAll)
-                    .font(Typo.ui(12.5, .semibold))
-                    .foregroundStyle(accent.deep)
-            }
-            .padding(.horizontal, 18)
+            SectionHeader(
+                Copy.sideQuestsHeading,
+                action: journeys.isEmpty ? Copy.startSideQuest : "See all",
+                perform: journeys.isEmpty ? onStart : onSeeAll
+            )
+            .padding(.horizontal, Tokens.gutter)
 
             if let quiet {
                 Text(quietCaption(quiet))
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .padding(.horizontal, 18)
+                    .textRole(.meta)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, Tokens.gutter)
+                    .padding(.top, -6)
             }
 
             if journeys.isEmpty && seeds.isEmpty {
                 emptyCard
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, Tokens.gutter)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
+                    HStack(alignment: .top, spacing: Tokens.gridGap) {
                         ForEach(journeys) { quest in
                             Button { onOpen(quest) } label: {
                                 QuestCard(
@@ -85,7 +84,7 @@ struct JourneyRail: View {
                             QuestCard(
                                 title: Copy.newSideQuest,
                                 count: 0,
-                                palette: CategoryPalette(hue: 18),
+                                palette: NeutralPalette.value,
                                 motif: .compass,
                                 layout: .rail,
                                 dashed: true
@@ -93,8 +92,8 @@ struct JourneyRail: View {
                         }
                         .buttonStyle(PressableStyle())
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, Tokens.gutter)
+                    .padding(.vertical, 1)
                 }
             }
         }
@@ -113,47 +112,39 @@ struct JourneyRail: View {
     }
 
     /// The coach card: what a quest is, how it differs from a topic, and the
-    /// three moves — beside the running scene, the example every line of
-    /// copy uses. Same shape as `InsightsEntry`'s card: text on the left, a
-    /// clay scene on the right, accent tint behind.
+    /// way in — beside the running scene, the example every line of copy
+    /// uses. A flat white card with a hairline, like every other card.
     private var emptyCard: some View {
         Button(action: onStart) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(Copy.whatWorkingOn)
-                        .font(Typo.display(17, .bold))
-                        .foregroundStyle(Tokens.ink)
+                        .textRole(.cardTitle, color: Tokens.ink)
                     Text(Copy.sideQuestOneLiner)
-                        .font(Typo.ui(13, .semibold))
-                        .foregroundStyle(Tokens.ink)
+                        .textRole(.meta)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(Copy.sideQuestCoachLine)
-                        .font(Typo.ui(13))
-                        .foregroundStyle(Tokens.inkSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(Copy.startSideQuest)
-                        .font(Typo.ui(13.5, .bold))
-                        .foregroundStyle(accent.deep)
-                        .padding(.top, 4)
+                    HStack(spacing: 2) {
+                        Text(Copy.startSideQuest)
+                        Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                    }
+                    .font(.custom("Instrument Sans", size: 15, relativeTo: .subheadline).weight(.semibold))
+                    .foregroundStyle(accent.deep)
+                    .padding(.top, 6)
                 }
-                Spacer(minLength: 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 QuestArt(motif: .run)
-                    .frame(width: 78, height: 78)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .frame(width: 76, height: 76)
+                    .background(Tokens.clayGround)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
-            .padding(16)
+            .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(accent.tint.opacity(0.55), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(accent.base.opacity(0.22), lineWidth: 1)
-            )
+            .cardSurface()
         }
         .buttonStyle(PressableStyle())
+        .accessibilityElement(children: .combine)
     }
 }
-
-
 
 /// Pick existing side quests, or start a new one, for a single bork.
 struct JourneyPickerSheet: View {
@@ -176,15 +167,19 @@ struct JourneyPickerSheet: View {
             ScrollView {
                 LazyVStack(spacing: 8) {
                     Button { creating = true } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus.circle.fill")
+                        HStack(spacing: 10) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 14, weight: .semibold))
+                                .frame(width: 28, height: 28)
+                                .overlay(Circle().strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])))
                             Text(Copy.newSideQuest)
-                                .font(Typo.ui(14, .semibold))
+                                .textRole(.cardTitle)
                             Spacer()
                         }
                         .foregroundStyle(accent.deep)
-                        .padding(14)
-                        .cardSurface(radius: 16)
+                        .padding(.horizontal, 14)
+                        .frame(minHeight: Tokens.slimRowHeight)
+                        .cardSurface()
                     }
                     .buttonStyle(.plain)
 
@@ -196,29 +191,28 @@ struct JourneyPickerSheet: View {
                             Haptics.tap()
                         } label: {
                             HStack(spacing: 10) {
-                                Circle()
-                                    .fill((quest.topic?.palette ?? NeutralPalette.value).dot)
-                                    .frame(width: 10, height: 10)
-                                VStack(alignment: .leading, spacing: 2) {
+                                TopicDot(palette: quest.topic?.palette ?? NeutralPalette.value)
+                                VStack(alignment: .leading, spacing: 0) {
                                     Text(quest.title)
-                                        .font(Typo.ui(14.5, .semibold))
-                                        .foregroundStyle(Tokens.ink)
+                                        .textRole(.cardTitle, color: Tokens.ink)
                                     Text(Copy.countedBorks(quest.bookmarkIDs.count))
-                                        .font(Typo.ui(11.5))
-                                        .foregroundStyle(Tokens.inkMeta)
+                                        .textRole(.meta)
                                 }
                                 Spacer()
                                 Image(systemName: on ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 20, weight: .semibold))
+                                    .font(.system(size: 22, weight: .regular))
                                     .foregroundStyle(on ? accent.base : Tokens.inkFaint)
                             }
-                            .padding(14)
-                            .cardSurface(radius: 16)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .frame(minHeight: Tokens.slimRowHeight)
+                            .cardSurface()
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(on ? .isSelected : [])
                     }
                 }
-                .padding(18)
+                .padding(Tokens.gutter)
             }
             .background(Tokens.paper)
             .navigationTitle("Add to a side quest")
@@ -232,6 +226,6 @@ struct JourneyPickerSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
     }
 }

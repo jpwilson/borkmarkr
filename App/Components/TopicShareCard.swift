@@ -41,22 +41,29 @@ struct TopicShareCard: View {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(heading)
-                        .font(Typo.display(28, .heavy))
-                        .tracking(-0.8)
-                        .foregroundStyle(topic.palette.deep)
+                        .font(Typo.display(28, .bold))
+                        .tracking(-0.6)
+                        .foregroundStyle(Tokens.ink)
                         .lineLimit(2)
                         .minimumScaleFactor(0.6)
-                    Text("\(Copy.countedBorks(count)) I saved with bookmarker")
-                        .font(Typo.ui(12.5, .semibold))
-                        .foregroundStyle(Tokens.inkMeta)
+                    HStack(spacing: 6) {
+                        TopicDot(palette: topic.palette)
+                        Text("\(Copy.countedBorks(count)) I saved with bookmarker")
+                            .font(Typo.ui(13, .medium))
+                            .foregroundStyle(Tokens.inkSecondary)
+                    }
                 }
 
                 // Takes whatever height is left and clips rather than pushing.
                 // Six two-line titles at the largest plausible length overflow
                 // 4:5, and the thing that must never be the casualty is the
                 // line that says where the app is.
-                titleList
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                // An overlay reports no size of its own, so however long the
+                // titles are they can only be clipped, never push the footer
+                // off the card.
+                Color.clear
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .overlay(alignment: .topLeading) { titleList }
                     .clipped()
 
                 footer
@@ -73,12 +80,12 @@ struct TopicShareCard: View {
             ForEach(Array(titles.prefix(TopicShare.cardLimit).enumerated()), id: \.offset) { index, title in
                 HStack(alignment: .top, spacing: 9) {
                     Text("\(index + 1)")
-                        .font(Typo.mono(11))
-                        .foregroundStyle(topic.palette.deep.opacity(0.7))
+                        .font(Typo.ui(12, .semibold).monospacedDigit())
+                        .foregroundStyle(topic.palette.deep)
                         .frame(width: 14, alignment: .trailing)
                     Text(title)
-                        .font(Typo.ui(13, .semibold))
-                        .foregroundStyle(Tokens.bodyOnWhite)
+                        .font(Typo.ui(13.5, .semibold))
+                        .foregroundStyle(Tokens.ink)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -88,18 +95,21 @@ struct TopicShareCard: View {
 
     /// The same band the topic page opens with, so the card is recognisably
     /// the screen it came from.
+    /// No gradient (1.4): the scene on the clay ground, or the compass there
+    /// when the topic has no scene of its own.
     private var band: some View {
-        ZStack {
-            LinearGradient(colors: [topic.palette.tint, topic.palette.tint.opacity(0.45)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-            if let art {
-                Image(uiImage: art)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
+        Tokens.clayGround
+            .overlay {
+                if let art {
+                    Image(uiImage: art)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    ClayArtImage(source: .topic(topic.id))
+                }
             }
-        }
-        .frame(width: Self.size.width, height: 138)
-        .clipped()
+            .frame(width: Self.size.width, height: 138)
+            .clipped()
     }
 
     private var footer: some View {
@@ -111,11 +121,11 @@ struct TopicShareCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 0) {
                 Text("bookmarker")
-                    .font(Typo.ui(12.5, .bold))
+                    .font(Typo.display(13, .bold))
                     .foregroundStyle(Tokens.ink)
                 Text(TopicShare.footer)
-                    .font(Typo.ui(10.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .font(Typo.ui(11, .medium))
+                    .foregroundStyle(Tokens.inkSecondary)
             }
             Spacer(minLength: 0)
         }

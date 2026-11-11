@@ -24,9 +24,10 @@ import SwiftUI
 
 // MARK: - Field
 
-/// The field and its scope chips. Always visible at the top of Browse, whether
-/// or not anything is typed — a search box you have to reveal is a search box
-/// people forget exists.
+/// The field, always at the top of Browse — a search box you have to reveal
+/// is a search box people forget exists. Its scope chips (Topics · Subtopics
+/// · Tags) appear only while searching (1.4): over the topic grid they were a
+/// second row of controls that did nothing until you typed.
 struct BrowseSearchBar: View {
     @Binding var query: String
     @Binding var scopes: SearchScope
@@ -34,36 +35,37 @@ struct BrowseSearchBar: View {
     let isSearching: Bool
     let onCancel: () -> Void
 
-    @Environment(\.accent) private var accent
-
     private var active: Bool { focus.wrappedValue || !query.isEmpty }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
                 field
                 if isSearching || focus.wrappedValue {
                     Button("Cancel", action: onCancel)
-                        .font(Typo.ui(14, .semibold))
-                        .foregroundStyle(accent.deep)
+                        .buttonStyle(.clayQuiet)
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
             .animation(Motion.snap, value: active)
 
-            chips
+            if active || isSearching {
+                chips
+                    .transition(.opacity)
+            }
         }
-        .padding(.horizontal, 18)
+        .animation(Motion.snap, value: active || isSearching)
+        .padding(.horizontal, Tokens.gutter)
     }
 
     private var field: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(active ? accent.base : Tokens.inkFaint)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(active ? Tokens.ink : Tokens.inkSecondary)
+                .accessibilityHidden(true)
             TextField(Copy.searchPlaceholder, text: $query)
-                .font(Typo.ui(14.5))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.body, color: Tokens.ink)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .submitLabel(.search)
@@ -77,27 +79,24 @@ struct BrowseSearchBar: View {
             if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 17))
                         .foregroundStyle(Tokens.inkFaint)
+                        .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .padding(.trailing, -12)
                 .accessibilityLabel("Clear the search")
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 13)
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(active ? accent.base.opacity(0.55) : Tokens.hairline,
-                        lineWidth: active ? 1.5 : 1)
-        )
+        .searchFieldSurface()
     }
 
     /// Topics · Subtopics · Tags. None selected is the old behaviour — every
     /// field at once — so the row reads as "narrow this", never as "pick one
     /// before I can search".
     private var chips: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 6) {
             ForEach(SearchScope.ordered, id: \.rawValue) { scope in
                 SearchChip(label: scope.label, active: scopes.contains(scope)) {
                     if scopes.contains(scope) { scopes.remove(scope) } else { scopes.insert(scope) }
@@ -109,30 +108,19 @@ struct BrowseSearchBar: View {
     }
 }
 
-/// One filter chip. Shared by the scope row and the source row so the two can
-/// never drift into looking like different controls.
+/// One filter chip — the shared `FilterChip`, with the tap haptic and the
+/// snap. Shared by the scope row and the source row so the two can never
+/// drift into looking like different controls.
 struct SearchChip: View {
     let label: String
     let active: Bool
     let tap: () -> Void
 
     var body: some View {
-        Button {
+        FilterChip(label, isOn: active) {
             Haptics.tap()
             withAnimation(Motion.snap) { tap() }
-        } label: {
-            Text(label)
-                .font(Typo.ui(12.5, .semibold))
-                .foregroundStyle(active ? .white : Tokens.inkSecondary)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 8)
-                .background(active ? Tokens.ink : Tokens.surface, in: Capsule())
-                .overlay(Capsule().stroke(active ? .clear : Tokens.hairline, lineWidth: 1))
-                .tappableChip()
         }
-        .buttonStyle(ChipStyle())
-        .accessibilityLabel(label)
-        .accessibilityAddTraits(active ? [.isSelected] : [])
     }
 }
 
@@ -152,18 +140,18 @@ struct BrowseSearchResults: View {
     @Environment(\.accent) private var accent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             if !presentPlatforms.isEmpty { sourceRow }
 
             if results.isEmpty {
                 empty
             } else {
                 Text(SearchCopy.resultsHeadline(count: results.count, query: query, scopes: scopes))
-                    .font(Typo.ui(11.5, .semibold))
-                    .foregroundStyle(Tokens.inkMeta)
-                    .padding(.horizontal, 18)
+                    .textRole(.meta)
+                    .padding(.horizontal, Tokens.gutter)
+                    .padding(.top, 4)
 
-                LazyVStack(spacing: 9) {
+                LazyVStack(spacing: 8) {
                     ForEach(results) { bookmark in
                         Button { onOpen(bookmark) } label: {
                             BookmarkRow(bookmark: bookmark)
@@ -172,7 +160,7 @@ struct BrowseSearchResults: View {
                         .borkActions(bookmark)
                     }
                 }
-                .padding(.horizontal, 18)
+                .padding(.horizontal, Tokens.gutter)
 
                 relatedSection
             }
@@ -181,7 +169,7 @@ struct BrowseSearchResults: View {
 
     private var sourceRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
+            HStack(spacing: 6) {
                 SearchChip(label: "All sources", active: sources.isEmpty) { sources = [] }
                 ForEach(presentPlatforms, id: \.self) { platform in
                     SearchChip(label: platform.name, active: sources.contains(platform)) {
@@ -190,35 +178,28 @@ struct BrowseSearchResults: View {
                     }
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
         }
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
 
     private var empty: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Text("No matches")
-                .font(Typo.ui(15, .bold))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.sectionTitle, color: Tokens.ink)
             Text(SearchCopy.emptyDetail(scopes: scopes))
-                .font(Typo.ui(13))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             if !scopes.isEmpty {
-                Button(action: onClearScopes) {
-                    Text(SearchCopy.clearScopes)
-                        .font(Typo.ui(13.5, .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 10)
-                        .background(accent.base, in: Capsule())
-                }
-                .buttonStyle(PressableStyle())
-                .padding(.top, 4)
+                Button(SearchCopy.clearScopes, action: onClearScopes)
+                    .buttonStyle(.claySecondary)
+                    .fixedSize()
+                    .padding(.top, 14)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 40)
+        .padding(.top, 48)
     }
 
     /// Meaning-matched items the keyword pass missed. Additive on purpose —
@@ -230,18 +211,17 @@ struct BrowseSearchResults: View {
         let extras = related.filter { !exact.contains($0.id) }
 
         if !extras.isEmpty {
-            VStack(alignment: .leading, spacing: 9) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 5) {
                     Image(systemName: "sparkles").font(.system(size: 10, weight: .bold))
-                    Text("RELATED")
-                        .font(Typo.ui(10, .heavy)).tracking(0.6)
+                    Text("Related").textRole(.label)
                 }
-                .foregroundStyle(accent.deep)
-                .padding(.top, 18)
+                .foregroundStyle(Tokens.inkSecondary)
+                .padding(.top, Tokens.sectionGap - 8)
 
                 Text("Close in meaning, even though the words don't match.")
-                    .font(Typo.ui(12))
-                    .foregroundStyle(Tokens.inkSecondary)
+                    .textRole(.meta)
+                    .padding(.bottom, 2)
 
                 ForEach(extras) { hit in
                     Button { onOpen(hit.bookmark) } label: {
@@ -251,7 +231,7 @@ struct BrowseSearchResults: View {
                     .borkActions(hit.bookmark)
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
         }
     }
 }

@@ -93,14 +93,24 @@ struct TopicPage: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                hero
-                if !presentSubs.isEmpty { subRow }
-                if presentSources.count > 1 { sourceRow }
-                if !refineTags.isEmpty { refineRow }
+            VStack(alignment: .leading, spacing: 0) {
+                banner
+                titleRow
+                    .padding(.horizontal, Tokens.gutter)
+                    .padding(.top, 16)
+                if !presentSubs.isEmpty {
+                    subRow.padding(.top, 12)
+                }
+                if presentSources.count > 1 {
+                    sourceRow.padding(.top, 8)
+                }
+                if !refineTags.isEmpty {
+                    refineRow.padding(.top, 8)
+                }
                 list
+                    .padding(.top, 12)
             }
-            .padding(.bottom, 120)
+            .padding(.bottom, Tokens.sectionGap)
         }
         .background(Tokens.paper)
         .navigationBarTitleDisplayMode(.inline)
@@ -129,67 +139,44 @@ struct TopicPage: View {
         }
     }
 
-    // MARK: Hero band
+    // MARK: Banner and title
 
-    /// The tile you tapped, opened out.
+    /// The tile you tapped, opened out: its clay scene as a short banner on
+    /// the clay ground, about 120 pt — enough to say which topic this is and
+    /// keep the first bork above the fold on the smallest phone.
     ///
-    /// The old header was a flat tint gradient with the name on it, which
-    /// meant every topic page looked like every other topic page and none of
-    /// them looked like the tile that got you there. This is the tile's own
-    /// composition at full width — clay scene on top, name and count on the
-    /// topic's tint underneath — so arriving feels like a continuation rather
-    /// than a jump. Deliberately compact: two chip rows' worth, which keeps
-    /// the first bork above the fold on the smallest phone we support.
-    ///
-    /// The text block is below the art, not over it, so Dynamic Type grows the
-    /// band instead of overflowing a fixed-height image, and nothing ever sits
-    /// on top of a busy scene at a contrast we can't predict.
-    private var hero: some View {
-        VStack(spacing: 0) {
-            TopicClayArt(
-                categoryID: category.id,
-                remote: customEntry?.imageURL,
-                fallbackTint: category.palette.tint
-            )
+    /// No colour band (1.4). The name sits under the art on paper, so Dynamic
+    /// Type grows the page instead of overflowing an image, and nothing ever
+    /// sits on top of a busy scene at a contrast we can't predict.
+    private var banner: some View {
+        Tokens.clayGround
+            .frame(height: 120)
             .frame(maxWidth: .infinity)
-            .frame(height: 96)
+            .overlay {
+                TopicClayArt(categoryID: category.id, remote: customEntry?.imageURL)
+            }
             .clipped()
-            .overlay(alignment: .topTrailing) {
-                shareControl
-                    .padding(.horizontal, 14)
-                    .padding(.top, 12)
-            }
+            .accessibilityHidden(true)
+    }
 
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(currentName)
-                        .font(Typo.display(26, .heavy))
-                        .tracking(-0.6)
-                        .foregroundStyle(category.palette.deep)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.75)
-                    if let entry = customEntry {
-                        Button {
-                            renameDraft = entry.name
-                            renaming = true
-                        } label: {
-                            Image(systemName: "pencil")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(category.palette.deep.opacity(0.7))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Rename this topic")
+    /// Bricolage title and the count, with Share (and Rename, for a topic you
+    /// made) at the right.
+    private var titleRow: some View {
+        ScreenHeader(currentName, subtitle: Copy.countedBorks(inCategory.count)) {
+            HStack(spacing: 4) {
+                if let entry = customEntry {
+                    Button {
+                        renameDraft = entry.name
+                        renaming = true
+                    } label: {
+                        BrowseRoundIcon(symbol: "pencil")
                     }
-                    Spacer(minLength: 0)
+                    .buttonStyle(PressableStyle())
+                    .accessibilityLabel("Rename this topic")
                 }
-                Text(Copy.countedBorks(inCategory.count))
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(category.palette.deep.opacity(0.75))
+                shareControl
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(category.palette.tint)
+            .padding(.trailing, -4)
         }
     }
 
@@ -225,14 +212,7 @@ struct TopicPage: View {
             }
             .disabled(visible.isEmpty)
         } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))
-                Text("Share").font(Typo.ui(12.5, .semibold))
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 13)
-            .padding(.vertical, 8)
-            .background(Tokens.ink, in: Capsule())
+            BrowseRoundIcon(symbol: "square.and.arrow.up")
         }
         .accessibilityLabel("Share this topic")
     }
@@ -302,76 +282,49 @@ struct TopicPage: View {
         return UIImage(data: data)
     }
 
+    /// Subtopics in the topic's own tint and deep; the chosen one filled.
     private var subRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                pill("All", active: sub == nil, tint: category.palette) {
-                    sub = nil; tag = nil
-                }
-                ForEach(presentSubs, id: \.name) { entry in
-                    pill("\(entry.name) \(entry.count)", active: sub == entry.name, tint: category.palette) {
-                        // Picking a subcategory clears the tag — the tag was
-                        // scoped to the previous slice and would filter to zero.
-                        sub = sub == entry.name ? nil : entry.name
-                        tag = nil
-                    }
+        BrowseChipRow {
+            TopicChip("All", palette: category.palette, isOn: sub == nil) {
+                sub = nil; tag = nil
+            }
+            ForEach(presentSubs, id: \.name) { entry in
+                TopicChip("\(entry.name) \(entry.count)", palette: category.palette, isOn: sub == entry.name) {
+                    // Picking a subcategory clears the tag — the tag was
+                    // scoped to the previous slice and would filter to zero.
+                    sub = sub == entry.name ? nil : entry.name
+                    tag = nil
                 }
             }
-            .padding(.horizontal, 18)
         }
     }
 
+    /// Where they came from — neutral filter chips, so the topic's colour
+    /// stays the topic's.
     private var sourceRow: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("FROM")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
-                .padding(.horizontal, 18)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    pill("All", active: source == nil, tint: category.palette) { source = nil }
-                    ForEach(presentSources, id: \.self) { platform in
-                        pill(platform.name, active: source == platform, tint: category.palette) {
-                            source = source == platform ? nil : platform
-                        }
+        VStack(alignment: .leading, spacing: 2) {
+            BrowseChipLabel("From")
+            BrowseChipRow {
+                FilterChip("All", isOn: source == nil) { source = nil }
+                ForEach(presentSources, id: \.self) { platform in
+                    FilterChip(platform.name, isOn: source == platform) {
+                        source = source == platform ? nil : platform
                     }
                 }
-                .padding(.horizontal, 18)
             }
         }
     }
 
     private var refineRow: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("REFINE")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
-                .padding(.horizontal, 18)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(refineTags, id: \.self) { candidate in
-                        let active = tag == candidate
-                        Button {
-                            tag = active ? nil : candidate
-                        } label: {
-                            Text("#\(candidate)")
-                                .font(Typo.ui(12, .semibold))
-                                .foregroundStyle(active ? .white : category.palette.deep)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(active ? category.palette.deep : .clear, in: Capsule())
-                                .overlay(
-                                    Capsule().strokeBorder(
-                                        category.palette.deep.opacity(active ? 0 : 0.45),
-                                        style: StrokeStyle(lineWidth: 1, dash: [3, 3])
-                                    )
-                                )
-                                .tappableChip()
-                        }
-                        .buttonStyle(.plain)
+        VStack(alignment: .leading, spacing: 2) {
+            BrowseChipLabel("Refine")
+            BrowseChipRow {
+                ForEach(refineTags, id: \.self) { candidate in
+                    let active = tag == candidate
+                    TagChip(candidate, isOn: active, size: .filter) {
+                        tag = active ? nil : candidate
                     }
                 }
-                .padding(.horizontal, 18)
             }
         }
     }
@@ -379,41 +332,69 @@ struct TopicPage: View {
     @ViewBuilder
     private var list: some View {
         if visible.isEmpty {
-            VStack(spacing: 8) {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                    .font(.system(size: 32, weight: .light))
-                    .foregroundStyle(Tokens.inkFaint)
-                Text("Nothing in this slice")
-                    .font(Typo.ui(14, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 50)
+            Text("Nothing in this slice")
+                .textRole(.body, color: Tokens.inkSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 40)
         } else {
-            LazyVStack(spacing: 9) {
+            LazyVStack(spacing: 8) {
                 ForEach(visible) { bookmark in
                     Button { detail = bookmark } label: {
                         BookmarkRow(bookmark: bookmark)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressableStyle(scale: 0.99))
                     .borkActions(bookmark)
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
         }
     }
+}
 
-    private func pill(_ label: String, active: Bool, tint: CategoryPalette, tap: @escaping () -> Void) -> some View {
-        Button(action: tap) {
-            Text(label)
-                .font(Typo.ui(12.5, .semibold))
-                .foregroundStyle(active ? .white : tint.deep)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .background(active ? tint.deep : tint.tint, in: Capsule())
-                .tappableChip()
+// MARK: - Shared bits (topic, unfiled and source pages)
+
+/// A sideways-scrolling row of chips that starts at the gutter and runs to
+/// the screen's edge.
+struct BrowseChipRow<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) { content() }
+                .padding(.horizontal, Tokens.gutter)
         }
-        .buttonStyle(.plain)
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+    }
+}
+
+/// The small-caps label over a chip row ("FROM", "REFINE").
+struct BrowseChipLabel: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(text)
+            .textRole(.label, color: Tokens.inkSecondary)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.top, 6)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// A 36 pt white circle with a hairline and an ink glyph, in a 44 pt
+/// target: Share and Rename beside a page title.
+struct BrowseRoundIcon: View {
+    let symbol: String
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(Tokens.ink)
+            .frame(width: 36, height: 36)
+            .background(Tokens.surface, in: Circle())
+            .overlay(Circle().strokeBorder(Tokens.hairline, lineWidth: 1))
+            .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+            .contentShape(Rectangle())
     }
 }
 
@@ -436,65 +417,50 @@ struct UncategorisedPage: View {
 
     private var visible: [Bookmark] { all.filter { $0.categoryID == nil } }
 
+    /// The topic page's layout on Sand: a title on paper with the count, the
+    /// one slim row that sorts them all, then the rows.
     var body: some View {
         let visible = self.visible
         ScrollView {
-            LazyVStack(spacing: 9) {
+            VStack(alignment: .leading, spacing: 0) {
+                ScreenHeader("Not filed yet", subtitle: Copy.countedBorks(visible.count))
+                    .padding(.top, 8)
                 if !visible.isEmpty {
-                    sortCard(count: visible.count)
-                        .padding(.bottom, 6)
-                }
-                ForEach(visible) { bookmark in
-                    Button { detail = bookmark } label: {
-                        BookmarkRow(bookmark: bookmark)
+                    // "Sort these": the whole list, one tap each, instead of
+                    // opening every bork to pick its topic.
+                    SlimActionRow(
+                        art: .quest(.compass),
+                        title: "\(visible.count) without a topic",
+                        subtitle: "Give each a home in one tap",
+                        action: "Sort",
+                        perform: { sorting = true }
+                    )
+                    .padding(.top, 16)
+                    LazyVStack(spacing: 8) {
+                        ForEach(visible) { bookmark in
+                            Button { detail = bookmark } label: {
+                                BookmarkRow(bookmark: bookmark)
+                            }
+                            .buttonStyle(PressableStyle(scale: 0.99))
+                            .borkActions(bookmark)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .borkActions(bookmark)
+                    .padding(.top, 16)
+                } else {
+                    Text("Everything has a topic.")
+                        .textRole(.body, color: Tokens.inkSecondary)
+                        .padding(.top, 12)
                 }
             }
-            .padding(18)
-            .padding(.bottom, 110)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.bottom, Tokens.sectionGap)
         }
         .background(Tokens.paper)
-        .navigationTitle("Not filed yet")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $detail) { DetailSheet(bookmark: $0).environment(\.accent, accent) }
         .sheet(isPresented: $sorting) {
             TriageSheet(deck: .unfiled, account: account)
                 .environment(\.accent, accent)
         }
-    }
-
-    /// "Sort these": the whole list, one tap each, instead of opening every
-    /// bork to pick its topic.
-    private func sortCard(count: Int) -> some View {
-        HStack(spacing: 13) {
-            QuestArt(motif: .compass)
-                .frame(width: 56, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(count) without a topic")
-                    .font(Typo.display(16, .bold))
-                    .foregroundStyle(Tokens.ink)
-                Text("Give each a home in one tap.")
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 6)
-            Button { sorting = true } label: {
-                Text("Sort these")
-                    .font(Typo.ui(13.5, .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 15)
-                    .frame(height: 36)
-                    .background(accent.base, in: Capsule())
-            }
-            .buttonStyle(PressableStyle(scale: 0.96))
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(radius: 18)
     }
 }

@@ -1,7 +1,12 @@
 import SwiftUI
 import SwiftData
 
-/// Source page: full-bleed dark brand header with cross-axis topic chips.
+/// Source page: the platform's own mark and name on paper, cross-axis topic
+/// chips in each topic's colours, creator chips, then the rows.
+///
+/// 1.3 opened on a full-bleed dark brand gradient with a dark navigation bar.
+/// 1.4 keeps one world of colour (design/SYSTEM.md): the platform is named by
+/// its real mark, not by painting the screen its colours.
 struct SourcePage: View {
     let platform: Platform
 
@@ -15,7 +20,7 @@ struct SourcePage: View {
     private var all: [Bookmark]
 
     @State private var topic: String?
-    /// A creator picked from the CREATOR row, as `displayAuthor` shows it.
+    /// A creator picked from the Creator row, as `displayAuthor` shows it.
     @State private var creator: String?
     @State private var detail: Bookmark?
 
@@ -53,132 +58,70 @@ struct SourcePage: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 0) {
                 header
-                if !presentTopics.isEmpty { topicRow }
+                    .padding(.horizontal, Tokens.gutter)
+                    .padding(.top, 8)
+                if !presentTopics.isEmpty {
+                    topicRow.padding(.top, 10)
+                }
                 let creators = presentCreators
-                if !creators.isEmpty { creatorRow(creators) }
-                list
+                if !creators.isEmpty {
+                    creatorRow(creators).padding(.top, 4)
+                }
+                list.padding(.top, 12)
             }
-            .padding(.bottom, 120)
+            .padding(.bottom, Tokens.sectionGap)
         }
         .background(Tokens.paper)
         .navigationBarTitleDisplayMode(.inline)
-        // The header is a dark brand gradient, so the status bar and back
-        // button need light content or they vanish into it.
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .toolbarBackground(platform.headerColors.first ?? .black, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
         .sheet(item: $detail) { DetailSheet(bookmark: $0).environment(\.accent, accent) }
     }
 
+    /// The mark, then the name in Bricolage with the count and what the
+    /// platform is for.
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                PlatformBadge(platform: platform, size: 46)
-                Spacer()
-                Text(Copy.countedBorks(inSource.count))
-                    .font(Typo.ui(12, .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 6)
-                    .background(.white.opacity(0.18), in: Capsule())
-            }
-
-            VStack(alignment: .leading, spacing: 3) {
+        HStack(alignment: .center, spacing: 14) {
+            PlatformBadge(platform: platform, size: 52)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(platform.name)
-                    .font(Typo.display(28, .heavy))
-                    .tracking(-0.6)
-                    .foregroundStyle(.white)
-                Text(platform.descriptor)
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .textRole(.screenTitle, color: Tokens.ink)
+                    .accessibilityAddTraits(.isHeader)
+                Text("\(Copy.countedBorks(inSource.count)) · \(platform.descriptor)")
+                    .textRole(.meta)
             }
+            Spacer(minLength: 0)
         }
-        .padding(18)
-        .padding(.top, 4)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: platform.headerColors,
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-        )
     }
 
     private var topicRow: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("TOPIC")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
-                .padding(.horizontal, 18)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    Button { topic = nil } label: {
-                        Text("All")
-                            .font(Typo.ui(12.5, .semibold))
-                            .foregroundStyle(topic == nil ? .white : Tokens.inkSecondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(topic == nil ? Tokens.ink : Tokens.surface, in: Capsule())
-                            .overlay(Capsule().stroke(topic == nil ? .clear : Tokens.hairline, lineWidth: 1))
-                            .tappableChip()
-                    }
-                    .buttonStyle(.plain)
-
-                    // Each chip in its own category tint — the cross-axis link
-                    // back to the Topics side.
-                    ForEach(presentTopics) { category in
-                        let active = topic == category.id
-                        Button {
-                            topic = active ? nil : category.id
-                        } label: {
-                            Text(category.name)
-                                .font(Typo.ui(12.5, .semibold))
-                                .foregroundStyle(active ? .white : category.palette.deep)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(active ? category.palette.deep : category.palette.tint, in: Capsule())
-                                .tappableChip()
-                        }
-                        .buttonStyle(.plain)
+        VStack(alignment: .leading, spacing: 2) {
+            BrowseChipLabel("Topic")
+            BrowseChipRow {
+                FilterChip("All", isOn: topic == nil) { topic = nil }
+                // Each chip in its own topic's colours — the cross-axis link
+                // back to the Topics side.
+                ForEach(presentTopics) { category in
+                    let active = topic == category.id
+                    TopicChip(category.name, palette: category.palette, isOn: active) {
+                        topic = active ? nil : category.id
                     }
                 }
-                .padding(.horizontal, 18)
             }
         }
     }
 
     private func creatorRow(_ creators: [(name: String, count: Int)]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("CREATOR")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
-                .padding(.horizontal, 18)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(creators, id: \.name) { entry in
-                        let active = creator == entry.name
-                        Button {
-                            creator = active ? nil : entry.name
-                        } label: {
-                            HStack(spacing: 5) {
-                                Text(entry.name)
-                                Text("\(entry.count)")
-                                    .foregroundStyle(active ? .white.opacity(0.75) : Tokens.inkMeta)
-                            }
-                            .font(Typo.ui(12.5, .semibold))
-                            .foregroundStyle(active ? .white : Tokens.inkSecondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(active ? Tokens.ink : Tokens.surface, in: Capsule())
-                            .overlay(Capsule().stroke(active ? .clear : Tokens.hairline, lineWidth: 1))
-                            .tappableChip()
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("\(entry.name), \(Copy.countedBorks(entry.count))")
-                        .accessibilityAddTraits(active ? .isSelected : [])
+        VStack(alignment: .leading, spacing: 2) {
+            BrowseChipLabel("Creator")
+            BrowseChipRow {
+                ForEach(creators, id: \.name) { entry in
+                    let active = creator == entry.name
+                    FilterChip("\(entry.name) \(entry.count)", isOn: active) {
+                        creator = active ? nil : entry.name
                     }
+                    .accessibilityLabel("\(entry.name), \(Copy.countedBorks(entry.count))")
                 }
-                .padding(.horizontal, 18)
             }
         }
     }
@@ -186,29 +129,23 @@ struct SourcePage: View {
     @ViewBuilder
     private var list: some View {
         if visible.isEmpty {
-            VStack(spacing: 8) {
-                Image(systemName: "tray")
-                    .font(.system(size: 32, weight: .light))
-                    .foregroundStyle(Tokens.inkFaint)
-                Text("Nothing here yet")
-                    .font(Typo.ui(14, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 50)
+            Text("Nothing here yet")
+                .textRole(.body, color: Tokens.inkSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 40)
         } else {
-            LazyVStack(spacing: 9) {
+            LazyVStack(spacing: 8) {
                 ForEach(visible) { bookmark in
                     Button { detail = bookmark } label: {
                         // Platform badge omitted — every row here is this
                         // platform, so repeating it is noise.
                         BookmarkRow(bookmark: bookmark, showPlatformBadge: false)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressableStyle(scale: 0.99))
                     .borkActions(bookmark)
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
         }
     }
 }
