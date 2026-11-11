@@ -133,6 +133,7 @@ struct RootView: View {
                         tab = .browse
                     },
                     onShowWall: { wall = $0 },
+                    onOpenAccount: { tab = .you },
                     account: account,
                     // Every sheet the root owns, so a milestone sheet never
                     // goes up behind one of them.

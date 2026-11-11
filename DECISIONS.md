@@ -1529,6 +1529,12 @@ Group (`FilingSnapshot`, `quickfile/snapshot-v1.json`) and draws topic art
 from 240 px thumbnails the app copies there. `project.yml` is unchanged: the
 extension keeps SF Rounded rather than bundling Bricolage.
 
+*Note, 2026-11-11 (design/quiet-clay):* no longer true. The extension now
+bundles both brand faces (`BricolageGrotesque.ttf` and `InstrumentSans.ttf`,
+in its own `UIAppFonts`), in a commit of its own so it can be reverted if
+device memory disagrees, and falls back to SF Rounded if they don't register.
+See "Quiet clay: the 1.4 look" below.
+
 **One ranking, written twice and held together.** `Core/FilingSuggest.swift`
 and `docs/filing-suggest.js` score each topic as keywords
 (`Categorizer.scores` / `Filer.scores`), plus on-screen text at half weight
@@ -1899,3 +1905,114 @@ The snapshot gains your most-used subtopics and recent tags per filing
 pinned by `Scripts/fixtures/quick_file_refine_cases.json`, which
 `Scripts/test_quick_file_refine.swift` and `Scripts/test_quick_file_refine.mjs`
 both read (workflow `quick-file-refine-tests.yml`).
+
+## Quiet clay: the 1.4 look (design/quiet-clay)
+
+**The owner chose "A's Library with B's wheel" from three directions, on
+2026-11-11.** Two things in 1.3 had stopped working. The neon topic colours
+fought the clay art they sat beside, so every screen with a picture on it
+looked like two products. And the Library opened on chrome: a wordmark, an
+insight card, banners and toggles all came before the first save. Direction A
+put the saves first on a quiet paper page; direction B drew the dial as a
+wheel of clay slabs. The 1.4 look is the two together, on the iPhone and on
+the web. Behaviour didn't change: this is a restyle plus the layout moves the
+design system names.
+
+**Every colour comes from one recipe.** A topic's tint, mid and deep come from
+its stored hue through `ClayRecipe`, an OKLCH table anchored on the seven
+reference rows of the design system, each pinned at the hue of the topic it
+was drawn for (Health, Cars & motors, Recipes, Garden, Nutrition, Travel,
+AI). No stored hue changed, so Fitness comes out sage-teal and Cars
+terracotta. Sand is the colour of anything not filed. `Core/ClayPalette.swift`
+and `docs/palette.js` agree byte for byte on all 360 hues, pinned by
+`Scripts/fixtures/clay_palette_cases.json`, and the tests require deep on
+tint and white on deep to reach 4.5:1 for every hue. The web reads its values
+from `docs/tokens.css` alone. Cards are flat with a hairline and no shadow;
+only things that float (wheel slabs, the hub, toasts) get a `Lift`. Nothing
+is bolder than 700. The tab bar is a bottom safe-area inset rather than a
+floating layer, so nothing scrolls under it, and a paper band sits behind the
+status bar on every tab, so scrolled cards disappear under it cleanly.
+
+**Errors are sentences, never codes.** `Core/PlainError.swift` translates
+whatever reaches the screen, and sync failures are stored already
+translated, so the You tab and the share sheet both say "Couldn't back up —
+please sign in again." while the raw text goes to the debug log. Sign-in
+names the likely mistake ("That code didn't work") and leaves network
+trouble to `PlainError`, because an expired code is not an expired session.
+
+**The Library shows saves first, and at most one prompt.** Under the search
+field sits one slim action row at most, chosen by `Core/LibraryPrompt.swift`
+(pinned by `Scripts/test_library_prompt.swift`) in the order waiting, backup,
+sort, dial hint. Waiting borks come first because they are saves the person
+already made and can't see working; the backup countdown next, because past
+ten borks it is the only warning before a save stops working. Each prompt
+keeps its own snooze, so the next appears when the one above it goes. The
+rows are shorter than 1.3's banners, but VoiceOver still reads `SaveLimit`'s
+full sentences. Every card is now one shape (a 4:3 cover that is the save's
+own picture, else its topic's clay art, else the compass on clay ground; two
+title lines; the dot with "Topic › Sub"), so the masonry gave way to a plain
+grid, which is what lets the side-quest rail sit after the second row. The
+insight card moved to Revisit and You. The source chips fade out before the
+view menu instead of being cut mid-word, and the avatar opens You.
+
+**Browse and the topic pages lost their colour blocks.** Browse has one
+segmented control, its sort is a menu in the list header, and its scope chips
+show only while searching. A topic page opens on its clay art, running up
+under the status bar with the back button on the scene, then the title on
+paper. A source page drops its dark brand gradient for the platform's own
+mark on paper. Text posts (X, Threads) use the same card with the topic's
+art as cover. Wherever art is missing, it falls back to the clay ground or
+the compass, never paper, an initial or a gradient.
+
+**Revisit, You and the sheets.** The weekly read opens Revisit as one compact
+card; You keeps the full one. Every sheet is paper with one shared header and
+close button rather than a navigation bar, which is also what fixed the
+narrow shared-links column: the navigation container was painting the white
+bands. A library past the signed-out limit says "50 borks on this phone",
+not "50 of 20". On the Pro sheet each plan still opens the website in one
+tap; Yearly is marked with an ink ring rather than pre-selected, because a
+select-then-confirm step would change what a tap does. "Delete account"
+moved to the foot of You, beside the welcome tour, so the account card holds
+only the counts and the backup state.
+
+**The wheel is direction B, everywhere.** Quick File is drawn as B's clay
+wheel on the Add sheet, in triage, in the Share Extension, in the topic
+picker and on the web. Eight slabs in their topics' tints each carry the
+topic's clay object, the topic in small caps and the subtopic in the deep
+colour. The lit or chosen slab fills with its deep colour and lifts 5 pt
+outward from the centre, so the slabs at six o'clock don't ride into the
+hub. There is no bead, no backplate and no gradient: the lit slab is the
+cue. The hub is a raised white disc with the topic's art and a check in its
+deep colour. The evidence ring stays, 2 pt in the topic's mid: solid when
+it's yours or strong, dashed for a thin guess. Geometry is referenced to B's
+360 pt artboard, and the hit regions are pinned by
+`QuickFileDialGeometryTests`. Seats, detents, VoiceOver, the drag maths, the
+dial's web options and the chip order did not change. The refine panel is a
+white slab: subtopics in two packed rows that scroll sideways together and
+only ever grow at the end, so the panel's height never changes and no chip
+moves under a thumb; tags in one row with "+ Tag" first. Done is the coral
+pill with its drain, which on the web stays a CSS transition because the
+dialog closes on `animationend`. Quick File's text now scales with Dynamic
+Type exactly once in both targets (the app's style had been scaling twice),
+and the filing-state header uses stroke icons, not emoji. The Share
+Extension bundles the two brand faces, in a commit of its own so it can be
+reverted, and falls back to SF Rounded if they don't register.
+
+**The web app follows the iPhone.** The web Library draws the same card in a
+CSS grid in reading order, with the side quests after the second row; the
+arrow keys move by one across and by a row down. From 1100 px the rail beside
+the feed is slim rows and topic chips. All colour comes from `Palette`, with
+unfiled as `Palette.of(null)`; no HSL remains, and no initial is drawn under
+art, which is what showed through as the stray "F" on the topic banner. Art
+that fails to load becomes the compass, once. Browse's sort became a native
+menu at the right of the list header. Done moves into the refine slab only
+while it is showing, because the same button is needed before anything is
+filed.
+
+**The written pages share the tokens.** The guides, /pro, /app, /lifetime,
+privacy, terms, 404, press and /get take their colours from `tokens.css`
+alone: flat cards with a hairline and the coral pill as the main action. The
+written-page header keeps "Get the app" on its first line at every width, and
+on a phone its links move to a second row that scrolls sideways. Content,
+analytics and prices were left alone: Lifetime is still $30 on /lifetime and
+in the FAQ, and $199.99 on /pro, until the owner decides.

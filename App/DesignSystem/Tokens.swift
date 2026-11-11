@@ -371,6 +371,25 @@ extension View {
     }
 }
 
+// MARK: - Status bar
+
+extension View {
+    /// A paper band behind the status bar, so a tab screen's scrolled cards
+    /// slide away under it instead of showing through the clock. Use on a
+    /// tab's root scroll view only: a pushed page with art up top (a topic)
+    /// wants that art to run under the status bar.
+    func statusBarBand() -> some View {
+        overlay(alignment: .top) {
+            Color.clear
+                .frame(height: 0)
+                .background(alignment: .bottom) {
+                    Tokens.paper.ignoresSafeArea(edges: .top)
+                }
+                .accessibilityHidden(true)
+        }
+    }
+}
+
 // MARK: - Elevation
 
 /// The only shadows in the system: for things that truly float. Cards, rows,

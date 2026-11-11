@@ -49,8 +49,10 @@ fs.mkdirSync(OUT, { recursive: true });
 const PLAN = [
   { name: "01-home-signed-out", path: "/", full: true },
   { name: "02-library", path: "/", signedIn: true },
+  // The fixture server keeps what is saved, so each size pastes a link of its
+  // own; a fixed link came out as "Already in your library" the second time.
   { name: "03-add-quick-file-dial", path: "/", signedIn: true, after: 3500,
-    js: `(async()=>{const b=[document.getElementById("add-mobile"),document.getElementById("add-desktop")].find(x=>x&&x.offsetParent);b&&b.click();await new Promise(r=>setTimeout(r,500));const i=document.getElementById("add-url");if(!i)return false;i.value="https://www.tiktok.com/@kaylawalks/video/7299999";i.dispatchEvent(new InputEvent("input",{bubbles:true,inputType:"insertFromPaste"}));return true})()` },
+    js: `(async()=>{const b=[document.getElementById("add-mobile"),document.getElementById("add-desktop")].find(x=>x&&x.offsetParent);b&&b.click();await new Promise(r=>setTimeout(r,500));const i=document.getElementById("add-url");if(!i)return false;i.value="https://www.tiktok.com/@kaylawalks/video/7299"+String(Date.now()).slice(-6);i.dispatchEvent(new InputEvent("input",{bubbles:true,inputType:"insertFromPaste"}));return true})()` },
   { name: "04-browse", path: "/#browse", signedIn: true },
   { name: "05-topic-fitness", path: "/#browse/fitness", signedIn: true },
   { name: "06-side-quests", path: "/#browse/quests", signedIn: true },

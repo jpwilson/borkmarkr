@@ -50,6 +50,10 @@ trap cleanup EXIT
 xcrun simctl boot "$SIM" 2>/dev/null || true
 xcrun simctl bootstatus "$SIM" -b >/dev/null 2>&1 || true
 xcrun simctl ui "$SIM" appearance light 2>/dev/null || true
+# A fresh simulator shows the keyboard's swipe-typing tip over the first
+# text field (07 came out with it); mark it as already seen.
+xcrun simctl spawn "$SIM" defaults write com.apple.Preferences DidShowContinuousPathIntroduction -bool true 2>/dev/null || true
+xcrun simctl spawn "$SIM" defaults write com.apple.keyboard.preferences DidShowContinuousPathIntroduction -bool true 2>/dev/null || true
 xcrun simctl status_bar "$SIM" override --time "9:41" --batteryState charged \
   --batteryLevel 100 --cellularBars 4 --wifiBars 3 2>/dev/null || true
 
@@ -72,12 +76,22 @@ fresh() { # a clean install: DebugSeed only seeds an empty store
   xcrun simctl install "$SIM" "$APP"
 }
 
-# shoot <name> <reset 0|1> <startingTab|-> [launch args...]
-#   reset=1 reinstalls first (seed / empty-state shots); "-" leaves the tab.
+seeded() { # a clean install with the standard seed, for shots that need the
+  # seeded library but must not see a link an earlier shot already saved
+  fresh
+  xcrun simctl launch "$SIM" "$BUNDLE" -seed -signedIn >/dev/null
+  sleep "$WAIT"
+}
+
+# shoot <name> <reset 0|1|2> <startingTab|-> [launch args...]
+#   reset=1 reinstalls first (seed / empty-state shots); reset=2 reinstalls
+#   and seeds (a shot of TIKTOK_NEW after another shot has saved it);
+#   "-" leaves the tab.
 shoot() {
   local name="$1" reset="$2" tab="$3"; shift 3
   wanted "$name" || return 0
   [ "$reset" = 1 ] && fresh
+  [ "$reset" = 2 ] && seeded
   xcrun simctl terminate "$SIM" "$BUNDLE" 2>/dev/null || true
   local args=("$@")
   if [ "$tab" != "-" ]; then args+=(-startingTab "$tab"); fi
@@ -123,16 +137,18 @@ shoot 06-you-signed-out           0 you     -signedOut
 shoot 06b-you-import              0 you     -signedIn -importSheet
 shoot 28-share-guide              0 you     -signedIn -shareGuide
 shoot 27-sign-in                  0 library -signedOut -auth signIn
-# Add sheet, picker, triage, share extension harness
+# Add sheet, picker, triage, share extension harness. Showing the dial for
+# TIKTOK_NEW saves it, so every later shot of that link starts from a fresh
+# seeded install (reset 2), or it would come out as "Already in your library".
 shoot 07-add-paste-step           0 library -signedIn -add
 shoot 08-add-quick-file-dial      0 library -signedIn -add "$TIKTOK_NEW"
-shoot 08b-add-refine-panel        0 library -signedIn -add "$TIKTOK_NEW" -quickFileChosen
+shoot 08b-add-refine-panel        2 library -signedIn -add "$TIKTOK_NEW" -quickFileChosen
 shoot 09-add-already-in-library   0 library -signedIn -add "$TIKTOK_SEEDED"
-shoot 19-topic-picker             0 library -signedIn -add "$TIKTOK_NEW" -picker runn
+shoot 19-topic-picker             2 library -signedIn -add "$TIKTOK_NEW" -picker runn
 shoot 10-triage-sort-your-borks   0 library -signedIn -triage
 shoot 11-triage-check-our-guesses 0 library -signedIn -triage guesses
-shoot 12-share-quick-file-harness 0 -       -quickFileShare "$TIKTOK_NEW"
-shoot 12b-share-refine-panel      0 -       -quickFileShare "$TIKTOK_NEW" -quickFileChosen
+shoot 12-share-quick-file-harness 2 -       -quickFileShare "$TIKTOK_NEW"
+shoot 12b-share-refine-panel      2 -       -quickFileShare "$TIKTOK_NEW" -quickFileChosen
 # Sheets
 shoot 13-pro-sheet                0 library -signedIn -proSheet
 shoot 20-collections-list         0 library -signedIn -collections

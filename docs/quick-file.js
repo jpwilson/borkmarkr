@@ -89,11 +89,20 @@ const QuickFileDial = (() => {
   function bumpUses() { try { localStorage.setItem(USES, String(Math.min(99, uses() + 1))); } catch { /* a hint, nothing more */ } }
 
   /* ── Copy shared by every place the dial appears ── */
+  /* Each state's icon is an inline stroke SVG (never an emoji), drawn in
+     currentColor so it takes the header's colour. Hosts set it as markup. */
+  const ico = (size, body) => `<svg class="qf-ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${body}</svg>`;
+  const ICON = {
+    spark: '<path d="M12 3.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"/><path d="M18.5 15.5v4M16.5 17.5h4"/>',
+    guess: '<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.6a2.4 2.4 0 1 1 3.3 2.2c-.6.3-1 .8-1 1.4v.4"/><path d="M12 16.5v.2"/>',
+    folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h3.8l2 2h7.2a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+    check: '<circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.3l2.5 2.5 5-5.2"/>',
+  };
   const HEADER = {
-    strong: { icon: "✨", text: "Sorted for you" },
-    thin: { icon: "🤔", text: "Our best guess — turn to change" },
-    none: { icon: "📂", text: "Where does this go?" },
-    yours: { icon: "✅", text: "Filed by you" },
+    strong: { icon: ico(16, ICON.spark), text: "Sorted for you" },
+    thin: { icon: ico(16, ICON.guess), text: "Our best guess — turn to change" },
+    none: { icon: ico(16, ICON.folder), text: "Where does this go?" },
+    yours: { icon: ico(16, ICON.check), text: "Filed by you" },
   };
   /** The header above the dial: DECISIONS' four filing states. */
   function header(ranking, { yours = false } = {}) {
@@ -308,12 +317,12 @@ const QuickFileDial = (() => {
         lab.classList.toggle("is-long", big.length > 13);
         lab.innerHTML = disc(t) + (c.subcategory
           ? `<small>${name}</small><b>${esc(c.subcategory)}</b>`
-          : `<b class="qf-solo">${name}</b>`) + (badge === s ? `<i class="qf-badge" title="Also likely">✨</i>` : "");
+          : `<b class="qf-solo">${name}</b>`) + (badge === s ? `<i class="qf-badge" title="Also likely">${ico(12, ICON.spark)}</i>` : "");
         const why = reasonFor(c);
         opt.setAttribute("aria-label", `${t.name}${c.subcategory ? ", " + c.subcategory : ""}${why ? ". " + why : ""}. ${s + 1} of ${count}`);
         opt.innerHTML = `<span class="qf-opt-dot" style="background:${pal.mid}"></span>`
           + `<span class="qf-opt-t"><b>${name}${c.subcategory ? ` <span>› ${esc(c.subcategory)}</span>` : ""}</b>${why ? `<small>${esc(why)}</small>` : ""}</span>`
-          + (badge === s ? `<i class="qf-badge">✨</i>` : "");
+          + (badge === s ? `<i class="qf-badge">${ico(12, ICON.spark)}</i>` : "");
         warm(t.art);
       }
     }
@@ -442,7 +451,7 @@ const QuickFileDial = (() => {
       }
       if (also) {
         const t = topicOf(also.categoryID);
-        alsoEl.innerHTML = `<button type="button" class="qf-also"><i aria-hidden="true">✨</i> Also likely: <b>${esc(label(also, t))}</b></button>`;
+        alsoEl.innerHTML = `<button type="button" class="qf-also"><i aria-hidden="true">${ico(14, ICON.spark)}</i> Also likely: <b>${esc(label(also, t))}</b></button>`;
       }
     }
 

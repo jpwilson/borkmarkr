@@ -142,22 +142,43 @@ struct TopicPage: View {
     // MARK: Banner and title
 
     /// The tile you tapped, opened out: its clay scene as a short banner on
-    /// the clay ground, about 120 pt — enough to say which topic this is and
+    /// the clay ground, short — enough to say which topic this is and
     /// keep the first bork above the fold on the smallest phone.
     ///
     /// No colour band (1.4). The name sits under the art on paper, so Dynamic
     /// Type grows the page instead of overflowing an image, and nothing ever
     /// sits on top of a busy scene at a contrast we can't predict.
+    ///
+    /// The art runs up under the status bar and the back button, so the
+    /// button sits on the scene in its own circle instead of floating in an
+    /// empty band of paper, and it stretches when the page is pulled down.
+    /// At rest it ends `bannerBelowBar` under the navigation bar: about
+    /// 168 pt from the top of an iPhone 17 Pro, 44 pt below the back button.
     private var banner: some View {
-        Tokens.clayGround
-            .frame(height: 120)
-            .frame(maxWidth: .infinity)
-            .overlay {
-                TopicClayArt(categoryID: category.id, remote: customEntry?.imageURL)
-            }
-            .clipped()
-            .accessibilityHidden(true)
+        GeometryReader { geo in
+            let rise = max(geo.frame(in: .global).minY, 0)
+            let visible = Self.bannerBelowBar + rise
+            let width = geo.size.width
+            // Cropped to fill, with the crop centred a little above the
+            // art's middle so the object stays in view.
+            let lift = width * 0.06
+            Tokens.clayGround
+                .overlay {
+                    TopicClayArt(categoryID: category.id, remote: customEntry?.imageURL)
+                        .frame(width: width, height: max(width, visible + 2 * lift))
+                        .offset(y: lift)
+                }
+                .frame(width: width, height: visible)
+                .clipped()
+                .offset(y: -rise)
+        }
+        .frame(height: Self.bannerBelowBar)
+        .frame(maxWidth: .infinity)
+        .accessibilityHidden(true)
     }
+
+    /// How far the banner reaches below the navigation bar at rest.
+    private static let bannerBelowBar: CGFloat = 52
 
     /// Bricolage title and the count, with Share (and Rename, for a topic you
     /// made) at the right.

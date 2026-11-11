@@ -259,7 +259,7 @@ function show(i) {
   $("sheet").hidden = false; $("done").hidden = true;
   state.ranking = rankOf(s, null);
   const h = QuickFileDial.header(state.ranking);
-  $("head").textContent = h.icon + " " + h.text;
+  $("head").innerHTML = h.icon + " <span>" + h.text + "</span>";
   state.dial = QuickFileDial.mount($("dial-host"), {
     ranking: state.ranking, topic, mode: "sheet", input: inputOf(s),
     onConfirm: (c) => filed(c),
@@ -273,7 +273,7 @@ function show(i) {
       const r = rankOf(s, s.ai);
       const touched = state.dial.touched;
       state.dial.offer(r);
-      if (!touched) { state.ranking = r; const h2 = QuickFileDial.header(r); $("head").textContent = h2.icon + " " + h2.text; }
+      if (!touched) { state.ranking = r; const h2 = QuickFileDial.header(r); $("head").innerHTML = h2.icon + " <span>" + h2.text + "</span>"; }
       paintScores(r, state.dial.highlighted);
       toast("The model answered: " + label({ categoryID: s.ai.topic, subcategory: s.ai.subtopic }) + " (" + s.ai.confidence + ")");
     }, 1500);

@@ -158,6 +158,7 @@ struct BrowseView: View {
                 }
             }
             .background(Tokens.paper)
+            .statusBarBand()
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .topic("__uncategorised__"):

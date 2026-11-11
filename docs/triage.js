@@ -363,7 +363,7 @@ const Triage = (() => {
   function paintHead(r, ranking) {
     const pin = pinOf(r);
     const h = QuickFileDial.header(ranking, { yours: pin?.reason === "yours" });
-    ui.head.textContent = `${h.icon} ${h.text}`;
+    ui.head.innerHTML = `${h.icon}<span>${h.text}</span>`; // fixed copy and inline SVG from QuickFileDial.header
   }
   function destroyDial() {
     if (S && S.dial) { S.dial.destroy(); S.dial = null; }

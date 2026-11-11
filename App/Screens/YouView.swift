@@ -62,6 +62,7 @@ struct YouView: View {
             .padding(.bottom, 28)
         }
         .background(Tokens.paper)
+        .statusBarBand()
         .onAppear(perform: openLaunchSheets)
         .sheet(isPresented: $showingHowTo) {
             HowToSheet().environment(\.accent, accent)

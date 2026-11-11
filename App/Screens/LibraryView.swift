@@ -153,6 +153,7 @@ struct LibraryView: View {
             }
         }
         .background(Tokens.paper)
+        .statusBarBand()
         .animation(Motion.gentle, value: prompt)
         .safeAreaInset(edge: .bottom) {
             if selecting {
@@ -405,12 +406,17 @@ struct LibraryView: View {
                     }
                 }
                 .padding(.leading, Tokens.gutter)
-                .padding(.trailing, 4)
+                .padding(.trailing, 28)
             }
-            // A hairline where the chips run under the menu, so the cut
-            // reads as "more this way" rather than as a chip cut in half.
-            .overlay(alignment: .trailing) {
-                Tokens.hairline.frame(width: 1, height: 24)
+            // The chips fade out before the menu, so the last one reads as
+            // "more this way" rather than as a chip sliced in half.
+            .mask {
+                HStack(spacing: 0) {
+                    Color.black
+                    LinearGradient(colors: [.black, .clear],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .frame(width: 28)
+                }
             }
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             viewMenu

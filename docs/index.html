@@ -207,6 +207,13 @@
   /* ── Filter chips (FilterChip): white with a hairline; on = ink. 34 px, 44 px to the touch ── */
   .chips { display: flex; gap: 8px; padding: 5px 0 14px; overflow-x: auto; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
+  /* On a phone the row scrolls: the last chip fades out at the edge instead
+     of being sliced mid-word, and a trailing pad lets it scroll clear. */
+  @media (max-width: 760px) {
+    .chips { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+      mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+    .chips::after { content: ""; flex: 0 0 20px; }
+  }
   .chip { flex: 0 0 auto; position: relative; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px;
     border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface); color: var(--ink);
     font-size: 14px; font-weight: 600; white-space: nowrap; }
@@ -1453,9 +1460,9 @@
             <h2 class="section-title" style="margin-top:0">Tell us something</h2>
             <p class="hint" style="margin:0 0 12px">An idea, something broken, a question. It lands in a real inbox and gets read by the person who builds this.</p>
             <div class="fb-kinds" role="radiogroup" aria-label="What kind of message">
-              <button class="chip" role="radio" data-fb-kind="idea">💡 Idea</button>
-              <button class="chip" role="radio" data-fb-kind="problem">🐛 Something's broken</button>
-              <button class="chip" role="radio" data-fb-kind="other">💬 Other</button>
+              <button class="chip" role="radio" data-fb-kind="idea"><svg class="qf-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/></svg>Idea</button>
+              <button class="chip" role="radio" data-fb-kind="problem"><svg class="qf-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="7.5" y="7.5" width="9" height="12" rx="4.5"/><path d="M12 11v8.5M9.5 7.5a2.5 2.5 0 0 1 5 0M4.5 13h3M16.5 13h3M5.5 8.5l2.4 1.6M18.5 8.5l-2.4 1.6M5.5 18.5l2.4-1.6M18.5 18.5l-2.4-1.6"/></svg>Something's broken</button>
+              <button class="chip" role="radio" data-fb-kind="other"><svg class="qf-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 19 17h-8l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z"/></svg>Other</button>
             </div>
             <label class="field-label" for="fb-msg">What's up?</label>
             <textarea class="field ph-no-capture" id="fb-msg" maxlength="2000" placeholder="The more specific, the better — what you did, what you expected, what happened."></textarea>
@@ -1535,7 +1542,7 @@
       </div>
     </article>
 
-    <div class="add-filing-h" id="add-filing-h"><span id="add-sorted-icon" aria-hidden="true">✨</span><span id="add-sorted-h">Sorted for you</span></div>
+    <div class="add-filing-h" id="add-filing-h"><span id="add-sorted-icon" aria-hidden="true"><svg class="qf-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"/><path d="M18.5 15.5v4M16.5 17.5h4"/></svg></span><span id="add-sorted-h">Sorted for you</span></div>
     <div id="add-dial"></div>
     <section class="add-refine" id="add-refine" aria-labelledby="add-refine-h" hidden>
       <p class="add-refine-h" id="add-refine-h" aria-live="polite"></p>
@@ -1683,7 +1690,7 @@
   <button class="linkish" data-act="refresh-preview">Refresh missing content &amp; preview</button>
   <p class="hint" id="edit-preview-status" role="status"></p>
   <section class="sorted">
-    <div class="sorted-h"><span aria-hidden="true">✨</span>Filed under</div>
+    <div class="sorted-h"><svg class="qf-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"/><path d="M18.5 15.5v4M16.5 17.5h4"/></svg>Filed under</div>
     <button type="button" class="topic-trigger" id="edit-topic" data-act="pick-topic" data-for="edit" aria-haspopup="dialog"></button>
     <div class="tag-row" id="edit-tag-chips"></div>
     <div class="tag-add">
@@ -4770,7 +4777,7 @@ function fileOffline(url) {
 function renderFilingState() {
   const s = qf;
   const h = QuickFileDial.header(s && (s.shown || s.ranking), { yours: !!(s && (s.filed || (s.pin && s.pin.reason === "yours"))) });
-  $("add-sorted-icon").textContent = h.icon;
+  $("add-sorted-icon").innerHTML = h.icon; // a fixed inline SVG from QuickFileDial.header
   $("add-sorted-h").textContent = h.text;
   // The sheet's own title already asks where it goes.
   $("add-filing-h").hidden = h.state === "none";

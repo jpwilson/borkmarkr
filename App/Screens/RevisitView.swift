@@ -109,6 +109,7 @@ struct RevisitView: View {
                 .padding(.bottom, 28)
             }
             .background(Tokens.paper)
+            .statusBarBand()
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .topic(let id):
