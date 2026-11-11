@@ -30,63 +30,52 @@ struct ProSheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header
+            VStack(alignment: .leading, spacing: 0) {
+                ClaySheetHeader(title: "bookmarker Pro") { dismiss() }
 
-                VStack(spacing: 10) {
-                    ForEach(Plan.allCases) { plan in
-                        planButton(plan)
+                VStack(alignment: .leading, spacing: 16) {
+                    header
+
+                    VStack(spacing: 10) {
+                        ForEach(Plan.allCases) { plan in
+                            planButton(plan)
+                        }
                     }
-                }
 
-                Text("Pro isn't on sale yet. Picking a plan opens bookmarker.lol to hold that price — nothing is charged.")
-                    .font(Typo.ui(12.5))
-                    .foregroundStyle(Tokens.inkMeta)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text("Pro isn't on sale yet. Picking a plan opens bookmarker.lol to hold that price — nothing is charged.")
+                        .textRole(.meta)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                Button { dismiss() } label: {
-                    Text("Not now")
-                        .font(Typo.ui(13.5, .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: Tokens.minTapTarget)
-                        .contentShape(Rectangle())
+                    Button("Not now") { dismiss() }
+                        .buttonStyle(.claySecondary)
                 }
-                .buttonStyle(.plain)
+                .padding(.top, 12)
             }
-            .padding(20)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.bottom, 12)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(Tokens.paper)
         .presentationDetents([.height(height)])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
     }
 
     private var header: some View {
         HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("bookmarker Pro")
-                    .font(Typo.display(26, .heavy))
-                    .tracking(-0.5)
-                    .foregroundStyle(Tokens.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityAddTraits(.isHeader)
-                Text("Unlimited borks, for when your library outgrows 100.")
-                    .font(Typo.ui(14))
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text("Unlimited borks, for when your library outgrows 100.")
+                .textRole(.sectionTitle, color: Tokens.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             // The welcome tour's clay: saves pouring into a phone and piling
             // up beside it. Left out at accessibility sizes, where the words
             // need the width.
             if !typeSize.isAccessibilitySize {
-                ClayArt(name: "welcomeHero")
-                    .frame(width: 76, height: 76)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .accessibilityHidden(true)
+                ClayArtImage(source: .asset("welcomeHero"))
+                    .frame(width: 72, height: 72)
+                    .background(Tokens.clayGround)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
     }
@@ -165,8 +154,8 @@ extension ProSheet {
 }
 
 /// One plan: its name on the left, the price on the right, and an arrow that
-/// says the tap leaves the app. Yearly wears the Insights entry's tinted
-/// card with its deal in the accent, so it reads as the one to pick without
+/// says the tap leaves the app. White hairline cards; Yearly wears an ink
+/// ring and its deal in the accent, so it reads as the one to pick without
 /// anything being pre-selected.
 private struct ProPlanCard: View {
     let plan: ProSheet.Plan
@@ -176,7 +165,7 @@ private struct ProPlanCard: View {
     @Environment(\.accent) private var accent
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
         let card = HStack(spacing: 12) {
             Group {
                 if stacked {
@@ -195,48 +184,41 @@ private struct ProPlanCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Image(systemName: "arrow.up.right")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Tokens.inkFaint)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Tokens.inkSecondary)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 13)
+        .padding(.vertical, 12)
+        .frame(minHeight: 64)
         .contentShape(shape)
 
-        if plan.deal != nil {
-            card
-                .background(
-                    LinearGradient(colors: [accent.tint, accent.tint.opacity(0.45)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing),
-                    in: shape
-                )
-                .overlay(shape.stroke(accent.base.opacity(0.28), lineWidth: 1))
-                .shadow(color: accent.base.opacity(0.12), radius: 16, y: 8)
-        } else {
-            card.cardSurface(radius: 18)
-        }
+        card
+            .cardSurface()
+            .overlay {
+                if plan.deal != nil {
+                    shape.strokeBorder(Tokens.ink, lineWidth: 2)
+                }
+            }
     }
 
     private var name: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 1) {
             Text(plan.name)
-                .font(Typo.ui(15, .bold))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.cardTitle, color: Tokens.ink)
             if let deal = plan.deal {
                 Text(deal)
-                    .font(Typo.ui(12.5, .semibold))
-                    .foregroundStyle(accent.deep)
+                    .textRole(.meta, color: accent.deep)
             }
         }
     }
 
     private func price(alignment: HorizontalAlignment) -> some View {
-        VStack(alignment: alignment, spacing: 1) {
+        VStack(alignment: alignment, spacing: 0) {
             Text(plan.price)
-                .font(Typo.display(19, .heavy))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.sectionTitle, color: Tokens.ink)
+                .monospacedDigit()
             Text(plan.period)
-                .font(Typo.ui(12, .medium))
-                .foregroundStyle(Tokens.inkMeta)
+                .textRole(.meta)
         }
     }
 }

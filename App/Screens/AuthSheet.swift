@@ -38,9 +38,11 @@ struct AuthSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            ClaySheetHeader(title: title) { dismiss() }
+                .padding(.horizontal, Tokens.gutter)
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 16) {
                     switch stage {
                     case .email: emailStage
                     case .code: codeStage
@@ -50,24 +52,30 @@ struct AuthSheet: View {
 
                     if let message {
                         Text(message)
-                            .font(Typo.ui(12.5))
-                            .foregroundStyle(Tokens.destructive)
+                            .textRole(.meta, color: Tokens.destructive)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(18)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 28)
             }
-            .background(Tokens.paper)
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(stage == .done ? "Done" : "Not now") { dismiss() }
-                }
-            }
+            .scrollBounceBehavior(.basedOnSize)
         }
+        .background(Tokens.paper)
         .presentationDetents([.medium, .large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
+    }
+
+    /// The one field style: white, hairline, radius 14, ≥ 52 pt.
+    private func fieldSurface<Content: View>(_ content: Content) -> some View {
+        content
+            .padding(.horizontal, 16)
+            .frame(minHeight: 52)
+            .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous)
+                .strokeBorder(Tokens.hairline, lineWidth: 1))
     }
 
     private var emailStage: some View {
@@ -75,18 +83,17 @@ struct AuthSheet: View {
             Text(mode == .signUp
                  ? "Your borks only exist on this phone right now. Enter your email and we'll send a six-digit code — that's the whole sign-up. Your borks get backed up and follow you to every device."
                  : "Enter the email you signed up with and we'll send a six-digit code.")
-                .font(Typo.ui(14))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            TextField("you@example.com", text: $email)
-                .font(Typo.ui(16))
-                .textContentType(.emailAddress)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .padding(14)
-                .cardSurface(radius: 16)
+            fieldSurface(
+                TextField("you@example.com", text: $email)
+                    .textRole(.body, color: Tokens.ink)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            )
 
             primaryButton(busy ? "Sending…" : "Email me a code") {
                 Task { await sendCode() }
@@ -94,8 +101,8 @@ struct AuthSheet: View {
             .disabled(busy || !email.contains("@"))
 
             Text("No password to make up or lose — the code is the whole thing.")
-                .font(Typo.ui(12))
-                .foregroundStyle(Tokens.inkFaint)
+                .textRole(.meta)
+                .fixedSize(horizontal: false, vertical: true)
 
             Button(mode == .signUp ? "Already have an account? Sign in" : "New here? Sign up") {
                 withAnimation(Motion.gentle) {
@@ -103,24 +110,25 @@ struct AuthSheet: View {
                 }
                 message = nil
             }
-            .font(Typo.ui(13, .semibold))
-            .padding(.top, 4)
+            .buttonStyle(.clayQuiet)
         }
     }
 
     private var codeStage: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Check \(email) for a six-digit code.")
-                .font(Typo.ui(14))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
 
-            TextField("123456", text: $code)
-                .font(Typo.mono(24))
-                .keyboardType(.numberPad)
-                .textContentType(.oneTimeCode)
-                .multilineTextAlignment(.center)
-                .padding(16)
-                .cardSurface(radius: 16)
+            fieldSurface(
+                TextField("123456", text: $code)
+                    .font(Typo.mono(24))
+                    .foregroundStyle(Tokens.ink)
+                    .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                    .multilineTextAlignment(.center)
+                    .padding(.vertical, 6)
+            )
 
             primaryButton(busy ? "Checking…" : "Continue") {
                 Task { await verify() }
@@ -132,21 +140,20 @@ struct AuthSheet: View {
                 code = ""
                 message = nil
             }
-            .font(Typo.ui(13, .semibold))
+            .buttonStyle(.clayQuiet)
         }
     }
 
     private var passwordStage: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("\(email) signs in with a password.")
-                .font(Typo.ui(14))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
 
-            SecureField("Password", text: $password)
-                .font(Typo.ui(16))
-                .textContentType(.password)
-                .padding(14)
-                .cardSurface(radius: 16)
+            fieldSurface(
+                SecureField("Password", text: $password)
+                    .textRole(.body, color: Tokens.ink)
+                    .textContentType(.password)
+            )
 
             primaryButton(busy ? "Checking…" : "Sign in") {
                 Task { await signInWithPassword() }
@@ -158,41 +165,48 @@ struct AuthSheet: View {
                 password = ""
                 message = nil
             }
-            .font(Typo.ui(13, .semibold))
+            .buttonStyle(.clayQuiet)
         }
     }
 
     private var doneStage: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 30))
-                    .foregroundStyle(accent.base)
-                VStack(alignment: .leading, spacing: 2) {
+                    .foregroundStyle(accent.deep)
+                VStack(alignment: .leading, spacing: 1) {
                     Text(account.email ?? email)
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(Tokens.ink)
+                        .textRole(.cardTitle, color: Tokens.ink)
                     Text(mode == .signUp
                          ? "Account made. Your borks are backing up now."
                          : "Your borks are backing up now.")
-                        .font(Typo.ui(12.5))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .textRole(.meta)
                 }
+                Spacer(minLength: 0)
             }
+            .padding(16)
+            .cardSurface()
             primaryButton("Done") { dismiss() }
         }
     }
 
     private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Typo.ui(15.5, .bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
+        Button(title, action: action)
+            .buttonStyle(.clayPrimary)
+    }
+
+    /// A wrong code or password is the likeliest failure, so it is named;
+    /// a network problem gets `PlainError`'s sentence. The raw text is logged.
+    private func plain(_ error: Error, doing: String, otherwise: String) -> String {
+        #if DEBUG
+        print("Auth failed (\(doing)):", error)
+        #endif
+        switch PlainError.kind(of: error) {
+        case .offline, .timeout, .server: return PlainError.message(error, doing: doing)
+        case .cancelled: return ""
+        case .signedOut, .other: return otherwise
         }
-        .buttonStyle(PressableStyle())
     }
 
     private func sendCode() async {
@@ -208,7 +222,8 @@ struct AuthSheet: View {
         } catch where Supabase.isUnknownAccount(error) {
             message = "No account with that email yet. Tap Sign up and we'll make one."
         } catch {
-            message = error.localizedDescription
+            message = plain(error, doing: "send the code",
+                            otherwise: "Couldn't send the code. Check the email and try again.")
         }
     }
 
@@ -220,7 +235,8 @@ struct AuthSheet: View {
             Haptics.success()
             withAnimation(Motion.gentle) { stage = .done }
         } catch {
-            message = error.localizedDescription
+            message = plain(error, doing: "sign you in",
+                            otherwise: "That email and password don't match. Try again.")
         }
     }
 
@@ -232,7 +248,8 @@ struct AuthSheet: View {
             Haptics.success()
             withAnimation(Motion.gentle) { stage = .done }
         } catch {
-            message = error.localizedDescription
+            message = plain(error, doing: "check the code",
+                            otherwise: "That code didn't work. Check it, or use a different email to get a new one.")
         }
     }
 }

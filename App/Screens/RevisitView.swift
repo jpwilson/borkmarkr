@@ -15,6 +15,9 @@ import SwiftData
 /// likely they are to send someone back into their library. **Saved, never
 /// opened** is the one that earns the tab, and it gets the room.
 ///
+/// The weekly read ("What are you finding interesting?") opens the tab, in its
+/// compact form: it left the Library in 1.4 and lives here and on You.
+///
 /// The screen is a renderer. Every number here comes from `Revisit`, which is
 /// pure and tested — see `Core/Revisit.swift` for why.
 struct RevisitView: View {
@@ -54,8 +57,13 @@ struct RevisitView: View {
     @State private var openQuest: Mission?
     @State private var showingBackupBanner = false
     @State private var showingAuth = false
+    @State private var showingInsights = false
+    @State private var creatingQuestTitle: String?
     /// The never-opened pile, dealt one at a time.
     @State private var goingThrough: [Bookmark]?
+    #if DEBUG
+    @State private var openedLaunchQueue = false
+    #endif
 
     private enum Route: Hashable {
         case topic(String)
@@ -73,8 +81,8 @@ struct RevisitView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 26) {
-                    header
+                VStack(alignment: .leading, spacing: Tokens.sectionGap) {
+                    top
 
                     if showingBackupBanner {
                         SignInNudgeBanner(
@@ -85,20 +93,20 @@ struct RevisitView: View {
                                 withAnimation(Motion.gentle) { showingBackupBanner = false }
                             }
                         )
-                        .padding(.horizontal, 18)
+                        .padding(.horizontal, Tokens.gutter)
                         .transition(.opacity)
                     }
 
                     if let model {
                         if model.isThin || model.hasNothing {
                             ThinRevisitCard(count: model.total)
-                                .padding(.horizontal, 18)
+                                .padding(.horizontal, Tokens.gutter)
                         } else {
                             sections(model)
                         }
                     }
                 }
-                .padding(.bottom, 120)
+                .padding(.bottom, 28)
             }
             .background(Tokens.paper)
             .navigationDestination(for: Route.self) { route in
@@ -120,6 +128,22 @@ struct RevisitView: View {
                     AuthSheet(account: account, mode: .signUp).environment(\.accent, accent)
                 }
             }
+            .sheet(isPresented: $showingInsights) {
+                InsightsSheet(bookmarks: bookmarks, account: account) { title in
+                    creatingQuestTitle = title
+                }
+                .environment(\.accent, accent)
+            }
+            .sheet(isPresented: Binding(
+                get: { creatingQuestTitle != nil },
+                set: { if !$0 { creatingQuestTitle = nil } }
+            )) {
+                NewMissionSheet(seed: creatingQuestTitle.map {
+                    Mission.Seed(title: $0, categoryID: nil, subcategory: nil,
+                                 bookmarkIDs: [], sampleTitles: [], blurb: "")
+                })
+                .environment(\.accent, accent)
+            }
         }
         // Rebuilt on appearance, whenever the library changes size, and
         // whenever something is opened — keyed on counts alone, a bork you had
@@ -132,21 +156,25 @@ struct RevisitView: View {
             RevisitQueueSheet(bookmarks: goingThrough ?? [])
                 .environment(\.accent, accent)
         }
-        .onAppear { readNudgePolicy() }
+        .onAppear {
+            readNudgePolicy()
+            #if DEBUG
+            if ScreenshotDefaults.openInsights { showingInsights = true }
+            #endif
+        }
         .onChange(of: account?.isSignedIn ?? false) { _, _ in readNudgePolicy() }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Revisit")
-                .font(Typo.display(34, .heavy))
-                .tracking(-1.0)
-                .foregroundStyle(Tokens.ink)
-            Text("What's worth another look.")
-                .font(Typo.ui(12.5, .medium))
-                .foregroundStyle(Tokens.inkMeta)
+    /// Title, then the weekly read as one compact card.
+    private var top: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ScreenHeader("Revisit", subtitle: "What's worth another look.")
+            Button { showingInsights = true } label: {
+                InsightsEntry(bookmarks: bookmarks, compact: true)
+            }
+            .buttonStyle(PressableStyle(scale: 0.99))
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, Tokens.gutter)
         .padding(.top, 12)
     }
 
@@ -164,78 +192,64 @@ struct RevisitView: View {
 
     /// 1 — Saved this week.
     private func savedThisWeek(_ week: Revisit.ThisWeek) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             SectionHeading("Saved this week")
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text(week.headline)
-                    .font(Typo.ui(14.5, .semibold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if !week.rising.isEmpty {
-                    VStack(alignment: .leading, spacing: 7) {
-                        Text("Growing")
-                            .font(Typo.ui(10, .heavy)).tracking(0.6)
-                            .foregroundStyle(Tokens.mutedHeading)
-                        FlowLayout(spacing: 7) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Growing").textRole(.label, color: Tokens.inkSecondary)
+                        FlowLayout(spacing: Tokens.chipGap) {
                             ForEach(week.rising) { growth in
-                                Button { path.append(Route.topic(growth.id)) } label: {
-                                    let palette = merged.topic(id: growth.id)?.palette ?? NeutralPalette.value
-                                    HStack(spacing: 5) {
-                                        Text(growth.name)
-                                            .font(Typo.ui(12.5, .semibold))
-                                        Text("+\(growth.gain)")
-                                            .font(Typo.ui(11, .bold))
-                                            .opacity(0.75)
-                                    }
-                                    .foregroundStyle(palette.deep)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 7)
-                                    .background(palette.tint, in: Capsule())
-                                    .tappableChip()
-                                }
-                                .buttonStyle(ChipStyle())
+                                TopicChip(
+                                    "\(growth.name) +\(growth.gain)",
+                                    palette: merged.topic(id: growth.id)?.palette ?? NeutralPalette.value,
+                                    isOn: false,
+                                    size: .filter
+                                ) { path.append(Route.topic(growth.id)) }
                             }
                         }
                     }
                 }
             }
-            .padding(15)
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .cardSurface(radius: 18)
-            .padding(.horizontal, 18)
+            .cardSurface()
+            .padding(.horizontal, Tokens.gutter)
         }
     }
 
     /// 2 — You keep coming back to.
     private func comingBack(_ items: [RevisitBork]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             SectionHeading("You keep coming back to",
                            caption: "The ones you've opened again.")
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 12) {
+                HStack(alignment: .top, spacing: Tokens.gridGap) {
                     ForEach(items) { item in
                         if let bookmark = index[item.id] {
                             Button { detail = bookmark } label: {
                                 VStack(alignment: .leading, spacing: 6) {
                                     BookmarkCard(bookmark: bookmark)
                                     Text(openLine(item))
-                                        .font(Typo.ui(11, .semibold))
-                                        .foregroundStyle(Tokens.inkMeta)
-                                        .padding(.horizontal, 2)
+                                        .textRole(.meta)
+                                        .padding(.leading, 4)
                                 }
-                                .frame(width: 176)
+                                .frame(width: 168)
                             }
                             .buttonStyle(PressableStyle())
                             .borkActions(bookmark)
                         }
                     }
                 }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 2)
+                .padding(.horizontal, Tokens.gutter)
             }
+            .scrollClipDisabled()
         }
     }
 
@@ -247,36 +261,24 @@ struct RevisitView: View {
     /// list rather than a strip: the point is the *length* of the pile.
     private func neverOpened(_ stale: Revisit.NeverOpened) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Saved, never opened")
-                    .font(Typo.display(22, .bold))
-                    .foregroundStyle(Tokens.ink)
-                Text(stale.headline)
-                    .font(Typo.ui(13.5, .medium))
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            SectionHeading("Saved, never opened", caption: stale.headline)
 
-                Button {
-                    Haptics.tap()
-                    goingThrough = stale.items.compactMap { index[$0.id] }
-                } label: {
-                    HStack(spacing: 7) {
-                        Image(systemName: "play.fill").font(.system(size: 11, weight: .black))
-                        Text("Go through them, one at a time").font(Typo.ui(14, .bold))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 11)
-                    .background(accent.base, in: Capsule())
-                    .shadow(color: accent.base.opacity(0.28), radius: 10, y: 6)
+            // Right under the heading, where the UI test (and a thumb) finds it.
+            Button {
+                Haptics.tap()
+                goingThrough = stale.items.compactMap { index[$0.id] }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "play.fill").font(.system(size: 12, weight: .semibold))
+                    Text("Go through them, one at a time")
                 }
-                .buttonStyle(PressableStyle())
-                .padding(.top, 6)
-                .accessibilityIdentifier("revisit-go-through")
             }
-            .padding(.horizontal, 18)
+            .buttonStyle(.clayPrimary)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.vertical, 2)
+            .accessibilityIdentifier("revisit-go-through")
 
-            LazyVStack(spacing: 9) {
+            LazyVStack(spacing: 8) {
                 ForEach(stale.preview) { item in
                     if let bookmark = index[item.id] {
                         Button { detail = bookmark } label: {
@@ -287,31 +289,30 @@ struct RevisitView: View {
                     }
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
 
             if stale.overflow > 0 {
                 Button { path.append(Route.neverOpened) } label: {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Text("and \(stale.overflow) more")
-                            .font(Typo.ui(13.5, .bold))
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: 12, weight: .semibold))
                     }
-                    .foregroundStyle(accent.deep)
-                    .padding(.horizontal, 18)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.clayQuiet)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.vertical, -6)
             }
         }
     }
 
     /// 4 — A month ago today.
     private func monthAgo(_ items: [RevisitBork]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             SectionHeading("A month ago today",
                            caption: "What you were saving four weeks back.")
 
-            LazyVStack(spacing: 9) {
+            LazyVStack(spacing: 8) {
                 ForEach(items) { item in
                     if let bookmark = index[item.id] {
                         Button { detail = bookmark } label: {
@@ -322,17 +323,17 @@ struct RevisitView: View {
                     }
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
         }
     }
 
     /// 5 — Side quests in progress. The Library's card, unchanged.
     private func questsInProgress(_ items: [RevisitQuest]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             SectionHeading("Side quests in progress")
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
+                HStack(spacing: Tokens.gridGap) {
                     ForEach(items) { item in
                         if let quest = quests.first(where: { $0.id == item.id }) {
                             Button { openQuest = quest } label: {
@@ -350,46 +351,46 @@ struct RevisitView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 2)
+                .padding(.horizontal, Tokens.gutter)
             }
+            .scrollClipDisabled()
         }
     }
 
     /// 6 — What's shifting.
     private func shifting(_ sentence: String, _ shifts: [Revisit.Shift]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             SectionHeading("What's shifting",
                            caption: "The last 30 days against the 30 before.")
 
-            VStack(alignment: .leading, spacing: 11) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text(sentence)
-                    .font(Typo.display(19, .bold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
-                VStack(spacing: 7) {
+                Tokens.hairline.frame(height: 1)
+
+                VStack(spacing: 8) {
                     ForEach(shifts) { shift in
                         HStack(spacing: 8) {
                             Image(systemName: shift.isUp ? "arrow.up.right" : "arrow.down.right")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(shift.isUp ? accent.deep : Tokens.inkMeta)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(shift.isUp ? accent.deep : Tokens.inkSecondary)
+                                .accessibilityLabel(shift.isUp ? "Up" : "Down")
                             Text(shift.name)
-                                .font(Typo.ui(13, .semibold))
-                                .foregroundStyle(Tokens.ink)
+                                .textRole(.body, color: Tokens.ink)
                             Spacer(minLength: 6)
                             Text("\(percent(shift.previousShare)) → \(percent(shift.share))")
-                                .font(Typo.ui(12, .medium))
-                                .foregroundStyle(Tokens.inkMeta)
+                                .textRole(.meta)
                                 .monospacedDigit()
                         }
                     }
                 }
             }
-            .padding(15)
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .cardSurface(radius: 18)
-            .padding(.horizontal, 18)
+            .cardSurface()
+            .padding(.horizontal, Tokens.gutter)
         }
     }
 
@@ -409,6 +410,13 @@ struct RevisitView: View {
         }.value
         index = Dictionary(bookmarks.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         model = built
+        #if DEBUG
+        // `-revisitQueue`: deal the never-opened pile once there is a model.
+        if ScreenshotDefaults.openRevisitQueue, !openedLaunchQueue, let stale = built.neverOpened {
+            openedLaunchQueue = true
+            goingThrough = stale.items.compactMap { index[$0.id] }
+        }
+        #endif
     }
 
     /// The same policy the Library reads, on the same one call site shape. The
@@ -425,7 +433,8 @@ struct RevisitView: View {
     }
 }
 
-/// Shared section chrome, so six sections can't drift into six styles.
+/// The shared `SectionHeader`, plus the one meta line Revisit puts under it.
+/// One component, so six sections can't drift into six styles.
 private struct SectionHeading: View {
     let title: String
     var caption: String?
@@ -436,18 +445,15 @@ private struct SectionHeading: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(Typo.display(18, .bold))
-                .foregroundStyle(Tokens.ink)
+        VStack(alignment: .leading, spacing: 2) {
+            SectionHeader(title)
             if let caption {
                 Text(caption)
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, Tokens.gutter)
     }
 }
 
@@ -456,37 +462,32 @@ private struct SectionHeading: View {
 /// is the point: it tells someone what saving ten things buys them.
 private struct ThinRevisitCard: View {
     let count: Int
-    @Environment(\.accent) private var accent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(accent.deep)
-                .padding(.bottom, 2)
+        VStack(alignment: .leading, spacing: 0) {
+            ClayArtImage(source: .quest(.scroll))
+                .frame(maxWidth: .infinity)
+                .frame(height: 140)
+                .background(Tokens.clayGround)
+                .clipped()
 
-            Text("Save ten things and this fills in")
-                .font(Typo.display(20, .bold))
-                .foregroundStyle(Tokens.ink)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Save ten things and this fills in")
+                    .textRole(.sectionTitle, color: Tokens.ink)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Text("What you keep coming back to, what you saved and never opened, what a month ago looked like.")
-                .font(Typo.ui(13.5))
-                .foregroundStyle(Tokens.inkSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                Text("What you keep coming back to, what you saved and never opened, what a month ago looked like.")
+                    .textRole(.body, color: Tokens.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Text(count == 0 ? "Nothing saved yet." : "\(Copy.countedBorks(count)) so far.")
-                .font(Typo.ui(12.5, .semibold))
-                .foregroundStyle(Tokens.inkMeta)
-                .padding(.top, 4)
+                Text(count == 0 ? "Nothing saved yet." : "\(Copy.countedBorks(count)) so far.")
+                    .textRole(.meta)
+                    .padding(.top, 4)
+            }
+            .padding(16)
         }
-        .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.tint.opacity(0.55), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(accent.base.opacity(0.22), lineWidth: 1)
-        )
+        .cardSurface()
     }
 }
 
@@ -499,7 +500,7 @@ private struct NeverOpenedList: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 9) {
+            LazyVStack(spacing: 8) {
                 ForEach(items) { bookmark in
                     Button { detail = bookmark } label: {
                         BookmarkRow(bookmark: bookmark)
@@ -508,9 +509,9 @@ private struct NeverOpenedList: View {
                     .borkActions(bookmark)
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
             .padding(.top, 12)
-            .padding(.bottom, 120)
+            .padding(.bottom, 28)
         }
         .background(Tokens.paper)
         .navigationTitle("Saved, never opened")

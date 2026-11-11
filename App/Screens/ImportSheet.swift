@@ -26,7 +26,12 @@ struct ImportSheet: View {
     @State private var error: String?
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            ClaySheetHeader(title: "Import your saves") {
+                if stage == .done { onDone(imported) }
+                dismiss()
+            }
+            .padding(.horizontal, Tokens.gutter)
             Group {
                 switch stage {
                 case .pick: pickStage
@@ -35,87 +40,81 @@ struct ImportSheet: View {
                 case .done: doneStage
                 }
             }
-            .background(Tokens.paper)
-            .navigationTitle("Import your saves")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(stage == .done ? "Done" : "Cancel") {
-                        if stage == .done { onDone(imported) }
-                        dismiss()
-                    }
-                }
-            }
-            .fileImporter(
-                isPresented: $picking,
-                allowedContentTypes: [.json, .html, .commaSeparatedText, .plainText, .data],
-                allowsMultipleSelection: false
-            ) { result in
-                handle(result)
-            }
-            .alert("Couldn't read that file", isPresented: .constant(error != nil)) {
-                Button("OK") { error = nil }
-            } message: {
-                Text(error ?? "")
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .background(Tokens.paper)
+        .fileImporter(
+            isPresented: $picking,
+            allowedContentTypes: [.json, .html, .commaSeparatedText, .plainText, .data],
+            allowsMultipleSelection: false
+        ) { result in
+            handle(result)
+        }
+        .alert("Couldn't read that file", isPresented: .constant(error != nil)) {
+            Button("OK") { error = nil }
+        } message: {
+            Text(error ?? "")
         }
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
     }
 
     // MARK: Pick
 
     private var pickStage: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("You've already saved thousands of things.")
-                        .font(Typo.display(21, .heavy))
-                        .foregroundStyle(Tokens.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("Every app has to give you your data. Download it, drop the file here, and it all becomes searchable at once.")
-                        .font(Typo.ui(14))
-                        .foregroundStyle(Tokens.inkSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 20) {
+                HStack(alignment: .top, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("You've already saved thousands of things.")
+                            .textRole(.sectionTitle, color: Tokens.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("Every app has to give you your data. Download it, drop the file here, and it all becomes searchable at once.")
+                            .textRole(.body, color: Tokens.inkSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    ClayArtImage(source: .quest(.scroll))
+                        .frame(width: 72, height: 72)
+                        .background(Tokens.clayGround)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
 
                 Button { picking = true } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: "folder")
-                        Text("Choose a file").font(Typo.ui(15, .bold))
+                        Image(systemName: "folder").font(.system(size: 15, weight: .semibold))
+                        Text("Choose a file")
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                    .shadow(color: accent.base.opacity(0.34), radius: 16, y: 8)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.clayPrimary)
 
-                Text("WHERE TO GET IT")
-                    .font(Typo.ui(10, .heavy)).tracking(0.6)
-                    .foregroundStyle(Tokens.mutedHeading)
-                    .padding(.top, 4)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Where to get it")
+                        .textRole(.label, color: Tokens.inkSecondary)
+                        .padding(.leading, 4)
 
-                VStack(spacing: 9) {
-                    ForEach(Importer.Format.allCases, id: \.self) { format in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(format.label)
-                                .font(Typo.ui(13.5, .bold))
-                                .foregroundStyle(Tokens.ink)
-                            Text(format.howTo)
-                                .font(Typo.ui(12))
-                                .foregroundStyle(Tokens.inkSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                    VStack(spacing: 0) {
+                        ForEach(Array(Importer.Format.allCases.enumerated()), id: \.element) { index, format in
+                            if index > 0 { Tokens.hairline.frame(height: 1).padding(.leading, 16) }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(format.label)
+                                    .textRole(.cardTitle, color: Tokens.ink)
+                                Text(format.howTo)
+                                    .textRole(.meta)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .accessibilityElement(children: .combine)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(13)
-                        .cardSurface(radius: 16)
                     }
+                    .cardSurface()
                 }
             }
-            .padding(18)
-            .padding(.bottom, 30)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.top, 12)
+            .padding(.bottom, 28)
         }
     }
 
@@ -124,123 +123,115 @@ struct ImportSheet: View {
     private var reviewStage: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
                         Text("\(outcome.candidates.count)")
-                            .font(Typo.display(38, .heavy))
-                            .foregroundStyle(accent.base)
-                        VStack(alignment: .leading, spacing: 2) {
+                            .font(.custom("Bricolage Grotesque", size: 40, relativeTo: .largeTitle).weight(.bold))
+                            .foregroundStyle(accent.deep)
+                            .monospacedDigit()
+                        VStack(alignment: .leading, spacing: 1) {
                             Text("links found")
-                                .font(Typo.ui(14, .bold))
-                                .foregroundStyle(Tokens.ink)
+                                .textRole(.cardTitle, color: Tokens.ink)
                             if let format = outcome.format {
-                                Text(format.label)
-                                    .font(Typo.ui(12, .medium))
-                                    .foregroundStyle(Tokens.inkMeta)
+                                Text(format.label).textRole(.meta)
                             }
                             if outcome.skipped > 0 {
-                                Text("\(outcome.skipped) skipped (not links)")
-                                    .font(Typo.ui(11.5))
-                                    .foregroundStyle(Tokens.inkFaint)
+                                Text("\(outcome.skipped) skipped (not links)").textRole(.meta)
                             }
                         }
                         Spacer()
                     }
-                    .padding(15)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .cardSurface(radius: 18)
+                    .cardSurface()
 
-                    Text("A SAMPLE")
-                        .font(Typo.ui(10, .heavy)).tracking(0.6)
-                        .foregroundStyle(Tokens.mutedHeading)
+                    Text("A sample")
+                        .textRole(.label, color: Tokens.inkSecondary)
+                        .padding(.leading, 4)
+                        .padding(.top, 8)
 
-                    ForEach(outcome.candidates.prefix(8)) { candidate in
-                        HStack(spacing: 10) {
-                            PlatformBadge(platform: Platform.detect(from: candidate.url), size: 26, pageURL: candidate.url)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(candidate.title ?? candidate.url.host ?? "Link")
-                                    .font(Typo.ui(13, .semibold))
-                                    .foregroundStyle(Tokens.ink)
-                                    .lineLimit(1)
-                                Text(candidate.url.absoluteString)
-                                    .font(Typo.mono(10.5))
-                                    .foregroundStyle(Tokens.inkFaint)
-                                    .lineLimit(1)
+                    VStack(spacing: 0) {
+                        ForEach(Array(outcome.candidates.prefix(8).enumerated()), id: \.element.id) { index, candidate in
+                            if index > 0 { Tokens.hairline.frame(height: 1).padding(.leading, 54) }
+                            HStack(spacing: 12) {
+                                PlatformBadge(platform: Platform.detect(from: candidate.url), size: 26, pageURL: candidate.url)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(candidate.title ?? candidate.url.host ?? "Link")
+                                        .textRole(.cardTitle, color: Tokens.ink)
+                                        .lineLimit(1)
+                                    Text(candidate.url.absoluteString)
+                                        .textRole(.meta)
+                                        .lineLimit(1)
+                                }
+                                Spacer(minLength: 0)
                             }
-                            Spacer(minLength: 0)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
                         }
-                        .padding(11)
-                        .cardSurface(radius: 14)
                     }
+                    .cardSurface()
 
                     if outcome.candidates.count > 8 {
                         Text("…and \(outcome.candidates.count - 8) more")
-                            .font(Typo.ui(12.5, .medium))
-                            .foregroundStyle(Tokens.inkMeta)
+                            .textRole(.meta)
+                            .padding(.leading, 4)
                     }
                 }
-                .padding(18)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 20)
             }
 
-            Button(action: runImport) {
-                Text("Import \(Copy.countedBorks(outcome.candidates.count))")
-                    .font(Typo.ui(15.5, .bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .disabled(outcome.candidates.isEmpty)
-            .padding(18)
+            Button("Import \(Copy.countedBorks(outcome.candidates.count))", action: runImport)
+                .buttonStyle(.clayPrimary)
+                .disabled(outcome.candidates.isEmpty)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+                .background(Tokens.paper)
+                .overlay(alignment: .top) { Tokens.hairline.frame(height: 1) }
         }
     }
 
     // MARK: Importing / done
 
     private var importingStage: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
+            Spacer()
             ProgressView(value: progress)
                 .tint(accent.base)
                 .padding(.horizontal, 40)
             Text("Filing \(Copy.countedBorks(outcome.candidates.count))…")
-                .font(Typo.ui(14, .semibold))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.cardTitle, color: Tokens.ink)
             Text("Titles and thumbnails fill in afterwards.")
-                .font(Typo.ui(12))
-                .foregroundStyle(Tokens.inkFaint)
+                .textRole(.meta)
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var doneStage: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 46))
-                .foregroundStyle(accent.base)
+        VStack(spacing: 12) {
+            Spacer()
+            ClayArtImage(source: .quest(.scroll))
+                .frame(width: 132, height: 132)
+                .background(Tokens.clayGround)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             Text("\(Copy.countedBorks(imported)) imported")
-                .font(Typo.display(21, .heavy))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.screenTitle, color: Tokens.ink)
+                .padding(.top, 8)
             Text("They're sorted into topics already. Titles and thumbnails will keep filling in while you browse.")
-                .font(Typo.ui(13.5))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 34)
-
-            Button {
+            Spacer()
+            Button("See them") {
                 onDone(imported)
                 dismiss()
-            } label: {
-                Text("See them")
-                    .font(Typo.ui(15, .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 26)
-                    .frame(height: 48)
-                    .background(accent.base, in: Capsule())
             }
-            .buttonStyle(.plain)
-            .padding(.top, 6)
+            .buttonStyle(.clayPrimary)
         }
+        .padding(.horizontal, Tokens.gutter)
+        .padding(.bottom, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { ReviewPrompter.reached(.importFinished(count: imported), requestReview) }
     }
