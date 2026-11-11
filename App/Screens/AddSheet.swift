@@ -151,7 +151,6 @@ struct AddSheet: View {
     }
 
     private var style: QuickFileStyle { .app(accent) }
-    private static let savedGreen = Color(hex: "1D8A50")
 
     /// Borks that count against the signed-out limit. `allBookmarks` also
     /// feeds tag suggestions, where a waiting bork's tags are perfectly good
@@ -170,46 +169,19 @@ struct AddSheet: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                switch step {
-                case .paste: pasteStep
-                case .details: detailsStep
+            VStack(spacing: 0) {
+                sheetHeader
+                    .padding(.horizontal, Tokens.gutter)
+                Group {
+                    switch step {
+                    case .paste: pasteStep
+                    case .details: detailsStep
+                    }
                 }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
             .background(Tokens.paper)
-            .navigationTitle(saved != nil ? "Saved to bookmarker" : "Add a link")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if saved != nil {
-                    // Saved already, so there is nothing to cancel: "Done"
-                    // keeps it (and the guess), and the one way back is a
-                    // deliberate "Remove this save".
-                    if createdHere {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Menu {
-                                Button(role: .destructive, action: removeSave) {
-                                    Label("Remove this save", systemImage: "trash")
-                                }
-                            } label: {
-                                Image(systemName: "ellipsis.circle")
-                                    .font(.system(size: 17, weight: .semibold))
-                            }
-                            .accessibilityLabel("More")
-                        }
-                    }
-                    // Once something is chosen, Done is pinned under the panel.
-                    if dial?.isChosen != true {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done", action: done)
-                                .fontWeight(.semibold)
-                        }
-                    }
-                } else {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .alert("Couldn't save", isPresented: .constant(error != nil)) {
                 Button("OK") { error = nil }
             } message: {
@@ -217,7 +189,7 @@ struct AddSheet: View {
             }
         }
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
         // More… on the dial. It opens with nothing picked, so closing it
         // (Cancel, or swiping it away) files nothing; a pick files.
         .sheet(isPresented: $showingPicker, onDismiss: filePick) {
@@ -253,6 +225,49 @@ struct AddSheet: View {
         .onDisappear(perform: finishIfNeeded)
     }
 
+    // MARK: Header
+
+    /// A's sheet header: the grabber band, then the title at 17/600 on the
+    /// left. Before tap 1 the one way out is Cancel; once saved there is
+    /// nothing to cancel, so "Done" keeps it (and the guess) and the one way
+    /// back is a deliberate "Remove this save" in the ⋯ menu. Once something
+    /// is chosen, Done is pinned under the panel instead.
+    private var sheetHeader: some View {
+        ClaySheetHeader(title: saved != nil ? "Saved to bookmarker" : "Add a link")
+            .overlay(alignment: .bottomTrailing) {
+                HStack(spacing: 2) {
+                    if saved != nil {
+                        if createdHere {
+                            Menu {
+                                Button(role: .destructive, action: removeSave) {
+                                    Label("Remove this save", systemImage: "trash")
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Tokens.ink)
+                                    .frame(width: 36, height: 36)
+                                    .background(Tokens.surface, in: Circle())
+                                    .overlay(Circle().strokeBorder(Tokens.hairline, lineWidth: 1))
+                                    .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+                                    .contentShape(Rectangle())
+                            }
+                            .accessibilityLabel("More")
+                        }
+                        if dial?.isChosen != true {
+                            Button("Done", action: done)
+                                .buttonStyle(.clayQuiet)
+                        }
+                    } else {
+                        Button("Cancel") { dismiss() }
+                            .buttonStyle(.clayQuiet)
+                    }
+                }
+                .frame(height: 36)
+                .padding(.trailing, -6)
+            }
+    }
+
     // MARK: Step 1 — paste
 
     /// No "Fetch preview" button. Paste a link and it just goes — a button
@@ -282,18 +297,18 @@ struct AddSheet: View {
                     .submitLabel(.go)
                     .onSubmit(saveNow)
                     .padding(14)
-                    .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .frame(minHeight: 48)
+                    .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(parsedURL != nil ? accent.base.opacity(0.5) : Tokens.hairline,
+                        RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous)
+                            .stroke(parsedURL != nil ? accent.base.opacity(0.6) : Tokens.hairline,
                                     lineWidth: parsedURL != nil ? 1.5 : 1)
                     )
 
                 if urlText.isEmpty && clipboardHasContent {
                     HStack(spacing: 12) {
                         Text("Paste the link you copied")
-                            .font(Typo.ui(13, .semibold))
-                            .foregroundStyle(Tokens.ink)
+                            .textRole(.cardTitle, color: Tokens.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 8)
                         PasteButton(payloadType: PastedLink.self) { links in
@@ -311,8 +326,10 @@ struct AddSheet: View {
                         .frame(minWidth: 104, minHeight: 36, alignment: .trailing)
                         .accessibilityLabel("Paste the link you copied")
                     }
-                    .padding(13)
-                    .cardSurface(radius: 16)
+                    .padding(.vertical, 10)
+                    .padding(.leading, 14)
+                    .padding(.trailing, 10)
+                    .cardSurface(radius: Tokens.cardRadius)
                 }
 
                 // A typed link that has paused: what it is, and the button
@@ -320,16 +337,8 @@ struct AddSheet: View {
                 if typedReady, let url = parsedURL {
                     VStack(spacing: 12) {
                         linkRow(url, saved: false)
-                        Button(action: saveTyped) {
-                            Text(Copy.saveVerb)
-                                .font(Typo.ui(15, .bold))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                                .shadow(color: accent.base.opacity(0.34), radius: 16, y: 8)
-                        }
-                        .buttonStyle(PressableStyle(scale: 0.97))
+                        Button(Copy.saveVerb, action: saveTyped)
+                            .buttonStyle(.clayPrimary)
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -337,11 +346,13 @@ struct AddSheet: View {
                 HStack(spacing: 6) {
                     Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))
                     Text("Saving from another app? Use the share sheet.")
-                        .font(Typo.ui(12.5, .medium))
+                        .textRole(.meta)
                 }
                 .foregroundStyle(Tokens.inkSecondary)
             }
-            .padding(18)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.top, 8)
+            .padding(.bottom, 20)
             .animation(.easeOut(duration: 0.2), value: typedReady)
         }
         .task {
@@ -450,6 +461,7 @@ struct AddSheet: View {
     /// away. Fits a phone without scrolling, so a drag on the dial is always
     /// a turn and never a scroll.
     private var detailsStep: some View {
+        GeometryReader { geometry in
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 14) {
@@ -458,9 +470,10 @@ struct AddSheet: View {
                     } else if let dial, let url = parsedURL {
                         linkRow(url, saved: true)
                         QuickFileHeader(model: dial, style: style)
-                            .padding(.top, 10)
-                        QuickFileDial(model: dial, style: style, diameter: 300,
+                            .padding(.top, 6)
+                        QuickFileDial(model: dial, style: style, diameter: Self.dialDiameter(geometry.size.width),
                                       onDone: dial.isChosen ? { finishChosen() } : nil)
+                            .padding(.top, -6)
                         if dial.isChosen, let tagState {
                             QuickFileRefinePanel(model: dial, tags: tagState, source: refineSource, style: style,
                                                  onEditingTag: { editing in
@@ -473,6 +486,8 @@ struct AddSheet: View {
                                                      }
                                                  })
                                 .id(Self.refineID)
+                                .padding(.top, -12)
+                                .padding(.horizontal, -4)
                                 .transition(.opacity)
                         } else {
                             QuickFileDialFooter(model: dial, style: style)
@@ -481,20 +496,27 @@ struct AddSheet: View {
                             .padding(.top, 8)
                     }
                 }
-                .padding(18)
-                .padding(.bottom, 30)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 8)
+                .padding(.bottom, 28)
                 .animation(.easeOut(duration: 0.18), value: dial?.isChosen)
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollDismissesKeyboard(.interactively)
         }
+        }
         // Pinned, so it is always in reach and rides above the keyboard.
         .safeAreaInset(edge: .bottom) {
             if duplicate == nil, dial?.isChosen == true {
                 QuickFileDoneButton(draining: drain.isDraining, style: style) { finishChosen() }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
-                    .background(Tokens.paper)
+                    .padding(.horizontal, Tokens.gutter)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
+                    .background {
+                        Tokens.paper
+                            .overlay(alignment: .top) { Tokens.hairline.frame(height: 1) }
+                            .ignoresSafeArea(edges: .bottom)
+                    }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -510,6 +532,11 @@ struct AddSheet: View {
     }
 
     private static let refineID = "refine"
+
+    /// B's 360 pt wheel where the sheet is wide enough, 15 pt clear each side.
+    static func dialDiameter(_ width: CGFloat) -> CGFloat {
+        max(260, min(width - 30, 360))
+    }
 
     // MARK: Already saved
 
@@ -563,115 +590,71 @@ struct AddSheet: View {
         let when = DuplicateSave.savedPhrase(daysAgo: days) ?? "saved \(RelativeDate.calendar(bork.savedAt))"
         let filed = DuplicateSave.filedPhrase(topic: topic?.name, subtopic: bork.subcategory)
 
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Already in your library")
-                    .font(Typo.display(16, .semibold))
-                    .foregroundStyle(Tokens.ink)
-                Text("\(filed) · \(when)")
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .textRole(.sectionTitle, color: Tokens.ink)
+                    .accessibilityAddTraits(.isHeader)
+                HStack(spacing: 6) {
+                    TopicDot(palette: palette)
+                    Text("\(filed) · \(when)")
+                        .textRole(.meta)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
-            HStack(alignment: .top, spacing: 12) {
-                CoverImage(url: bork.imageURL, palette: palette)
-                    .frame(width: 64, height: 64)
-                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(bork.title.isEmpty ? "Untitled" : bork.title)
-                        .font(Typo.display(14, .semibold))
-                        .foregroundStyle(Tokens.ink)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.leading)
-                    Text(bork.displayAuthor ?? bork.url?.host ?? bork.platform.name)
-                        .font(Typo.ui(11.5, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 0)
-            }
+            savedRow(cover: CoverImage(url: bork.imageURL, topicID: bork.categoryID),
+                     title: bork.title.isEmpty ? "Untitled" : bork.title,
+                     meta: bork.displayAuthor.map { "\($0) · \(bork.platform.name)" }
+                         ?? bork.url?.host ?? bork.platform.name)
 
-            VStack(spacing: 9) {
-                Button { openingDuplicate = bork } label: {
-                    Text("Open it")
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                }
-                .buttonStyle(.plain)
-
-                Button { saveAgain(over: bork) } label: {
-                    Text("Save again anyway")
-                        .font(Typo.ui(14, .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous)
-                                .stroke(Tokens.hairline, lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
+            VStack(spacing: 10) {
+                Button("Open it") { openingDuplicate = bork }
+                    .buttonStyle(.clayPrimary)
+                Button("Save again anyway") { saveAgain(over: bork) }
+                    .buttonStyle(.claySecondary)
             }
         }
-        .padding(15)
-        .cardSurface(radius: 18)
     }
 
-    /// The thing itself, compact: cover, who made it, the title, and — once
-    /// tap 1 has happened — a green "Saved". This is the confirmation: you see
-    /// the post, not a form about it. Compact so the dial fits under it.
-    private func linkRow(_ url: URL, saved isSaved: Bool) -> some View {
-        let platform = Platform.detect(from: url)
-        let palette = Taxonomy.category(id: saved?.categoryID)?.palette ?? NeutralPalette.value
-        let creator = (Bookmark.isPlaceholderAuthor(author, url: url, platform: platform)
-                       ? Platform.handle(in: url) : author) ?? url.host ?? platform.name
-
-        return HStack(alignment: .center, spacing: 12) {
-            ZStack(alignment: .topLeading) {
-                CoverImage(url: imageURL, palette: palette)
-                PlatformBadge(platform: platform, size: 18, pageURL: url)
-                    .padding(5)
-            }
-            .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(creator == platform.name ? creator : "\(creator) · \(platform.name)")
-                    .font(Typo.ui(11.5, .semibold))
-                    .foregroundStyle(Tokens.inkMeta)
+    /// A's saved row: white, hairline, 62 pt, a 44 pt cover at radius 10,
+    /// the title at 15/600 over "@author · Platform" in meta.
+    private func savedRow<Cover: View>(cover: Cover, title: String, meta: String,
+                                       note: String? = nil) -> some View {
+        HStack(spacing: 12) {
+            cover
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: Tokens.thumbRadius, style: .continuous))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title)
+                    .textRole(.cardTitle, color: Tokens.ink)
                     .lineLimit(1)
-                Text(title.isEmpty ? Categorizer.fallbackTitle(for: url) : title)
-                    .font(Typo.display(15, .semibold))
-                    .foregroundStyle(Tokens.ink)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .animation(.easeOut(duration: 0.2), value: title)
-                if isSaved {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12, weight: .bold))
-                        Text("Saved")
-                            .font(Typo.ui(12, .bold))
-                        if previewFetched && !titleWasFetched {
-                            Text("· couldn't read the page")
-                                .font(Typo.ui(11, .medium))
-                                .foregroundStyle(Tokens.inkMeta)
-                        }
-                    }
-                    .foregroundStyle(Self.savedGreen)
-                }
+                (Text(meta) + Text(note.map { " · \($0)" } ?? ""))
+                    .textRole(.meta)
+                    .lineLimit(1)
             }
             Spacer(minLength: 0)
         }
-        .padding(11)
+        .padding(.leading, 10)
+        .padding(.trailing, 14)
+        .frame(minHeight: 62)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(radius: 18)
+        .cardSurface(radius: Tokens.cardRadius)
         .accessibilityElement(children: .combine)
+    }
+
+    /// The thing itself, compact: A's saved row — cover, title, who made it.
+    /// Under the "Saved to bookmarker" header this is the confirmation: you
+    /// see the post, not a form about it. Compact so the dial fits under it.
+    private func linkRow(_ url: URL, saved isSaved: Bool) -> some View {
+        let platform = Platform.detect(from: url)
+        let creator = (Bookmark.isPlaceholderAuthor(author, url: url, platform: platform)
+                       ? Platform.handle(in: url) : author) ?? url.host ?? platform.name
+        return savedRow(cover: CoverImage(url: imageURL, topicID: saved?.categoryID),
+                        title: title.isEmpty ? Categorizer.fallbackTitle(for: url) : title,
+                        meta: creator == platform.name ? creator : "\(creator) · \(platform.name)",
+                        note: isSaved && previewFetched && !titleWasFetched ? "couldn't read the page" : nil)
+            .animation(.easeOut(duration: 0.2), value: title)
     }
 
     /// "Note, side quest, title", folded away under the dial. The whole point
@@ -687,20 +670,16 @@ struct AddSheet: View {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 12, weight: .bold))
                     Text("Note, side quest, title")
-                        .font(Typo.ui(13.5, .semibold))
+                        .textRole(.chip)
                     Spacer()
                     Image(systemName: "chevron.down")
                         .font(.system(size: 11, weight: .bold))
                         .rotationEffect(.degrees(extrasOpen ? 180 : 0))
                 }
                 .foregroundStyle(Tokens.inkSecondary)
-                .padding(.horizontal, 14)
-                .frame(height: 46)
-                .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Tokens.hairline, lineWidth: 1)
-                )
+                .padding(.horizontal, 16)
+                .frame(minHeight: Tokens.slimRowHeight)
+                .cardSurface(radius: Tokens.cardRadius)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -717,42 +696,23 @@ struct AddSheet: View {
 
     private var journeyAttach: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("ALSO ON A SIDE QUEST")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
+            Text("Also on a side quest")
+                .textRole(.label)
             Text("Optional. Topics file what this is. A side quest is why you kept it.")
-                .font(Typo.ui(12))
-                .foregroundStyle(Tokens.inkMeta)
+                .textRole(.meta)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
+                HStack(spacing: Tokens.chipGap) {
                     ForEach(journeys) { journey in
                         let on = selectedJourneyIDs.contains(journey.id)
-                        Button {
+                        FilterChip(journey.title, isOn: on) {
                             if on { selectedJourneyIDs.remove(journey.id) }
                             else { selectedJourneyIDs.insert(journey.id) }
-                        } label: {
-                            Text(journey.title)
-                                .font(Typo.ui(12, .semibold))
-                                .foregroundStyle(on ? .white : Tokens.inkSecondary)
-                                .padding(.horizontal, 11)
-                                .padding(.vertical, 7)
-                                .background(on ? accent.base : Tokens.mutedControl, in: Capsule())
                         }
-                        .buttonStyle(ChipStyle())
                     }
-                    Button { showingNewJourney = true } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus").font(.system(size: 10, weight: .bold))
-                            Text(Copy.newSideQuest)
-                                .font(Typo.ui(12, .semibold))
-                        }
-                        .foregroundStyle(accent.deep)
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 7)
-                        .overlay(Capsule().strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                    TagChip(Copy.newSideQuest, isOn: false, isAdd: true, size: .filter) {
+                        showingNewJourney = true
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -771,7 +731,7 @@ struct AddSheet: View {
                 HStack(spacing: 6) {
                     Image(systemName: "pencil").font(.system(size: 11, weight: .semibold))
                     Text(titleWasFetched ? "Edit title" : "Write a title")
-                        .font(Typo.ui(13, .semibold))
+                        .textRole(.chip)
                     Spacer()
                 }
                 .foregroundStyle(Tokens.inkSecondary)
@@ -783,13 +743,12 @@ struct AddSheet: View {
 
     private var titleEditor: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("TITLE")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
+            Text("Title")
+                .textRole(.label)
             TextField("What is this?", text: $title, axis: .vertical)
-                .font(Typo.ui(14.5))
+                .textRole(.body)
                 .padding(14)
-                .cardSurface(radius: 16)
+                .cardSurface(radius: Tokens.fieldRadius)
         }
     }
 
@@ -797,25 +756,21 @@ struct AddSheet: View {
         VStack(alignment: .leading, spacing: 9) {
             Toggle(isOn: $noteOpen.animation(.easeOut(duration: 0.18))) {
                 Text("Add a note")
-                    .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
+                    .textRole(.chip, color: Tokens.inkSecondary)
             }
             if noteOpen {
                 TextField("Why does this matter?", text: $note, axis: .vertical)
-                    .font(Typo.ui(14.5))
+                    .textRole(.body)
                     .lineLimit(3...6)
                     .padding(14)
-                    .background(
-                        LinearGradient(colors: [Tokens.noteTop, Tokens.noteBottom],
-                                       startPoint: .top, endPoint: .bottom),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    )
+                    .background(Tokens.noteTop, in: RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous)
                             .stroke(Tokens.noteBorder, lineWidth: 1)
                     )
                 DatePicker("Note date", selection: $noteDate, displayedComponents: .date)
-                    .font(Typo.ui(12.5, .medium))
+                    .textRole(.meta)
+                    .tint(accent.base)
             }
         }
     }
@@ -925,7 +880,8 @@ struct AddSheet: View {
             Task { await enrich(url, bork: bork) }
         } catch {
             didSave = false
-            self.error = error.localizedDescription
+            let line = PlainError.message(error, doing: "save")
+            self.error = line.isEmpty ? nil : line
         }
     }
 
