@@ -9,8 +9,8 @@ SITE = "https://bookmarker.lol"
 # Derived from this file, not hard-coded: the generators must work in any
 # checkout, and an absolute path would quietly write into the wrong one.
 OUT = Path(__file__).resolve().parents[2] / "docs"
-UPDATED = "21 October 2026"
-LASTMOD = "2026-10-21"
+UPDATED = "6 November 2026"
+LASTMOD = "2026-11-06"
 
 NAV = """<header class="site-head">
   <div class="head-in">
@@ -56,6 +56,8 @@ FOOT = """<footer class="site-foot">
       <ul>
         <li><a href="/how-to-organize-twitter-bookmarks">Organise your X bookmarks</a></li>
         <li><a href="/how-to-search-twitter-bookmarks">Search your X bookmarks</a></li>
+        <li><a href="/how-to-organize-instagram-saved-posts">Organise Instagram saved posts</a></li>
+        <li><a href="/how-to-search-tiktok-favorites">Search TikTok favourites</a></li>
         <li><a href="/llms.txt">llms.txt</a></li>
       </ul>
     </div>
@@ -169,6 +171,24 @@ def article(headline, desc, path):
     }
 
 
+# What the shipped product does, in one list, so every page's structured data
+# says the same thing. Keep it to what is in the current App Store build and the
+# live web app (see SEO.md, "Claims that were wrong").
+FEATURES = [
+    "Save any link from any iPhone app through the share sheet, by pasting it, or in the web app",
+    "Quick File: after each save, a dial of the seven likeliest topics with the best guess in the middle; one tap files it",
+    "Signed in, an AI model reads the caption of every save you make and suggests a topic and subtopic",
+    "50 topics and 612 subtopics, plus topics and subtopics of your own",
+    "Sort your borks: anything unfiled or uncertain, one card at a time",
+    "Browse by topic or by the app a save came from",
+    "Search titles, accounts, post text, tags, notes, topics and links",
+    "Dated notes on any save, and a count of how often you reopen it",
+    "Import Instagram, TikTok, X and YouTube data exports and browser bookmarks (Pinterest too, in the web app)",
+    "Share a set of saves as a link anyone can open",
+    "Web app at bookmarker.lol with the same library",
+    "Works offline; the first 20 saves need no account",
+]
+
 # The one description of the product that every page's structured data reuses.
 APP_LD = {
     "@context": "https://schema.org",
@@ -186,17 +206,7 @@ APP_LD = {
     "description": ("bookmarker is a bookmark manager for iPhone and the web that collects what you save on "
                     "Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save "
                     "into a topic and subtopic automatically, and lets you search it again later."),
-    "featureList": [
-        "Save any link from any app through the iOS share sheet",
-        "Automatic filing into 50 topics and 612 subtopics, always overridable",
-        "Browse by topic or by the app a save came from",
-        "Search titles, accounts, tags, notes, topics and links",
-        "Dated notes on any save",
-        "Counts how often you reopen something",
-        "Import browser bookmarks and X, Instagram, TikTok and YouTube data exports",
-        "Share a collection of saves as a link",
-        "Works offline; the first 20 saves need no account",
-    ],
+    "featureList": FEATURES,
     "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD",
                "availability": "https://schema.org/InStock",
                "url": "https://apps.apple.com/us/app/bookmarker-save-links-reels/id6799805479"},

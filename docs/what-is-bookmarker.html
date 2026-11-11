@@ -61,14 +61,17 @@
   ],
   "description": "bookmarker is a bookmark manager for iPhone and the web that collects what you save on Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a topic and subtopic automatically, and lets you search it again later.",
   "featureList": [
-    "Save any link from any app through the iOS share sheet",
-    "Automatic filing into 50 topics and 612 subtopics, always overridable",
+    "Save any link from any iPhone app through the share sheet, by pasting it, or in the web app",
+    "Quick File: after each save, a dial of the seven likeliest topics with the best guess in the middle; one tap files it",
+    "Signed in, an AI model reads the caption of every save you make and suggests a topic and subtopic",
+    "50 topics and 612 subtopics, plus topics and subtopics of your own",
+    "Sort your borks: anything unfiled or uncertain, one card at a time",
     "Browse by topic or by the app a save came from",
-    "Search titles, accounts, tags, notes, topics and links",
-    "Dated notes on any save",
-    "Counts how often you reopen something",
-    "Import browser bookmarks and X, Instagram, TikTok and YouTube data exports",
-    "Share a collection of saves as a link",
+    "Search titles, accounts, post text, tags, notes, topics and links",
+    "Dated notes on any save, and a count of how often you reopen it",
+    "Import Instagram, TikTok, X and YouTube data exports and browser bookmarks (Pinterest too, in the web app)",
+    "Share a set of saves as a link anyone can open",
+    "Web app at bookmarker.lol with the same library",
     "Works offline; the first 20 saves need no account"
   ],
   "offers": {
@@ -135,7 +138,7 @@
   "description": "A plain explanation of what bookmarker is, who it is for, what it does and what it does not do.",
   "url": "https://bookmarker.lol/what-is-bookmarker",
   "datePublished": "2026-10-19",
-  "dateModified": "2026-10-21",
+  "dateModified": "2026-11-06",
   "inLanguage": "en",
   "author": {
     "@type": "Person",
@@ -179,7 +182,7 @@
 <main>
 <nav class="crumbs" aria-label="Breadcrumb"><a href="/">bookmarker</a> &rsaquo; What is bookmarker?</nav>
 <h1>What is bookmarker?</h1>
-<p class="meta">Last updated: 21 October 2026</p>
+<p class="meta">Last updated: 6 November 2026</p>
 
 <p class="intro">bookmarker is a free bookmark manager for iPhone and the web that collects everything you save on
 Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a topic
@@ -197,18 +200,22 @@ no way to answer the only question you ever actually ask: <em>where did I see th
 <ul>
   <li><strong>Saves from anywhere.</strong> Tap Share in any iPhone app and pick bookmarker, or paste a link into
     the app, or paste it into the web app at <a href="/">bookmarker.lol</a>.</li>
-  <li><strong>Files itself.</strong> Every save lands in a topic and a subtopic — Fitness &rsaquo; Mobility,
-    Recipes &rsaquo; Meal prep. There are 50 topics and 612 subtopics, and you can add your own subtopics. The
-    filing is a suggestion: you can change it before or after saving.</li>
+  <li><strong>Files itself, in one tap.</strong> Every save lands in a topic and a subtopic — Fitness &rsaquo;
+    Mobility, Recipes &rsaquo; Meal prep. Straight after you save, a dial shows the seven likeliest of 50 topics
+    with the best guess in the middle: tap to file it there, turn the dial to pick another, or leave it and the
+    guess stands. Signed in, an AI model also reads the caption and suggests the topic and subtopic. There are 612
+    subtopics, you can add topics and subtopics of your own, and anything unfiled or uncertain waits in
+    <em>Sort your borks</em>, one card at a time.</li>
   <li><strong>Browses two ways.</strong> By topic, to see everything about running wherever it came from; or by
     source app, to see everything you kept from TikTok. Each view filters the other.</li>
-  <li><strong>Finds things again.</strong> Search covers the title, the account that posted it, your tags, your
-    notes, the topic and subtopic, the source app and the link itself. You can narrow a search to topics,
-    subtopics or tags only.</li>
+  <li><strong>Finds things again.</strong> Search covers the title, the account that posted it, any post text
+    that came with the save, your tags, your notes, the topic and subtopic, the source app and the link itself.
+    You can narrow a search to topics, subtopics or tags only.</li>
   <li><strong>Remembers why.</strong> Add a dated note to any save, and bookmarker counts how often you have
     gone back to something — the signal platform bookmarks throw away.</li>
-  <li><strong>Imports what you already saved.</strong> Browser bookmarks, or the data export from X, Instagram,
-    TikTok or YouTube. Thousands of old saves become a filed, searchable library in one step.</li>
+  <li><strong>Imports what you already saved.</strong> Browser bookmarks, or the data export from Instagram
+    (saved posts), TikTok (favourites and likes), X (bookmarks and likes), YouTube (playlists, including Watch
+    later), plus Pinterest in the web app. Thousands of old saves become one library in a single step.</li>
   <li><strong>Shares a set.</strong> Pick some saves and bookmarker turns them into a page at
     bookmarker.lol/c/&hellip; that you can send to anyone, with an expiry of never, one day or ten days, and a
     switch to turn it off.</li>
@@ -229,18 +236,20 @@ no way to answer the only question you ever actually ask: <em>where did I see th
     thumbnail where one is published. Opening a save sends you to the original post in the app it came from. It
     is not an archive — if the original is deleted, the link dies with it.</li>
   <li><strong>Thumbnails and titles are only as good as the platform allows.</strong> YouTube and most ordinary
-    web pages publish the metadata bookmarker needs. Instagram, TikTok and X usually do not publish it to an
-    unauthenticated request, so saves from those apps often arrive with a plain title and no image.</li>
+    web pages publish a title and an image. TikTok and X publish the caption or post text through their embed
+    endpoints, which the iPhone app reads (TikTok with a cover image, X usually without). Instagram usually
+    returns nothing to a request that is not logged in, so Instagram saves often arrive with a plain title and
+    no image.</li>
   <li><strong>Search does not reach into the page behind the link.</strong> It matches what bookmarker holds:
     titles, accounts, tags, notes, topics, source and link, plus whatever post text came with the save — the
     description a page published, or the full post body when it arrived in an X data export. Nothing fetches the
     body of an article, a PDF or a video transcript, so none of that is indexed. There is no quoted-phrase
     operator — multiple words are treated as "all of these must appear".</li>
   <li><strong>No Android app.</strong> There is an iPhone app and a web app that runs in any modern browser.</li>
-  <li><strong>Filing is keyword-first; a language model is the backup, not the engine.</strong> The pass that
-    runs on your device is a keyword score, so it does well on descriptive links and captions and leaves an
-    opaque link unfiled rather than guessing. When you are signed in, those leftovers go to our server, which
-    asks a language model — so filing is only entirely on-device when you are signed out.</li>
+  <li><strong>Filing is only entirely on-device when you are signed out.</strong> The first pass runs on your
+    phone and works offline. Signed in, every save you make by hand is also sent once to our server, which asks
+    a language model for a topic — so the link, its title or caption, the account, hashtags and your tags leave
+    the device. Your notes never do.</li>
 </ul>
 
 <h2>What it costs</h2>
@@ -288,6 +297,8 @@ paid version; payments are not switched on, and no card is taken.</p>
       <ul>
         <li><a href="/how-to-organize-twitter-bookmarks">Organise your X bookmarks</a></li>
         <li><a href="/how-to-search-twitter-bookmarks">Search your X bookmarks</a></li>
+        <li><a href="/how-to-organize-instagram-saved-posts">Organise Instagram saved posts</a></li>
+        <li><a href="/how-to-search-tiktok-favorites">Search TikTok favourites</a></li>
         <li><a href="/llms.txt">llms.txt</a></li>
       </ul>
     </div>
