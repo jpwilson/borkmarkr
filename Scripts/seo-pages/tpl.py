@@ -239,6 +239,11 @@ SITE_LD = {
 }
 
 
+def nav_for(path):
+    """The header, with the link to this page marked as the current one."""
+    return NAV.replace(f'<a href="{path}">', f'<a href="{path}" aria-current="page">', 1)
+
+
 def write(path, title, desc, body, crumb=None, ogtype="article", jsonld=()):
     """path is the canonical path ('/faq'); the file lands at docs/<path>.html."""
     crumbs = ""
@@ -247,7 +252,7 @@ def write(path, title, desc, body, crumb=None, ogtype="article", jsonld=()):
                   + crumb + "</nav>\n")
     html = HEAD.format(
         title=title, desc=desc, url=SITE + path, site=SITE, ogtype=ogtype, posthog=POSTHOG,
-        jsonld="".join(ld(o) for o in jsonld), nav=NAV, foot=FOOT,
+        jsonld="".join(ld(o) for o in jsonld), nav=nav_for(path), foot=FOOT,
         crumbs=crumbs, body=body.strip())
     name = path.strip("/") or "index"
     dest = os.path.join(OUT, name + ".html")

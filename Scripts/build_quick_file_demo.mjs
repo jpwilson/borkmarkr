@@ -63,7 +63,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 h1, h2, h3 { font-family: var(--font-head); letter-spacing: -.02em; }
 :focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
 .pg { width: 12px; height: 12px; fill: currentColor; display: inline-block; vertical-align: -1px; flex: 0 0 auto; }
-.pg-txt { font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+.pg-txt { font-size: 10px; font-weight: 700; letter-spacing: .04em; }
 .badge { position: absolute; left: 10px; top: 10px; width: 26px; height: 26px; display: grid; place-items: center;
   background: rgba(25,21,16,.66); color: #fff; border-radius: 8px; }
 .badge .pg { width: 13px; height: 13px; }
@@ -79,36 +79,36 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
 
 /* ── The lab ── */
 .lab-top { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; max-width: 1180px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 28px) 6px; }
-.lab-brand { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font: 800 18px var(--font-head); }
+.lab-brand { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font: 700 18px var(--font-head); }
 .lab-brand img { width: 28px; height: 28px; border-radius: 8px; }
 .lab-title { flex: 1 1 260px; min-width: 0; }
 .lab-title h1 { margin: 0; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.02; letter-spacing: -.035em; }
 .lab-title p { margin: 4px 0 0; color: var(--ink-2); font-size: 15px; }
 .lab-title .tag { display: inline-flex; align-items: center; height: 20px; margin-left: 8px; padding: 0 8px; border-radius: 999px; vertical-align: 6px;
-  background: var(--ink); color: var(--paper); font: 800 10px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
+  background: var(--ink); color: var(--paper); font: 700 10px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
 .lab-modes { display: flex; gap: 3px; padding: 3px; border-radius: 999px; background: var(--control); }
-.lab-modes button { height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-weight: 650; font-size: 14px; white-space: nowrap; }
+.lab-modes button { height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-weight: 600; font-size: 14px; white-space: nowrap; }
 .lab-modes button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(25,21,16,.08); }
 .lab-main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: clamp(20px, 3vw, 40px); align-items: start;
   max-width: 1180px; margin: 0 auto; padding: 14px clamp(16px, 3vw, 28px) 48px; }
 .lab-stage { display: flex; justify-content: center; }
 /* The share sheet, as it rises over somebody else's app. */
-.lab-phone { position: relative; width: min(392px, 100%); padding: 18px 20px 20px; border-radius: 34px; background: var(--surface);
+.lab-phone { position: relative; width: min(400px, 100%); padding: 18px 16px 20px; border-radius: 28px; background: var(--paper);
   box-shadow: 0 1px 2px rgba(25,21,16,.05), 0 40px 80px -40px rgba(25,21,16,.45), 0 0 0 1px var(--hairline); }
 .lab-grab { width: 38px; height: 5px; margin: -6px auto 14px; border-radius: 999px; background: #DBD2C4; }
 .lab-saved { display: flex; justify-content: center; }
 .lab-saved span { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 15px; border-radius: 999px;
   background: var(--ink); color: var(--paper); font-weight: 700; font-size: 13.5px; }
-.lab-saved i { font-style: normal; color: #7BE3A4; font-weight: 900; }
+.lab-saved i { font-style: normal; color: #7BE3A4; font-weight: 700; }
 .lab-item { display: flex; align-items: center; gap: 11px; margin: 14px 2px 0; }
 .lab-item .badge { position: static; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; background: var(--ink); }
 .lab-item b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14.5px; line-height: 1.3; font-weight: 700; }
 .lab-item small { display: block; margin-top: 2px; color: var(--meta); font-size: 12px; font-weight: 600; }
-.lab-head { margin: 16px 0 20px; text-align: center; color: var(--accent-text); font-size: 13px; font-weight: 800; }
-.lab-notnow { display: block; width: 100%; height: 46px; margin-top: 14px; border: 0; border-radius: 999px; background: var(--control);
-  color: var(--ink-2); font-weight: 700; font-size: 14.5px; }
+.lab-head { margin: 16px 0 14px; text-align: center; color: var(--coral-deep); font: 600 13px/18px var(--font-body); }
+.lab-notnow { display: block; width: 100%; height: 54px; margin-top: 16px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface);
+  color: var(--ink); font-weight: 600; font-size: 16px; }
 .lab-done { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 34px 6px 10px; text-align: center; }
-.lab-done b { font: 800 22px/1.15 var(--font-head); letter-spacing: -.02em; }
+.lab-done b { font: 700 22px/1.15 var(--font-head); letter-spacing: -.02em; }
 .lab-done-acts { display: flex; gap: 8px; }
 .lab-done-acts button { height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--control); font-weight: 700; }
 .lab-done-acts .go { background: var(--coral); color: #fff; }
@@ -130,10 +130,10 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
 .lab-scores { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .lab-scores td { padding: 7px 4px; border-top: 1px solid var(--hairline); vertical-align: top; }
 .lab-scores tr:first-child td { border-top: 0; }
-.lab-scores td:first-child { width: 18px; color: var(--meta); font-weight: 800; }
+.lab-scores td:first-child { width: 18px; color: var(--meta); font-weight: 700; }
 .lab-scores .t { font-weight: 700; }
 .lab-scores .t small { display: block; color: var(--meta); font-weight: 600; }
-.lab-scores .n { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+.lab-scores .n { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .lab-scores tr.on td { background: var(--tint); }
 .lab-scores tr.on td:first-child { border-radius: 8px 0 0 8px; } .lab-scores tr.on td:last-child { border-radius: 0 8px 8px 0; }
 .lab-dot { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; vertical-align: 0; }
