@@ -5,9 +5,10 @@ import UIKit
 /// Instrument Sans for everything else, the bundled clay scenes, and the
 /// accent the person picked in onboarding.
 ///
-/// The Share Extension can reach none of these (it compiles Core and nothing
-/// else, under a ~120 MB cap), so it keeps `QuickFileStyle.system`: SF
-/// Rounded and the 240 px thumbnails `QuickFileBridge` copies into the App
+/// The Share Extension can't reach the clay scenes (it compiles Core and
+/// nothing else, under a ~120 MB cap), so it keeps `QuickFileStyle.system`:
+/// the same two faces (bundled with it too; SF Rounded if they fail to
+/// register) and the 240 px thumbnails `QuickFileBridge` copies into the App
 /// Group. The dial itself is the same code in both places.
 ///
 /// The faces are fixed-size, like the extension's `.system(size:)`: Quick
