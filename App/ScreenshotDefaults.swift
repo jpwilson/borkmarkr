@@ -171,6 +171,80 @@ enum ScreenshotDefaults {
         #endif
     }
 
+    // MARK: - 1.4 design review ("Quiet clay")
+    //
+    // Screens that no launch argument reached in 1.3. The foundation declares
+    // every accessor here; each screen's owner wires its own consumer (an
+    // `.onAppear` in that screen). Where the two 1.4 plans named a flag
+    // differently, both spellings work. All DEBUG-only, like everything above.
+
+    /// `-detail 0` (an index into the Library's newest-first list) or
+    /// `-detail <stableID>`; `-detail first` is index 0. Opens `DetailSheet`.
+    /// Consumer: LibraryView.
+    static var openDetail: String? {
+        guard let raw = value(for: "-detail") else { return nil }
+        return raw == "first" ? "0" : raw
+    }
+
+    /// `-auth signIn` / `-auth signUp` opens `AuthSheet` in that mode.
+    /// Consumer: RootView (wired).
+    static var openAuth: String? { value(for: "-auth") }
+
+    /// `-importSheet` (or `-import`) opens `ImportSheet` from You.
+    /// Consumer: YouView.
+    static var openImport: Bool { contains("-importSheet") || contains("-import") }
+
+    /// `-onboardingPage 2` starts the first-run tour on that page (1-based).
+    /// Consumer: OnboardingView.
+    static var onboardingPage: Int? { value(for: "-onboardingPage").flatMap(Int.init) }
+
+    /// `-libraryAt rail|rest` (or `-libraryScroll rail|end`) scrolls the
+    /// Library to the side-quest rail or the saves after it. Returns "rail" or
+    /// "rest" ("end" is read as "rest"). Consumer: LibraryView (ScrollViewReader ids).
+    static var libraryAnchor: String? {
+        guard let raw = value(for: "-libraryAt") ?? value(for: "-libraryScroll") else { return nil }
+        return raw == "end" ? "rest" : raw
+    }
+
+    /// `-insights` opens `InsightsSheet` ("What are you finding interesting?")
+    /// over Revisit. Consumer: RevisitView.
+    static var openInsights: Bool { contains("-insights") }
+
+    /// `-revisitQueue` opens `RevisitQueueSheet`. Consumer: RevisitView.
+    static var openRevisitQueue: Bool { contains("-revisitQueue") }
+
+    /// `-source tiktok` (or `-sourcePage tiktok`) opens Browse on that
+    /// platform's Source page (a `Platform` raw value). Consumer: BrowseView.
+    static var openSource: String? { value(for: "-source") ?? value(for: "-sourcePage") }
+
+    /// `-wall` raises the save-limit wall; `-wall waiting` / `-wall addSheet`
+    /// pick its other two wordings. Consumer: RootView (wired).
+    static var openWall: String? {
+        guard contains("-wall") else { return nil }
+        return value(for: "-wall") ?? "add"
+    }
+
+    /// `-shareGuide` opens `ShareSheetGuide` (how to share into bookmarker).
+    /// Consumer: YouView or OnboardingView, whichever presents it.
+    static var openShareGuide: Bool { contains("-shareGuide") }
+
+    /// `-newQuest` opens `NewMissionSheet` on Browse's Side quests.
+    /// Consumer: MissionsView.
+    static var openNewQuest: Bool { contains("-newQuest") }
+
+    /// `-toast "Filed to Fitness"` shows that toast a moment after launch,
+    /// with an Undo action, so its placement above the tab bar can be
+    /// photographed. Consumer: RootView (wired).
+    static var toast: String? { value(for: "-toast") }
+
+    private static func contains(_ flag: String) -> Bool {
+        #if DEBUG
+        return CommandLine.arguments.contains(flag)
+        #else
+        return false
+        #endif
+    }
+
     private static func value(for flag: String) -> String? {
         #if DEBUG
         let arguments = CommandLine.arguments

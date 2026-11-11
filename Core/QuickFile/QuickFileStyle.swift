@@ -10,9 +10,8 @@ import UIKit
 /// app swaps in Bricolage and Instrument Sans and its bundled clay scenes
 /// (`QuickFileStyle+App.swift`).
 ///
-/// The brand colours are `App/DesignSystem/Tokens.swift` by value, for the
-/// same reason the extension's status card carries them: App/ is not compiled
-/// into the extension.
+/// The brand colours come from `Brand` (Core/BrandTokens.swift), which the
+/// app's `Tokens` reads too, so the two can no longer drift.
 struct QuickFileStyle: Sendable {
     /// The hub's topic name and other display lines.
     var display: @Sendable (CGFloat) -> Font
@@ -33,18 +32,18 @@ struct QuickFileStyle: Sendable {
         accentDeep: coralDeep
     )
 
-    // MARK: Brand tokens (Tokens.swift by value)
+    // MARK: Brand tokens (Core/BrandTokens.swift)
 
-    static let paper = Color(red: 0xF6 / 255, green: 0xF3 / 255, blue: 0xEE / 255)
-    static let ink = Color(red: 0x19 / 255, green: 0x15 / 255, blue: 0x10 / 255)
-    static let inkSecondary = Color(red: 0x6E / 255, green: 0x65 / 255, blue: 0x5A / 255)
+    static let paper = Brand.paper
+    static let ink = Brand.ink
+    static let inkSecondary = Brand.inkSecondary
     /// Decorative only, never information.
-    static let inkFaint = Color(red: 0xA3 / 255, green: 0x9A / 255, blue: 0x8D / 255)
-    static let hairline = Color(red: 0xEA / 255, green: 0xE4 / 255, blue: 0xDA / 255)
-    static let mutedControl = Color(red: 0xEE / 255, green: 0xE8 / 255, blue: 0xDE / 255)
-    static let toastCheck = Color(red: 0x7B / 255, green: 0xE3 / 255, blue: 0xA4 / 255)
-    static let coral = Color(red: 0xFF / 255, green: 0x5A / 255, blue: 0x2D / 255)
-    static let coralDeep = Color(red: 0xAE / 255, green: 0x35 / 255, blue: 0x12 / 255)
+    static let inkFaint = Brand.inkFaint
+    static let hairline = Brand.hairline
+    static let mutedControl = Brand.mutedControl
+    static let toastCheck = Brand.toastCheck
+    static let coral = Brand.coral
+    static let coralDeep = Brand.coralDeep
 
     /// A topic's colours, custom topics included; unknown ids get the dull
     /// "not filed" palette rather than a colour of their own.

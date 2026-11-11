@@ -424,6 +424,7 @@ const page = `<!DOCTYPE html>
 ${fonts}
 <style>${LAB_CSS}</style>
 <style>${css}</style>
+<link rel="stylesheet" href="../tokens.css">
 </head>
 <body>
 ${sprite}

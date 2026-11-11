@@ -1,34 +1,83 @@
 import SwiftUI
 
-/// A real thumbnail when we have one, the category-hue gradient when we don't.
+// MARK: - Covers
+
+/// The cover a save wears when it has no picture of its own: its topic's clay
+/// art on the clay ground (design/SYSTEM.md: "never an empty box, never a
+/// gradient").
 ///
-/// The gradient isn't a placeholder to be embarrassed about — Instagram and
-/// TikTok don't publish metadata to unauthenticated requests, so for those it's
-/// permanent. It stays deliberately handsome for that reason, and the image
-/// cross-fades in when it does arrive rather than popping.
-struct CoverImage: View {
-    let url: URL?
-    let palette: CategoryPalette
+/// Looks for the art in order: the bundled `topic{Id}` scene (built-ins), the
+/// App Group thumbnail the app keeps for every topic including custom ones
+/// (`QuickFileArt`), then `remote` (a custom topic's server scene). With no
+/// topic, or nothing found, it is the compass on the clay ground.
+///
+/// Reports no intrinsic size: give it a frame (or an aspect ratio) and it
+/// fills it. Decorative — hidden from VoiceOver.
+struct ClayCover: View {
+    let topicID: String?
+    var remote: URL? = nil
+
+    init(topicID: String?, remote: URL? = nil) {
+        self.topicID = topicID
+        self.remote = remote
+    }
 
     var body: some View {
-        gradient.overlay {
-            if let url { RemoteImage(url: url) }
-        }
-        // An overlay receives the gradient's bounds and contributes no
-        // intrinsic size. A loaded bitmap cannot enlarge the card.
-        .frame(maxWidth: .infinity)
-        .clipped()
+        Tokens.clayGround
+            .overlay { art }
+            .frame(maxWidth: .infinity)
+            .clipped()
+            .accessibilityHidden(true)
     }
 
-    private var gradient: some View {
-        LinearGradient(colors: [palette.coverTop, palette.coverBottom],
-                       startPoint: .topLeading, endPoint: .bottomTrailing)
-            .overlay(
-                RadialGradient(colors: [.white.opacity(0.16), .clear],
-                               center: .topLeading, startRadius: 0, endRadius: 180)
-            )
+    @ViewBuilder
+    private var art: some View {
+        if let topicID, let image = UIImage(named: TopicMotif.asset(for: topicID)) ?? QuickFileArt.image(for: topicID) {
+            Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
+        } else if let remote {
+            RemoteImage(url: remote) { compass }
+        } else {
+            compass
+        }
+    }
+
+    private var compass: some View {
+        ClayArtImage(source: .quest(.compass))
     }
 }
+
+/// A real thumbnail when there is one, the topic's `ClayCover` underneath and
+/// in its place when there isn't (or until it arrives — it cross-fades in).
+///
+/// The bitmap is an overlay, so it takes the cover's bounds and contributes no
+/// intrinsic size: a loaded image can never enlarge the card (28 Sep zoom bug).
+struct CoverImage: View {
+    let url: URL?
+    let topicID: String?
+
+    init(url: URL?, topicID: String?) {
+        self.url = url
+        self.topicID = topicID
+    }
+
+    /// 1.3's signature. The palette can't say which topic's art to draw, so a
+    /// missing picture shows the compass; move callers to `init(url:topicID:)`.
+    init(url: URL?, palette: CategoryPalette) {
+        self.url = url
+        self.topicID = nil
+    }
+
+    var body: some View {
+        ClayCover(topicID: topicID)
+            .overlay {
+                if let url { RemoteImage(url: url) }
+            }
+            .frame(maxWidth: .infinity)
+            .clipped()
+    }
+}
+
+// MARK: - Badges
 
 /// Brand mark, not a two-letter tile. Letters read as a placeholder; these
 /// are the shapes people actually recognise: X, IG camera, Shorts portrait
@@ -141,292 +190,139 @@ struct NoteDot: View {
     }
 }
 
-/// The masonry card. Its form follows the content type — the "content-native
-/// card system" the handoff calls the visual signature.
+/// The save card (grid): one shape for every kind of save (SYSTEM.md, Main.dc).
+///
+/// White, hairline, radius 18, no shadow. A 4:3 cover flush to the top — the
+/// save's picture, or its topic's clay art (text posts from X and Threads too)
+/// — with the platform mark top-left and the running time bottom-right when
+/// known. Under it: the title, 15/20 semibold, always two lines' worth of
+/// space; then an 8 pt dot in the topic's mid and "Fitness › Mobility".
+///
+/// Every card in a row is the same height at a given width and text size, so
+/// the Library's grid lines up. VoiceOver reads it as one element.
 struct BookmarkCard: View {
     let bookmark: Bookmark
 
-    private var palette: CategoryPalette {
-        bookmark.category?.palette ?? NeutralPalette.value
-    }
-
     var body: some View {
-        Group {
-            if bookmark.isTextPost {
-                textCard
-            } else if bookmark.isMedia {
-                mediaCard
-            } else {
-                articleCard
+        VStack(alignment: .leading, spacing: 0) {
+            cover
+            VStack(alignment: .leading, spacing: 4) {
+                Text(bookmark.displayTitle)
+                    .textRole(.cardTitle, color: Tokens.ink)
+                    .lineLimit(2, reservesSpace: true)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                BookmarkFiling(bookmark: bookmark)
             }
+            .padding(.top, 9)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 11)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(strong: bookmark.isMedia)
+        .cardSurface()
         .waitingForAnAccount(bookmark.isWaiting)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(BookmarkCard.spoken(bookmark))
     }
 
-    // MARK: Text post — X / Threads
-
-    private var textCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                PlatformBadge(platform: bookmark.platform, size: 20, pageURL: bookmark.url)
-                Text(bookmark.displayAuthor ?? bookmark.platform.name)
-                    .font(Typo.ui(11.5, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .lineLimit(1)
-            }
-
-            Text(bookmark.text ?? bookmark.displayTitle)
-                .font(Typo.ui(13.5, .regular))
-                .foregroundStyle(Tokens.bodyOnWhite)
-                .lineLimit(8)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-
-            footer()
-        }
-        .padding(13)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: Media cover — TikTok / IG / Shorts / YouTube / Pinterest
-
-    /// Title sits *under* the cover, not painted on it. Overlay titles with
-    /// `fixedSize` escaped a fixed-height ZStack and drew on the next card —
-    /// that's the squash the Library was showing.
-    private var mediaCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                CoverImage(url: bookmark.imageURL, palette: palette)
-                    .frame(height: bookmark.coverHeight)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-
-                HStack(alignment: .top) {
-                    PlatformBadge(platform: bookmark.platform, size: 22, pageURL: bookmark.url)
-                    Spacer()
-                    // A video reads as one at a glance: the play pill, with its
-                    // running time when the platform publishes it.
-                    if bookmark.isPlayable || bookmark.durationLabel != nil {
-                        HStack(spacing: 3) {
-                            Image(systemName: "play.fill").font(.system(size: 7, weight: .black))
-                            if let duration = bookmark.durationLabel {
-                                Text(duration).font(Typo.ui(10.5, .bold))
-                            }
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 4)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .environment(\.colorScheme, .dark)
-                        .accessibilityLabel(bookmark.durationLabel.map { "Video, \($0)" } ?? "Video")
-                    }
-                }
-                .padding(9)
-            }
-            .frame(height: bookmark.coverHeight)
+    private var cover: some View {
+        Color.clear
+            .aspectRatio(4 / 3, contentMode: .fit)
             .frame(maxWidth: .infinity)
+            .overlay { CoverImage(url: bookmark.imageURL, topicID: bookmark.category?.id) }
+            .overlay(alignment: .topLeading) {
+                PlatformBadge(platform: bookmark.platform, size: 22, pageURL: bookmark.url)
+                    .padding(8)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if let duration = bookmark.durationLabel {
+                    DurationChip(text: duration).padding(8)
+                }
+            }
             .clipped()
-
-            VStack(alignment: .leading, spacing: 8) {
-                VStack(alignment: .leading, spacing: 3) {
-                    // Who made it is how people remember a reel — "that
-                    // physio on TikTok" — so it sits right on the card.
-                    if let creator = bookmark.displayAuthor {
-                        Text(creator)
-                            .font(Typo.ui(11, .semibold))
-                            .foregroundStyle(Tokens.inkSecondary)
-                            .lineLimit(1)
-                    }
-                    Text(bookmark.displayTitle)
-                        .font(Typo.ui(13.5, .semibold))
-                        .foregroundStyle(Tokens.ink)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                footer()
-            }
-            .padding(11)
-        }
     }
 
-    // MARK: Article — web
-
-    private var articleCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Articles get a cover too when the page publishes an og:image —
-            // a wall of text-only cards is exactly the flat look we're avoiding.
-            if bookmark.imageURL != nil {
-                CoverImage(url: bookmark.imageURL, palette: palette)
-                    .frame(height: 112)
-                    .clipped()
-            }
-            articleBody
-        }
+    /// One sentence for VoiceOver: title, where it's filed, where it's from.
+    static func spoken(_ bookmark: Bookmark) -> String {
+        var parts = [bookmark.displayTitle]
+        parts.append(bookmark.isWaiting ? "Waiting for an account" : bookmark.filingPath)
+        parts.append(bookmark.platform.name)
+        if let duration = bookmark.durationLabel { parts.append("video, \(duration)") }
+        if bookmark.hasNote { parts.append("has a note") }
+        return parts.joined(separator: ", ")
     }
 
-    private var articleBody: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 6) {
-                Circle().fill(palette.dot).frame(width: 7, height: 7)
-                Text((bookmark.author ?? "web").uppercased())
-                    .font(Typo.ui(10, .heavy))
-                    .tracking(0.6)
-                    .foregroundStyle(Tokens.mutedHeading)
-                    .lineLimit(1)
-            }
-
-            Text(bookmark.displayTitle)
-                .font(Typo.display(14.5, .semibold))
-                .foregroundStyle(Tokens.ink)
-                .lineLimit(3)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-
-            footer()
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: Shared footer
-
-    private func footer() -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            BookmarkFiling(bookmark: bookmark)
-        HStack(spacing: 6) {
-            Spacer(minLength: 0)
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(RelativeDate.label(for: bookmark.savedAt))
-                    .font(Typo.ui(10.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
-                if let posted = bookmark.postedAt,
-                   !Calendar.current.isDate(posted, inSameDayAs: bookmark.savedAt) {
-                    Text("Posted \(RelativeDate.calendar(posted))")
-                        .font(Typo.ui(9.5, .medium))
-                        .foregroundStyle(Tokens.inkFaint)
-                }
-            }
-            if bookmark.hasNote { NoteDot() }
-        }
-        }
-    }
-
-    /// `estimatedHeight`, remembered per bork revision. The Library balances
-    /// its columns on every render, over every bork, and the estimate reads
-    /// the display title and creator — string and URL work that only
-    /// changes when the bork does (every edit goes through `touch()`).
+    /// Kept for the Library's masonry until it moves to a grid: every card is
+    /// now the same height at a given width — the 4:3 cover plus the text
+    /// block (9 + 40 + 4 + 18 + 11).
     @MainActor
     static func cachedEstimate(for bookmark: Bookmark, columnWidth: CGFloat) -> CGFloat {
-        let key = EstimateKey(id: bookmark.id, revision: bookmark.updatedAt, width: Int(columnWidth))
-        if let hit = estimates[key] { return hit }
-        if estimates.count > 5_000 { estimates.removeAll(keepingCapacity: true) }
-        let height = estimatedHeight(for: bookmark, columnWidth: columnWidth)
-        estimates[key] = height
-        return height
+        estimatedHeight(for: bookmark, columnWidth: columnWidth)
     }
 
-    private struct EstimateKey: Hashable {
-        let id: String
-        let revision: Date
-        let width: Int
-    }
-
-    @MainActor private static var estimates: [EstimateKey: CGFloat] = [:]
-
-    /// Estimated height for masonry packing. Approximate by design — it only
-    /// has to rank cards against each other, not match the final frame.
     static func estimatedHeight(for bookmark: Bookmark, columnWidth: CGFloat) -> CGFloat {
-        let footerHeight: CGFloat = 30
-        let title = bookmark.displayTitle
-
-        if bookmark.isTextPost {
-            let body = bookmark.text ?? title
-            let charsPerLine = max(1, Int(columnWidth / 7.2))
-            let lines = min(8, max(1, Int(ceil(Double(body.count) / Double(charsPerLine)))))
-            return 26 + CGFloat(lines) * 18 + footerHeight + 26
-        }
-
-        if bookmark.isMedia {
-            let charsPerLine = max(1, Int(columnWidth / 7.2))
-            let lines = min(3, max(1, Int(ceil(Double(title.count) / Double(charsPerLine)))))
-            let creator: CGFloat = bookmark.displayAuthor == nil ? 0 : 17
-            return bookmark.coverHeight + 11 + creator + CGFloat(lines) * 18 + footerHeight + 11
-        }
-
-        let charsPerLine = max(1, Int(columnWidth / 7.4))
-        let lines = min(3, max(1, Int(ceil(Double(title.count) / Double(charsPerLine)))))
-        let cover: CGFloat = bookmark.imageURL != nil ? 112 : 0
-        return cover + 22 + CGFloat(lines) * 19 + footerHeight + 24
+        columnWidth * 0.75 + 82
     }
 }
 
-/// Uniform row used by list density and by Topic / Source pages.
+/// The running time on a cover: 20 pt, radius 6, ink at 72 %, white 11.5/600
+/// tabular figures.
+struct DurationChip: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.custom("Instrument Sans", size: 11.5, relativeTo: .caption2).weight(.semibold).monospacedDigit())
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .frame(minHeight: 20)
+            .background(Tokens.ink.opacity(0.72), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .accessibilityLabel("Video, \(text)")
+    }
+}
+
+/// The save row (list / compact density, Topic and Source pages, search): the
+/// card's content in one row — a 56 pt cover at radius 10, the title, the
+/// filing line and a meta line. White, hairline, radius 18, no shadow.
 struct BookmarkRow: View {
     let bookmark: Bookmark
     var showPlatformBadge: Bool = true
 
-    private var palette: CategoryPalette {
-        bookmark.category?.palette ?? NeutralPalette.value
-    }
-
     var body: some View {
-        HStack(spacing: 11) {
-            ZStack {
-                if bookmark.isTextPost && bookmark.imageURL == nil {
-                    LinearGradient(colors: [Color(hex: "2A2C33"), Color(hex: "111318")],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                    Image(systemName: "quote.opening")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.55))
-                } else {
-                    CoverImage(url: bookmark.imageURL, palette: palette)
-                    if bookmark.isPlayable {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 13, weight: .black))
-                            .foregroundStyle(.white.opacity(0.9))
-                            .shadow(color: .black.opacity(0.4), radius: 3)
-                    }
-                }
-            }
-            .frame(width: 58, height: 58)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        HStack(alignment: .center, spacing: 12) {
+            CoverImage(url: bookmark.imageURL, topicID: bookmark.category?.id)
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: Tokens.thumbRadius, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(bookmark.displayTitle)
+                    .textRole(.cardTitle, color: Tokens.ink)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                BookmarkFiling(bookmark: bookmark)
                 HStack(spacing: 5) {
                     if showPlatformBadge {
                         PlatformBadge(platform: bookmark.platform, size: 16, pageURL: bookmark.url)
                     }
-                    if let author = bookmark.displayAuthor {
-                        Text(author)
-                            .font(Typo.ui(11, .semibold))
-                            .foregroundStyle(Tokens.inkSecondary)
-                            .lineLimit(1)
-                        Text("·").foregroundStyle(Tokens.inkFaint)
-                    }
-                    Text(RelativeDate.cardLine(saved: bookmark.savedAt, posted: bookmark.postedAt))
-                        .font(Typo.ui(11, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
+                    Text(metaLine)
+                        .textRole(.meta)
+                        .lineLimit(1)
                 }
-
-                Text(bookmark.displayTitle)
-                    .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(Tokens.ink)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-
-                BookmarkFiling(bookmark: bookmark)
             }
-
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(11)
+        .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(radius: 18)
+        .cardSurface()
         .waitingForAnAccount(bookmark.isWaiting)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(BookmarkCard.spoken(bookmark))
+    }
+
+    private var metaLine: String {
+        let when = RelativeDate.cardLine(saved: bookmark.savedAt, posted: bookmark.postedAt)
+        guard let author = bookmark.displayAuthor else { return when }
+        return "\(author) · \(when)"
     }
 }
 
@@ -565,27 +461,23 @@ extension View {
     }
 }
 
-/// One filing contract across all card densities; subtopics are not hashtags.
+/// The filing line on every card and row: an 8 pt dot in the topic's mid and
+/// "Topic › Subtopic" in meta (13/18 secondary), one line. A waiting bork shows
+/// the Waiting pill instead; a bork with a note gets the note dot at the end.
 struct BookmarkFiling: View {
     let bookmark: Bookmark
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        HStack(spacing: 6) {
             if bookmark.isWaiting {
                 WaitingPill()
             } else {
+                TopicDot(palette: bookmark.category?.palette ?? NeutralPalette.value)
                 Text(bookmark.filingPath)
-                    .font(Typo.ui(10.5, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                if !bookmark.tags.isEmpty {
-                    Text(bookmark.tags.prefix(2).map { "#\($0)" }.joined(separator: " · ")
-                         + (bookmark.tags.count > 2 ? " +\(bookmark.tags.count - 2)" : ""))
-                        .font(Typo.ui(10, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                        .lineLimit(1)
-                }
+                    .textRole(.meta)
+                    .lineLimit(1)
             }
+            if bookmark.hasNote { NoteDot() }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

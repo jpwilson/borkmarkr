@@ -12,7 +12,7 @@ import UIKit
 extension QuickFileStyle {
     static func app(_ accent: AccentRamp) -> QuickFileStyle {
         QuickFileStyle(
-            display: { size in Typo.display(size, .heavy) },
+            display: { size in Typo.display(size, .bold) },
             ui: { size, weight in Typo.ui(size, weight) },
             art: { topicID in QuickFileAppArt.image(for: topicID) },
             accent: accent.base,
