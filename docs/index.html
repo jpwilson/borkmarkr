@@ -46,20 +46,9 @@
   } catch (e) {}
 </script>
 <style>
-  /* The iOS app's DesignSystem/Tokens.swift, in CSS. Light paper, always —
-     the app is light, so the web app is light. */
-  :root {
-    --paper: #F6F3EE; --surface: #FFFFFF; --ink: #191510; --ink-2: #5B554D;
-    --meta: #8A8378; --faint: #A39A8D; --hairline: #EAE4DA;
-    --coral: #FF5A2D; --coral-dark: #E8451C; --accent-text: #C93A12; --tint: #FFE9E1;
-    --destructive: #C0392B; --control: #EEE8DE; --dashed: #D7CDBD;
-    --note-top: #FFFBEA; --note-bottom: #FFF5D8; --note-border: #F0E0AC; --note-ink: #4A4130;
-    --shadow-card: 0 1px 2px rgba(25,21,16,.04), 0 10px 26px -14px rgba(25,21,16,.16);
-    --radius: 18px; --nav-h: 60px; --tabbar-h: 62px; --banner-h: 0px;
-    --ease-out: cubic-bezier(.2, .7, .2, 1);
-    --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  }
+  /* Colours, type, radii and lifts come from /tokens.css (Quiet clay, 1.4),
+     linked last in the head. Only the page's own layout measures live here. */
+  :root { --nav-h: 60px; --tabbar-h: 56px; --banner-h: 0px; }
   * { box-sizing: border-box; }
   html { color-scheme: light; }
   body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font-body);
@@ -77,7 +66,7 @@
     outline: 0; border-color: var(--coral); box-shadow: 0 0 0 3px var(--tint); }
   /* Platform glyphs (Simple Icons paths, sprite at the top of <body>) */
   .pg { width: 12px; height: 12px; fill: currentColor; display: inline-block; vertical-align: -1px; flex: 0 0 auto; }
-  .pg-txt { font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+  .pg-txt { font-size: 10px; font-weight: 700; letter-spacing: .04em; }
 
   #demo-banner { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 12px;
     background: var(--ink); color: var(--paper); padding: 10px clamp(14px, 3vw, 28px); font-size: 14px; }
@@ -93,14 +82,14 @@
   .nav-in { display: flex; align-items: center; gap: 18px; height: var(--nav-h);
     max-width: 1280px; margin: 0 auto; padding: 0 clamp(14px, 3vw, 28px); }
   .brand { display: flex; align-items: center; gap: 9px; font-family: var(--font-head);
-    font-weight: 800; font-size: 19px; color: var(--ink); }
+    font-weight: 700; font-size: 19px; color: var(--ink); }
   .brand img { width: 28px; height: 28px; border-radius: 8px; }
   .nav-tabs { display: flex; gap: 4px; }
   .nav-tab { border: 0; background: none; padding: 8px 14px; border-radius: 999px;
     font-weight: 600; color: var(--ink-2); }
   .nav-tab.on { background: var(--ink); color: var(--paper); }
-  .nav-search { flex: 1; min-width: 120px; max-width: 380px; height: 38px; border: 1px solid var(--hairline);
-    border-radius: 999px; padding: 0 16px; background: var(--surface); outline: none; }
+  .nav-search { flex: 1; min-width: 120px; max-width: 380px; height: 40px; border: 1px solid var(--hairline);
+    border-radius: var(--r-search); padding: 0 14px; background: var(--surface); outline: none; font-weight: 500; }
   /* Five tabs, a search field and two buttons is a lot of header. Below
      1100px the row tightens rather than running off the side (at 800px it
      used to push the page 10px wider than the window). */
@@ -110,7 +99,7 @@
     .nav-search { min-width: 100px; padding: 0 12px; }
   }
   .btn-sm { display: inline-flex; align-items: center; justify-content: center; height: 38px;
-    padding: 0 16px; border-radius: 999px; border: 0; font-weight: 700; font-size: 14px;
+    padding: 0 16px; border-radius: 999px; border: 0; font-weight: 600; font-size: 14px;
     line-height: 1; white-space: nowrap; }
   .btn-coral { background: var(--coral); color: #fff; }
   .btn-plain { background: var(--surface); color: var(--ink); border: 1px solid var(--hairline); }
@@ -119,127 +108,136 @@
      top of the right-hand column. Icon only on a small laptop; on a phone the
      tab bar's + does the job. "Get the app" steps back to the accent tint
      beside it, and gives up its place below 1280px (it is in the footer). */
-  .nav-add { gap: 7px; padding: 0 8px 0 14px; box-shadow: 0 8px 18px -10px rgba(255,90,45,.8); }
+  .nav-add { gap: 7px; padding: 0 8px 0 14px; }
   .nav-add-plus { font-size: 20px; font-weight: 600; line-height: 1; margin: -2px 1px 0 0; }
   .nav-add kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px;
-    border-radius: 7px; background: rgba(255,255,255,.24); color: #fff; font: 700 11.5px/1 var(--font-body); }
-  @media (min-width: 761px) { .nav-app { background: var(--tint); color: var(--accent-text); } }
+    border-radius: 7px; background: rgba(255,255,255,.24); color: #fff; font: 600 11.5px/1 var(--font-body); }
+  /* "Get the app" is the secondary pill beside the coral one: white, hairline, ink. */
+  .nav-app { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--hairline); }
   @media (min-width: 761px) and (max-width: 1279px) { .nav-app { display: none; } }
   @media (min-width: 761px) and (max-width: 1099px) { .nav-add kbd { display: none; } .nav-add { padding: 0 15px 0 12px; } }
   @media (min-width: 761px) and (max-width: 919px) {
     .nav-add { width: 38px; padding: 0; } .nav-add .nav-add-label { display: none; } .nav-add-plus { margin: -2px 0 0; }
   }
   @media (max-width: 760px) { .nav-add { display: none; } }
-  .avatar { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--tint);
-    color: var(--accent-text); font-weight: 800; font-size: 15px; display: grid; place-items: center; flex: 0 0 auto; }
-  .avatar.on { outline: 2px solid var(--coral); }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--sand);
+    color: var(--sand-ink); font-weight: 600; font-size: 15px; display: grid; place-items: center; flex: 0 0 auto; position: relative; }
+  .avatar::before { content: ""; position: absolute; inset: -4px; }   /* 44 px hit area */
+  .avatar.on { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--coral-deep); }
   .spacer { flex: 1; }
 
-  main { max-width: 1280px; margin: 0 auto; padding: 22px clamp(14px, 3vw, 28px) 60px; }
+  main { max-width: 1280px; margin: 0 auto; padding: 22px clamp(20px, 3vw, 28px) 60px; }
   /* Bottom of every view. The You page carries the same links one tap away. */
   .app-foot { border-top: 1px solid var(--hairline); margin-top: 44px; padding: 16px 0 0;
-    color: var(--faint); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+    color: var(--meta); font-size: 13px; font-weight: 500; display: flex; flex-wrap: wrap; gap: 6px 16px; }
   .app-foot a { color: var(--ink-2); font-weight: 600; }
 
-  /* ── Library home sections ── */
-  .h-row { display: flex; align-items: baseline; justify-content: space-between; margin: 8px 0 10px; }
-  .h-title { font-family: var(--font-head); font-size: 19px; font-weight: 800; letter-spacing: -.015em; }
-  .h-more { border: 0; background: none; color: var(--accent-text); font-weight: 700; font-size: 13px; }
-  .recents { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 4px 0 16px; }
+  /* ── Section heads (SectionHeader: Bricolage 19/24, a quiet action at the right) ── */
+  .h-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0 10px; min-height: 32px; }
+  .h-title { margin: 0; font: 700 19px/24px var(--font-head); letter-spacing: -.01em; color: var(--ink); }
+  .h-more { border: 0; background: none; color: var(--coral-deep); font-weight: 600; font-size: 15px; padding: 0 2px; min-height: 44px; }
+
+  /* ── A small card for strips (Revisit): the save card at 156 px ── */
+  .recents { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 6px; }
   .recents::-webkit-scrollbar { display: none; }
-  .recent-card { flex: 0 0 150px; height: 142px; display: flex; flex-direction: column; background: var(--surface);
-    border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; cursor: pointer; box-shadow: var(--shadow-card); }
-  .rc-cover { flex: 0 0 88px; position: relative; }
+  .recent-card { flex: 0 0 156px; display: flex; flex-direction: column; background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: var(--r-card); overflow: hidden; cursor: pointer; }
+  .rc-cover { position: relative; aspect-ratio: 4 / 3; background: var(--clay-ground); overflow: hidden; }
   .rc-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .rc-cover .cover-glyph .pg { width: 26px; height: 26px; }
-  /* No picture: the poster's tint, its clay stamp in the middle, the app's badge. */
-  .rc-cover.rc-poster { background: radial-gradient(130% 95% at 0% 0%, rgba(255,255,255,.6), rgba(255,255,255,0) 58%),
-      color-mix(in srgb, var(--pt, #EEE8DE) 45%, #fff); }
-  .rc-cover .stamp { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; }
-  .rc-cover .pbadge { position: absolute; left: 8px; top: 8px; z-index: 1; width: 20px; height: 20px; border-radius: 6px; }
-  .rc-cover .pbadge .pg { width: 11px; height: 11px; }
-  .rc-title { font-size: 12px; font-weight: 600; line-height: 1.3; padding: 8px 10px 10px; overflow-wrap: anywhere;
+  .rc-cover .pbadge { position: absolute; left: 8px; top: 8px; z-index: 1; }
+  .rc-title { font: 600 14px/19px var(--font-body); margin: 8px 11px 0; overflow-wrap: anywhere; height: 38px;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .topic-pills { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 16px; }
+  .rc-meta { padding: 2px 11px 10px; color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; }
+  .recent-card .rc-title:last-child { margin-bottom: 10px; }
+
+  /* ── Topic chips: the topic's tint, its deep colour for the words ── */
+  .topic-pills { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 4px 0; }
   .topic-pills::-webkit-scrollbar { display: none; }
-  .topic-pill { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; height: 40px;
-    border: 0; border-radius: 999px; padding: 0 16px 0 6px; font-weight: 700; font-size: 13.5px; }
-  .pill-art { position: relative; width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
-    display: grid; place-items: center; background: rgba(255,255,255,.55); font: 800 13px var(--font-head); }
+  .topic-pill { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; height: 36px; position: relative;
+    border: 0; border-radius: 999px; padding: 0 13px 0 4px; font-weight: 600; font-size: 14px; }
+  .topic-pill::before { content: ""; position: absolute; inset: -4px 0; }
+  .pill-art { position: relative; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+    background: var(--clay-ground); }
   .pill-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .topic-pill .n { opacity: .6; margin-left: 5px; font-weight: 600; }
+  .topic-pill .n { opacity: .72; margin-left: 2px; font-weight: 500; }
   @media (min-width: 761px) { .topic-pills { flex-wrap: wrap; overflow: visible; } }
 
-  /* ── Side quests ── */
-  .quests { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 4px 0 16px; }
+  /* ── Side quests: clay art on top, the topic's tint underneath, the card's rules ── */
+  .quests { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 4px; }
   .quests::-webkit-scrollbar { display: none; }
-  .quest-card { flex: 0 0 240px; display: flex; gap: 12px; align-items: center; background: var(--surface);
-    border: 1px solid var(--hairline); border-radius: 16px; padding: 12px; cursor: pointer;
-    box-shadow: var(--shadow-card); text-align: left; }
-  .quest-art { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; flex: 0 0 auto; }
-  .quest-t { font-weight: 700; font-size: 13.5px; line-height: 1.25; display: -webkit-box;
-    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .quest-m { color: var(--meta); font-size: 11.5px; margin-top: 3px; }
-  .quest-new { flex: 0 0 auto; align-self: stretch; display: grid; place-items: center; padding: 0 18px;
-    border: 1.5px dashed var(--hairline); border-radius: 16px; background: none;
-    color: var(--accent-text); font-weight: 700; font-size: 13.5px; }
-  /* The iOS "What are you working on?" starter card, for a library with no quests yet */
-  .quest-starter { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; background: var(--surface);
-    border: 1px solid var(--hairline); border-radius: 16px; padding: 14px 16px; box-shadow: var(--shadow-card);
-    max-width: 640px; margin: 4px 0 16px; }
-  .quest-starter img { width: 60px; height: 60px; border-radius: 16px; object-fit: cover; flex: 0 0 auto; }
-  .quest-starter > div { flex: 1 1 220px; }
-  .quest-starter b { display: block; font-family: var(--font-head); font-size: 16px; letter-spacing: -.01em; }
-  .quest-starter p { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.4; }
+  .quest-card { flex: 0 0 168px; display: flex; flex-direction: column; align-items: stretch; padding: 0; overflow: hidden;
+    background: var(--quest-tint, var(--sand)); border: 1px solid var(--hairline); border-radius: var(--r-card);
+    cursor: pointer; text-align: left; color: var(--ink); }
+  .quest-art { display: block; width: 100%; aspect-ratio: 4 / 3; height: auto; object-fit: cover; background: var(--clay-ground); flex: 0 0 auto; }
+  .quest-card > span { display: block; padding: 9px 12px 11px; min-width: 0; }
+  .quest-t { font: 600 15px/20px var(--font-body); color: var(--ink); display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .quest-m { display: block; color: var(--quest-deep, var(--meta)); font-size: 13px; line-height: 18px; font-weight: 500; margin-top: 2px; }
+  .quest-new { flex: 0 0 132px; align-self: stretch; display: grid; place-items: center; padding: 0 14px; text-align: center;
+    border: 1.5px dashed var(--dashed); border-radius: var(--r-card); background: none;
+    color: var(--coral-deep); font-weight: 600; font-size: 15px; }
+  /* "What are you working on?": the starter, for a library with no quests yet */
+  .quest-starter { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: var(--r-card); padding: 12px; max-width: 640px; margin: 0; }
+  .quest-starter img { width: 56px; height: 56px; border-radius: var(--r-thumb); object-fit: cover; flex: 0 0 auto; }
+  .quest-starter > div { flex: 1 1 200px; min-width: 0; }
+  .quest-starter b { display: block; font: 600 15px/20px var(--font-body); }
+  .quest-starter p { margin: 2px 0 0; color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; }
   .quest-starter .btn-sm { flex: 0 0 auto; }
-  /* "From your library" — the app's QuestSeedRow: art, a name, why, one sample, Start this quest */
+  /* "From your library" — QuestSeedRow: art, a name, why, one sample, Start this quest */
   .quest-seed { flex: 0 0 300px; min-width: 0; display: flex; gap: 12px; align-items: flex-start; background: var(--surface);
-    border: 1px solid var(--hairline); border-radius: 16px; padding: 12px; box-shadow: var(--shadow-card); }
-  .quest-seed .quest-art { width: 56px; height: 56px; }
+    border: 1px solid var(--hairline); border-radius: var(--r-card); padding: 12px; }
+  .quest-seed .quest-art { width: 56px; height: 56px; aspect-ratio: auto; border-radius: var(--r-thumb); }
   .qs-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
-  .qs-t { font-family: var(--font-head); font-weight: 700; font-size: 15px; line-height: 1.2; letter-spacing: -.01em; }
-  .qs-b { color: var(--ink-2); font-size: 12.5px; line-height: 1.35; }
-  .qs-s { color: var(--meta); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .qs-go { align-self: flex-start; margin-top: 7px; height: 32px; padding: 0 13px; font-size: 12.5px; }
+  .qs-t { font: 600 15px/20px var(--font-body); }
+  .qs-b { color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 500; }
+  .qs-s { color: var(--meta); font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .qs-go { align-self: flex-start; margin-top: 7px; }
   @media (max-width: 480px) { .quest-seed { flex-basis: min(300px, 84vw); } }
   .todo-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--hairline); }
   .todo-row input[type=checkbox] { width: 19px; height: 19px; accent-color: var(--coral); }
-  .todo-row span { flex: 1; font-size: 14px; }
-  .todo-row.done span { color: var(--faint); text-decoration: line-through; }
-  .todo-x, .qb-x { border: 0; background: none; color: var(--faint); font-size: 15px; padding: 2px 6px; }
-  .qb-row { display: flex; align-items: center; gap: 9px; padding: 6px 0; font-size: 13px; }
+  .todo-row span { flex: 1; font-size: 15px; }
+  .todo-row.done span { color: var(--meta); text-decoration: line-through; }
+  .todo-x, .qb-x { border: 0; background: none; color: var(--meta); font-size: 15px; padding: 2px 6px; min-width: 44px; min-height: 44px; }
+  .qb-row { display: flex; align-items: center; gap: 9px; padding: 6px 0; font-size: 14px; }
   .qb-row b { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .qb-add { border: 0; background: var(--tint); color: var(--accent-text); font-weight: 700;
-    border-radius: 999px; padding: 4px 12px; font-size: 12.5px; }
+  .qb-add { border: 1px solid var(--hairline); background: var(--surface); color: var(--ink); font-weight: 600;
+    border-radius: 999px; padding: 0 14px; height: 34px; font-size: 14px; }
 
-  /* ── Filter chips ── */
-  .chips { display: flex; gap: 8px; padding: 2px 0 14px; overflow-x: auto; scrollbar-width: none; }
+  /* ── Filter chips (FilterChip): white with a hairline; on = ink. 34 px, 44 px to the touch ── */
+  .chips { display: flex; gap: 8px; padding: 5px 0 14px; overflow-x: auto; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
-  .chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 33px; padding: 0 13px;
+  .chip { flex: 0 0 auto; position: relative; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px;
     border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface); color: var(--ink);
-    font-size: 13px; font-weight: 600; }
-  .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-  .chip .n { opacity: .5; font-weight: 500; }
+    font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .chip::before { content: ""; position: absolute; inset: -5px 0; }
+  .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .chip .n { color: var(--meta); font-weight: 500; }
+  .chip.on .n { color: rgba(255,255,255,.7); }
+  #platform-chips .chip .n { display: none; }
+  /* Topic and subtopic chips (TopicChip): tint + deep; on = a deep fill, white, a check. */
+  .chip.tchip { background: var(--pt, var(--sand)); color: var(--pd, var(--sand-ink)); border-color: transparent; height: 36px; }
+  .chip.tchip.on { background: var(--pd, var(--sand-ink)); color: #fff; }
+  .chip.tchip.on::after { content: "✓"; order: -1; font-size: 12px; }
 
-  /* ── Cards: the app's masonry, one card at a time ──
-     cardHTML draws three shapes. Media: the picture, cropped to the iOS cover
-     height at its 175pt column (a reel is 7:8 rather than 9:16, so a screen
-     holds twice as many) and pulled up a little, away from burned-in
-     captions. Poster: a save whose picture never came, or died — its topic's
-     colour, its words set large, a clay stamp; never an empty box, never a
-     play button that plays nothing. Text: threads and articles, as words.
-     Each card carries --pt/--pd/--ps: its topic's tint, deep and dot colours. */
-  .grid { display: flex; gap: 14px; align-items: flex-start; }
-  .grid .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
-  .card { position: relative; background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius);
-    overflow: hidden; box-shadow: var(--shadow-card); cursor: pointer;
-    content-visibility: auto; contain-intrinsic-size: auto 280px;
+  /* ── The save card (BookmarkCard): white, hairline, radius 18, no shadow.
+     A 4:3 cover flush to the top — the save's own picture, or its topic's
+     clay art when it has none (never an empty box, never a gradient) — the
+     app's mark top-left, the duration bottom-right. Then the title in two
+     reserved lines and the topic's dot with "Topic › Sub". Every card is the
+     same height, so the feed is a plain grid with the side quests after its
+     second row. Each card carries --pt/--pd/--ps: tint, deep, mid. */
+  .grid { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--gap); align-items: start; }
+  .card { position: relative; display: flex; flex-direction: column; min-width: 0; background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: var(--r-card); overflow: hidden; cursor: pointer; color: var(--ink);
+    content-visibility: auto; contain-intrinsic-size: auto 240px;
     scroll-margin: calc(var(--banner-h) + var(--nav-h) + 16px) 0 calc(var(--tabbar-h) + 40px); }
   .card:focus-visible { outline: 2.5px solid var(--coral); outline-offset: 3px; }
-  .cover { position: relative; width: 100%; background: var(--tint); max-height: 340px; overflow: hidden; }
-  .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
-  /* The iOS PlatformBadge: the app's own colour, its mark in white. */
-  .pbadge { width: 22px; height: 22px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 7px;
+  .cover { position: relative; width: 100%; aspect-ratio: 4 / 3; background: var(--clay-ground); overflow: hidden; }
+  .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
+  .cover img.cv-art { object-position: 50% 50%; }
+  /* PlatformBadge: the app's own colour, its mark in white. */
+  .pbadge { width: 22px; height: 22px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 6px;
     background: #0F1014; color: #fff; }
   .pbadge .pg { width: 12px; height: 12px; }
   .pbadge .pg-txt { font-size: 8px; }
@@ -249,268 +247,225 @@
   .pbadge[data-p="shorts"] { background: #FF0033; }
   .pbadge[data-p="pinterest"] { background: #B8121F; }
   .pbadge[data-p="web"] { background: #48505C; }
-  .pbadge + .pbadge { margin-left: -6px; box-shadow: 0 0 0 1.5px var(--surface); }
-  .badges { position: absolute; left: 9px; top: 9px; z-index: 1; display: flex; }
-  .badges .pbadge { box-shadow: 0 1px 4px rgba(25,21,16,.28); }
-  .badges .pbadge + .pbadge { box-shadow: 0 0 0 1.5px #fff, 0 1px 4px rgba(25,21,16,.28); }
-  .dur-chip { position: absolute; right: 9px; top: 9px; z-index: 1; display: inline-flex; align-items: center; gap: 4px;
-    height: 22px; padding: 0 8px 0 7px; border-radius: 999px; background: rgba(25,21,16,.55); color: #fff;
-    font-size: 10.5px; font-weight: 800; font-variant-numeric: tabular-nums;
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-  .dur-chip svg { width: 7px; height: 8px; fill: currentColor; }
+  .pbadge + .pbadge { margin-left: -6px; box-shadow: 0 0 0 1.5px #fff; }
+  .badges { position: absolute; left: 8px; top: 8px; z-index: 1; display: flex; }
+  .dur-chip { position: absolute; right: 8px; bottom: 8px; z-index: 1; height: 20px; padding: 0 6px; border-radius: 6px;
+    background: rgba(25,21,16,.72); color: #fff; font: 600 11.5px/20px var(--font-body); font-variant-numeric: tabular-nums; }
   .selecting .dur-chip { display: none; }
-  /* The glyph sits under the image: a failed load simply reveals it. */
-  .cover-glyph { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(255,255,255,.5); }
-  .cover-glyph::before { content: ""; position: absolute; inset: 0;
-    background: radial-gradient(130% 95% at 18% 0%, rgba(255,255,255,.30), transparent 58%); }
-  .cover-glyph .pg { width: 40px; height: 40px; position: relative; }
-  .badge { position: absolute; left: 10px; top: 10px; width: 26px; height: 26px; display: grid; place-items: center;
-    background: rgba(25,21,16,.66); color: #fff; border-radius: 8px; backdrop-filter: blur(6px); }
-  .badge .pg { width: 13px; height: 13px; }
-  .card-body { padding: 10px 12px 12px; }
-  .card-author { display: flex; align-items: center; gap: 6px; color: var(--meta); font-size: 11.5px; font-weight: 600;
-    margin-bottom: 3px; min-width: 0; }
-  .card-author > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card-author .pg { width: 11px; height: 11px; opacity: .85; }
-  .card-author .pbadge .pg { opacity: 1; }
-  /* X saves carry the poster's avatar: a small round one by the name, glyph at the end */
-  .card-author .av { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
-  .card-author .av-pg { margin-left: auto; padding-left: 6px; display: inline-flex; }
-  .card-title { font-weight: 650; font-size: 14.5px; line-height: 1.3; letter-spacing: -.004em; display: -webkit-box;
+  /* The Add sheet's cover keeps its glyph: a failed load simply reveals it. */
+  .cover-glyph { position: absolute; inset: 0; display: grid; place-items: center; color: var(--sand-ink); background: var(--sand); }
+  .cover-glyph .pg { width: 30px; height: 30px; position: relative; opacity: .7; }
+  .badge { position: absolute; left: 8px; top: 8px; width: 22px; height: 22px; display: grid; place-items: center;
+    background: rgba(25,21,16,.72); color: #fff; border-radius: 6px; }
+  .badge .pg { width: 12px; height: 12px; }
+  .card-body { display: flex; flex-direction: column; gap: 4px; padding: 9px 12px 11px; min-width: 0; }
+  .card-title { font: 600 15px/20px var(--font-body); height: 40px; display: -webkit-box;
     -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-  .card-text .card-author { margin-bottom: 8px; }
-  .card-text .card-title { -webkit-line-clamp: 6; font-weight: 500; font-size: 14px; line-height: 1.42; color: #332C23; }
-  .card-article .card-title { -webkit-line-clamp: 4; font: 700 16px/1.2 var(--font-head); letter-spacing: -.012em; color: var(--ink); }
-  .card-snippet { color: var(--ink-2); font-size: 12.5px; line-height: 1.45; margin-top: 5px;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  /* One line under every card: the topic's dot, where it is filed, when. */
-  .card-meta { display: flex; align-items: center; gap: 6px; min-width: 0; margin-top: 8px;
-    color: var(--meta); font-size: 11.5px; font-weight: 600; }
-  .card-meta .tdot { width: 7px; height: 7px; border-radius: 50%; background: var(--ps, var(--faint)); flex: 0 0 auto; }
-  .card-meta .filing-path { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); }
+  .card-author { display: flex; align-items: center; gap: 6px; color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; min-width: 0; }
+  .card-author > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* The filing line: the topic's 8 px dot in mid, "Topic › Sub" in secondary. */
+  .card-meta { display: flex; align-items: center; gap: 6px; min-width: 0; height: 20px;
+    color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; }
+  .card-meta .tdot { width: 8px; height: 8px; border-radius: 4px; background: var(--ps, var(--faint)); flex: 0 0 auto; }
+  .card-meta .filing-path { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card-meta .date { flex: 0 0 auto; font-size: inherit; }
-  .card-meta > * + .date::before { content: "·"; margin-right: 6px; opacity: .7; }
-  .card-meta .note-dot { flex: 0 0 auto; }
-  .also { margin-top: 5px; color: var(--meta); font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-meta > * + .date::before { content: "·"; margin-right: 6px; }
+  .card-meta .note-dot { flex: 0 0 auto; margin-left: auto; }
+  .also { color: var(--meta); font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Not filed yet: the one card that asks for something, and the way in to
      filing just that one (docs/triage.js answers data-triage). */
-  .file-it { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; height: 22px; padding: 0 9px;
-    border: 1.5px dashed var(--dashed); border-radius: 999px; background: var(--surface); color: var(--accent-text);
-    font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-it { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; height: 20px; padding: 0 8px;
+    border: 1.5px dashed var(--dashed); border-radius: 999px; background: var(--surface); color: var(--coral-deep);
+    font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .file-it:hover { border-color: var(--coral); }
   .selecting [data-triage] { pointer-events: none; }
-  /* The poster. The tint is the phone's CategoryPalette tint, let out with
-     white so a column of them reads as paper in colour, not as a paint chart. */
-  .card-poster { background: radial-gradient(130% 95% at 0% 0%, rgba(255,255,255,.6), rgba(255,255,255,0) 58%),
-      color-mix(in srgb, var(--pt, #EEE8DE) 45%, #fff);
-    border-color: color-mix(in srgb, var(--pd, #5B554D) 14%, transparent); }
-  .poster { display: flex; flex-direction: column; gap: 10px; padding: 12px 13px; }
-  .poster-top { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--pd); font-size: 11.5px; font-weight: 700; }
-  .poster-top > span:last-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .poster-title { font: 700 18px/1.15 var(--font-head); letter-spacing: -.016em; color: color-mix(in srgb, var(--pd, #5B554D) 58%, var(--ink));
-    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-  .poster-snippet { color: color-mix(in srgb, var(--pd, #5B554D) 78%, var(--ink)); font-size: 12.5px; line-height: 1.42;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .poster .card-meta { margin-top: 0; color: var(--pd); }
-  .poster .card-meta .filing-path { color: color-mix(in srgb, var(--pd, #5B554D) 85%, var(--ink)); }
-  .stamp { position: relative; width: 26px; height: 26px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
-    background: var(--paper); box-shadow: 0 0 0 2px rgba(255,255,255,.8), 0 2px 6px -2px rgba(25,21,16,.35); }
-  .stamp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.45); }
-  .stamp .ini { position: absolute; inset: 0; display: grid; place-items: center; font: 800 11px var(--font-head); color: var(--pd); }
-  .stamp:has(> img) .ini { visibility: hidden; }
-  .selecting .card-poster .poster-top, .selecting .tile .card-author { padding-right: 30px; }
-  .card-poster.unfiled { background: var(--paper); border: 1.5px dashed var(--dashed); box-shadow: none; }
-  .card-poster.unfiled .poster-top, .card-poster.unfiled .card-meta { color: var(--ink-2); }
-  .card-poster.unfiled .poster-title { color: var(--ink); }
-  /* Compact: square tiles. A picture carries its title on a scrim; a poster
-     sets it on the tint; words stay words. */
-  .tile { aspect-ratio: 1 / 1; contain-intrinsic-size: auto 150px; }
-  .tile-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
-  .tile-cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 32px 10px 9px; color: #fff;
-    background: linear-gradient(to top, rgba(25,21,16,.76), rgba(25,21,16,.3) 58%, rgba(25,21,16,0)); }
-  .tile-t { font-size: 12.5px; font-weight: 650; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2;
+  /* Compact: square tiles, the cover alone with the title on a scrim. */
+  .card.tile { aspect-ratio: 1 / 1; contain-intrinsic-size: auto 150px; }
+  .tile-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; background: var(--clay-ground); }
+  .tile-cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 30px 10px 9px; color: #fff;
+    background: linear-gradient(to top, rgba(25,21,16,.78), rgba(25,21,16,.34) 60%, rgba(25,21,16,0)); }
+  .tile-t { font: 600 13px/17px var(--font-body); display: -webkit-box; -webkit-line-clamp: 2;
     -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-  .tile-cap .tile-t { text-shadow: 0 1px 2px rgba(0,0,0,.3); }
-  .tile.card-poster, .tile.card-text { display: flex; flex-direction: column; gap: 8px; padding: 10px 11px; }
-  .tile.card-poster .tile-t { font: 700 14px/1.16 var(--font-head); letter-spacing: -.01em; -webkit-line-clamp: 3;
-    color: color-mix(in srgb, var(--pd, #5B554D) 58%, var(--ink)); }
-  .tile.card-poster.unfiled .tile-t { color: var(--ink); }
-  .tile.card-text .tile-t { font-weight: 500; line-height: 1.38; -webkit-line-clamp: 4; color: #332C23; }
-  .tile.card-poster .tile-t, .tile.card-text .tile-t { flex: 0 1 auto; min-height: 0; }
-  .tile .stamp { margin-top: auto; }
-  .tile .card-author { margin: 0; }
-  .topic-chip { font-size: 11px; font-weight: 700; border-radius: 7px; padding: 2.5px 7px; }
-  .date { color: var(--meta); font-size: 11px; }
-  .note-dot { color: var(--accent-text); font-size: 11px; }
-  /* Skeleton while the first pull runs */
-  .skel { height: var(--h, 220px); background: var(--surface); border: 1px solid var(--hairline);
-    border-radius: var(--radius); position: relative; overflow: hidden; }
-  .skel::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 58%; background: var(--paper); }
+  .tile .file-it { position: absolute; right: 8px; top: 8px; z-index: 2; }
+  .selecting .tile .file-it { display: none; }
+  .date { color: var(--meta); font-size: 13px; }
+  .note-dot { color: var(--coral-deep); font-size: 12px; }
+  .chip.tagc { background: var(--sand); color: var(--ink); border-color: transparent; }
+  .chip.tagc.on { background: var(--ink); color: #fff; }
+  .topic-chip { font-size: 13px; font-weight: 600; border-radius: 999px; padding: 2px 9px; }
+  .cover-glyph { background: var(--pt, var(--sand)); color: var(--pd, var(--sand-ink)); }
+  .coll-strip .cs { background: var(--pt, var(--sand)); color: var(--pd, var(--sand-ink)) !important; }
+  .quest-board .quest-new { min-height: 56px; }
+  .field-label .opt { color: var(--meta); }
+  /* The side-quest strip inside the feed, after its second row (phones and tablets). */
+  .feed-quests { grid-column: 1 / -1; min-width: 0; margin: 6px 0 4px; }
+  .feed-quests .h-row { margin: 0 0 8px; }
+  @media (min-width: 1100px) { .feed-quests { display: none; } }
+  /* Skeleton while the first pull runs: the card's own shape, flat */
+  .skel { aspect-ratio: 4 / 4.1; background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: var(--r-card); position: relative; overflow: hidden; }
+  .skel::before { content: ""; position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 4 / 3; background: var(--paper); }
   .skel::after { content: ""; position: absolute; inset: 0;
     background: linear-gradient(90deg, transparent 20%, rgba(25,21,16,.035) 50%, transparent 80%); transform: translateX(-100%); }
 
+  /* ── Screen titles (ScreenHeader): Bricolage 30/34 on paper, a meta line under it ── */
+  .screen-title { margin: 0; font: 700 30px/34px var(--font-head); letter-spacing: -.02em; color: var(--ink); }
+  .screen-sub { margin: 4px 0 0; color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; }
+  .screen-head { margin: 4px 0 16px; }
+
   /* ── Browse ── */
-  .section-title { font-size: 21px; margin: 10px 0 12px; }
-  /* The app's Topics · Sources · Side quests control (BrowseView.segmented):
-     a capsule track with the chosen segment lifted onto white. */
-  .seg { display: flex; gap: 3px; padding: 3px; margin: 0 0 16px; border-radius: 999px; background: var(--control); }
-  .seg button { flex: 1; min-width: 0; height: 34px; border: 0; border-radius: 999px; background: none;
-    color: var(--ink-2); font-size: 13.5px; font-weight: 600; white-space: nowrap; }
-  .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(25,21,16,.06); }
+  .section-title { font: 700 19px/24px var(--font-head); letter-spacing: -.01em; margin: 10px 0 12px; }
+  /* Topics · Sources · Side quests (ClaySegmented): a sand track, the chosen segment on white. */
+  .seg { display: flex; gap: 2px; padding: 3px; margin: 0 0 18px; border-radius: 999px; background: var(--control); }
+  .seg button { flex: 1; min-width: 0; height: 38px; border: 0; border-radius: 999px; background: none;
+    color: var(--ink-2); font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--hairline); }
   @media (min-width: 761px) { .seg { max-width: 430px; } }
-  @media (max-width: 760px) { .seg button { height: 40px; font-size: 13px; } }
-  .topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-  .topic-tile { border: 1px solid var(--hairline); border-radius: 18px; padding: 0; text-align: left;
-    overflow: hidden; box-shadow: var(--shadow-card); }
-  /* Hue-tinted like the iOS tiles; the clay art has cream baked in, so it multiplies onto the tint.
-     The initial letter sits under the image — a missing file shows a lettered hue block, never a hole. */
-  .tt-art { position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center;
-    font: 800 34px var(--font-head); opacity: .9; }
-  .tt-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
-    mix-blend-mode: multiply; z-index: 1; }
-  /* A topic you made yourself carries no bundled scene until the server draws
-     one, so the lettered block is what it wears meanwhile. The same top-left
-     sheen the card covers use makes it read as clay rather than as a gap. */
-  .tt-art::before { content: ""; position: absolute; inset: 0;
-    background: radial-gradient(130% 95% at 18% 0%, rgba(255,255,255,.42), transparent 58%); }
-  /* The initial is the fallback: it only shows once a broken image has removed itself. */
-  .ini { font-style: normal; position: relative; }
-  .tt-art:has(> img) .ini, .pill-art:has(> img) .ini { visibility: hidden; }
-  .tt-text { display: flex; flex-direction: column; gap: 1px; padding: 10px 13px 12px; background: var(--surface); }
-  .topic-tile b { font-size: 14.5px; font-family: var(--font-head); color: var(--ink); }
-  .tt-text span { font-size: 12px; color: var(--meta); font-weight: 600; }
-  /* "+ New topic" — first in the grid, not last (the app's BrowseView tile).
-     A topic tile's shape with the plus standing where the clay art goes, on
-     the accent tint with the dashed edge the suggested-quest card wears. */
-  .tile-new { display: flex; flex-direction: column; background: var(--tint); border: 1.5px dashed var(--dashed);
-    box-shadow: none; min-height: 162px; }
-  .tile-new .tn-plus { flex: 1 1 auto; display: grid; place-items: center; }
+  /* The list header: what you're looking at, and how it's ordered — a small
+     menu at the right instead of a row of pills. */
+  .browse-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; min-height: 44px; }
+  .browse-head .h-title { min-width: 0; }
+  .sort-menu { position: relative; display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; min-height: 44px;
+    color: var(--coral-deep); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .sort-menu select { appearance: none; -webkit-appearance: none; border: 0; background: none; padding: 0; margin: 0;
+    color: inherit; font: inherit; cursor: pointer; min-height: 44px; text-align: right; }
+  .sort-menu svg { flex: 0 0 auto; width: 16px; height: 16px; pointer-events: none;
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .sort-menu select:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; border-radius: 8px; }
+  .sort-menu .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  /* Topic tiles: clay art 4:3 on its own ground, then on white the name, the dot, the count. No colour block. */
+  .topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: var(--gap); }
+  @media (max-width: 760px) { .topics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .topic-tile { display: flex; flex-direction: column; border: 1px solid var(--hairline); border-radius: var(--r-card);
+    padding: 0; text-align: left; overflow: hidden; background: var(--surface); color: var(--ink); }
+  .tt-art { position: relative; display: block; aspect-ratio: 4 / 3; background: var(--clay-ground); overflow: hidden; }
+  .tt-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tt-text { display: flex; flex-direction: column; gap: 2px; padding: 9px 12px 11px; background: var(--surface); min-width: 0; }
+  .topic-tile b { font: 600 15px/20px var(--font-body); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tt-text > span { display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; color: var(--meta); font-weight: 500; }
+  .tt-dot { width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; background: var(--pm, var(--faint)); }
+  /* "New topic" (DashedTile): the same size, a dashed hairline, the plus where the art goes. */
+  .tile-new { background: none; border: 1.5px dashed var(--dashed); }
+  .tile-new .tn-plus { display: grid; place-items: center; aspect-ratio: 4 / 3; }
   .tile-new .tn-plus i { font-style: normal; display: grid; place-items: center; width: 44px; height: 44px;
-    border-radius: 50%; background: var(--coral); color: #fff; font: 800 26px/1 var(--font-head); }
+    border-radius: 50%; background: var(--surface); border: 1px solid var(--hairline); color: var(--coral-deep);
+    font: 500 26px/1 var(--font-body); }
   .tile-new .tt-text { background: transparent; }
-  /* "Not filed yet": the sort card's tile — the clay compass on the accent
-     tint, a door into sorting rather than a topic (docs/triage.js). */
-  .tile-unfiled { background: var(--tint); border-color: color-mix(in srgb, var(--coral) 24%, transparent); }
-  .tile-unfiled .tt-art { background: var(--tint); }
-  .tile-unfiled .tt-text { background: transparent; }
-  .tile-unfiled .tt-text span { color: var(--accent-text); }
+  .tile-new .tt-text > span { color: var(--meta); }
+  /* "Not filed yet": the compass on the clay ground, a door into sorting rather than a topic (docs/triage.js). */
+  .tile-unfiled .tt-text > span { color: var(--coral-deep); }
   #topics-hint { display: block; margin: 14px 0 0; }
-  .source-row { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--surface);
-    border: 1px solid var(--hairline); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
-  .source-badge { width: 38px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--paper);
-    display: grid; place-items: center; }
-  .source-badge .pg { width: 16px; height: 16px; }
-  .source-row b { flex: 1; text-align: left; }
-  .source-row span { color: var(--meta); font-size: 13px; }
-  .backlink { border: 0; background: none; color: var(--accent-text); font-weight: 700; padding: 0 0 12px; }
+  .source-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: var(--slim-h); background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: var(--r-card); padding: 0 16px 0 10px; margin-bottom: 8px; color: var(--ink); }
+  .source-badge { width: 36px; height: 36px; border-radius: var(--r-thumb); background: var(--sand); color: var(--sand-ink);
+    display: grid; place-items: center; flex: 0 0 auto; }
+  .source-badge .pg { width: 17px; height: 17px; }
+  .source-row b { flex: 1; text-align: left; font-weight: 600; font-size: 15px; }
+  .source-row span:last-child { color: var(--meta); font-size: 13px; font-weight: 500; }
+  .backlink { border: 0; background: none; color: var(--coral-deep); font-weight: 600; font-size: 15px; padding: 0; min-height: 44px; margin: -6px 0 6px; }
 
-  /* ── Topic page hero: the tile you tapped, opened out ──
-     The old header was a line of text, so every topic page looked like every
-     other one and none of them looked like the tile that got you there. Same
-     composition as the tile at full width — clay scene on top, name and count
-     on the topic's own tint underneath. The text sits below the art, never
-     over it: nothing then depends on the contrast of a scene we can't predict,
-     and a long name grows the band instead of overflowing a fixed image. */
-  .hero { position: relative; border: 1px solid var(--hairline); border-radius: 18px; overflow: hidden;
-    box-shadow: var(--shadow-card); margin: 0 0 14px; }
-  .hero-art { position: relative; height: 120px; display: grid; place-items: center;
-    font: 800 40px var(--font-head); opacity: .95; }
-  .hero-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
-    mix-blend-mode: multiply; z-index: 1; }
-  .hero-art::before { content: ""; position: absolute; inset: 0;
-    background: radial-gradient(120% 95% at 18% 0%, rgba(255,255,255,.42), transparent 58%); }
-  .hero-text { display: block; padding: 12px 18px 14px; }
-  .hero-text b { display: block; font-family: var(--font-head); font-size: 26px; letter-spacing: -.023em;
-    line-height: 1.12; }
-  .hero-text span { display: block; margin-top: 3px; font-size: 12.5px; font-weight: 600; opacity: .78; }
-  /* Deliberately compact — two chip rows' worth — so the first bork stays
-     above the fold on the smallest phone we support. */
-  @media (max-width: 760px) { .hero-art { height: 96px; } .hero-text b { font-size: 22px; } }
+  /* ── Topic page: a short art banner, then the title on paper with the count.
+     No colour band; the name never sits over the art. ── */
+  .hero { position: relative; margin: 0 0 6px; }
+  .hero-art { position: relative; display: block; height: 120px; border-radius: var(--r-card); overflow: hidden;
+    background: var(--clay-ground); border: 1px solid var(--hairline); }
+  .hero-art img { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: min(100%, 560px); height: 100%;
+    object-fit: cover; display: block; }
+  /* Wider than the scene: it sits in the middle and its edges fade into the ground. */
+  @media (min-width: 600px) { .hero-art img { -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); } }
+  .hero-text { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 16px 0 4px; min-width: 0; }
+  .hero-text > span { min-width: 0; }
+  .hero-text b { display: block; font: 700 30px/34px var(--font-head); letter-spacing: -.02em; color: var(--ink); overflow-wrap: anywhere; }
+  .hero-text small { display: block; margin-top: 4px; font-size: 13px; line-height: 18px; font-weight: 500; color: var(--meta); }
 
-  /* ── Share a topic ── */
-  .hero-share { position: absolute; right: 12px; top: 12px; z-index: 2; display: inline-flex; align-items: center;
-    gap: 5px; height: 32px; padding: 0 13px; border: 0; border-radius: 999px; background: var(--ink);
-    color: #fff; font-size: 12.5px; font-weight: 600; }
-  .hero-share svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.2;
+  /* ── Share a topic: a secondary pill beside the title ── */
+  .hero-share { position: relative; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px;
+    border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface); color: var(--ink);
+    font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .hero-share::before { content: ""; position: absolute; inset: -4px 0; }
+  .hero-share svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2;
     stroke-linecap: round; stroke-linejoin: round; }
-  .share-menu { position: absolute; right: 12px; top: 50px; z-index: 3; min-width: 190px; padding: 6px;
-    background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px;
-    box-shadow: 0 18px 44px -16px rgba(25,21,16,.34); }
-  .share-menu button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 11px; border: 0;
-    border-radius: 10px; background: none; text-align: left; font-size: 13.5px; font-weight: 600; }
+  .share-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 3; min-width: 200px; padding: 6px;
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-search);
+    box-shadow: var(--lift-slab); }
+  .share-menu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 11px; border: 0;
+    border-radius: 10px; background: none; text-align: left; font-size: 15px; font-weight: 500; color: var(--ink); }
   .share-menu button:hover { background: var(--paper); }
-  .share-menu button[disabled] { color: var(--faint); cursor: default; }
-  .share-menu svg { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor;
-    stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; opacity: .72; }
-  @media (max-width: 760px) { .share-menu button { min-height: 44px; } }
+  .share-menu button[disabled] { color: var(--meta); cursor: default; }
+  .share-menu svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: .72; }
 
   /* ── Search ── */
   #browse-search .h-row { margin-top: 0; }
-  #search-mobile { margin-bottom: 14px; }
-  #search-meta { font-size: 17px; }
-  #scope-chips { padding-bottom: 12px; }
+  /* The search field (SearchFieldSurface): the magnifier, then the words. */
+  #search-mobile { margin-bottom: 16px; padding-left: 44px; background: var(--surface) no-repeat 14px 50% / 20px 20px
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236E655A' stroke-width='1.75' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4 4'/%3E%3C/svg%3E"); }
+  #search-meta { font: 700 19px/24px var(--font-head); }
+  #scope-chips { padding-bottom: 8px; }
   #empty-search .btn-sm { margin-top: 12px; }
 
   /* ── Revisit ── */
-  .rv { margin: 0 0 30px; }
+  .rv { margin: 0 0 var(--section-gap); }
   .rv:last-child { margin-bottom: 0; }
   .rv .h-row { margin-top: 0; }
-  .rv-line { color: var(--ink-2); font-size: 14.5px; line-height: 1.5; margin: -2px 0 12px; }
-  .rv-line b { color: var(--ink); font-weight: 700; }
+  .rv-line { color: var(--ink-2); font-size: 15px; line-height: 21px; font-weight: 500; margin: -2px 0 12px; }
+  .rv-line b { color: var(--ink); font-weight: 600; }
   .rv-more { display: block; margin: 14px 0 0; }
-  /* The Recent strip, with one line of why a card is in this section. */
-  .recents.rv-strip .recent-card { height: 166px; }
-  .rc-meta { margin-top: auto; padding: 0 10px 9px; color: var(--meta); font-size: 11px; font-weight: 600; }
   .rv-thin { max-width: 640px; }
   .rv-thin p { margin: 4px 0 0; }
+  /* "What are you finding interesting?": the insight, now Revisit's opening card. */
+  .rv-insight { display: flex; align-items: center; gap: 14px; max-width: 720px; margin: 0 0 var(--section-gap);
+    padding: 14px 16px; background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-card); }
+  .rv-insight img { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; flex: 0 0 auto; background: var(--clay-ground); }
+  .rv-insight b { display: block; font: 700 19px/24px var(--font-head); letter-spacing: -.01em; margin: 0 0 3px; }
+  .rv-insight p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 21px; font-weight: 500; }
 
   /* ── You ── */
-  .you-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); max-width: 980px; }
-  .you-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .you-grid { display: grid; gap: var(--gap); grid-template-columns: minmax(0, 1fr); max-width: 980px; }
+  .you-col { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
   @media (min-width: 761px) { .you-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
-  .you-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 20px;
-    padding: 20px; box-shadow: var(--shadow-card); }
+  .you-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-card); padding: 18px; }
   .you-head { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
-  .avatar-big { width: 64px; height: 64px; border-radius: 50%; background: var(--tint); color: var(--accent-text);
-    font-weight: 800; font-size: 26px; font-family: var(--font-head); display: grid; place-items: center; }
-  .you-email { color: var(--meta); font-size: 13px; }
+  .avatar-big { width: 56px; height: 56px; border-radius: 50%; background: var(--sand); color: var(--sand-ink);
+    font-weight: 600; font-size: 22px; font-family: var(--font-body); display: grid; place-items: center; flex: 0 0 auto; }
+  .you-email { color: var(--meta); font-size: 13px; font-weight: 500; }
   .stats { display: flex; gap: 0; border-top: 1px solid var(--hairline); margin-top: 14px; padding-top: 14px; }
   .stat { flex: 1; text-align: center; }
-  .stat b { display: block; font-size: 22px; font-family: var(--font-head); }
-  .stat span { color: var(--meta); font-size: 12px; }
-  /* bookmarker Pro: the sort card's recipe (accent tint, clay, one button) as
-     a row of its own under your name. A link to /pro, where the plans are;
-     nothing is on sale and no save is ever stopped. */
-  #view-you .you-card.you-pro { grid-column: 1 / -1; display: grid; grid-template-columns: 64px minmax(0, 1fr) auto;
-    align-items: center; gap: 14px; padding: 16px 20px 16px 16px; color: var(--ink); background: var(--tint);
-    border-color: color-mix(in srgb, var(--coral) 24%, transparent); box-shadow: none; }
-  .you-pro img { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; display: block; }
-  .you-pro-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .you-pro-text b { font-family: var(--font-head); font-size: 18px; line-height: 1.15; letter-spacing: -.015em; }
-  .you-pro-text span { color: var(--accent-text); font-size: 13px; font-weight: 600; }
-  @media (max-width: 520px) {
-    #view-you .you-card.you-pro { grid-template-columns: 52px minmax(0, 1fr); gap: 12px; padding: 14px; }
-    .you-pro img { width: 52px; height: 52px; border-radius: 14px; }
-    .you-pro .btn-sm { grid-column: 1 / -1; width: 100%; height: 44px; }
-  }
-  .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin: 12px 0 5px; }
-  .field { width: 100%; height: 46px; border: 1px solid var(--hairline); border-radius: 13px;
-    padding: 0 14px; background: var(--surface); outline: none; }
-  .btn { width: 100%; height: 48px; border: 0; border-radius: 14px; background: var(--coral); color: #fff;
-    font-weight: 700; font-size: 15px; }
-  .btn.ghost { background: var(--tint); color: var(--accent-text); }
+  .stat b { display: block; font: 700 22px/28px var(--font-head); }
+  .stat span { color: var(--meta); font-size: 13px; font-weight: 500; }
+  /* bookmarker Pro: a slim row under your name — art, two lines, one quiet action. A link
+     to /pro, where the plans are; nothing is on sale and no save is ever stopped. */
+  #view-you .you-card.you-pro { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px;
+    min-height: 64px; padding: 0 8px 0 12px; color: var(--ink); }
+  .you-pro img { width: 40px; height: 40px; border-radius: var(--r-thumb); object-fit: cover; display: block; flex: 0 0 auto; }
+  .you-pro-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .you-pro-text b { font: 600 15px/20px var(--font-body); }
+  .you-pro-text span { color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; }
+  .you-pro .go { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 8px;
+    color: var(--coral-deep); font-size: 15px; font-weight: 600; }
+  .field-label { display: block; font: 700 11px/14px var(--font-body); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--meta); margin: 16px 0 6px; }
+  .field-label .opt { text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .field { width: 100%; height: 48px; border: 1px solid var(--hairline); border-radius: var(--r-search);
+    padding: 0 14px; background: var(--surface); outline: none; font-weight: 500; }
+  /* Buttons: the coral pill is the one main action; the white pill with a hairline, the other. */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 54px; border: 0;
+    border-radius: 999px; background: var(--coral); color: #fff; font-weight: 600; font-size: 16px; text-decoration: none; }
+  .btn.ghost { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--hairline); }
   .btn.danger { background: var(--destructive); }
-  .btn[disabled], .btn-sm[disabled], .linkish[disabled] { opacity: .55; cursor: default; }
-  .linkish { display: block; background: none; border: 0; color: var(--accent-text); font-weight: 600; padding: 8px 0 0; }
-  .danger-link { display: block; background: none; border: 0; color: var(--destructive); font-weight: 600; padding: 10px 0 0; }
-  .err { color: var(--destructive); font-size: 13px; min-height: 18px; margin: 6px 0 0; }
-  .ok-msg { color: #1F7A4D; font-size: 13px; min-height: 18px; margin: 6px 0 0; }
-  .hint { color: var(--faint); font-size: 12.5px; }
-  textarea.field { height: auto; min-height: 124px; padding: 12px 14px; resize: vertical; line-height: 1.45; font: inherit; }
-  .fb-kinds { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 4px; }
-  .help-steps { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
-  .help-steps li { margin: 0 0 10px; } .help-steps b { color: var(--ink); }
-  .state { text-align: center; color: var(--ink-2); padding: 56px 20px; }
+  .btn[disabled], .btn-sm[disabled], .linkish[disabled] { opacity: .45; cursor: default; }
+  .linkish { display: block; background: none; border: 0; color: var(--coral-deep); font-weight: 600; font-size: 15px;
+    padding: 0; min-height: 44px; text-align: left; }
+  .danger-link { display: block; background: none; border: 0; color: var(--destructive); font-weight: 600; padding: 0; min-height: 44px; }
+  .err { color: var(--destructive); font-size: 13px; font-weight: 500; min-height: 18px; margin: 6px 0 0; }
+  .ok-msg { color: #2F6B45; font-size: 13px; font-weight: 500; min-height: 18px; margin: 6px 0 0; }
+  .hint { color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; }
+  textarea.field { height: auto; min-height: 124px; padding: 12px 14px; resize: vertical; line-height: 1.45; font: inherit; font-weight: 500; }
+  .fb-kinds { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
+  .help-steps { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 15px; line-height: 21px; font-weight: 500; }
+  .help-steps li { margin: 0 0 12px; } .help-steps b { color: var(--ink); font-weight: 600; }
+  .state { text-align: center; color: var(--ink-2); padding: 56px 20px; font-weight: 500; }
 
   /* ── Auth / signed-out story ── */
   #auth { min-height: 100svh; display: flex; align-items: center; }
@@ -518,321 +473,323 @@
     width: 100%; max-width: 1040px; margin: 0 auto; padding: 48px 24px; }
   .auth-pitch { max-width: 470px; }
   .auth-pitch .brand { margin-bottom: 26px; }
-  .pitch-h1 { font-size: clamp(30px, 4vw, 44px); line-height: 1.04; margin: 0 0 14px; letter-spacing: -.03em; }
-  .pitch-sub { color: var(--ink-2); font-size: 16px; line-height: 1.55; margin: 0 0 18px; }
+  .pitch-h1 { font: 700 clamp(32px, 4vw, 44px)/1.06 var(--font-head); margin: 0 0 14px; letter-spacing: -.03em; }
+  .pitch-sub { color: var(--ink-2); font-size: 17px; line-height: 1.5; font-weight: 500; margin: 0 0 18px; }
   .pitch-points { list-style: none; padding: 0; margin: 0 0 26px; }
   .pitch-points li { padding-left: 26px; position: relative; margin: 9px 0; color: var(--ink); font-weight: 500; }
-  .pitch-kicker { margin: 0 0 10px; color: var(--accent-text); font-size: 13px; font-weight: 700;
-    letter-spacing: .02em; }
-  .pitch-cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; max-width: 400px; }
-  .pitch-cta .btn { flex: 1 1 150px; width: auto; margin: 0; display: inline-flex; align-items: center;
-    justify-content: center; gap: 8px; text-decoration: none; }
-  .pitch-cta-sub { color: var(--meta); font-size: 12.5px; margin: 0 0 22px; }
-  .pitch-points li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-text); font-weight: 800; }
-  .pitch-art { width: 100%; max-width: 400px; height: auto; border-radius: 22px; margin: 0 0 20px; display: block;
-    box-shadow: 0 1px 2px rgba(25,21,16,.04), 0 14px 34px -18px rgba(25,21,16,.22); }
-  .pitch-links { color: var(--faint); font-size: 12.5px; }
-  .pitch-links a { color: var(--ink-2); font-weight: 600; }
-  .pitch-island { display: flex; align-items: center; gap: 12px; max-width: 400px; margin: 0 0 22px; padding: 11px 16px 11px 12px;
-    border-radius: 16px; background: #15201C; color: #F3EFE4; box-shadow: var(--shadow-card); transition: background .15s; }
-  .pitch-island:hover { background: #1F2E26; }
-  .pitch-island .pa-tag { flex: none; padding: 3px 8px; border-radius: 999px; background: var(--coral); color: #fff;
-    font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-  .pitch-island b { display: block; font-family: var(--font-head); font-weight: 800; font-size: 15px; letter-spacing: -.01em; }
-  .pitch-island small { display: block; color: rgba(243, 239, 228, .68); font-size: 12.5px; margin-top: 1px; }
-  .pitch-island .pa-go { margin-left: auto; color: #F0A85E; font-weight: 800; }
+  .pitch-points li::before { content: "✓"; position: absolute; left: 0; color: var(--coral-deep); font-weight: 700; }
+  .pitch-kicker { margin: 0 0 10px; color: var(--coral-deep); font: 700 11px/16px var(--font-body);
+    letter-spacing: .08em; text-transform: uppercase; }
+  .pitch-cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; max-width: 420px; }
+  .pitch-cta .btn { flex: 1 1 160px; width: auto; margin: 0; }
+  @media (max-width: 480px) { .pitch-cta .btn { flex-basis: 100%; } }
+  .pitch-cta-sub { color: var(--meta); font-size: 13px; font-weight: 500; margin: 0 0 22px; }
+  .pitch-art { width: 100%; max-width: 420px; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: 50% 45%;
+    border-radius: var(--r-card); margin: 0; display: block;
+    border: 1px solid var(--hairline); background: var(--clay-ground); }
+  /* Library Island: one slim row, the "New" label in small caps. */
+  .pitch-island { display: flex; align-items: center; gap: 12px; max-width: 420px; margin: 0 0 22px; min-height: 64px; padding: 10px 14px 10px 10px;
+    border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--hairline); color: var(--ink); }
+  .pitch-island:hover { border-color: var(--dashed); }
+  .pitch-island img { width: 40px; height: 40px; border-radius: var(--r-thumb); object-fit: cover; flex: 0 0 auto; }
+  .pitch-island .pa-tag { display: block; color: var(--coral-deep); font: 700 11px/14px var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
+  .pitch-island b { display: block; font: 600 15px/20px var(--font-body); }
+  .pitch-island small { display: block; color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; margin-top: 1px; }
+  .pitch-island .pa-go { margin-left: auto; color: var(--coral-deep); font-weight: 600; flex: 0 0 auto; }
   .auth-card { width: min(400px, 100%); flex: 0 0 auto; background: var(--surface); border: 1px solid var(--hairline);
-    border-radius: 24px; padding: 28px 24px; box-shadow: var(--shadow-card); }
+    border-radius: var(--r-sheet); padding: 28px 24px; }
   .auth-card .brand { margin-bottom: 18px; }
   .auth-card-brand { display: none; }
   @media (max-width: 880px) {
     #auth { align-items: flex-start; }
-    .auth-wrap { flex-direction: column; gap: 26px; align-items: stretch; padding-top: 40px; }
-    .auth-pitch { max-width: none; }
+    .auth-wrap { flex-direction: column; gap: 26px; align-items: stretch; padding: 32px var(--gutter) 40px; }
+    .auth-pitch { max-width: none; display: flex; flex-direction: column; }
+    .auth-pitch .brand { margin-bottom: 20px; }
+    /* The clay hero stays on a phone: a wide crop under the headline, not a 340 px square. */
+    .pitch-art { order: 1; max-width: none; aspect-ratio: 16 / 10; object-fit: cover; object-position: 50% 45%; margin: 4px 0 20px; }
+    .pitch-kicker, .pitch-h1 { order: 0; }
+    .pitch-sub, .pitch-points, .pitch-cta, .pitch-cta-sub, .pitch-island { order: 2; }
     .pitch-points { margin-bottom: 4px; }
     .pitch-island { margin: 18px 0 0; max-width: none; }
     .pitch-cta { margin-top: 20px; max-width: none; }
     .pitch-cta-sub { margin-bottom: 0; }
-    .pitch-art { display: none; }
-    .auth-pitch .pitch-links { display: none; }
-    .auth-card { width: 100%; }
+    .auth-card { width: 100%; padding: 24px 20px; }
   }
-  @media (min-width: 881px) { .m-links { display: none; } }
+  @media (min-width: 881px) { .pitch-art { margin: 0 0 4px; } }
   /* ── Signed-out explainer, below the auth fold ──
      Plain HTML, always in the document, so a crawler that runs no JavaScript
      still gets the whole pitch. Shown and hidden with #auth in render(). */
   #home-about { border-top: 1px solid var(--hairline); background: var(--surface); }
   .about-in { max-width: 820px; margin: 0 auto; padding: 56px 24px 72px; }
-  .about-in h2 { font-size: clamp(23px, 3vw, 30px); margin: 44px 0 12px; }
+  .about-in h2 { font: 700 clamp(23px, 3vw, 30px)/1.15 var(--font-head); letter-spacing: -.02em; margin: 44px 0 12px; }
   .about-in h2:first-of-type { margin-top: 0; }
-  .about-in h3 { font-size: 17px; margin: 22px 0 4px; }
-  .about-in p { color: var(--ink-2); margin: 0 0 14px; line-height: 1.6; }
+  .about-in h3 { font: 700 17px/1.3 var(--font-head); letter-spacing: -.01em; margin: 22px 0 4px; }
+  .about-in p { color: var(--ink-2); margin: 0 0 14px; line-height: 1.6; font-weight: 500; }
   .about-in .lede { font-size: 17.5px; color: var(--ink); }
   .about-grid { display: grid; gap: 4px 28px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
   .about-steps { padding-left: 20px; }
-  .about-steps li { margin: 8px 0; color: var(--ink-2); }
+  .about-steps li { margin: 8px 0; color: var(--ink-2); font-weight: 500; }
   .about-in .qa { border-top: 1px solid var(--hairline); padding-top: 16px; margin-top: 16px; }
   .about-in .qa h3 { margin: 0 0 4px; font-size: 16.5px; color: var(--ink); }
   .about-more { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 10px 0 0; padding: 0; list-style: none; font-weight: 600; }
+  .about-in a { color: var(--coral-deep); }
   .about-foot { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairline);
-    color: var(--faint); font-size: 13px; }
+    color: var(--meta); font-size: 13px; font-weight: 500; }
   .about-foot a { color: var(--ink-2); font-weight: 600; }
 
-  .auth-card h1, .auth-card h2 { font-family: var(--font-head); font-size: 27px;
-    letter-spacing: -.02em; margin: 0 0 6px; }
-  .auth-card > div > p { color: var(--ink-2); margin: 0 0 16px; }
+  .auth-card h1, .auth-card h2 { font: 700 27px/1.12 var(--font-head); letter-spacing: -.02em; margin: 0 0 8px; }
+  .auth-card > div > p { color: var(--ink-2); margin: 0 0 16px; font-weight: 500; }
   .auth-card > div > p.err, .auth-card > div > p.hint, .auth-card > div > p.consent { margin-bottom: 0; }
   .auth-card .field { margin-bottom: 10px; }
   .auth-card .btn { margin-bottom: 10px; }
   #code-blurb b { color: var(--ink); }
   #code-input { text-align: center; font-size: 22px; letter-spacing: .28em; font-variant-numeric: tabular-nums; }
   .g-btn { display: flex; align-items: center; justify-content: center; gap: 10px;
-    background: var(--surface); color: var(--ink); border: 1px solid var(--hairline); }
-  .divider { display: flex; align-items: center; gap: 10px; color: var(--faint); font-size: 12px; margin: 4px 0 12px; }
+    background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--hairline); }
+  .divider { display: flex; align-items: center; gap: 10px; color: var(--meta); font-size: 13px; margin: 4px 0 12px; }
   .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--hairline); }
-  .consent { color: var(--faint); font-size: 12px; margin-top: 14px; line-height: 1.5; }
+  .consent { color: var(--meta); font-size: 12.5px; font-weight: 500; margin-top: 14px; line-height: 1.5; }
 
   /* ── Dialogs ── */
-  dialog { border: 0; border-radius: 20px; background: var(--surface); color: var(--ink);
-    box-shadow: 0 24px 70px -20px rgba(25,21,16,.35); width: min(540px, calc(100vw - 32px)); padding: 22px;
+  /* Sheets: paper, radius 28, a grabber on a phone; the title row is A's
+     Quick File header — 17/600 in a 36 px row, nothing shouting. */
+  dialog { border: 0; border-radius: var(--r-sheet); background: var(--paper); color: var(--ink);
+    box-shadow: 0 24px 70px -20px rgba(25,21,16,.35); width: min(540px, calc(100vw - 32px)); padding: 14px 20px 20px;
     max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow-y: auto; overscroll-behavior: contain; }
   dialog.dlg-sm { width: min(420px, calc(100vw - 32px)); }
   dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
-  dialog h2 { margin: 0 0 12px; font-size: 20px; }
+  dialog h2, .tp-head h2 { display: flex; align-items: center; min-height: 36px; margin: 0 0 8px;
+    font: 600 17px/22px var(--font-body); letter-spacing: 0; color: var(--ink); }
   /* A long caption is a title, not a paragraph: three lines, then an ellipsis. */
-  #edit-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.25; }
-  dialog textarea { border: 1px solid var(--hairline); border-radius: 13px; background: var(--surface);
-    width: 100%; padding: 12px 14px; min-height: 68px; resize: vertical; outline: none; }
-  dialog select { height: 44px; width: 100%; border: 1px solid var(--hairline); border-radius: 12px;
-    background: var(--surface); padding: 0 10px; }
-  .dialog-row { display: flex; gap: 10px; margin-top: 16px; }
+  #edit-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; padding-top: 7px; }
+  dialog textarea { border: 1px solid var(--hairline); border-radius: var(--r-search); background: var(--surface);
+    width: 100%; padding: 12px 14px; min-height: 68px; resize: vertical; outline: none; font-weight: 500; }
+  dialog select { height: 48px; width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-search);
+    background: var(--surface); padding: 0 12px; font-weight: 500; }
+  #edit-open { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
+  .dialog-row { display: flex; gap: 10px; margin-top: 18px; }
   .dialog-row .btn { margin: 0; }
 
   /* ── Topic picker (trigger in Add/Edit + the sheet itself) ── */
   /* The app's topic button: a capsule in the topic's own colour, not a form
      field. Same control in Add and Edit. */
   .topic-trigger { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 40px;
-    padding: 8px 13px; border: 0; border-radius: 999px; background: var(--control); color: var(--ink-2);
-    text-align: left; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+    padding: 8px 14px; border: 0; border-radius: 999px; background: var(--sand); color: var(--sand-ink);
+    text-align: left; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
   .topic-trigger .tp-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .topic-trigger .tp-empty { color: var(--ink-2); }
   .topic-trigger svg { width: 15px; height: 15px; flex: 0 0 auto; opacity: .5; }
   .tp-sep { opacity: .45; margin: 0 5px; }
-  .tp-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+  .tp-dot { width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; }
   #topic-dialog[open] { display: flex; flex-direction: column; overflow: hidden; padding: 0; height: min(640px, calc(100dvh - 48px)); }
-  .tp-head { flex: 0 0 auto; padding: 22px 22px 12px; }
+  .tp-head { flex: 0 0 auto; padding: 0 20px 12px; }
   .tp-head h2 { outline: none; }
-  #tp-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 22px 12px; }
-  .tp-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 8px 4px; border: 0;
+  #tp-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 20px 12px; }
+  .tp-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 4px; border: 0;
     border-bottom: 1px solid var(--hairline); background: none; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
   .tp-row .tp-name { flex: 1; min-width: 0; font-weight: 600; }
-  .tp-row .n { color: var(--faint); font-size: 12.5px; }
+  .tp-row .n { color: var(--meta); font-size: 13px; font-weight: 500; }
   .tp-row svg { width: 16px; height: 16px; flex: 0 0 auto; opacity: .4; transition: transform .18s ease; }
   .tp-row[aria-expanded="true"] svg { transform: rotate(90deg); }
-  .tp-row.tp-on .tp-name::after { content: " ✓"; color: var(--accent-text); }
+  .tp-row.tp-on .tp-name::after { content: " ✓"; color: var(--coral-deep); }
   .tp-none .tp-name { color: var(--ink-2); font-weight: 500; }
   /* Add a topic, and the topics you added — the app's addTopicRow and its
      "yours" badge, in the same list rather than a screen of their own. */
-  .tp-add .tp-name { color: var(--accent-text); font-weight: 700; }
+  .tp-add .tp-name { color: var(--coral-deep); font-weight: 600; }
   .tp-plus { width: 22px; height: 22px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%;
-    background: var(--tint); color: var(--accent-text); font: 800 15px/1 var(--font-body); }
+    background: var(--surface); border: 1px solid var(--hairline); color: var(--coral-deep); font: 600 15px/1 var(--font-body); }
   /* "Make your own topic" — the invitation at the top, and the empty-search
      state, which is the add itself with the name typed. The Browse tile's
      tint and plus, the suggested-quest card's dashed edge (TopicPickerSheet's
      makeYourOwnCard / nothingCalledCard). */
   .tp-make { display: flex; align-items: center; gap: 12px; width: 100%; margin: 8px 0 4px; padding: 12px 14px;
-    border: 1.5px dashed var(--dashed); border-radius: var(--radius); background: var(--tint);
+    border: 1.5px dashed var(--dashed); border-radius: var(--r-card); background: none;
     text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
-  .tp-make .tp-plus { width: 30px; height: 30px; background: var(--coral); color: #fff; font-size: 18px; }
-  .tp-make b { display: block; font-family: var(--font-head); font-size: 15px; line-height: 1.25; }
-  .tp-make small { display: block; font-size: 12.5px; color: var(--accent-text); line-height: 1.35; margin-top: 2px; }
+  .tp-make .tp-plus { width: 36px; height: 36px; background: var(--coral); border: 0; color: #fff; font-size: 20px; }
+  .tp-make b { display: block; font: 600 15px/20px var(--font-body); }
+  .tp-make small { display: block; font-size: 13px; color: var(--meta); font-weight: 500; line-height: 18px; margin-top: 1px; }
   /* The same add, pinned under the list (newTopicFooter): the sheet opens
      scrolled to the topic already picked, which is exactly where the top
      row is not. */
-  .tp-foot { position: sticky; bottom: 0; z-index: 1; margin-top: -1px; background: var(--surface);
+  .tp-foot { position: sticky; bottom: 0; z-index: 1; margin-top: -1px; background: var(--paper);
     border-bottom: 0; border-top: 1px solid var(--hairline); }
-  .tp-group { padding: 18px 4px 7px; color: var(--meta); font-size: 10.5px; font-weight: 800;
-    letter-spacing: .06em; text-transform: uppercase; }
-  .tp-mine { flex: 0 0 auto; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; }
+  .tp-group { padding: 18px 4px 7px; color: var(--meta); font: 700 11px/14px var(--font-body);
+    letter-spacing: .08em; text-transform: uppercase; }
+  .tp-mine { flex: 0 0 auto; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
   .tp-add-open { padding: 10px 4px 14px; border-bottom: 1px solid var(--hairline); }
   .tp-new-hint { margin: 9px 2px 0; }
   .tp-subs { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 4px 14px 26px; border-bottom: 1px solid var(--hairline); }
   .tp-subs .chip { cursor: pointer; height: auto; min-height: 34px; max-width: 100%; padding: 5px 13px; white-space: normal; text-align: left; }
-  .tp-subs .chip.hit { border-color: var(--ink); }
+  .tp-subs .chip.hit { box-shadow: inset 0 0 0 1.5px var(--pd, var(--ink)); }
   .tp-subs .chip.mine::after { content: "yours"; font-size: 10px; opacity: .55; }
   .tp-subs .chip.just { background: var(--surface); color: var(--ink-2); }
-  .tp-subs .chip.just.on { background: var(--ink); color: var(--paper); }
+  .tp-subs .chip.just.on { background: var(--ink); color: #fff; }
   .tp-new { display: flex; gap: 8px; width: 100%; margin-top: 2px; }
-  .tp-new .field { height: 40px; flex: 1; }
+  .tp-new .field { height: 44px; flex: 1; }
   .tp-empty-msg { padding: 18px 4px; }
   #topic-dialog .dialog-row { flex: 0 0 auto; position: static; margin: 0; border-top: 1px solid var(--hairline);
-    padding: 12px 22px calc(14px + env(safe-area-inset-bottom)); }
+    padding: 12px 20px calc(14px + env(safe-area-inset-bottom)); background: var(--paper); }
+  #topic-dialog[open] { padding-top: 14px; }
   /* ── Add / Edit sheets: the parts of AddSheet.swift + DetailSheet.swift ──
-     Same components in both dialogs, so a bork looks the same whether you are
-     saving it or fixing it. */
-  .add-card { margin-top: 14px; border: 1px solid var(--hairline); border-radius: 18px; overflow: hidden;
-    background: var(--surface); box-shadow: var(--shadow-card); }
-  .add-card .cover { height: 150px; }
-  .add-card .dur { position: absolute; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 4px;
-    height: 22px; padding: 0 8px; border-radius: 999px; background: rgba(25,21,16,.66); color: #fff;
-    font-size: 10.5px; font-weight: 800; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-  .add-card-body { padding: 13px; }
-  .add-card-title { font-family: var(--font-head); font-size: 15px; font-weight: 600; line-height: 1.3;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-  .add-card-meta { margin-top: 4px; color: var(--meta); font-size: 11.5px; font-weight: 600; overflow-wrap: anywhere; }
-  .add-card-meta i { color: var(--faint); font-weight: 500; font-style: normal; }
+     The saved row is A's Quick File: one white hairline row, a 44 px cover at
+     radius 10, the title on one line and "@who · App" under it. The Add
+     sheet's own sizing of it lives with the dial in quick-file.css. */
+  .add-card { display: flex; align-items: center; gap: 12px; margin-top: 8px; min-height: 62px; padding: 9px 14px 9px 10px;
+    border: 1px solid var(--hairline); border-radius: var(--r-card); background: var(--surface); }
+  .add-card .cover { flex: 0 0 44px; width: 44px; height: 44px; aspect-ratio: auto; border-radius: var(--r-thumb); }
+  .add-card .cover-glyph .pg { width: 18px; height: 18px; }
+  .add-card .badge { left: 3px; top: 3px; width: 17px; height: 17px; border-radius: 5px; }
+  .add-card .badge .pg { width: 10px; height: 10px; }
+  .add-card .dur { position: absolute; right: 3px; bottom: 3px; height: 15px; padding: 0 4px; border-radius: 4px;
+    background: rgba(25,21,16,.72); color: #fff; font: 600 9px/15px var(--font-body); }
+  .add-card-body { flex: 1; min-width: 0; }
+  .add-card-title { font: 600 15px/20px var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .add-card-meta { color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .add-card-meta i { font-style: normal; }
 
-  /* Already in your library: the same preview card laid on its side, because
-     this is a bork you have rather than one you are making. It replaces the
-     whole sheet — filing a link twice is a form filled in twice — and answers
+  /* Already in your library: the same row, because this is a bork you have
+     rather than one you are making. It replaces the whole sheet and answers
      the only question worth asking, which is where the first one went. */
-  .dupe-card { display: flex; align-items: stretch; }
-  .add-card.dupe-card .cover { flex: 0 0 88px; width: 88px; height: auto; min-height: 92px; }
-  .dupe-card .cover-glyph .pg { width: 26px; height: 26px; }
-  .dupe-card .add-card-body { flex: 1; min-width: 0; padding: 12px 14px; }
-  .dupe-h { color: var(--accent-text); font-size: 10px; font-weight: 800;
-    letter-spacing: .06em; text-transform: uppercase; margin-bottom: 5px; }
-  .dupe-filed { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px;
-    color: var(--meta); font-size: 11.5px; font-weight: 600; }
-  /* The dot belongs to the date, so a narrow sheet wraps them together
-     rather than leaving a "·" hanging off the end of the line. */
+  .dupe-card { align-items: center; }
+  .add-card.dupe-card .cover { flex: 0 0 56px; width: 56px; height: 56px; }
+  .dupe-card .add-card-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .dupe-h { color: var(--meta); font: 700 11px/14px var(--font-body); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 3px; }
+  .dupe-filed { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+    color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; }
+  /* The dot belongs to the date, so a narrow sheet wraps them together. */
   .dupe-filed .when { white-space: nowrap; }
-  .dupe-filed .sep { opacity: .5; margin-right: 6px; }
-  .dupe-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .dupe-filed .sep { margin-right: 6px; }
+  .dupe-actions { display: flex; gap: 10px; margin-top: 16px; }
   .dupe-actions .btn { margin: 0; }
-  /* Three buttons on one sheet need three weights, or the eye reads a row of
-     equals: Open it is the answer, saving again is the other answer, and the
-     tinted "Not now" below is the way out. */
-  .dupe-actions .btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--hairline); }
   @media (max-width: 420px) { .dupe-actions { flex-direction: column; } }
 
-  /* "Sorted for you": the topic, the tags, and where the tags say it belongs. */
-  .sorted { margin-top: 14px; padding: 15px; border-radius: 18px;
-    background: color-mix(in srgb, var(--tint) 55%, var(--surface));
-    border: 1px solid color-mix(in srgb, var(--coral) 25%, transparent); }
-  .sorted-h { display: flex; align-items: center; gap: 6px; margin-bottom: 11px;
-    color: var(--accent-text); font-size: 13px; font-weight: 800; }
-  .mini-h { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--meta); }
-  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  /* "Filed under": the topic, the tags, and where the tags say it belongs — a white slab. */
+  .sorted { margin-top: 14px; padding: 14px; border-radius: var(--r-card); background: var(--surface);
+    border: 1px solid var(--hairline); }
+  .sorted-h { display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+    color: var(--meta); font: 700 11px/14px var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
+  .mini-h { font: 700 11px/14px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--meta); }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .tag-row:not(:empty) { margin-top: 10px; }
-  .tag-chip { display: inline-flex; align-items: center; gap: 5px; height: 31px; max-width: 100%; padding: 0 11px;
-    border: 0; border-radius: 999px; background: var(--control); color: var(--ink-2);
-    font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Tag pills: "#" on sand; on = ink. */
+  .tag-chip { display: inline-flex; align-items: center; gap: 5px; height: 34px; max-width: 100%; padding: 0 12px;
+    border: 0; border-radius: 999px; background: var(--sand); color: var(--ink);
+    font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tag-chip .x { font-size: 9px; opacity: .65; }
-  .sorted .tag-chip.on { background: var(--tint); color: var(--accent-text); }
-  .tag-add { display: flex; align-items: center; gap: 6px; height: 42px; margin-top: 10px; padding: 0 4px 0 14px;
-    border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface); }
-  .tag-add input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; outline: none; font-size: 13.5px; }
-  .tag-go { height: 100%; padding: 0 12px; border: 0; background: none; color: var(--accent-text); font-size: 13px; font-weight: 700; }
+  .sorted .tag-chip.on { background: var(--ink); color: #fff; }
+  .tag-add { display: flex; align-items: center; gap: 6px; height: 44px; margin-top: 10px; padding: 0 4px 0 14px;
+    border: 1px solid var(--hairline); border-radius: var(--r-search); background: var(--surface); }
+  .tag-add input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; outline: none; font-size: 15px; font-weight: 500; }
+  .tag-go { height: 100%; padding: 0 12px; border: 0; background: none; color: var(--coral-deep); font-size: 15px; font-weight: 600; }
   .tag-go[disabled] { color: var(--faint); cursor: default; }
-  .place { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 12px; padding: 0;
-    border: 0; background: none; color: var(--accent-text); font-size: 12.5px; font-weight: 700; text-align: left; }
+  .place { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 12px; padding: 0; min-height: 44px;
+    border: 0; background: none; color: var(--coral-deep); font-size: 14px; font-weight: 600; text-align: left; }
   .quest-attach { margin-top: 18px; }
   .quest-attach p { margin: 4px 0 0; }
   .quest-attach .tag-row { margin-top: 9px; }
-  .quest-attach .chip.new { border-style: dashed; border-color: var(--dashed); color: var(--accent-text); background: none; }
+  .quest-attach .chip.new { border-style: dashed; border-color: var(--dashed); color: var(--coral-deep); background: none; }
 
-  .sheet-toggle { display: flex; align-items: center; gap: 7px; width: 100%; margin-top: 16px; padding: 0;
-    border: 0; background: none; color: var(--ink-2); font-size: 13.5px; font-weight: 700; text-align: left; }
-  .sheet-check { display: flex; align-items: center; gap: 10px; margin-top: 16px;
-    color: var(--ink-2); font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .sheet-toggle { display: flex; align-items: center; gap: 7px; width: 100%; margin-top: 12px; padding: 0; min-height: 44px;
+    border: 0; background: none; color: var(--ink-2); font-size: 15px; font-weight: 600; text-align: left; }
+  .sheet-check { display: flex; align-items: center; gap: 10px; margin-top: 12px; min-height: 44px;
+    color: var(--ink-2); font-size: 15px; font-weight: 600; cursor: pointer; }
   .sheet-check input { width: 19px; height: 19px; accent-color: var(--coral); }
   .title-box { margin-top: 10px; }
   .title-box textarea { width: 100%; min-height: 62px; padding: 13px 14px; border: 1px solid var(--hairline);
-    border-radius: 16px; background: var(--surface); outline: none; resize: vertical; font: inherit; font-size: 14.5px; }
+    border-radius: var(--r-search); background: var(--surface); outline: none; resize: vertical; font: inherit; font-size: 15px; font-weight: 500; }
   /* The app's note card: the same paper, so a note looks like a note. */
-  .note-box { margin-top: 10px; padding: 14px; border: 1px solid var(--note-border); border-radius: 16px;
-    background: linear-gradient(180deg, var(--note-top), var(--note-bottom)); }
+  .note-box { margin-top: 10px; padding: 14px; border: 1px solid var(--note-border); border-radius: var(--r-card);
+    background: var(--note-top); }
   .note-box textarea { width: 100%; min-height: 76px; padding: 0; border: 0; border-radius: 0; background: none; outline: none; resize: vertical;
-    font: inherit; font-size: 14.5px; line-height: 1.45; color: var(--note-ink); }
-  .note-when { display: flex; align-items: center; gap: 10px; margin-top: 8px; color: var(--ink-2); font-size: 12.5px; font-weight: 600; }
-  .note-when input { height: 34px; padding: 0 10px; border: 1px solid var(--note-border); border-radius: 10px;
-    background: rgba(255,255,255,.65); outline: none; font: inherit; font-size: 12.5px; color: var(--ink); }
+    font: inherit; font-size: 15px; line-height: 1.45; color: var(--note-ink); }
+  .note-when { display: flex; align-items: center; gap: 10px; margin-top: 8px; color: var(--ink-2); font-size: 13px; font-weight: 600; }
+  .note-when input { height: 36px; padding: 0 10px; border: 1px solid var(--note-border); border-radius: 10px;
+    background: rgba(255,255,255,.65); outline: none; font: inherit; font-size: 13px; color: var(--ink); }
 
   /* ── Import ── */
   .drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-    width: 100%; min-height: 118px; padding: 18px; border: 2px dashed var(--hairline); border-radius: 16px;
-    background: var(--paper); color: var(--ink); text-align: center; }
-  .drop b { font-size: 15.5px; }
+    width: 100%; min-height: 118px; padding: 18px; border: 1.5px dashed var(--dashed); border-radius: var(--r-card);
+    background: var(--surface); color: var(--ink); text-align: center; }
+  .drop b { font-size: 16px; font-weight: 600; }
   #import-dialog.dragging .drop { border-color: var(--coral); background: var(--tint); }
-  .import-h3 { font-family: var(--font-body); font-size: 10.5px; font-weight: 800; letter-spacing: .06em;
+  .import-h3 { font: 700 11px/14px var(--font-body); letter-spacing: .08em;
     text-transform: uppercase; color: var(--meta); margin: 22px 0 8px; }
-  .import-how { border: 1px solid var(--hairline); border-radius: 14px; padding: 11px 13px; margin-bottom: 8px; }
-  .import-how b { display: block; font-size: 13.5px; }
-  .import-how span { display: block; color: var(--ink-2); font-size: 12.5px; line-height: 1.45; margin-top: 2px; }
+  .import-how { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-card); padding: 11px 14px; margin-bottom: 8px; }
+  .import-how b { display: block; font-size: 15px; font-weight: 600; }
+  .import-how span { display: block; color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 500; margin-top: 2px; }
   .import-bar { height: 8px; border-radius: 999px; background: var(--hairline); overflow: hidden; }
   .import-bar span { display: block; height: 100%; width: 0; background: var(--coral); border-radius: 999px;
     transition: width .18s linear; }
   .import-count { display: flex; align-items: center; gap: 13px; margin: 2px 0 14px; }
-  .import-count b { font-family: var(--font-head); font-size: 38px; line-height: 1; color: var(--accent-text); }
-  .import-count i { font-style: normal; font-weight: 700; display: block; }
+  .import-count b { font: 700 38px/1 var(--font-head); color: var(--ink); }
+  .import-count i { font-style: normal; font-weight: 600; display: block; }
   .import-count em { font-style: normal; font-weight: 500; color: var(--meta); font-size: 13px; display: block; }
   .import-rows { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
   .import-rows .chip { cursor: default; }
   .import-row { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--hairline); }
   .import-row .t { flex: 1; min-width: 0; }
-  .import-row b { display: block; font-size: 13px; font-weight: 600; overflow: hidden;
+  .import-row b { display: block; font-size: 14px; font-weight: 600; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; }
-  .import-row small { display: block; color: var(--faint); font-size: 11px; overflow: hidden;
+  .import-row small { display: block; color: var(--meta); font-size: 12px; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; }
-  .import-note { background: var(--tint); border-radius: 14px; padding: 13px 15px; margin: 0 0 16px; }
-  .import-note b { display: block; margin-bottom: 3px; }
-  .import-note p { margin: 0 0 11px; color: var(--ink-2); font-size: 13.5px; }
+  .import-note { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-card); padding: 14px 16px; margin: 0 0 16px; }
+  .import-note b { display: block; margin-bottom: 3px; font-weight: 600; }
+  .import-note p { margin: 0 0 12px; color: var(--ink-2); font-size: 14px; font-weight: 500; }
 
   #toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 14px); z-index: 60; opacity: 0;
-    pointer-events: none; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 10px 18px;
-    font-size: 14px; display: flex; gap: 14px; align-items: center; max-width: calc(100vw - 32px);
-    box-shadow: var(--shadow-card); }
+    pointer-events: none; background: var(--toast); color: #fff; border-radius: 999px; padding: 10px 18px;
+    font-size: 15px; font-weight: 500; display: flex; gap: 14px; align-items: center; max-width: calc(100vw - 40px);
+    box-shadow: var(--lift-toast); }
   #toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
-  #toast button { background: none; border: 0; color: var(--coral); font-weight: 700; }
+  #toast button { background: none; border: 0; color: var(--coral); font-weight: 600; }
 
   /* ── Footer (desktop) ── */
   footer { border-top: 1px solid var(--hairline); margin-top: 30px; }
-  .foot-in { max-width: 1280px; margin: 0 auto; padding: 22px clamp(14px, 3vw, 28px);
+  .foot-in { max-width: 1280px; margin: 0 auto; padding: 22px clamp(20px, 3vw, 28px);
     display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; color: var(--meta); font-size: 13px; }
   .foot-in a { color: var(--ink-2); font-weight: 600; }
 
-  /* ── Mobile: look like the app ── */
+  /* ── Mobile: look like the app ──
+     The tab bar is the app's TabDock: flat, paper, a hairline on top, five
+     56 px slots and the 52 px coral + in line with them. Nothing shows
+     through it or beside it; the page simply ends above it. */
   .tabbar { display: none; }
   @media (max-width: 760px) {
     .nav-tabs, .nav-search { display: none; }
-    main { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 80px); }
-    .grid { gap: 10px; } .grid .col { gap: 10px; }
+    main { padding: 18px var(--gutter) calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 28px); }
     .chips { position: sticky; top: calc(var(--banner-h) + var(--nav-h)); z-index: 20; background: var(--paper);
-      margin: 0 -14px; padding: 8px 14px 12px; }
-    #search-chips { position: static; margin: 0; padding: 2px 0 14px; }
-    #scope-chips, #sort-chips, .rv .chips { position: static; margin: 0; padding: 2px 0 12px; }
-    /* Thumb-sized targets */
-    .chip { min-height: 44px; }
-    .topic-pill { height: 44px; }
+      margin: 0 calc(-1 * var(--gutter)); padding: 5px var(--gutter) 10px; }
+    #search-chips { position: static; margin: 0; padding: 5px 0 14px; }
+    #scope-chips, #sort-chips, .rv .chips, #topic-refinements .chips { position: static; margin: 0; padding: 5px 0 10px; }
     .todo-x, .qb-x, .demo-x, #toast button { min-width: 44px; min-height: 44px; }
-    .h-more, .backlink, .linkish, .danger-link, .qb-add { min-height: 44px; }
     .tag-chip { height: auto; min-height: 40px; }
     .tag-go, .place, .sheet-toggle, .topic-trigger { min-height: 44px; }
-    .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid;
-      grid-template-columns: 1fr 1fr 74px 1fr 1fr; align-items: center;
-      height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-      padding-bottom: env(safe-area-inset-bottom);
-      background: color-mix(in srgb, var(--surface) 92%, transparent);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--hairline); }
-    .tab { border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 2px;
-      color: var(--meta); font-size: 10.5px; font-weight: 600; padding: 6px 0; }
-    .tab svg { width: 23px; height: 23px; }
-    .tab.on { color: var(--accent-text); }
-    .fab-mobile { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--coral); color: #fff;
-      font-size: 30px; font-weight: 700; line-height: 1; margin: 0 auto; transform: translateY(-14px);
-      box-shadow: 0 10px 24px -6px rgba(255,90,45,.55); }
-    /* Bottom sheets: scroll inside, keep the buttons reachable above the keyboard */
-    dialog { margin: auto 0 0; width: 100vw; max-width: 100vw; border-radius: 22px 22px 0 0;
-      max-height: calc(100dvh - 40px); padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
+    .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; align-items: center;
+      height: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding: 0 8px env(safe-area-inset-bottom);
+      background: var(--paper); border-top: 1px solid var(--hairline); }
+    .tab { flex: 1; height: 56px; border: 0; background: none; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 3px; color: var(--meta); font-size: 11px; line-height: 13px; font-weight: 600; padding: 0; }
+    .tab svg { width: 24px; height: 24px; stroke-width: 1.75; }
+    .tab.on { color: var(--coral-deep); }
+    .tab.on svg { color: var(--coral); }
+    .fab-slot { flex: 1; height: 56px; display: flex; align-items: center; justify-content: center; }
+    .fab-mobile { width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--coral); color: #fff;
+      display: grid; place-items: center; padding: 0; }
+    .fab-mobile svg { width: 24px; height: 24px; }
+    /* Bottom sheets: paper, radius 28, an 18 px grabber band, scroll inside */
+    dialog { margin: auto 0 0; width: 100vw; max-width: 100vw; border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+      max-height: calc(100dvh - 40px); padding: 0 var(--gutter) calc(22px + env(safe-area-inset-bottom)); }
+    dialog:not(.triage)::before { content: ""; display: block; width: 36px; height: 5px; border-radius: 3px;
+      background: var(--grabber); margin: 7px auto 6px; flex: 0 0 auto; }
     dialog.dlg-sm { width: 100vw; }
     /* The sticky row pins to the scrollport, whose bottom edge sits inside the
        sheet's own 22px of padding — without that much padding of its own it
        leaves a strip of scrolling content showing underneath it. */
-    .dialog-row { position: sticky; bottom: calc(-22px - env(safe-area-inset-bottom)); background: var(--surface);
+    .dialog-row { position: sticky; bottom: calc(-22px - env(safe-area-inset-bottom)); background: var(--paper);
       margin: 12px 0 calc(-22px - env(safe-area-inset-bottom)); padding: 12px 0 calc(14px + env(safe-area-inset-bottom)); }
-    #toast { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px); }
-    #topic-dialog[open] { height: calc(100dvh - 40px); }
+    #toast { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 12px); }
+    #topic-dialog[open] { height: calc(100dvh - 40px); padding-top: 0; }
   }
   @media (min-width: 761px) {
     .fab-mobile, #search-mobile { display: none; }
@@ -846,13 +803,13 @@
     .card, .recent-card, .topic-tile, .file-it, .library-search {
       transition: transform .14s var(--ease-out), background-color .16s ease, color .16s ease,
         border-color .16s ease, box-shadow .16s ease, opacity .16s ease; }
-    .topic-tile:hover, .recent-card:hover, .card:hover, .quest-card:hover, .card:focus-visible { transform: translateY(-2px); }
-    .card:hover, .card:focus-visible, .topic-tile:hover { box-shadow: 0 1px 2px rgba(25,21,16,.04), 0 16px 32px -14px rgba(25,21,16,.22); }
+    /* Calm surfaces: a hover darkens the hairline; nothing lifts. */
+    .topic-tile:hover, .recent-card:hover, .card:hover, .quest-card:hover { border-color: var(--dashed); }
     .btn:active, .btn-sm:active, .chip:active, .nav-tab:active, .tab:active, .topic-pill:active, .quest-card:active,
     .quest-new:active, .source-row:active, .avatar:active, .h-more:active, .backlink:active, .linkish:active,
     .danger-link:active, .todo-x:active, .qb-x:active, .qb-add:active, #toast button:active, .file-it:active { transform: scale(.96); }
     .card:active, .recent-card:active, .topic-tile:active { transform: translateY(0) scale(.98); }
-    .fab-mobile:active { transform: translateY(-14px) scale(.93); }
+    .fab-mobile:active { transform: scale(.93); }
     /* Pictures arrive with a short fade rather than a pop. One already in
        the cache is marked loaded the moment the grid is drawn, so redrawing
        a grid never blinks. */
@@ -898,7 +855,7 @@
     box-shadow: 0 1px 3px rgba(25,21,16,.3); background-position: center; background-repeat: no-repeat; background-size: 15px; }
   .selecting .card.sel::after { background-color: var(--coral);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E"); }
-  .selecting .card.sel { box-shadow: 0 0 0 3px var(--coral), var(--shadow-card); }
+  .selecting .card.sel { box-shadow: 0 0 0 3px var(--coral); }
   .selecting .card-text .card-body { padding-right: 46px; }
   #select-bar { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center;
     gap: 8px; max-width: calc(100vw - 32px); padding: 7px 7px 7px 18px; border-radius: 999px; background: var(--ink); color: var(--paper);
@@ -918,14 +875,14 @@
   .field-label .opt { color: var(--faint); font-weight: 500; }
   textarea.coll-note { min-height: 62px; }
   #collect-dialog .seg { margin: 0 0 6px; max-width: 100%; }
-  .coll-link { display: block; padding: 13px 15px; border-radius: 13px; background: var(--tint); color: var(--accent-text);
+  .coll-link { display: block; padding: 13px 15px; border-radius: var(--r-search); background: var(--surface); border: 1px solid var(--hairline); color: var(--coral-deep);
     font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
   /* The list */
   .coll-list { display: grid; gap: 12px; max-width: 760px; }
   .coll { display: grid; gap: 8px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--hairline);
-    border-radius: var(--radius); box-shadow: var(--shadow-card); }
+    border-radius: var(--r-card); }
   .coll-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .coll-name { font-family: var(--font-head); font-weight: 800; font-size: 18px; letter-spacing: -.015em; overflow-wrap: anywhere; }
+  .coll-name { font-family: var(--font-head); font-weight: 700; font-size: 18px; letter-spacing: -.015em; overflow-wrap: anywhere; }
   .coll-n { color: var(--meta); font-size: 13px; font-weight: 600; }
   .coll-note { margin: 0; color: var(--ink-2); font-size: 14px; overflow-wrap: anywhere; }
   .coll-status { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
@@ -1153,12 +1110,11 @@
       </div>
       <p class="pitch-cta-sub">Free on the App Store, iOS 17 or later. No account for your first 20 saves.</p>
       <a class="pitch-island" href="/palace">
-        <span class="pa-tag">New</span>
-        <span><b>Explore Library Island</b><small>Your saves as an island: every topic its own zone, every link a camp</small></span>
+        <img src="/img/quests/compass.jpg" alt="" width="40" height="40" loading="lazy">
+        <span><span class="pa-tag">New</span><b>Explore Library Island</b><small>Your saves as an island: every topic its own zone, every link a camp</small></span>
         <span class="pa-go" aria-hidden="true">→</span>
       </a>
       <img class="pitch-art" src="/img/hero-bookmark.jpg" width="900" height="900" alt="A coral clay bookmark with the Instagram, X, TikTok and YouTube app icons set into it.">
-      <p class="pitch-links">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/palace">Library Island</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a></p>
     </div>
   <div class="auth-card">
     <a class="brand auth-card-brand" href="/app"><img src="/img/mark-192.png" alt=""><span>bookmarker</span></a>
@@ -1198,7 +1154,6 @@
       <p class="err" id="code-err" role="alert"></p>
     </div>
   </div>
-  <p class="pitch-links m-links" style="text-align:center;padding-bottom:30px">© 2026 bookmarker · <a href="/app">Get the app</a> · <a href="/palace">Library Island</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
   </div>
 </section>
 
@@ -1370,6 +1325,7 @@
     </section>
 
     <section id="view-browse" hidden>
+      <div class="screen-head" id="browse-title"><h2 class="screen-title">Browse</h2></div>
       <input type="search" class="field" id="search-mobile" placeholder="Search everything you've borked" autocomplete="off" aria-label="Search everything you've borked">
       <!-- Two browse axes that cross, plus what you're working on — the app's
            BrowseView segmented control. The search field stays above it. -->
@@ -1379,7 +1335,11 @@
           <button data-seg="sources" aria-pressed="false">Sources</button>
           <button data-seg="quests" aria-pressed="false">Side quests</button>
         </nav>
-        <nav class="chips" id="sort-chips" aria-label="Sort"></nav>
+        <!-- The list header: what this is, and a small sort menu at its right. -->
+        <div class="browse-head" id="browse-head">
+          <h2 class="h-title" id="browse-head-t">Your topics</h2>
+          <label class="sort-menu"><span class="sr">Sort</span><select id="sort-chips" aria-label="Sort"></select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></label>
+        </div>
         <div id="seg-topics">
           <div class="topics-grid" id="topics-grid"></div>
           <p class="hint" id="topics-hint" hidden>Topics appear here once something is filed under them.</p>
@@ -1412,6 +1372,7 @@
     <!-- Revisit: everything you saved, handed back to you. One container —
          renderRevisit builds the whole page and memoises it. -->
     <section id="view-revisit" hidden>
+      <div class="screen-head"><h2 class="screen-title">Revisit</h2><p class="screen-sub">What you saved, handed back to you.</p></div>
       <div id="revisit-sections"></div>
     </section>
 
@@ -1447,7 +1408,7 @@
           <a class="you-card you-pro" href="/pro?from=web-you">
             <img src="/img/hero-bookmark.jpg" alt="" loading="lazy">
             <span class="you-pro-text"><b>bookmarker Pro</b><span>Unlimited saves, for people who bork a lot.</span></span>
-            <span class="btn-sm btn-coral">See plans</span>
+            <span class="go">See plans<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg></span>
           </a>
           <div class="you-card">
             <label class="field-label" for="profile-name">Display name</label>
@@ -1461,12 +1422,12 @@
         <div class="you-col">
           <div class="you-card">
             <img class="account-art" src="/img/quests/scroll.jpg" alt="">
-            <h2 class="section-title" style="margin:0 0 6px;font-size:17px">Import your saves</h2>
+            <h2 class="section-title" style="margin:0 0 6px">Import your saves</h2>
             <p class="hint" style="margin:0 0 12px">Bring across everything you already saved on Instagram, TikTok, X, YouTube, Pinterest or in your browser. The export file is read here in your browser and never uploaded.</p>
             <button class="btn ghost" data-act="import">Import from a file</button>
           </div>
           <div class="you-card">
-            <h2 class="section-title" style="margin:0 0 8px;font-size:20px">Across your devices</h2>
+            <h2 class="section-title" style="margin:0 0 8px">Across your devices</h2>
             <p class="account-status" id="account-sync-status" role="status">Checking your library…</p>
             <button class="linkish" data-act="sync-now">Refresh library</button>
             <a class="linkish" href="#browse/quests" data-act="library-quests">Your side quests →</a>
@@ -1534,13 +1495,13 @@
   </main>
 
   <nav class="tabbar" aria-label="Tabs">
-    <button class="tab" data-tab-link="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</button>
-    <button class="tab" data-tab-link="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
-    <button class="fab-mobile" id="add-mobile" aria-label="Bork a link">+</button>
+    <button class="tab" data-tab-link="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-3.6L6 20V5a1 1 0 0 1 1-1z"/></svg>Library</button>
+    <button class="tab" data-tab-link="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>Browse</button>
+    <span class="fab-slot"><button class="fab-mobile" id="add-mobile" aria-label="Bork a link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></span>
     <!-- Help is a form you use once; Revisit is a habit. Help moved to a link
          on the You page, and keeps its place in the desktop header. -->
-    <button class="tab" data-tab-link="revisit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>Revisit</button>
-    <button class="tab" data-tab-link="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>You</button>
+    <button class="tab" data-tab-link="revisit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v3.2h3.2"/><path d="M12 8.5V12l2.5 1.8"/></svg>Revisit</button>
+    <button class="tab" data-tab-link="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>You</button>
   </nav>
 </div>
 
@@ -2759,17 +2720,20 @@ const fmtDate = (iso) => {
   if (days < 30) return `${Math.floor(days)}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
-/* Topic colours are the phone's: docs/palette.js ports CategoryPalette, so a
-   topic is the same colour on both. Should that file ever fail to load, the
-   old HSL stands in rather than nothing. Unfiled is NeutralPalette's hue. */
-const PAL = window.Palette || null;
-const NEUTRAL_HUE = PAL ? PAL.NEUTRAL_HUE : 40;
-const chipStyle = (hue) => PAL ? PAL.chip(hue) : `background:hsl(${hue} 70% 92%);color:hsl(${hue} 60% 28%)`;
-const tileStyle = (hue) => `background:hsl(${hue} 68% 90%);color:hsl(${hue} 62% 24%)`;
-const gradient = (hue) => `background:${PAL ? PAL.gradient(hue) : `linear-gradient(135deg, hsl(${hue} 65% 62%), hsl(${hue} 72% 44%))`}`;
-/* A card's own colours, as custom properties: tint, deep, dot. */
-const paletteVars = (hue) => PAL ? `--pt:${PAL.tint(hue)};--pd:${PAL.deep(hue)};--ps:${PAL.solid(hue)}`
-  : `--pt:hsl(${hue} 70% 86%);--pd:hsl(${hue} 46% 30%);--ps:hsl(${hue} 50% 52%)`;
+/* Topic colours are the phone's clay palette: docs/palette.js is a
+   byte-identical port of Core/ClayPalette.swift, so a topic is the same
+   colour on both. Every topic has a tint (surfaces), a mid (the dot, small
+   fills; never under white text) and a deep (text on the tint, and the fill
+   behind white text). No hue — unfiled, More…, the art ground — is Sand,
+   Palette.of(null). Should palette.js ever fail to load, everything is Sand. */
+const SAND_CLAY = Object.freeze({ tint: "#ECE5D8", mid: "#B5A68A", deep: "#5A4E38" });
+const PAL = window.Palette || { of: () => SAND_CLAY };
+const NEUTRAL_HUE = null;
+const pal = (hue) => PAL.of(hue ?? null);
+const chipStyle = (hue) => { const p = pal(hue); return `background:${p.tint};color:${p.deep}`; };
+/* A card's own colours, as custom properties: tint, deep, and the mid twice
+   (--ps for the 1.3 rules, --pm for tokens.css's .c-dot). */
+const paletteVars = (hue) => { const p = pal(hue); return `--pt:${p.tint};--pd:${p.deep};--ps:${p.mid};--pm:${p.mid}`; };
 /* Cover ratios are the iOS cover heights (reel 200, pin 176, post 148, video
    118) over its 175pt column, so the web grid has the phone's proportions. */
 const KIND_ASPECT = { clip: "7 / 8", reel: "7 / 8", short: "7 / 8", pin: "1 / 1", video: "3 / 2", post: "6 / 5" };
@@ -2919,7 +2883,7 @@ const fmtDuration = (secs) => {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(s % 60).padStart(2, "0");
   return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 };
-const PLAY_ICON = `<svg viewBox="0 0 7 8" aria-hidden="true"><path d="M0 0l7 4-7 4z"/></svg>`;
+
 /* The app's PlatformBadge: the platform's colour, its mark. */
 const pbadge = (k) => `<span class="pbadge" data-p="${esc(k)}" role="img" aria-label="${esc(PLATFORM[k]?.name || "Web")}">${glyph(k)}</span>`;
 /* A folded card's other apps, as badges stacked behind its own. */
@@ -2932,162 +2896,102 @@ function alsoHTML(r, also = []) {
   const elsewhere = [...new Set(also.filter(a => a.platform !== r.platform).map(a => PLATFORM[a.platform]?.name || "the web"))];
   return `<div class="also">${esc(elsewhere.length ? `Also on ${andList(elsewhere)}` : `Saved ${also.length + 1} times`)}</div>`;
 }
-/* What a poster calls itself — the app's words for what it is. */
-function kindLabel(r) {
-  let path = "";
-  try { path = new URL(r.url).pathname.toLowerCase(); } catch {}
-  switch (r.platform) {
-    case "instagram": return path.includes("/reel") || (r.kind === "reel" && !path.includes("/p/")) ? "Reel" : "Post";
-    case "tiktok": return path.includes("/photo/") ? "Photos" : "Video";
-    case "shorts": return "Short";
-    case "youtube": return "Video";
-    case "pinterest": return "Pin";
-    case "grok": return "Answer";
-    default: return r.kind === "video" ? "Video" : "Post";
-  }
-}
-/* The topic's clay scene in a coin: the poster's signature, the same art
-   Browse and the rail use. A topic with no scene yet shows its initial. */
-function stampHTML(t) {
-  if (!t) return "";
-  const src = topicArtSrc(t);
-  return `<span class="stamp" aria-hidden="true"><i class="ini">${esc(t.name.charAt(0))}</i>${src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : ""}</span>`;
-}
-/* The line under a card: the topic's dot (or its stamp), where it is filed,
-   when. An unfiled save says so, and its chip files just that one: the
-   data-triage protocol, answered by docs/triage.js's own listener. */
-function metaHTML(r, topic, lead = `<span class="tdot"></span>`) {
-  const when = `<span class="date">${fmtDate(r.saved_at)}</span>`;
+/* The clay art that stands in for a missing picture: the topic's own scene,
+   or the compass on the clay ground for an unfiled save or a topic with no
+   scene yet. Never an empty box, never a gradient (ClayCover). */
+const COMPASS_ART = "/img/quests/compass.jpg";
+const artFor = (t) => (t && topicArtSrc(t)) || COMPASS_ART;
+/* An <img> of clay art. data-fb="art" falls back to the compass, once. */
+const artImg = (t, cls = "cv-art", lazy = true) =>
+  `<img class="${cls}" src="${esc(artFor(t))}" alt=""${lazy ? ' loading="lazy"' : ""} data-fb="art">`;
+/* The line under a card: the topic's 8 px dot in mid and "Topic › Sub", or,
+   for an unfiled save, the chip that files just that one (the data-triage
+   protocol, answered by docs/triage.js's own listener). A note is a ✎. */
+const fileItHTML = (r) => `<span class="file-it" data-triage="one" data-id="${esc(r.id)}" title="Choose where it goes">Unfiled · File it</span>`;
+function metaHTML(r, topic, { date = false } = {}) {
   const note = r.note_text ? `<span class="note-dot" title="Has a note">✎</span>` : "";
   const filed = topic
-    ? `${lead}<span class="filing-path">${esc(SavedContent.breadcrumb(topic.name, r.subcategory))}</span>`
-    : `<span class="file-it" data-triage="one" data-id="${esc(r.id)}" title="Choose where it goes">Unfiled · File it</span>`;
-  return `<div class="card-meta">${filed}${when}${note}</div>`;
+    ? `<span class="tdot"></span><span class="filing-path">${esc(SavedContent.breadcrumb(topic.name, r.subcategory))}</span>`
+    : fileItHTML(r);
+  return `<div class="card-meta">${filed}${date ? `<span class="date">${fmtDate(r.saved_at)}</span>` : ""}${note}</div>`;
 }
 /* One card. o: idx (stagger slot), fresh (just saved), n (its place in the
-   feed, for the keyboard), also (cross-posts folded into it), density, colW
-   and est (the column width, and the height content-visibility reserves). */
+   feed, for the keyboard), also (cross-posts folded into it: their marks
+   stack behind its own), density, colW and est (the column width, and the
+   height content-visibility reserves). Media, poster and text survive as a
+   class only: every card is now the same shape (BookmarkCard). */
 function cardHTML(r, o = {}) {
-  const p = PLATFORM[r.platform] || PLATFORM.web;
   const d = displayFields(r);
   const topic = topicFor(r.category_id);
   const hue = topic ? topic.hue : NEUTRAL_HUE;
   const shape = cardShape(r);
   const also = o.also || [];
   const compact = o.density === "compact";
-  const textPost = r.platform === "x" || r.platform === "threads";
   const est = o.est ?? estHeight(r, o.colW, o.density);
-  const cls = ["card", compact && "tile", `card-${shape.kind}`, shape.kind === "text" && !textPost && "card-article",
-    shape.kind === "poster" && !topic && "unfiled", o.fresh && "card-in"].filter(Boolean).join(" ");
-  const look = shape.kind === "media" && compact ? `;${gradient(hue)}` : "";
+  const cls = ["card", compact && "tile", `card-${shape.kind}`, !topic && "unfiled", o.fresh && "card-in"].filter(Boolean).join(" ");
   const attrs = `class="${cls}" role="button" tabindex="0" data-id="${esc(r.id)}" data-platform="${esc(r.platform)}"`
     + (o.n != null ? ` data-n="${o.n}"` : "") + (also.length ? ` data-also="${esc(also.map(a => a.id).join(","))}"` : "")
-    + ` style="${paletteVars(hue)};contain-intrinsic-size:auto ${Math.round(est)}px${o.idx != null ? `;--i:${o.idx}` : ""}${look}"`;
-  const dur = fmtDuration(r.duration_seconds);
-  const durChip = dur ? `<span class="dur-chip">${PLAY_ICON}${dur}</span>` : "";
-  const who = d.author || (r.platform === "web" ? hostOf(r.url) : null) || p.name;
+    + ` style="${paletteVars(hue)};contain-intrinsic-size:auto ${Math.round(est)}px${o.idx != null ? `;--i:${o.idx}` : ""}"`;
+  const dur = shape.kind === "media" ? fmtDuration(r.duration_seconds) : null;
+  const durChip = dur ? `<span class="dur-chip">${dur}</span>` : "";
+  const badges = `<span class="badges">${badgesHTML(r, also)}</span>`;
   if (compact) {
-    if (shape.kind === "media") return `<article ${attrs}>
-      <img class="tile-img" src="${esc(shape.src)}" alt="" loading="lazy" data-fb="remove"><span class="badges">${badgesHTML(r, also)}</span>${durChip}
+    const pic = shape.kind === "media"
+      ? `<img class="tile-img" src="${esc(shape.src)}" alt="" loading="lazy" data-fb="remove">` : artImg(topic, "tile-img cv-art");
+    return `<article ${attrs}>${pic}${badges}${topic ? "" : fileItHTML(r)}
       <div class="tile-cap"><span class="tile-t">${esc(d.title)}</span></div></article>`;
-    if (shape.kind === "poster") return `<article ${attrs}>
-      <div class="poster-top">${badgesHTML(r, also)}<span>${esc(kindLabel(r))}</span></div>
-      <span class="tile-t">${esc(d.title)}</span>${stampHTML(topic)}</article>`;
-    return `<article ${attrs}><div class="card-author">${badgesHTML(r, also)}<span>${esc(who)}</span></div>
-      <span class="tile-t">${esc(d.title)}</span></article>`;
   }
-  if (shape.kind === "media") return `<article ${attrs}>
-    <div class="cover" style="aspect-ratio:${shape.aspect};${gradient(hue)}"><img src="${esc(shape.src)}" alt="" loading="lazy" data-fb="remove"><span class="badges">${badgesHTML(r, also)}</span>${durChip}</div>
-    <div class="card-body">
-      ${d.author ? `<div class="card-author"><span>${esc(d.author)}</span></div>` : ""}
-      <div class="card-title">${esc(d.title)}</div>
-      ${metaHTML(r, topic)}${alsoHTML(r, also)}
-    </div>
-  </article>`;
-  // No play button on a poster: a duration, when the platform published one, is words.
-  if (shape.kind === "poster") return `<article ${attrs}>
-    <div class="poster">
-      <div class="poster-top">${badgesHTML(r, also)}<span>${esc([kindLabel(r), dur, d.author].filter(Boolean).join(" · "))}</span></div>
-      <div class="poster-title">${esc(d.title)}</div>
-      ${metaHTML(r, topic, stampHTML(topic))}${alsoHTML(r, also)}
-    </div>
-  </article>`;
-  const av = avatarOf(r);
-  const byline = av
-    ? `<img class="av" src="${esc(av)}" alt="" loading="lazy" data-fb="hide"><span>${esc(who)}</span><span class="av-pg">${badgesHTML(r, also)}</span>`
-    : `${badgesHTML(r, also)}<span>${esc(who)}</span>`;
+  const pic = shape.kind === "media" ? `<img src="${esc(shape.src)}" alt="" loading="lazy" data-fb="remove">` : artImg(topic);
   return `<article ${attrs}>
-    <div class="card-body">
-      <div class="card-author">${byline}</div>
-      <div class="card-title">${esc(d.title)}</div>
-      ${d.snippet ? `<div class="card-snippet">${esc(d.snippet)}</div>` : ""}
-      ${metaHTML(r, topic)}${alsoHTML(r, also)}
-    </div>
+    <div class="cover">${pic}${badges}${durChip}</div>
+    <div class="card-body"><div class="card-title">${esc(d.title)}</div>${metaHTML(r, topic)}</div>
   </article>`;
 }
-/* What a card will measure, for the masonry and for the space
-   content-visibility holds while it is off screen. Approximate by design,
-   like the app's estimatedHeight: it only has to rank cards against each other. */
+/* What a card will measure, for the space content-visibility holds while it
+   is off screen: one shape now, so one sum (BookmarkCard.estimatedHeight). */
 function estHeight(r, colW = 220, density = "cards") {
   if (density === "compact") return colW;
-  const d = displayFields(r), shape = cardShape(r);
-  const lines = (text, px, max) => Math.min(max, Math.max(1, Math.ceil(String(text || "").length / Math.max(8, (colW - 26) / px))));
-  if (shape.kind === "media") {
-    const [aw, ah] = shape.aspect.split("/").map(Number);
-    return Math.min(340, (colW * ah) / aw) + 22 + (d.author ? 18 : 0) + lines(d.title, 7.6, 2) * 19 + 26;
-  }
-  if (shape.kind === "poster") return 24 + 22 + 10 + lines(d.title, 9.6, 4) * 21 + 10 + 28;
-  const snippet = d.snippet ? lines(d.snippet, 6.6, 3) * 18 + 5 : 0;
-  const words = r.platform === "x" || r.platform === "threads" ? lines(d.title, 7.2, 6) * 20 : lines(d.title, 8.4, 4) * 19.5;
-  return 22 + 30 + words + snippet + 26;
+  if (density === "list") return 78;
+  return colW * 0.75 + 84;
 }
 function columnCount() {
   return LibraryPresentation.columns(window.innerWidth);
 }
-/* List density: today's rows. A save with no picture shows its topic's clay
-   scene in the thumbnail, a post of words a quote mark, as the app's rows do. */
+/* List density: BookmarkRow — a 56 px cover at radius 10 (the picture, or
+   the topic's clay art), the title, the filing line and tags, "@who · when". */
 function listCardHTML(r, o = {}) {
   const d = displayFields(r), t = topicFor(r.category_id), shape = cardShape(r);
-  const art = !shape.src && t ? topicArtSrc(t) : null;
   const thumb = shape.src ? `<span class="feed-thumb"><img src="${esc(shape.src)}" alt="" loading="lazy" data-fb="remove"></span>`
-    : r.platform === "x" || r.platform === "threads" ? `<span class="feed-thumb quote" aria-hidden="true">“</span>`
-    : art ? `<span class="feed-thumb art"><img src="${esc(art)}" alt="" loading="lazy" data-fb="remove"></span>`
-    : `<span class="feed-thumb unfiled">${glyph(r.platform)}</span>`;
-  const filed = t ? `<span class="tdot"></span><span class="filing-path">${esc(SavedContent.breadcrumb(t.name, r.subcategory))}</span>`
-    : `<span class="file-it" data-triage="one" data-id="${esc(r.id)}" title="Choose where it goes">Unfiled · File it</span>`;
+    : `<span class="feed-thumb art">${artImg(t, "cv-art")}</span>`;
+  const filed = t ? `<span class="tdot"></span><span class="filing-path">${esc(SavedContent.breadcrumb(t.name, r.subcategory))}</span>` : fileItHTML(r);
   const also = o.also || [];
   return `<article class="card feed-row" role="button" tabindex="0" data-id="${esc(r.id)}"${o.n != null ? ` data-n="${o.n}"` : ""}${also.length ? ` data-also="${esc(also.map(a => a.id).join(","))}"` : ""} style="${paletteVars(t ? t.hue : NEUTRAL_HUE)}">
     ${thumb}
-    <div class="card-body"><div class="card-author">${badgesHTML(r, also)}<span>${esc(d.author || (r.platform === "web" ? hostOf(r.url) : null) || PLATFORM[r.platform]?.name || "Web")} · ${fmtDate(r.saved_at)}</span></div>
-      <div class="card-title">${esc(d.title)}</div><div class="card-meta">${filed}
+    <div class="card-body"><div class="card-title">${esc(d.title)}</div><div class="card-meta">${filed}
       ${r.tags?.length ? `<span class="card-tags">${esc(r.tags.slice(0, 3).map(t => "#" + t).join(" · "))}</span>` : ""}
-      ${r.note_text ? '<span class="note-dot" title="Has a note">✎</span>' : ""}</div>${alsoHTML(r, also)}</div></article>`;
+      ${r.note_text ? '<span class="note-dot" title="Has a note">✎</span>' : ""}</div>
+      <div class="card-author">${badgesHTML(r, also)}<span>${esc(d.author || (r.platform === "web" ? hostOf(r.url) : null) || PLATFORM[r.platform]?.name || "Web")} · ${fmtDate(r.saved_at)}</span></div>${alsoHTML(r, also)}</div></article>`;
 }
-// The app's Masonry.swift in three lines: next card goes to the shortest column.
-// Rows may arrive folded ({ row, also }) when cross-posts are grouped.
-function gridHTML(rows, stagger, { cols: n = columnCount(), density = "cards", colW = 220 } = {}) {
-  const cols = Array.from({ length: n }, () => ({ h: 0, html: [] }));
-  rows.forEach((item, i) => {
+/* The feed is a plain grid now that every card is one height: cards in
+   reading order, and `insert` (the side-quest strip) after `at` of them.
+   Rows may arrive folded ({ row, also }) when cross-posts are grouped. */
+function gridHTML(rows, stagger, { density = "cards", colW = 220, insert = null } = {}) {
+  const html = rows.map((item, i) => {
     const r = item.row || item, also = item.also || [];
-    const est = estHeight(r, colW, density) + (also.length && density !== "compact" ? 16 : 0);
-    const c = cols.reduce((a, b) => (b.h < a.h ? b : a));
-    c.html.push(cardHTML(r, { idx: stagger ? Math.min(i, 30) : null, fresh: justAdded.has(r.id), n: i, also, density, colW, est }));
-    c.h += est;
+    return cardHTML(r, { idx: stagger ? Math.min(i, 30) : null, fresh: justAdded.has(r.id), n: i, also, density, colW, est: estHeight(r, colW, density) });
   });
-  return cols.map(c => `<div class="col">${c.html.join("")}</div>`).join("");
+  if (insert && insert.html && html.length) html.splice(Math.min(insert.at, html.length), 0, insert.html);
+  return html.join("");
 }
 function skeletonHTML(n = columnCount()) {
-  const heights = [260, 180, 320, 200, 240, 300, 210, 280];
-  return Array.from({ length: n }, (_, c) =>
-    `<div class="col">${[0, 1, 2].map(i => `<div class="skel" style="--h:${heights[(c * 3 + i) % heights.length]}px"></div>`).join("")}</div>`
-  ).join("");
+  return Array.from({ length: n * 2 }, () => `<div class="skel"></div>`).join("");
 }
 /* The width a grid lays out in: its own, once it is on screen; before that
    the window, less the gutters (and the rail, for the library's). */
 function gridWidth(el) {
   if (el.clientWidth) return el.clientWidth;
-  const vw = window.innerWidth, gutter = Math.min(28, Math.max(14, vw * 0.03));
-  return Math.min(vw, vw >= 1100 ? 1440 : 1280) - 2 * gutter - (vw >= 1100 && el.id === "grid-library" ? 308 : 0);
+  const vw = window.innerWidth, gutter = vw <= 760 ? 20 : Math.min(28, Math.max(20, vw * 0.03));
+  return Math.min(vw, vw >= 1100 ? 1440 : 1280) - 2 * gutter - (vw >= 1100 && el.id === "grid-library" ? 332 : 0);
 }
 /* What makes two saves one post, for LibraryPresentation.crossPosts: the
    title and creator the card shows, and a real picture (never an avatar). */
@@ -3099,14 +3003,18 @@ const CROSS_POST_KEYS = {
 /* Rebuild a grid only when what it shows has changed. A new context (another
    filter, another view) staggers the cards in; a same-context change animates
    only the rows in `justAdded`. Columns come from the grid's own width and
-   the density; crossPosts folds one post saved from two apps into one card. */
-function renderGrid(el, rows, ctx, { skeleton = false, density = "cards", crossPosts = false } = {}) {
+   the density; crossPosts folds one post saved from two apps into one card.
+   `insert` is { rows, html }: a strip that sits after that many rows of
+   cards (the Library's side quests). */
+function renderGrid(el, rows, ctx, { skeleton = false, density = "cards", crossPosts = false, insert = null } = {}) {
   const width = gridWidth(el);
   const cols = LibraryPresentation.gridColumns(width, density);
-  const gap = window.innerWidth <= 760 ? 10 : 14;
+  const gap = 12;
   const colW = (width - gap * (cols - 1)) / cols;
   el.classList.toggle("list-mode", density === "list");
   el.classList.toggle("compact-mode", density === "compact");
+  el.style.setProperty("--cols", cols);
+  el.dataset.cols = cols;
   if (skeleton) {
     const k = `skel|${cols}`;
     if (memo.get(el.id) === k) return;
@@ -3114,14 +3022,18 @@ function renderGrid(el, rows, ctx, { skeleton = false, density = "cards", crossP
     return;
   }
   const items = crossPosts ? LibraryPresentation.crossPosts(rows, CROSS_POST_KEYS) : rows.map(row => ({ row, also: [] }));
-  const key = `${ctx}|${density}|${cols}|${items.map(({ row, also }) => row.id + ":" + row.updated_at + also.map(a => "+" + a.id).join("")).join(",")}`;
+  const at = insert ? insert.rows * (density === "list" ? 2 : cols) : 0;
+  const key = `${ctx}|${density}|${cols}|${items.map(({ row, also }) => row.id + ":" + row.updated_at + also.map(a => "+" + a.id).join("")).join(",")}|${insert ? at + insert.html : ""}`;
   const prev = memo.get(el.id) || "";
   if (prev === key) return;
   const fresh = !prev || prev.startsWith("skel|") || !prev.startsWith(ctx + "|");
   memo.set(el.id, key);
   el.classList.toggle("grid-in", fresh);
-  el.innerHTML = density === "list" ? items.map(({ row, also }, i) => listCardHTML(row, { n: i, also })).join("")
-    : gridHTML(items, fresh, { cols, density, colW });
+  if (density === "list") {
+    const html = items.map(({ row, also }, i) => listCardHTML(row, { n: i, also }));
+    if (insert && html.length) html.splice(Math.min(at, html.length), 0, insert.html);
+    el.innerHTML = html.join("");
+  } else el.innerHTML = gridHTML(items, fresh, { density, colW, insert: insert && { at, html: insert.html } });
   // A picture the browser already holds is shown at once, so a redraw never blinks.
   for (const img of el.querySelectorAll("img")) if (img.complete && img.naturalWidth) img.classList.add("loaded");
 }
@@ -3151,10 +3063,10 @@ const bySaved = (a, b) => (b.saved_at || "").localeCompare(a.saved_at || "");
 function recentCardHTML(r, meta) {
   const topic = topicFor(r.category_id);
   const src = cardShape(r).src;
-  // The poster's tint and stamp sit underneath; a picture covers them, and a dead one uncovers them.
+  // The topic's clay art sits underneath; a picture covers it, and a dead one uncovers it.
   const img = src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : "";
   return `<div class="recent-card" data-id="${esc(r.id)}" role="button" tabindex="0">
-    <div class="rc-cover rc-poster" style="${paletteVars(topic ? topic.hue : NEUTRAL_HUE)}">${stampHTML(topic)}${img}${pbadge(r.platform)}</div>
+    <div class="rc-cover">${artImg(topic, "cv-art")}${img}${pbadge(r.platform)}</div>
     <div class="rc-title">${esc(displayFields(r).title)}</div>
     ${meta ? `<div class="rc-meta">${esc(meta)}</div>` : ""}</div>`;
 }
@@ -3190,25 +3102,29 @@ function sortCardHTML({ unfiled, guesses }) {
     : [`${guessWord(guesses)} to check`, "guesses", "Check", guesses];
   return `<div class="lib-card lib-sort">
     <img src="/img/quests/compass.jpg" alt="" data-fb="remove">
-    <div class="lib-sort-text"><b>${title}</b><span>${sortTime(n)} · one tap each</span>
-      ${unfiled && guesses ? `<button class="lib-sort-more" data-triage="guesses">Then check ${guessWord(guesses)} →</button>` : ""}</div>
-    <button class="btn-sm btn-coral" data-triage="${deck}">${go}</button>
+    <div class="lib-sort-text"><b>${title}</b><span>${sortTime(n)} · ${unfiled && guesses
+      ? `<button class="lib-sort-more" data-triage="guesses">then ${guessWord(guesses)}</button>` : "one tap each"}</span></div>
+    <button class="lib-sort-go" data-triage="${deck}">${go}${CHEVRON_RIGHT}</button>
   </div>`;
 }
-/* Everything filed: what the library says about you, on the green card. */
+const CHEVRON_RIGHT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>`;
+/* What the library says about you: the insight card, which left the
+   Library in 1.4 and opens Revisit instead. */
 function insightHTML(all) {
   const recent = all.filter(r => Date.parse(r.saved_at) >= Date.now() - 7 * 86400000);
   const top = topicCounts(recent)[0];
-  return `<div class="lib-card library-insight"><div><b>What are you finding interesting?</b><p>${top ? `${esc(topicFor(top[0]).name)} is your most-saved topic this week. ` : "Your interests, collected in one place. "}${recent.length ? `You saved ${plural(recent.length, "bork")} in the last 7 days.` : "Save something worth coming back to."}</p></div><img src="/img/quests/scroll.jpg" alt=""></div>`;
+  return `<div class="rv-insight"><img src="/img/quests/scroll.jpg" alt="" data-fb="art"><div><b>What are you finding interesting?</b><p>${top ? `${esc(topicFor(top[0]).name)} is your most-saved topic this week. ` : "Your interests, collected in one place. "}${recent.length ? `You saved ${plural(recent.length, "bork")} in the last 7 days.` : "Save something worth coming back to."}</p></div></div>`;
 }
+/* A quest wears its topic's clay: the tint behind its words, the deep for its line. */
+const questLook = (categoryID) => { const t = topicFor(categoryID), p = pal(t ? t.hue : null); return `--quest-tint:${p.tint};--quest-deep:${p.deep}`; };
 function questCardHTML(m) {
   const done = (m.todos || []).filter(t => t.done).length;
   const total = (m.todos || []).length;
   const meta = [total ? `${done} of ${total} done` : null,
                 m.bookmark_ids?.length ? plural(m.bookmark_ids.length, "bork") : null]
                 .filter(Boolean).join(" · ") || "just started";
-  return `<button class="quest-card" data-quest="${esc(m.id)}">
-    <img class="quest-art" src="${questArt(m.category_id, m.title)}" alt="" data-fb="remove">
+  return `<button class="quest-card" data-quest="${esc(m.id)}" style="${questLook(m.category_id)}">
+    <img class="quest-art" src="${questArt(m.category_id, m.title)}" alt="" data-fb="art">
     <span><span class="quest-t">${esc(m.title)}</span><span class="quest-m" style="display:block">${meta}</span></span>
   </button>`;
 }
@@ -3220,9 +3136,9 @@ function topicCounts(all) {
 }
 function topicPillsHTML(all, limit) {
   return topicCounts(all).slice(0, limit).map(([id, n]) => {
-    const t = topicFor(id), src = topicArtSrc(t);
+    const t = topicFor(id);
     return `<button class="topic-pill" style="${chipStyle(t.hue)}" data-topic-go="${esc(id)}">
-      <span class="pill-art"><i class="ini">${esc(t.name.charAt(0))}</i>${src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : ""}</span>${esc(t.name)}<span class="n">${n}</span></button>`;
+      <span class="pill-art">${artImg(t, "")}</span>${esc(t.name)}<span class="n">${n}</span></button>`;
   }).join("");
 }
 /* ── Suggested side quests — the app's Mission.suggested, ported ──
@@ -3406,6 +3322,7 @@ function platformItems(rows) {
 
 function renderLibrary(all, s) {
   const home = $("home-sections");
+  let questStrip = "";
   if (all.length) {
     const recents = all.slice(0, 12);
     const quests = liveMissions();
@@ -3418,21 +3335,27 @@ function renderLibrary(all, s) {
       seeds.map(s => s.id + ":" + s.title + ":" + s.bookmark_ids.length).join(",")].join("|");
     const sort = sortSummary(all);
     const topTopics = topicCounts(all);
+    // The side quests, drawn once and shown in one of two places: as a strip
+    // after the feed's second row on a phone or tablet, or as slim rows in the
+    // rail from 1100px (library-layout.css shows the one that fits).
+    const questCards = quests.map(m => questCardHTML(m)).join("");
+    const suggested = seeds.map(seed => `<button class="quest-card" data-seed="${esc(seed.id)}" style="${questLook(seed.category_id)}">
+      <img class="quest-art" src="${questArt(seed.category_id, seed.title, seed.subcategory)}" alt="" data-fb="art">
+      <span><span class="quest-t">${esc(seed.title)}</span><span class="quest-m">Suggested · ${plural(seed.bookmark_ids.length, "bork")}</span></span></button>`).join("");
+    const questBody = `<div class="h-row"><h2 class="h-title">Your side quests</h2><button class="h-more" data-act="library-quests">See all</button></div>
+      ${quests.length || seeds.length ? `<div class="quests">${questCards}${suggested}<button class="quest-new" data-quest="">+ Start a side quest</button></div>` : questStarterHTML()}`;
+    questStrip = `<section class="feed-quests" aria-label="Your side quests">${questBody}</section>`;
     if (memo.get("home-sections") !== key + `|${sort.unfiled}|${sort.guesses}`) {
       memo.set("home-sections", key + `|${sort.unfiled}|${sort.guesses}`);
       refineSeedTitles(seeds);
-      const questCards = quests.map(m => questCardHTML(m)).join("");
       const stats = `${plural(all.length, "bork")} · ${plural(new Set(all.map(r => r.platform)).size, "app")} · ${plural(topTopics.length, "topic")}`;
-      const suggested = seeds.map(seed => `<button class="quest-card" data-seed="${esc(seed.id)}">
-        <img class="quest-art" src="${questArt(seed.category_id, seed.title, seed.subcategory)}" alt="">
-        <span><span class="quest-t">${esc(seed.title)}</span><span class="quest-m">Suggested · ${plural(seed.bookmark_ids.length, "bork")}</span></span></button>`).join("");
-      // One set of sections: above the feed on a phone, the rail beside it from 1100px.
+      // The title, the count, search, and at most one slim action row (the
+      // sort row; the insight moved to Revisit). The rail's sections follow.
       home.innerHTML = `<div class="lib-intro"><div class="lib-hello"><h1>Your library</h1><p>${stats}</p></div>
         <button class="library-search" data-act="library-search">${SEARCH_ICON}<span>Search everything you've borked</span></button></div>
-        ${sortCardHTML(sort) || insightHTML(all)}
-        <section class="lib-quests" aria-label="Your side quests"><div class="h-row"><span class="h-title">Your side quests</span><button class="h-more" data-act="library-quests">See all</button></div>
-        ${quests.length || seeds.length ? `<div class="quests">${questCards}${suggested}<button class="quest-new" data-quest="">+ Start a side quest</button></div>` : questStarterHTML()}</section>
-        ${topTopics.length ? `<section class="lib-topics" aria-label="Top topics"><div class="h-row"><span class="h-title">Top topics</span><button class="h-more" data-tab-link="browse">Browse</button></div>
+        ${sortCardHTML(sort)}
+        <section class="lib-quests" aria-label="Your side quests">${questBody}</section>
+        ${topTopics.length ? `<section class="lib-topics" aria-label="Top topics"><div class="h-row"><h2 class="h-title">Top topics</h2><button class="h-more" data-tab-link="browse">Browse</button></div>
         <div class="topic-pills">${topicPillsHTML(all, 8)}</div></section>` : ""}`;
     }
   } else {
@@ -3443,10 +3366,11 @@ function renderLibrary(all, s) {
   $("platform-chips").hidden = skeleton || !all.length;
   if (!skeleton) renderChips($("platform-chips"), platformItems(all), platformFilter, "data-platform");
   $("library-tools").hidden = !all.length;
-  $("library-tools").innerHTML = `<span class="h-title">Your borks</span><div class="feed-actions">${selectButtonHTML()}<div class="density" role="group" aria-label="Feed layout">
+  $("library-tools").innerHTML = `<h2 class="h-title">Your borks</h2><div class="feed-actions">${selectButtonHTML()}<div class="density" role="group" aria-label="Feed layout">
     ${DENSITIES.map(([k, label, icon]) => `<button data-density="${k}" aria-pressed="${feedDensity === k}" aria-label="${label}" title="${label}">${icon}<span>${label}</span></button>`).join("")}</div></div>`;
   // Cross-posts fold into one card, except while picking: every save is its own pick.
-  renderGrid($("grid-library"), rows, `library|${platformFilter || "all"}|${demoMode}`, { skeleton, density: feedDensity, crossPosts: !sel().on });
+  renderGrid($("grid-library"), rows, `library|${platformFilter || "all"}|${demoMode}`,
+    { skeleton, density: feedDensity, crossPosts: !sel().on, insert: questStrip ? { rows: 2, html: questStrip } : null });
   $("empty-library").hidden = skeleton || rows.length > 0;
   if (!skeleton && !rows.length) {
     if (all.length === 0 && !demoMode) {
@@ -3454,10 +3378,10 @@ function renderLibrary(all, s) {
         <div style="max-width:640px;margin:0 auto;text-align:left">
           <h2 style="font-family:var(--font-head);font-size:24px;letter-spacing:-.02em;margin:0 0 6px">Everything you're consuming on the internet — one library.</h2>
           <p style="color:var(--ink-2);margin:0 0 18px">Reels, threads, videos, articles. Save them here and they stop disappearing.</p>
-          <div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px">
-            <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>1 · Save</b><br><span style="color:var(--ink-2);font-size:13px">Tap +, paste any link from any app</span></div>
-            <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>2 · It files itself</b><br><span style="color:var(--ink-2);font-size:13px">Fifty topics, sorted automatically</span></div>
-            <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:14px"><b>3 · Find it in seconds</b><br><span style="color:var(--ink-2);font-size:13px">Search everything you ever saved</span></div>
+          <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:22px">
+            <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:14px"><b style="font-weight:600">1 · Save</b><br><span style="color:var(--meta);font-size:13px;font-weight:500">Tap +, paste any link from any app</span></div>
+            <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:14px"><b style="font-weight:600">2 · It files itself</b><br><span style="color:var(--meta);font-size:13px;font-weight:500">Fifty topics, sorted automatically</span></div>
+            <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:14px"><b style="font-weight:600">3 · Find it in seconds</b><br><span style="color:var(--meta);font-size:13px;font-weight:500">Search everything you ever saved</span></div>
           </div>
           <div class="import-note">
             <b>Already saved a thousand things somewhere else?</b>
@@ -3497,6 +3421,7 @@ function renderBrowse(all) {
   $("browse-home").hidden = panel !== "home";
   $("browse-topic").hidden = panel !== "drill";
   $("browse-search").hidden = panel !== "search";
+  $("browse-title").hidden = panel !== "home";
   if (memo.get("browse-panel") !== panel) { memo.set("browse-panel", panel); replay($(`browse-${panel === "drill" ? "topic" : panel}`), "view-enter"); }
   if (panel !== "drill" && shareMenuOpen) shareMenuOpen = false;
   if (panel === "search") { renderSearch(all); return; }
@@ -3506,11 +3431,13 @@ function renderBrowse(all) {
     renderTopicHero(t, rows);
     if (t && !demoMode) buildShareCard(t, rows);
     if (topicRefine.id !== topicFilter) topicRefine = { id: topicFilter, sub: null, source: null, tag: null };
-    const chip = (key, value, label, active) => `<button class="chip${active ? " on" : ""}" data-refine="${key}" data-value="${esc(value)}" aria-pressed="${active}">${esc(label)}</button>`;
+    // Subtopics in the topic's own tint and deep (TopicChip); sources neutral
+    // (FilterChip); tags the sand "#" pill.
+    const chip = (key, value, label, active, kind = "") => `<button class="chip${kind}${active ? " on" : ""}" data-refine="${key}" data-value="${esc(value)}" aria-pressed="${active}">${esc(label)}</button>`;
     const subtopics = LibraryPresentation.subtopics(rows), tags = LibraryPresentation.tags(rows, topicRefine.sub);
-    $("topic-refinements").innerHTML = `${subtopics.length ? `<nav class="chips" aria-label="Subtopics">${chip("sub", "", "All subtopics", !topicRefine.sub)}${subtopics.map(sub => chip("sub", sub, sub, topicRefine.sub === sub)).join("")}</nav>` : ""}
+    $("topic-refinements").innerHTML = `${subtopics.length ? `<nav class="chips" aria-label="Subtopics" style="${paletteVars(t ? t.hue : NEUTRAL_HUE)}">${chip("sub", "", "All subtopics", !topicRefine.sub, " tchip")}${subtopics.map(sub => chip("sub", sub, sub, topicRefine.sub === sub, " tchip")).join("")}</nav>` : ""}
       <nav class="chips" aria-label="Sources">${platformItems(rows).map(p => chip("source", p.key, p.label, (topicRefine.source || "") === p.key)).join("")}</nav>
-      ${tags.length ? `<nav class="chips" aria-label="Tags">${chip("tag", "", "All tags", !topicRefine.tag)}${tags.map(([tag]) => chip("tag", tag, "#" + tag, topicRefine.tag === tag)).join("")}</nav>` : ""}
+      ${tags.length ? `<nav class="chips" aria-label="Tags">${chip("tag", "", "All tags", !topicRefine.tag, " tagc")}${tags.map(([tag]) => chip("tag", tag, "#" + tag, topicRefine.tag === tag, " tagc")).join("")}</nav>` : ""}
       ${topicRefine.sub || topicRefine.source || topicRefine.tag ? '<button class="linkish" data-refine="clear">Clear filters</button>' : ""}`;
     const filtered = LibraryPresentation.filter(rows, topicRefine);
     renderGrid($("grid-topic"), filtered, `browse|${topicFilter}|${demoMode}`);
@@ -3535,15 +3462,23 @@ function renderBrowse(all) {
    question on Topics than on Sources, and picking A–Z once to find a platform
    should not permanently reorder the topic grid. */
 const sortFor = (axis) => BrowseSort.named(lsGet(BrowseSort.KEY[axis]));
+/* The sort is a small menu at the right of the list's header now (a native
+   <select>, so it is a real menu on every phone), and the header names what
+   the list is. Same choices, same storage, same event. */
+const AXIS_HEADING = { topics: "Your topics", sources: "Your sources", quests: "Your side quests" };
 function renderSortChips() {
   const current = sortFor(browseAxis);
   const key = `sort|${browseAxis}|${current}`;
   const el = $("sort-chips");
+  $("browse-head-t").textContent = AXIS_HEADING[browseAxis] || "";
+  // Nothing to order: an empty side-quest board shows its guide instead.
+  $("browse-head").hidden = browseAxis === "quests" && !liveMissions().length;
   el.setAttribute("aria-label", `Sort ${browseAxis === "quests" ? "side quests" : browseAxis}`);
-  if (memo.get("sort-chips") === key) return;
+  if (memo.get("sort-chips") === key && el.options.length) return;
   memo.set("sort-chips", key);
   el.innerHTML = BrowseSort.ALL.map(o =>
-    `<button class="chip${o === current ? " on" : ""}" data-sort="${o}" aria-pressed="${o === current}">${esc(BrowseSort.title(o))}</button>`).join("");
+    `<option value="${o}"${o === current ? " selected" : ""}>${esc(BrowseSort.title(o))}</option>`).join("");
+  el.value = current;
 }
 
 /* Built-ins you actually use, then the topics you made, A–Z — the phone's
@@ -3593,11 +3528,12 @@ function questEntries() {
     rank,
   }));
 }
+/* A topic tile: its clay art 4:3 on its own ground, then on white the name,
+   the 8 px dot and the count. No colour block. */
 function topicTileHTML(t, n) {
-  const src = topicArtSrc(t);
-  return `<button class="topic-tile" data-topic="${esc(t.id)}">
-      <span class="tt-art" style="${tileStyle(t.hue)}"><i class="ini">${esc(t.name.charAt(0))}</i>${src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : ""}</span>
-      <span class="tt-text"><b>${esc(t.name)}</b><span>${plural(n, "bork")}</span></span></button>`;
+  return `<button class="topic-tile" data-topic="${esc(t.id)}" style="--pm:${pal(t.hue).mid}">
+      <span class="tt-art">${artImg(t, "")}</span>
+      <span class="tt-text"><b>${esc(t.name)}</b><span><i class="tt-dot"></i>${plural(n, "bork")}</span></span></button>`;
 }
 function renderTopicTiles(all) {
   const tiles = browseTiles(all);
@@ -3607,7 +3543,7 @@ function renderTopicTiles(all) {
   if (memo.get("topics-grid") !== key) {
     memo.set("topics-grid", key);
     $("topics-grid").innerHTML = `<button class="topic-tile tile-new" data-act="new-topic"><span class="tn-plus"><i aria-hidden="true">+</i></span><span class="tt-text"><b>New topic</b><span>Anything you like</span></span></button>`
-      + (unfiled ? `<button class="topic-tile tile-unfiled" data-triage="unfiled"><span class="tt-art"><img src="/img/quests/compass.jpg" alt="" loading="lazy" data-fb="remove"></span><span class="tt-text"><b>Not filed yet</b><span>${plural(unfiled, "bork")} · Sort them</span></span></button>` : "")
+      + (unfiled ? `<button class="topic-tile tile-unfiled" data-triage="unfiled" style="--pm:${pal(null).mid}"><span class="tt-art">${artImg(null, "")}</span><span class="tt-text"><b>Not filed yet</b><span><i class="tt-dot"></i>${plural(unfiled, "bork")} · Sort them</span></span></button>` : "")
       + tiles.map(([id, n]) => topicTileHTML(topicFor(id), n)).join("");
   }
   $("topics-hint").hidden = tiles.length > 0;
@@ -3631,7 +3567,7 @@ function renderBrowseQuests() {
   if (memo.get("quests-list") === key) return;
   memo.set("quests-list", key);
   $("quests-list").innerHTML = quests.length
-    ? `<div class="h-row"><h1 class="h-title">Your side quests</h1><button class="btn-sm btn-coral" data-quest="">+ Start a side quest</button></div><div class="quest-board">${quests.map(m => questCardHTML(m)).join("")}</div>${questGuideHTML(false)}`
+    ? `<div class="quest-board"><button class="quest-new" data-quest="">+ Start a side quest</button>${quests.map(m => questCardHTML(m)).join("")}</div>${questGuideHTML(false)}`
     : questGuideHTML(true);
 }
 function questGuideHTML(empty) {
@@ -3663,7 +3599,7 @@ function renderTopicHero(t, rows) {
   if (!t) {
     if (memo.get("browse-hero") === "none") return;
     memo.set("browse-hero", "none");
-    $("browse-hero").innerHTML = `<span class="hero-text"><b>Topic</b><span>${plural(rows.length, "bork")}</span></span>`;
+    $("browse-hero").innerHTML = `<span class="hero-art">${artImg(null, "", false)}</span><div class="hero-text"><span><b>Topic</b><small>${plural(rows.length, "bork")}</small></span></div>`;
     return;
   }
   const src = topicArtSrc(t);
@@ -3671,18 +3607,20 @@ function renderTopicHero(t, rows) {
   const key = `hero|${t.id}|${t.name}|${rows.length}|${src || ""}|${shareMenuOpen}|${ready}|${demoMode}`;
   if (memo.get("browse-hero") === key) return;
   memo.set("browse-hero", key);
+  // A short art banner, then the title in Bricolage on paper with the count.
+  // The initial that used to sit under the scene (and showed through it as a
+  // stray "F") is gone: a scene that fails becomes the compass, nothing else.
   $("browse-hero").innerHTML =
-    `<span class="hero-art" style="${tileStyle(t.hue)}"><i class="ini">${esc(t.name.charAt(0))}</i>${
-      src ? `<img src="${esc(src)}" alt="" crossorigin="anonymous" data-fb="remove">` : ""}</span>
-    <button class="hero-share" data-act="share-topic" aria-haspopup="true" aria-expanded="${shareMenuOpen}" aria-label="Share this topic">${SHARE_ICON}Share</button>${
+    `<span class="hero-art"><img src="${esc(src || COMPASS_ART)}" alt="" crossorigin="anonymous" data-fb="art"></span>
+    <div class="hero-text"><span><b>${esc(t.name)}</b><small>${plural(rows.length, "bork")}</small></span>
+    <span style="position:relative;flex:0 0 auto"><button class="hero-share" data-act="share-topic" aria-haspopup="true" aria-expanded="${shareMenuOpen}" aria-label="Share this topic">${SHARE_ICON}Share</button>${
       shareMenuOpen ? `<div class="share-menu" id="share-menu" role="menu">
         <button role="menuitem" data-act="share-collection">${collectIconHTML()}Share as a link</button>
         <button role="menuitem" data-act="share-links">${LINK_ICON}Share links</button>
         ${ready
           ? `<button role="menuitem" data-act="share-image">${IMAGE_ICON}Share as image</button>`
           : `<button role="menuitem" disabled>${IMAGE_ICON}Preparing image…</button>`}
-      </div>` : ""}
-    <span class="hero-text" style="${chipStyle(t.hue)}"><b>${esc(t.name)}</b><span>${plural(rows.length, "bork")}</span></span>`;
+      </div>` : ""}</span></div>`;
 }
 
 /* ── Share links ── */
@@ -3753,7 +3691,7 @@ async function cardFontsReady() {
   if (!document.fonts || !document.fonts.load) return;
   try {
     await Promise.all([
-      document.fonts.load(`800 ${pt(28)}px "Bricolage Grotesque"`),
+      document.fonts.load(`700 ${pt(28)}px "Bricolage Grotesque"`),
       document.fonts.load(`600 ${pt(13)}px "Instrument Sans"`),
       document.fonts.load(`700 ${pt(12.5)}px "Instrument Sans"`),
     ]);
@@ -3789,23 +3727,20 @@ async function drawShareCard(t, rows, art) {
   const token = (name, fallback) => (css.getPropertyValue(name) || "").trim() || fallback;
   const paper = token("--paper", "#F6F3EE"), meta = token("--meta", "#8A8378");
   const ink = token("--ink", "#191510"), body = token("--ink-2", "#5B554D");
-  const tint = `hsl(${t.hue} 70% 92%)`, deep = `hsl(${t.hue} 60% 28%)`;
+  const { tint, deep } = pal(t.hue);
+  const ground = token("--clay-ground", "#E8E0CB");
 
   ctx.fillStyle = paper;
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
-  // The band: the topic's tint, with the scene over it where there is one.
-  const grad = ctx.createLinearGradient(0, 0, CARD_W, CARD_BAND);
-  grad.addColorStop(0, tint);
-  grad.addColorStop(1, `hsl(${t.hue} 70% 96%)`);
-  ctx.fillStyle = grad;
+  // The band: the scene on its own clay ground, or the topic's flat tint.
+  ctx.fillStyle = art && art.naturalWidth ? ground : tint;
   ctx.fillRect(0, 0, CARD_W, CARD_BAND);
   if (art && art.naturalWidth) {
     const scale = Math.max(CARD_W / art.naturalWidth, CARD_BAND / art.naturalHeight);
     const w = art.naturalWidth * scale, h = art.naturalHeight * scale;
     ctx.save();
     ctx.beginPath(); ctx.rect(0, 0, CARD_W, CARD_BAND); ctx.clip();
-    ctx.globalCompositeOperation = "multiply";   // the clay has cream baked in, exactly as the tiles do it
     ctx.drawImage(art, (CARD_W - w) / 2, (CARD_BAND - h) / 2, w, h);
     ctx.restore();
   }
@@ -3820,7 +3755,7 @@ async function drawShareCard(t, rows, art) {
   ctx.fillStyle = deep;
   let size = pt(28);
   const heading = TopicShare.heading(t.name);
-  const headFont = (px) => `800 ${px}px "Bricolage Grotesque", ${css.getPropertyValue("--font-head") || "sans-serif"}`;
+  const headFont = (px) => `700 ${px}px "Bricolage Grotesque", ${css.getPropertyValue("--font-head") || "sans-serif"}`;
   ctx.font = headFont(size);
   try { ctx.letterSpacing = `${pt(-0.8)}px`; } catch { /* not everywhere yet */ }
   while (size > pt(17) && wrapLines(ctx, heading, width, 2).join(" ") !== heading) {
@@ -3851,8 +3786,10 @@ async function drawShareCard(t, rows, art) {
     if (y + height > footTop) return;
     ctx.textAlign = "right";
     ctx.font = `500 ${pt(11)}px ui-monospace, Menlo, monospace`;
-    ctx.fillStyle = `hsl(${t.hue} 60% 28% / .7)`;
+    ctx.fillStyle = deep;
+    ctx.globalAlpha = .7;
     ctx.fillText(String(i + 1), numberX, y + pt(1.5));
+    ctx.globalAlpha = 1;
     ctx.textAlign = "left";
     ctx.font = `600 ${pt(13)}px "Instrument Sans", sans-serif`;
     ctx.fillStyle = body;
@@ -3961,10 +3898,10 @@ function renderSearch(all) {
    as the Library. */
 const rvSection = (title, body) => `<section class="rv"><div class="h-row"><span class="h-title">${title}</span></div>${body}</section>`;
 const rvTopicChips = (items, n) =>
-  `<nav class="chips">${items.map(i => `<button class="chip" data-topic-go="${esc(i.id)}">${esc(i.name)}${n ? `<span class="n">${n(i)}</span>` : ""}</button>`).join("")}</nav>`;
+  `<nav class="chips">${items.map(i => `<button class="chip tchip" style="${paletteVars(topicFor(i.id)?.hue ?? NEUTRAL_HUE)}" data-topic-go="${esc(i.id)}">${esc(i.name)}${n ? `<span class="n">${n(i)}</span>` : ""}</button>`).join("")}</nav>`;
 
-function revisitHTML(d) {
-  const out = [];
+function revisitHTML(d, all = []) {
+  const out = [insightHTML(all)];
   if (d.week) {
     const split = d.week.platforms.map(p => `${p.n} ${PLATFORM[p.key]?.name || p.key}`).join(" · ");
     out.push(rvSection("Saved this week",
@@ -3980,7 +3917,7 @@ function revisitHTML(d) {
     const more = d.never.rows.length - shown.length;
     out.push(rvSection("Saved, never opened",
       `<p class="rv-line">${plural(d.never.n, "thing")} you saved and never looked at.</p>` +
-      `<div class="grid grid-in">${gridHTML(shown, true)}</div>` +
+      `<div class="grid grid-in" style="--cols:${columnCount()}" data-cols="${columnCount()}">${gridHTML(shown, true)}</div>` +
       (more ? `<button class="h-more rv-more" data-act="revisit-more">and ${more} more →</button>` : "")));
   }
   if (d.monthAgo) {
@@ -3996,8 +3933,8 @@ function revisitHTML(d) {
       `<p class="rv-line"><b>${esc(d.shifting.line)}.</b> Your last 30 days against the 30 before.</p>` +
       rvTopicChips(d.shifting.items, null)));
   }
-  if (d.thin || !out.length) {
-    return rvSection("Revisit",
+  if (d.thin || out.length < 2) {
+    return out[0] + rvSection("Revisit",
       `<div class="quest-starter rv-thin"><div><b>Nothing to revisit yet.</b>
         <p>Save ten things and this fills in — what you keep coming back to, what you saved and never opened, what a month ago looked like.</p></div></div>
        <p class="hint">${plural(d.total, "bork")} so far.</p>`);
@@ -4014,10 +3951,11 @@ function renderRevisit(all) {
     d.monthAgo ? ids(d.monthAgo.rows) : "",
     d.quests ? d.quests.missions.map(m => m.id + ":" + m.updated_at).join(",") : "",
     d.shifting ? d.shifting.line : "",
+    insightHTML(all),
   ].join("|");
   if (memo.get("revisit-sections") === key) return;
   memo.set("revisit-sections", key);
-  $("revisit-sections").innerHTML = revisitHTML(d);
+  $("revisit-sections").innerHTML = revisitHTML(d, all);
 }
 
 function renderHelp(s) {
@@ -4427,12 +4365,12 @@ function tpTopicRowHTML(t, p, needle) {
   // A–Z where the chips are drawn (TopicPickerQuery.alphabetical, the rule
   // iOS uses), whatever order the list arrived in.
   const subs = TopicPickerQuery.alphabetical(allSubs(t.id)), open = tp.expanded === t.id, on = p.topic === t.id;
-  let html = `<button class="tp-row${on ? " tp-on" : ""}" data-tp-topic="${esc(t.id)}" aria-expanded="${open}"><span class="tp-dot" style="background:hsl(${t.hue} 65% 55%)"></span><span class="tp-name">${esc(t.name)}</span>${t.custom ? `<span class="tp-mine" style="${chipStyle(t.hue)}">yours</span>` : ""}<span class="n">${subs.length}</span>${CHEV}</button>`;
+  let html = `<button class="tp-row${on ? " tp-on" : ""}" data-tp-topic="${esc(t.id)}" aria-expanded="${open}"><span class="tp-dot" style="background:${pal(t.hue).mid}"></span><span class="tp-name">${esc(t.name)}</span>${t.custom ? `<span class="tp-mine" style="${chipStyle(t.hue)}">yours</span>` : ""}<span class="n">${subs.length}</span>${CHEV}</button>`;
   if (!open) return html;
   const hits = tpMatchingSubs(subs, needle), mine = new Set(ownSubs(t.id));
-  return html + `<div class="tp-subs">` +
+  return html + `<div class="tp-subs" style="${paletteVars(t.hue)}">` +
     subs.map(sub => { const sel = on && p.sub === sub;
-      return `<button class="chip${sel ? " on" : ""}${hits.has(sub) ? " hit" : ""}${mine.has(sub) ? " mine" : ""}" style="${sel ? "" : chipStyle(t.hue)}" data-tp-sub="${esc(sub)}" data-tp-of="${esc(t.id)}" aria-pressed="${sel}">${esc(sub)}</button>`; }).join("") +
+      return `<button class="chip tchip${sel ? " on" : ""}${hits.has(sub) ? " hit" : ""}${mine.has(sub) ? " mine" : ""}" data-tp-sub="${esc(sub)}" data-tp-of="${esc(t.id)}" aria-pressed="${sel}">${esc(sub)}</button>`; }).join("") +
     `<button class="chip just${on && !p.sub ? " on" : ""}" data-tp-sub="" data-tp-of="${esc(t.id)}" aria-pressed="${on && !p.sub}">Just ${esc(t.name)}<span class="n">— no subtopic</span></button>` +
     (tp.adding === t.id
       ? `<div class="tp-new"><input class="field" id="tp-new-name" placeholder="New subtopic" maxlength="40" autocomplete="off" autocapitalize="sentences" data-tp-of="${esc(t.id)}" aria-label="New subtopic name"><button class="chip on" data-tp-add-go="${esc(t.id)}">Add</button></div>`
@@ -4677,7 +4615,7 @@ function paintAddCard() {
   const url = qf ? qf.url : parsedURL($("add-url").value);
   if (!url) return;
   const platform = detectPlatform(url), topic = topicFor(picks.add.topic);
-  $("add-cover").setAttribute("style", gradient(topic ? topic.hue : 24));
+  $("add-cover").setAttribute("style", paletteVars(topic ? topic.hue : NEUTRAL_HUE));
   $("add-glyph").innerHTML = glyph(platform);
   const badge = $("add-badge");
   badge.innerHTML = glyph(platform);
@@ -4759,8 +4697,8 @@ function renderAdd() {
    its cover, its title, its topic in the topic's own colour, and the day it
    was saved. Same pieces as a library card, laid out for one line of answer. */
 function renderDupe(r) {
-  const d = displayFields(r), topic = topicFor(r.category_id), hue = topic ? topic.hue : 24;
-  $("dupe-cover").setAttribute("style", gradient(hue));
+  const d = displayFields(r), topic = topicFor(r.category_id), hue = topic ? topic.hue : NEUTRAL_HUE;
+  $("dupe-cover").setAttribute("style", paletteVars(hue));
   $("dupe-glyph").innerHTML = glyph(r.platform);
   const img = $("dupe-thumb"), src = picOf(r);
   if (src && !isAvatar(src)) {
@@ -4770,7 +4708,7 @@ function renderDupe(r) {
   $("dupe-title").textContent = d.title;
   $("dupe-filed").innerHTML = (topic
       ? `filed under <span class="topic-chip" style="${chipStyle(hue)}">${esc(topic.name)}${r.subcategory ? `<span class="tp-sep">›</span>${esc(r.subcategory)}` : ""}</span>`
-      : `<span class="topic-chip" style="${chipStyle(24)}">Not filed</span>`)
+      : `<span class="topic-chip" style="${chipStyle(NEUTRAL_HUE)}">Not filed</span>`)
     + `<span class="when"><span class="sep" aria-hidden="true">·</span>saved ${esc(fmtDate(r.saved_at))}</span>`;
 }
 
@@ -5195,18 +5133,26 @@ function quickFileLateTags(s) {
    rest A–Z) and the tags (yours, this link's, then the ones you used lately
    on this filing). Both rows only ever grow while the sheet is up, so a chip
    never moves out from under the pointer. */
+/* The design puts Done inside the white refine slab once a choice is made;
+   until then (and after) it sits in the sheet's bottom row. The same node
+   moves, so its id, its listener and the drain band all go with it. */
+function dockAddDone(inPanel) {
+  const done = $("add-done"), home = inPanel ? $("add-refine") : $("add-remove").parentElement;
+  if (done.parentElement !== home) home.appendChild(done);
+}
 function quickFileRenderRefine() {
   const s = qf, panel = $("add-refine");
-  if (!s || !s.filed) { panel.hidden = true; return; }
+  if (!s || !s.filed) { panel.hidden = true; dockAddDone(false); return; }
   panel.hidden = false;
+  dockAddDone(true);
   const c = s.filed, t = c.categoryID ? topicFor(c.categoryID) : null;
-  const line = t ? `Filed to ${SavedContent.breadcrumb(t.name, c.subcategory)}` : "Left unfiled";
-  if ($("add-refine-h").textContent !== line) $("add-refine-h").textContent = line;
+  const line = t ? `Filed to <b>${esc(SavedContent.breadcrumb(t.name, c.subcategory))}</b>` : "Left unfiled";
+  if ($("add-refine-h").innerHTML !== line) $("add-refine-h").innerHTML = line;
   const subsEl = $("add-refine-subs");
   const subs = t ? quickFileSubOrder(s, t.id) : [];
   subsEl.hidden = !subs.length;
-  const P = typeof Palette === "object" && Palette, hue = t ? t.hue ?? 40 : 40;
-  const look = P ? `--qf-c:${P.tint(hue)};--qf-on:${P.deep(hue)};color:${P.deep(hue)}` : "";
+  const clay = pal(t ? t.hue : NEUTRAL_HUE);
+  const look = `--qf-c:${clay.tint};--qf-on:${clay.deep};color:${clay.deep}`;
   subsEl.innerHTML = subs.map(name => {
     const on = name === c.subcategory;
     return `<button type="button" class="qf-chip${on ? " is-on" : ""}" data-refine-sub="${esc(name)}" aria-pressed="${on}" style="${look}"`
@@ -5351,6 +5297,7 @@ function quickFileFinish() {
   quickFileStopDrain();
   qf = null;
   $("add-refine").hidden = true;
+  dockAddDone(false);
   $("add-refine-tag").value = ""; $("add-refine-tag").hidden = true; $("add-refine-plus").hidden = false;
   if (s.dial) { s.dial.destroy(); s.dial = null; }
   if (s.removed) return;
@@ -5890,11 +5837,13 @@ document.addEventListener("error", (e) => {
   if (!(img instanceof HTMLImageElement)) return;
   const fb = img.dataset.fb;
   if (fb === "hide") { img.hidden = true; return; }
+  // Clay art that didn't come: the compass on the clay ground, once.
+  if (fb === "art") { img.dataset.fb = "spent"; if (!img.src.endsWith(COMPASS_ART)) img.src = COMPASS_ART; return; }
   if (fb !== "remove") return;
   const src = img.getAttribute("src");
   // A save's own picture died after it was drawn: remember it, and draw the
-  // card again as the poster it would have been (a list row, its stand-in).
-  const card = img.matches(".cover > img, .tile-img, .feed-thumb:not(.art) > img") && img.closest(".card[data-id]");
+  // card again with its topic's clay art (a list row, the same).
+  const card = img.matches(".cover > img:not(.cv-art), .tile-img:not(.cv-art), .feed-thumb:not(.art) > img") && img.closest(".card[data-id]");
   if (card) { rememberBadImg(src); redrawCard(card); return; }
   if (src && !src.startsWith("/")) badImg.add(src);
   img.remove();   // whatever was underneath shows: a stamp's initial, a cover's tint
@@ -5925,18 +5874,11 @@ document.addEventListener("keydown", (e) => {
     const byN = (i) => grid.querySelector(`.card[data-n="${i}"]`);
     if (key === "j" || (list && key === "ArrowDown")) next = byN(n + 1);
     else if (key === "k" || (list && key === "ArrowUp")) next = byN(n - 1);
-    else if (key === "ArrowDown" || key === "ArrowUp") {
-      next = here;
-      do next = key === "ArrowDown" ? next.nextElementSibling : next.previousElementSibling; while (next && !next.matches(".card[data-n]"));
-    } else if (!list) {
-      const col = here.parentElement, beside = key === "ArrowRight" ? col.nextElementSibling : col.previousElementSibling;
-      const mid = (el) => { const r = el.getBoundingClientRect(); return (r.top + r.bottom) / 2; };
-      const y = mid(here);
-      let best = Infinity;
-      for (const c of beside ? beside.querySelectorAll(".card[data-n]") : []) {
-        const d = Math.abs(mid(c) - y);
-        if (d < best) { best = d; next = c; }
-      }
+    else if (!list) {
+      // A plain grid in reading order: across is ±1, down and up a row of --cols.
+      const cols = Number(grid.dataset.cols) || 1;
+      const step = { ArrowDown: cols, ArrowUp: -cols, ArrowRight: 1, ArrowLeft: -1 }[key];
+      next = byN(n + step);
     }
   }
   if (!next) return;
@@ -6557,7 +6499,7 @@ function collectStripHTML(rows) {
   const tiles = shown.map(r => {
     const t = topicFor(r.category_id);
     const src = coverAspect(r) ? picOf(r) : null;
-    return `<span class="cs" style="${gradient(t ? t.hue : 24)}">${glyph(r.platform)}${
+    return `<span class="cs" style="${paletteVars(t ? t.hue : NEUTRAL_HUE)}">${glyph(r.platform)}${
       src ? `<img src="${esc(src)}" alt="" loading="lazy" data-fb="remove">` : ""}</span>`;
   });
   if (rows.length > shown.length) tiles.push(`<span class="cs cs-more">+${rows.length - shown.length}</span>`);
@@ -6760,7 +6702,8 @@ function renderCollections() {
   empty.hidden = rows.length > 0;
   if (!rows.length) empty.innerHTML = `
     <div style="max-width:480px;margin:0 auto">
-      <h2 style="font-family:var(--font-head);font-size:22px;letter-spacing:-.02em;margin:0 0 6px">No links yet</h2>
+      <img src="/img/quests/scroll.jpg" alt="" width="96" height="96" style="display:block;margin:0 auto 14px;border-radius:18px;background:var(--clay-ground)">
+      <h2 style="font:700 19px/24px var(--font-head);color:var(--ink);margin:0 0 6px">No links yet</h2>
       <p style="margin:0 0 18px">Pick a few borks in your Library with <b>Select</b>, or open a topic and choose <b>Share as a link</b>. Whoever gets the link sees those borks and nothing else.</p>
       <button class="btn" style="max-width:260px;margin:0 auto" data-act="coll-pick">Pick some borks</button>
     </div>`;
