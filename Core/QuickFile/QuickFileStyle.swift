@@ -19,7 +19,7 @@ struct QuickFileStyle: Sendable {
     var ui: @Sendable (CGFloat, Font.Weight) -> Font
     /// A topic's clay picture, or nil for the colour disc with its initial.
     var art: @MainActor @Sendable (String) -> UIImage?
-    /// The bead, the confirm check and the drain on "Not now". Nowhere else.
+    /// Done, the drain on "Not now", and the tag field's ring. Nowhere else.
     var accent: Color
     /// The header and text buttons, in the accent's family.
     var accentDeep: Color
@@ -49,6 +49,14 @@ struct QuickFileStyle: Sendable {
     /// "not filed" palette rather than a colour of their own.
     static func palette(for topicID: String) -> CategoryPalette {
         Taxonomy.category(id: topicID)?.palette ?? NeutralPalette.value
+    }
+
+    /// The extension's UIKit text (its status card), in the same face as
+    /// `system`, scaled with Dynamic Type.
+    static func uiFont(_ size: CGFloat, _ weight: UIFont.Weight, relativeTo style: UIFont.TextStyle) -> UIFont {
+        let base = UIFont.systemFont(ofSize: size, weight: weight)
+        let face = base.fontDescriptor.withDesign(.rounded).map { UIFont(descriptor: $0, size: size) } ?? base
+        return UIFontMetrics(forTextStyle: style).scaledFont(for: face)
     }
 }
 

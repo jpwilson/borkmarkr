@@ -111,8 +111,9 @@ struct QuickFileDrain: Equatable {
     }
 }
 
-/// The refine panel's Done: ink, white, full width, and while it drains a
-/// lighter band shrinking across it, the "Not now" drain in Done's colours.
+/// The refine panel's Done: the one coral pill, full width, 58 pt, white
+/// 17/600. While it drains, a lighter band shrinks across it, the "Not now"
+/// drain in Done's colours.
 struct QuickFileDoneButton: View {
     let draining: Bool
     var seconds: Double = QuickFileDrain.seconds
@@ -120,23 +121,29 @@ struct QuickFileDoneButton: View {
     let action: () -> Void
 
     @State private var left: CGFloat = 1
+    @ScaledMetric(relativeTo: .body) private var font: CGFloat = 17
+
+    /// B's coral shadow, rgba(200,80,40,.28).
+    private static let glow = Color(.sRGB, red: 200 / 255, green: 80 / 255, blue: 40 / 255, opacity: 0.28)
 
     var body: some View {
         Button(action: action) {
             ZStack {
-                QuickFileStyle.ink
+                style.accent
                 GeometryReader { bar in
                     Rectangle()
-                        .fill(Color.white.opacity(0.16))
+                        .fill(Color.white.opacity(0.18))
                         .frame(width: bar.size.width * left)
                 }
                 .opacity(draining ? 1 : 0)
                 Text(QuickFileCopy.done)
-                    .font(style.ui(16, .semibold))
+                    .font(style.ui(min(font, 34), .semibold))
                     .foregroundStyle(Color.white)
             }
-            .frame(height: 54)
+            .frame(height: max(58, min(font, 34) + 24))
             .clipShape(Capsule())
+            .overlay(QuickFileTopEdge(base: Capsule(), depth: 1.5).fill(Color.white.opacity(0.4)))
+            .shadow(color: Self.glow, radius: 10, y: 10)
             .contentShape(Capsule())
         }
         .buttonStyle(QuickFilePressStyle())

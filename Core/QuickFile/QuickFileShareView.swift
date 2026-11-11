@@ -37,9 +37,10 @@ struct QuickFileShareView: View {
     let onNotNow: () -> Void
     var onDone: (FilingCandidate) -> Void
 
-    /// The height under the dial, the same before and after a choice, so
-    /// the dial never moves or resizes as the refine panel arrives.
-    static let belowDial: CGFloat = 128
+    /// Room kept under the dial for the refine panel with its Done (B: about
+    /// 315 pt at the default text size), so the dial is sized once and never
+    /// moves or resizes as the panel arrives. It grows with the text.
+    @ScaledMetric(relativeTo: .subheadline) private var belowDial: CGFloat = 318
     /// No touch for this long and the sheet closes, keeping the guess.
     static let hardCap: TimeInterval = 60
     /// Past the drain, an untouched sheet whose guess isn't sure yet waits
@@ -108,11 +109,12 @@ struct QuickFileShareView: View {
 
     // MARK: Layout
 
-    /// As big as the sheet allows: 320 pt on most phones, smaller only when
-    /// the sheet is short, never so small a key is hard to hit.
+    /// As big as the sheet allows: B's 360 pt on a 6.1" phone and up, smaller
+    /// only when the sheet is short, never so small a slab is hard to hit.
     /// The same in every state, so the dial never resizes under a thumb.
-    static func diameter(for size: CGSize) -> CGFloat {
-        max(232, min(320, size.width - 64, size.height - 404))
+    /// `below` is the room kept for the refine panel and its Done.
+    static func diameter(for size: CGSize, below: CGFloat = 318) -> CGFloat {
+        max(232, min(360, size.width - 30, size.height - 118 - below))
     }
 
     @ViewBuilder
@@ -128,10 +130,14 @@ struct QuickFileShareView: View {
         }
     }
 
+    /// Top-aligned, so nothing above the panel moves when it arrives: the
+    /// saved row, the evidence line, the dial, then the footer (with "Not
+    /// now" pinned at the foot) or the refine slab with Done in it.
     private func layout(_ size: CGSize, fixed: Bool) -> some View {
         VStack(spacing: 0) {
-            savedPill
+            savedRow
                 .padding(.top, 14)
+                .padding(.horizontal, 4)
             if editingTag {
                 // The keyboard is up: the dial gives way to one line saying
                 // where it went, and the panel rides above the keys.
@@ -139,13 +145,10 @@ struct QuickFileShareView: View {
                     .padding(.top, 14)
                 Spacer(minLength: 10)
             } else {
-                Spacer(minLength: 8)
-                    .frame(maxHeight: 26)
-                titleBlock
-                Spacer(minLength: 10)
                 QuickFileHeader(model: model, style: style)
-                    .padding(.bottom, 12)
-                QuickFileDial(model: model, style: style, diameter: Self.diameter(for: size),
+                    .padding(.top, 12)
+                    .padding(.bottom, 6)
+                QuickFileDial(model: model, style: style, diameter: Self.diameter(for: size, below: belowDial),
                               onLater: { notNow() }, onDone: { finishChosen() })
             }
             Group {
@@ -153,23 +156,27 @@ struct QuickFileShareView: View {
                     QuickFileRefinePanel(model: model, tags: tags, source: refineSource, style: style,
                                          onEditingTag: { editing in
                                              withAnimation(.easeOut(duration: 0.2)) { editingTag = editing }
-                                         })
+                                         },
+                                         draining: drain.isDraining, onDone: { finishChosen() })
+                        .padding(.top, editingTag ? 0 : -6)
                         .transition(.opacity)
                 } else {
                     QuickFileDialFooter(model: model, style: style)
+                        .padding(.top, 10)
+                        .padding(.horizontal, 4)
                 }
             }
-            .frame(height: fixed ? Self.belowDial : nil, alignment: .top)
-            .padding(.top, 14)
             .animation(.easeOut(duration: 0.18), value: model.isChosen)
             if fixed {
                 Spacer(minLength: 10)
-                    .frame(maxHeight: 36)
             }
-            bottomBar
-                .padding(.top, fixed ? 0 : 16)
+            if !model.isChosen {
+                notNowButton
+                    .padding(.horizontal, 4)
+                    .padding(.top, fixed ? 0 : 16)
+            }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 16)
         .padding(.bottom, 10)
     }
 
@@ -188,44 +195,39 @@ struct QuickFileShareView: View {
         }
     }
 
-    private var savedPill: some View {
-        HStack(spacing: 7) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(QuickFileStyle.toastCheck)
-            Text(QuickFileCopy.saved)
-                .font(style.ui(14, .semibold))
-                .foregroundStyle(Color.white)
+    /// "Saved to bookmarker" and where it came from, in one calm row: B's
+    /// header layout in A's type (17/600 over 13/500 secondary), with a
+    /// 44 pt sand tile carrying the save's check.
+    private var savedRow: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Brand.sand)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Brand.sandInk)
+            }
+            .frame(width: 44, height: 44)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(QuickFileCopy.saved)
+                    .font(style.ui(17, .semibold))
+                    .foregroundStyle(QuickFileStyle.ink)
+                    .lineLimit(1)
+                Text(platformName)
+                    .font(style.ui(13, .medium))
+                    .foregroundStyle(QuickFileStyle.inkSecondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(QuickFileStyle.ink, in: Capsule())
-        .shadow(color: QuickFileStyle.ink.opacity(0.18), radius: 10, y: 5)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var titleBlock: some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(style.ui(17, .semibold))
-                .foregroundStyle(QuickFileStyle.ink)
-                .lineLimit(2)
-            Text(platformName)
-                .font(style.ui(13, .medium))
-                .foregroundStyle(QuickFileStyle.inkSecondary)
-                .lineLimit(1)
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(QuickFileCopy.saved). \(title), \(platformName)")
+        .accessibilityAddTraits(.isHeader)
     }
 
     @ViewBuilder
-    private var bottomBar: some View {
-        if model.isChosen {
-            QuickFileDoneButton(draining: drain.isDraining, style: style) { finishChosen() }
-                .transition(.opacity)
-        } else {
+    private var notNowButton: some View {
+        if !model.isChosen {
             Button { notNow() } label: {
                 ZStack {
                     Color.white
