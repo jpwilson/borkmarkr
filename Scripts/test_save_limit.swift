@@ -220,6 +220,9 @@ enum SaveLimitTests {
         // ── The You tab ───────────────────────────────────────────────────
         expect(SaveLimit.youCount(liveCount: 17, signedIn: false) == "17 of 20", "You says 17 of 20")
         expect(SaveLimit.youCount(liveCount: 0, signedIn: false) == "0 of 20", "and 0 of 20 on day one")
+        expect(SaveLimit.youCount(liveCount: 20, signedIn: false) == "20 of 20", "20 of 20 at the limit")
+        expect(SaveLimit.youCount(liveCount: 50, signedIn: false) == "50 borks on this phone",
+               "past the limit it says the count, never 50 of 20")
         expect(SaveLimit.youCount(liveCount: 17, signedIn: true) == nil,
                "signed in there is nothing to be out of")
         expect(SaveLimit.youLine.contains("Without an account: 20 borks"), "the You line names the limit")

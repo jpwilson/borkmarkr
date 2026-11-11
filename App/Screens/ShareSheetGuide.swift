@@ -28,23 +28,22 @@ struct ShareSheetGuide: View {
     @State private var lastFailure: ShareOutcome.Record?
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            ClaySheetHeader(title: "Save from other apps") { dismiss() }
+                .padding(.horizontal, Tokens.gutter)
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     ShareSheetMock(accent: accent)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Put bookmarker first")
-                            .font(Typo.display(24, .heavy))
-                            .tracking(-0.5)
-                            .foregroundStyle(Tokens.ink)
+                            .textRole(.screenTitle, color: Tokens.ink)
                         Text("Add bookmarker to your iOS Favorites so it's easier to reach. Each app controls the menu before this sheet.")
-                            .font(Typo.ui(14))
-                            .foregroundStyle(Tokens.inkSecondary)
+                            .textRole(.body, color: Tokens.inkSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 16) {
                         step(1, "Tap Share",
                              "In Instagram, TikTok or YouTube that's the share arrow. On X, tap Share, then **Share via…** — X's own row can't show other apps.")
                         step(2, "Scroll the app icons and tap More",
@@ -56,32 +55,25 @@ struct ShareSheetGuide: View {
                     }
 
                     Text("bookmarker shows up when you share a post or a link — not a photo or a screenshot.")
-                        .font(Typo.ui(12.5))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .textRole(.meta)
                         .fixedSize(horizontal: false, vertical: true)
 
                     if let lastFailure {
                         lastShareLine(lastFailure)
                     }
 
-                    Button { dismiss() } label: {
-                        Text("Got it")
-                            .font(Typo.ui(15, .bold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                    }
-                    .buttonStyle(PressableStyle())
+                    Button("Got it") { dismiss() }
+                        .buttonStyle(.clayPrimary)
                 }
-                .padding(18)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 28)
             }
-            .background(Tokens.paper)
-            .navigationTitle("Save from other apps")
-            .navigationBarTitleDisplayMode(.inline)
         }
+        .background(Tokens.paper)
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
         .onAppear(perform: readLastShare)
     }
 
@@ -94,41 +86,39 @@ struct ShareSheetGuide: View {
     private func lastShareLine(_ record: ShareOutcome.Record) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.circle.fill")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(accent.base)
-            VStack(alignment: .leading, spacing: 3) {
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(accent.deep)
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Your last share from another app didn't save")
-                    .font(Typo.ui(13, .bold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: Tokens.ink)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text("\(record.outcome.explanation) · \(record.at, style: .relative) ago. Copy the link and paste it in with +.")
-                    .font(Typo.ui(12.5))
-                    .foregroundStyle(Tokens.inkSecondary)
+                    .textRole(.meta)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
-        .padding(14)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.tint.opacity(0.55), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .cardSurface()
         .accessibilityElement(children: .combine)
     }
 
     private func step(_ number: Int, _ title: String, _ detail: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(number)")
-                .font(Typo.ui(12, .heavy))
-                .foregroundStyle(.white)
-                .frame(width: 24, height: 24)
-                .background(Tokens.ink, in: Circle())
-            VStack(alignment: .leading, spacing: 3) {
+                .font(.custom("Instrument Sans", size: 13, relativeTo: .footnote).weight(.bold))
+                .foregroundStyle(Tokens.sandInk)
+                .frame(width: 28, height: 28)
+                .background(Tokens.sand, in: Circle())
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(Typo.ui(14, .bold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: Tokens.ink)
                 Text(detail)
-                    .font(Typo.ui(12.5))
-                    .foregroundStyle(Tokens.inkSecondary)
+                    .textRole(.meta)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.top, 3)
             Spacer(minLength: 0)
         }
     }
@@ -144,23 +134,18 @@ struct ShareSheetMock: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(LinearGradient(colors: Platform.instagram.badgeColors,
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 38, height: 38)
-                VStack(alignment: .leading, spacing: 2) {
+                PlatformBadge(platform: .instagram, size: 38)
+                VStack(alignment: .leading, spacing: 1) {
                     Text("Instagram")
-                        .font(Typo.ui(13, .semibold))
-                        .foregroundStyle(Tokens.ink)
+                        .textRole(.cardTitle, color: Tokens.ink)
                     Text("Reel · @physio.jane")
-                        .font(Typo.ui(11, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .textRole(.meta)
                 }
                 Spacer()
             }
-            .padding(13)
+            .padding(14)
 
-            Divider()
+            Tokens.hairline.frame(height: 1)
 
             HStack(alignment: .top, spacing: 16) {
                 tile(label: "bookmarker", pinned: true) {
@@ -177,9 +162,9 @@ struct ShareSheetMock: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(15)
+            .padding(16)
         }
-        .cardSurface(radius: 20)
+        .cardSurface()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("The share sheet, with bookmarker as the first app icon and More at the end")
     }
@@ -197,8 +182,8 @@ struct ShareSheetMock: View {
                 )
             if let label {
                 Text(label)
-                    .font(Typo.ui(9.5, .semibold))
-                    .foregroundStyle(pinned ? accent.deep : Tokens.inkMeta)
+                    .font(.custom("Instrument Sans", size: 11, relativeTo: .caption2).weight(.semibold))
+                    .foregroundStyle(pinned ? accent.deep : Tokens.inkSecondary)
             } else {
                 Capsule()
                     .fill(Tokens.mutedControl)
@@ -217,17 +202,14 @@ struct ShareGuideLink: View {
 
     var body: some View {
         Button { showingGuide = true } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: 4) {
                 Text("Not seeing bookmarker in your share sheet?")
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 12, weight: .semibold))
             }
-            .font(Typo.ui(13.5, .semibold))
-            .foregroundStyle(accent.deep)
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
+            .multilineTextAlignment(.center)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.clayQuiet)
         .sheet(isPresented: $showingGuide) {
             ShareSheetGuide().environment(\.accent, accent)
         }

@@ -25,26 +25,27 @@ struct CollectionsList: View {
     private var signedIn: Bool { account?.isSignedIn ?? false }
 
     var body: some View {
-        NavigationStack {
+        // No NavigationStack: its white container and the unsized VStack
+        // made the narrow column with white bands either side (1.3, [20]).
+        VStack(spacing: 0) {
+            ClaySheetHeader(title: "Links you've shared") { dismiss() }
+                .padding(.horizontal, Tokens.gutter)
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 12) {
                     content
                 }
-                .padding(18)
-                .padding(.bottom, 24)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 28)
             }
-            .background(Tokens.paper)
-            .navigationTitle("Links you've shared")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .scrollContentBackground(.hidden)
             .refreshable { await load() }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Tokens.paper)
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
         .task(id: signedIn) { await load() }
         .sheet(isPresented: $showingAuth) {
             if let account {
@@ -70,47 +71,43 @@ struct CollectionsList: View {
     private var content: some View {
         if !signedIn {
             explainer(
-                symbol: "person.crop.circle",
+                art: .quest(.compass),
                 title: "Sign in to see the links you've shared",
                 body: "Shared links are made from your backed-up borks, so they live with your account."
             )
             Button("Sign in") { showingAuth = true }
-                .font(Typo.ui(15, .bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(accent.base, in: Capsule())
-                .buttonStyle(PressableStyle())
+                .buttonStyle(.clayPrimary)
+                .padding(.top, 4)
         } else if let message {
-            explainer(symbol: "wifi.exclamationmark", title: "Couldn't load your links", body: message)
-            Button("Try again") { Task { await load() } }
-                .font(Typo.ui(14, .bold))
-                .foregroundStyle(accent.deep)
+            explainer(art: .quest(.compass), title: "That didn’t go through", body: message)
+            Button("Retry") { Task { await load() } }
+                .buttonStyle(.claySecondary)
+                .padding(.top, 4)
         } else if !loaded {
             HStack(spacing: 10) {
                 ProgressView().tint(accent.base)
-                Text("Loading…").font(Typo.ui(14)).foregroundStyle(Tokens.inkMeta)
+                Text("Loading…").textRole(.meta)
             }
             .padding(.top, 8)
         } else if rows.isEmpty {
             explainer(
-                symbol: "link",
+                art: .quest(.scroll),
                 title: "Nothing shared yet",
                 body: "Pick some borks in your Library with the tick button, or open a topic and choose “Share as a web page”. Each one becomes a link you can send to anyone."
             )
         } else {
             Text("\(rows.count) link\(rows.count == 1 ? "" : "s")")
-                .font(Typo.ui(12, .heavy)).tracking(0.4)
-                .foregroundStyle(Tokens.mutedHeading)
+                .textRole(.label, color: Tokens.inkSecondary)
+                .padding(.leading, 4)
             VStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                     if index > 0 {
-                        Tokens.divider.frame(height: 1).padding(.leading, 14)
+                        Tokens.hairline.frame(height: 1).padding(.leading, 60)
                     }
                     self.row(row)
                 }
             }
-            .cardSurface(radius: Tokens.cardRadius)
+            .cardSurface()
             .opacity(busy ? 0.6 : 1)
             .disabled(busy)
         }
@@ -120,25 +117,22 @@ struct CollectionsList: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "link")
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(row.isOpen() ? accent.deep : Tokens.inkFaint)
+                .foregroundStyle(row.isOpen() ? Tokens.sandInk : Tokens.inkFaint)
                 .frame(width: 32, height: 32)
-                .background(row.isOpen() ? accent.tint : Tokens.mutedControl,
+                .background(row.isOpen() ? Tokens.sand : Tokens.mutedControl,
                             in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(row.name)
-                    .font(Typo.ui(14.5, .semibold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: row.isOpen() ? Tokens.ink : Tokens.inkSecondary)
                     .lineLimit(2)
                 Text("\(Copy.countedBorks(row.count)) · \(row.statusLine())")
-                    .font(Typo.ui(12, .medium))
-                    .foregroundStyle(row.isOpen() ? Tokens.inkMeta : Tokens.inkFaint)
+                    .textRole(.meta)
                     .lineLimit(2)
                 if copiedID == row.id {
                     Text("Link copied")
-                        .font(Typo.ui(11.5, .bold))
-                        .foregroundStyle(accent.deep)
+                        .textRole(.meta, color: accent.deep)
                         .transition(.opacity)
                 }
             }
@@ -177,15 +171,17 @@ struct CollectionsList: View {
                     Label("Delete", systemImage: "trash")
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 18, weight: .semibold))
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Tokens.inkSecondary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
                     .contentShape(Rectangle())
             }
+            .padding(.trailing, -8)
+            .padding(.vertical, -6)
             .accessibilityLabel("Options for \(row.name)")
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 16)
         .padding(.vertical, 12)
     }
 
@@ -216,19 +212,22 @@ struct CollectionsList: View {
         return choice.days == days
     }
 
-    private func explainer(symbol: String, title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: symbol)
-                .font(.system(size: 28, weight: .light))
-                .foregroundStyle(accent.base.opacity(0.8))
+    /// A state with nothing to list: clay art, a title, one plain sentence.
+    private func explainer(art: ClayArtSource, title: String, body: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ClayArtImage(source: art)
+                .frame(width: 72, height: 72)
+                .background(Tokens.clayGround)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.bottom, 8)
             Text(title)
-                .font(Typo.display(18, .bold))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.sectionTitle, color: Tokens.ink)
+                .fixedSize(horizontal: false, vertical: true)
             Text(body)
-                .font(Typo.ui(13.5))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 8)
     }
 
@@ -250,7 +249,11 @@ struct CollectionsList: View {
             rows = try CollectionShare.owned(from: data)
             loaded = true
         } catch {
-            message = error.localizedDescription
+            #if DEBUG
+            print("Loading shared links failed:", error)
+            #endif
+            let plain = PlainError.message(error, doing: "load your links")
+            message = plain.isEmpty ? nil : plain
         }
     }
 
@@ -288,7 +291,10 @@ struct CollectionsList: View {
             copiedID = nil
             await load()
         } catch {
-            message = "\(failure): \(error.localizedDescription)"
+            #if DEBUG
+            print("\(failure):", error)
+            #endif
+            message = "\(failure). Try again in a moment."
         }
     }
 }
@@ -304,32 +310,11 @@ struct CollectionsEntry: View {
 
     var body: some View {
         Button { showing = true } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "link")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(accent.deep)
-                    .frame(width: 32, height: 32)
-                    .background(accent.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Links you've shared")
-                        .font(Typo.ui(14, .semibold))
-                        .foregroundStyle(Tokens.ink)
-                    Text("Copy, turn off or delete any link you've made")
-                        .font(Typo.ui(11.5, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Tokens.inkFaint)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .frame(minHeight: 52)
-            .contentShape(Rectangle())
+            YouRowFace(symbol: "link", title: "Links you've shared",
+                       subtitle: "Copy, turn off or delete any link you've made")
         }
-        .buttonStyle(PressableStyle())
-        .cardSurface(radius: Tokens.cardRadius)
+        .buttonStyle(PressableStyle(scale: 0.99))
+        .cardSurface()
         .sheet(isPresented: $showing) {
             CollectionsList(account: account).environment(\.accent, accent)
         }
@@ -369,7 +354,9 @@ struct SharedCollectionSheet: View {
     private var signedIn: Bool { account?.isSignedIn ?? false }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            ClaySheetHeader(title: "Shared with you") { dismiss() }
+                .padding(.horizontal, Tokens.gutter)
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     switch state {
@@ -380,25 +367,20 @@ struct SharedCollectionSheet: View {
                     }
                     if let message {
                         Text(message)
-                            .font(Typo.ui(12.5))
-                            .foregroundStyle(Tokens.destructive)
+                            .textRole(.meta, color: Tokens.destructive)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(18)
-                .padding(.bottom, 24)
-            }
-            .background(Tokens.paper)
-            .navigationTitle("Shared with you")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(saved == nil ? "Close" : "Done") { dismiss() }
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 28)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Tokens.paper)
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
         .task { await load() }
         .sheet(isPresented: $showingAuth) {
             if let account {
@@ -415,7 +397,7 @@ struct SharedCollectionSheet: View {
     private var loading: some View {
         HStack(spacing: 10) {
             ProgressView().tint(accent.base)
-            Text("Opening the link…").font(Typo.ui(14)).foregroundStyle(Tokens.inkMeta)
+            Text("Opening the link…").textRole(.meta)
         }
         .padding(.top, 8)
     }
@@ -424,24 +406,19 @@ struct SharedCollectionSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(shared.name)
-                    .font(Typo.display(24, .heavy))
-                    .tracking(-0.5)
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.screenTitle, color: Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("\(Copy.countedBorks(shared.items.count)) · from \(shared.ownerName)")
-                    .font(Typo.ui(13, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
                 if let note = shared.note {
                     Text(note)
-                        .font(Typo.ui(14))
-                        .foregroundStyle(Tokens.bodyOnWhite)
+                        .textRole(.body, color: Tokens.bodyOnWhite)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 2)
                 }
                 if let expiresAt = shared.expiresAt {
                     Text(CollectionShare.openUntilLine(expiresAt: expiresAt))
-                        .font(Typo.ui(12, .medium))
-                        .foregroundStyle(Tokens.inkFaint)
+                        .textRole(.meta)
                 }
             }
 
@@ -451,21 +428,20 @@ struct SharedCollectionSheet: View {
                 VStack(spacing: 0) {
                     ForEach(Array(shared.items.enumerated()), id: \.element.id) { index, item in
                         if index > 0 {
-                            Tokens.divider.frame(height: 1).padding(.leading, 58)
+                            Tokens.hairline.frame(height: 1).padding(.leading, 80)
                         }
                         itemRow(item)
                     }
                 }
-                .cardSurface(radius: Tokens.cardRadius)
+                .cardSurface()
             }
 
             Button {
                 if let url = URL(string: CollectionShare.publicURL(slug: slug)) { openURL(url) }
             } label: {
                 Label("Open on the web", systemImage: "safari")
-                    .font(Typo.ui(13, .semibold))
-                    .foregroundStyle(accent.deep)
             }
+            .buttonStyle(.clayQuiet)
         }
     }
 
@@ -475,54 +451,37 @@ struct SharedCollectionSheet: View {
             HStack(spacing: 10) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 22))
-                    .foregroundStyle(accent.base)
+                    .foregroundStyle(accent.deep)
                 Text(saved.line)
-                    .font(Typo.ui(14, .semibold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
             }
-            .padding(14)
-            .cardSurface(radius: 16)
+            .padding(16)
+            .cardSurface()
         } else if signedIn {
             primaryButton(saving ? "Saving…" : "Save all \(shared.items.count) to my library",
                           enabled: !saving && !shared.items.isEmpty) {
                 Task { await save() }
             }
             Text("Copies, filed under the same topics. Your notes stay yours; theirs stay theirs.")
-                .font(Typo.ui(12.5))
-                .foregroundStyle(Tokens.inkMeta)
+                .textRole(.meta)
                 .fixedSize(horizontal: false, vertical: true)
         } else {
             Text("Sign up (free) and these go straight into your library — backed up, filed, and searchable.")
-                .font(Typo.ui(13))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 10) {
-                Button {
+            VStack(spacing: 10) {
+                Button("Sign up and save these") {
                     authMode = .signUp
                     showingAuth = true
-                } label: {
-                    Text("Sign up and save these")
-                        .font(Typo.ui(14.5, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(accent.base, in: Capsule())
                 }
-                .buttonStyle(PressableStyle())
-                Button {
+                .buttonStyle(.clayPrimary)
+                Button("I have an account — sign in") {
                     authMode = .signIn
                     showingAuth = true
-                } label: {
-                    Text("Sign in")
-                        .font(Typo.ui(14.5, .bold))
-                        .foregroundStyle(accent.deep)
-                        .padding(.horizontal, 18)
-                        .frame(height: 50)
-                        .background(accent.tint, in: Capsule())
-                        .overlay(Capsule().stroke(accent.base.opacity(0.35), lineWidth: 1))
                 }
-                .buttonStyle(PressableStyle())
+                .buttonStyle(.claySecondary)
             }
         }
     }
@@ -533,20 +492,19 @@ struct SharedCollectionSheet: View {
         return Button {
             if let pageURL { openURL(pageURL) }
         } label: {
-            HStack(spacing: 11) {
+            HStack(spacing: 12) {
                 ZStack {
-                    CoverImage(url: item.imageURL.flatMap(URL.init(string:)), palette: NeutralPalette.value)
+                    CoverImage(url: item.imageURL.flatMap(URL.init(string:)), topicID: nil)
                     if item.imageURL == nil {
                         PlatformBadge(platform: platform, size: 22, pageURL: pageURL)
                     }
                 }
-                .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: Tokens.thumbRadius, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(item.title.isEmpty ? item.url : CollectionShare.displayTitle(item.title, platform: item.platform))
-                        .font(Typo.ui(13.5, .semibold))
-                        .foregroundStyle(Tokens.ink)
+                        .textRole(.cardTitle, color: Tokens.ink)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     HStack(spacing: 5) {
@@ -554,14 +512,13 @@ struct SharedCollectionSheet: View {
                             PlatformBadge(platform: platform, size: 14, pageURL: pageURL)
                         }
                         Text(item.author.flatMap { Platform.isSiteName($0) ? nil : $0 } ?? platform.name)
-                            .font(Typo.ui(11, .medium))
-                            .foregroundStyle(Tokens.inkMeta)
+                            .textRole(.meta)
                             .lineLimit(1)
                     }
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "arrow.up.right")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Tokens.inkFaint)
             }
             .padding(.horizontal, 12)
@@ -572,58 +529,47 @@ struct SharedCollectionSheet: View {
     }
 
     private var gone: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: "link")
-                .font(.system(size: 28, weight: .light))
-                .foregroundStyle(Tokens.inkFaint)
+        VStack(alignment: .leading, spacing: 6) {
+            stateArt(.quest(.compass))
             Text("This link has expired or was turned off.")
-                .font(Typo.display(18, .bold))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.sectionTitle, color: Tokens.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Text("Whoever sent it can share it again from their bookmarker.")
-                .font(Typo.ui(13.5))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.top, 8)
     }
 
     private func failed(_ why: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: "wifi.exclamationmark")
-                .font(.system(size: 28, weight: .light))
-                .foregroundStyle(Tokens.inkFaint)
-            Text("Couldn't open this link")
-                .font(Typo.display(18, .bold))
-                .foregroundStyle(Tokens.ink)
+        VStack(alignment: .leading, spacing: 6) {
+            stateArt(.quest(.compass))
+            Text("This link didn't open")
+                .textRole(.sectionTitle, color: Tokens.ink)
             Text(why)
-                .font(Typo.ui(13.5))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("Try again") { Task { await load() } }
-                .font(Typo.ui(14, .bold))
-                .foregroundStyle(accent.deep)
-                .padding(.top, 4)
+            Button("Retry") { Task { await load() } }
+                .buttonStyle(.claySecondary)
+                .padding(.top, 10)
         }
         .padding(.top, 8)
     }
 
-    /// `enabled` is drawn, not just enforced: `PressableStyle` does not dim a
-    /// disabled button on its own, and a full-colour button that ignores a
-    /// tap reads as broken rather than as waiting for a field.
+    private func stateArt(_ art: ClayArtSource) -> some View {
+        ClayArtImage(source: art)
+            .frame(width: 72, height: 72)
+            .background(Tokens.clayGround)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.bottom, 8)
+    }
+
+    /// The shared primary pill; it dims itself when disabled.
     private func primaryButton(_ title: String, enabled: Bool = true,
                                action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Typo.ui(15.5, .bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-        }
-        .buttonStyle(PressableStyle())
-        .disabled(!enabled)
-        .opacity(enabled ? 1 : 0.45)
+        Button(title, action: action)
+            .buttonStyle(.clayPrimary)
+            .disabled(!enabled)
     }
 
     // MARK: - Requests
@@ -641,7 +587,10 @@ struct SharedCollectionSheet: View {
                 state = .gone
             }
         } catch {
-            state = .failed(error.localizedDescription)
+            #if DEBUG
+            print("Opening a shared link failed:", error)
+            #endif
+            state = .failed(PlainError.message(error, doing: "open this link"))
         }
     }
 
@@ -671,7 +620,10 @@ struct SharedCollectionSheet: View {
             withAnimation(Motion.gentle) { saved = result }
             onSaved(result.added)
         } catch {
-            message = "Couldn't save these: \(error.localizedDescription)"
+            #if DEBUG
+            print("Saving a shared link failed:", error)
+            #endif
+            message = PlainError.message(error, doing: "save these")
         }
     }
 }
