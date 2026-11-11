@@ -70,7 +70,7 @@ names the web app — which 1.0's promo text never mentioned.)*
 Every save now files itself in one more tap — or none at all.
 
 ONE TAP TO FILE
-Save a link with + or from any app's Share button and a dial comes up: the seven likeliest topics, with our best guess in the middle. Tap to file it there, turn the dial to pick another, or just leave it and it's filed under the guess. Subtopics sit underneath, one tap each.
+Save a link with + or from any app's Share button and a dial comes up: the seven likeliest topics, with our best guess in the middle. Tap a topic to file it, then narrow it to a subtopic or add tags if you like, and press Done. Or just leave it, and it's filed under the guess.
 
 THE AI READS THE POST
 Signed in, every save gets a second opinion from the AI. It reads the caption, picks a topic and a subtopic, and moves the dial when it answers — you only tap if it's wrong. Your own habits count too: file a creator's posts somewhere and the next one goes there by itself.
