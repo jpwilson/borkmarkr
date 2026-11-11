@@ -57,6 +57,10 @@ const Triage = (() => {
   const reduced = () => (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches)
     || !!document.querySelector(".qf-reduced");
   const firstArt = (art) => (Array.isArray(art) ? art.find(Boolean) : art) || null;
+  /* A topic's clay colours; no topic (or no hue) is Sand, Palette.neutral. */
+  const coloursOf = (t) => (t && t.hue !== null && t.hue !== undefined && Number.isFinite(Number(t.hue))
+    ? Palette.of(Number(t.hue)) : Palette.neutral);
+  const chipStyle = (pal) => `background:${pal.tint};color:${pal.deep}`;
   const cssId = (s) => (typeof CSS === "object" && CSS.escape ? CSS.escape(s) : String(s).replace(/["\\]/g, "\\$&"));
 
   /* ── What counts ──────────────────────────────────────────────────────── */
@@ -298,21 +302,19 @@ const Triage = (() => {
       ui.tally.innerHTML = `<p class="tri-hint">${fine ? "Turn the dial · 1–7 files · S skips · Z undoes" : "Tap a topic, or turn the dial and tap the middle"}</p>`;
       return;
     }
-    const P = Palette;
     ui.tally.innerHTML = [...S.tallies].map(([id, n]) => {
-      const t = topic(id), hue = t ? t.hue : P.NEUTRAL_HUE, art = firstArt(t && t.art);
-      return `<span class="tri-chip" data-topic="${esc(id)}" style="${P.chip(hue)}">`
+      const t = topic(id), art = firstArt(t && t.art);
+      return `<span class="tri-chip" data-topic="${esc(id)}" style="${chipStyle(coloursOf(t))}">`
         + (art ? `<img src="${esc(art)}" alt="">` : `<span class="tri-chip-ini">${esc((t?.name || id).charAt(0))}</span>`)
         + `${esc(t ? t.name : id)} <b>${n}</b></span>`;
     }).join("");
   }
 
   function cardHTML(r, rise) {
-    const P = Palette;
     const d = call("display", r) || { title: r.title || r.url, author: r.author };
     const title = d.title || r.title || r.url || "Untitled";
     const t = topic(r.category_id);
-    const hue = t ? t.hue : P.NEUTRAL_HUE;
+    const pal = coloursOf(t);
     const g = call("glyph", r.platform) || "";
     const plat = call("platform", r.platform) || r.platform || "";
     const when = call("date", r.saved_at) || "";
@@ -323,15 +325,15 @@ const Triage = (() => {
     const dur = secs ? `<span class="tri-dur"><span aria-hidden="true">▶</span>${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}</span>` : "";
     if (pic && !badPics.has(pic)) {
       return `<article class="${cls} tri-media" data-id="${esc(r.id)}">
-        <div class="tri-cover" style="background-image:${P.gradient(hue)}"><img src="${esc(pic)}" alt="" decoding="async"><span class="badge" role="img" aria-label="${esc(plat)}">${g}</span>${dur}</div>
+        <div class="tri-cover"><img src="${esc(pic)}" alt="" decoding="async"><span class="badge" role="img" aria-label="${esc(plat)}">${g}</span>${dur}</div>
         <div class="tri-card-body"><div class="tri-who">${g}<span>${esc(d.author || plat)}</span></div>
           <div class="tri-title-t">${esc(title)}</div>
-          <div class="tri-meta"><span class="tri-filed${t ? "" : " is-none"}"${t ? ` style="${P.chip(hue)}"` : ""}>${esc(where)}</span><span>${esc(when)}</span></div></div>
+          <div class="tri-meta"><span class="tri-filed${t ? "" : " is-none"}"${t ? ` style="${chipStyle(pal)}"` : ""}>${esc(where)}</span><span>${esc(when)}</span></div></div>
       </article>`;
     }
     const art = firstArt(t && t.art);
     const kind = KIND_WORD[r.kind] || plat;
-    return `<article class="${cls} tri-poster${t ? "" : " is-unfiled"}" data-id="${esc(r.id)}" style="--tri-tint:color-mix(in srgb, ${P.tint(hue)} 58%, #fff);--tri-deep:${P.deep(hue)}">
+    return `<article class="${cls} tri-poster${t ? "" : " is-unfiled"}" data-id="${esc(r.id)}" style="--tri-tint:${pal.tint};--tri-deep:${pal.deep}">
       <span class="tri-wm" aria-hidden="true">${g}</span>
       <div class="tri-poster-top"><span class="badge" role="img" aria-label="${esc(plat)}">${g}</span><span>${esc(kind)}${d.author ? ` · ${esc(d.author)}` : ""}</span></div>
       <div class="tri-poster-title">${esc(title)}</div>
