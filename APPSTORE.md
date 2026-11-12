@@ -64,6 +64,41 @@ names the web app — which 1.0's promo text never mentioned.)*
 
 ---
 
+## What's New in 1.4 (4,000 char max — release notes, per version)
+
+```
+A calmer bookmarker, and every save filed in one tap.
+
+A NEW LOOK
+The Library puts your saves first, in a quieter grid of covers. Every topic has its own soft clay colour, and the tab bar stays put at the bottom of every screen.
+
+ONE TAP TO FILE
+Save a link with + or from any app's Share button and a dial comes up: the likeliest topics, with our best guess in the middle. One tap files it. Then pick a subtopic or add tags if you like, and press Done.
+
+THE AI READS THE CAPTION
+Signed in, the AI reads the post's caption and suggests a topic and subtopic. Your own habits count too: file a creator's posts somewhere and the next one goes there by itself.
+
+SORT YOUR BORKS
+Anything not filed yet, and any guess worth a second look, waits in Sort your borks: one card at a time, one tap each.
+
+UNDO MEANS UNDO
+Saved something by mistake? The Undo after saving now takes the whole save back, not just the topic.
+
+THE WEB LIBRARY, REBUILT
+bookmarker.lol now looks and works like the app: covers, topic colours, the same dial when you add a link, and keyboard shortcuts.
+
+Ideas, bugs, or a format you want imported: the Help tab at bookmarker.lol reaches us.
+```
+*(1,155/4,000. 1.3 was never submitted, so 1.4 carries its notes: these cover
+everything since 1.2, the version on the store, and the 1.3 block below is kept
+only as history. Every line is in 1.4 (19). "Signed in" because the AI needs an
+account and answers within the 200-a-day quota; it reaches the dial while the
+sheet is still up when it can, otherwise when the app next opens, so nothing
+here promises "instantly". The Pro preview stays out for the same reason as in
+1.3: nothing is on sale.)*
+
+---
+
 ## What's New in 1.3 (4,000 char max — release notes, per version)
 
 ```
@@ -266,7 +301,7 @@ rather Apple call a different one.
 **Notes** (paste the block below; keep it under 4,000 characters)
 ```
 DEMO ACCOUNT
-Use the sign-in details above (review@bookmarker.lol). You tab → Sign in → enter the email → the app asks for the password. This is the one address that uses a password: every other user receives a six-digit code by email, and a review address can't receive mail. Every feature can be tested signed out; tapping "Not now" works. The one thing an account changes is the number of saves: a signed-out library holds 20 borks (free, no trial, no purchase), and signing up makes it unlimited and backs it up. There is no paid tier and nothing in the app costs money. The You tab's "bookmarker Pro" row (signed in), and a sheet that comes up once when a library reaches 100, 250 and 500 saves, are an interest check: no in-app purchases are configured and nothing is sold in the app or on the web. Each plan opens bookmarker.lol/pro in Safari, which says Pro isn't on sale yet and offers an optional email list; nothing limits saving. New in 1.3: after a save, a dial suggests the topic (one tap files it), and signed in, the AI reads the caption to suggest a topic and subtopic.
+Use the sign-in details above (review@bookmarker.lol). You tab → Sign in → enter the email → the app asks for the password. This is the one address that uses a password: every other user receives a six-digit code by email, and a review address can't receive mail. Every feature can be tested signed out; tapping "Not now" works. The one thing an account changes is the number of saves: a signed-out library holds 20 borks (free, no trial, no purchase), and signing up makes it unlimited and backs it up. There is no paid tier and nothing in the app costs money. The You tab's "bookmarker Pro" row (signed in), and a sheet that comes up once when a library reaches 100, 250 and 500 saves, are an interest check: no in-app purchases are configured and nothing is sold in the app or on the web. Each plan opens bookmarker.lol/pro in Safari, which says Pro isn't on sale yet and offers an optional email list; nothing limits saving. New since 1.2 (1.3 was never released): after a save, a dial suggests the topic (one tap files it, then Done), and signed in, the AI reads the caption to suggest a topic and subtopic.
 
 WHAT THE APP IS, AND FOR WHOM
 bookmarker is a personal bookmark manager for people who save reels, threads, videos and articles across several apps and can't find them again. Users save links they chose — via the Share sheet or by pasting — into one library. Each save is filed under a topic, tagged, searchable, and can carry a note. "Side quests" group saves into a small to-do (recipes to cook, places to visit). Audience: general, rated 4+; typical users are adults who save a lot on social apps.
@@ -274,16 +309,16 @@ bookmarker is a personal bookmark manager for people who save reels, threads, vi
 The app does NOT display, embed, host, reproduce or scrape platform content. It stores the URL plus the title and thumbnail from the page's own Open Graph metadata, and opening a save calls openURL to hand off to the original app or site. There is no feed, no content visible to other users, and no login to any third-party service.
 
 HOW TO TEST
-1. Tap + → paste any link (e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ). Title/thumbnail fetch automatically → tap "Bork it".
-2. Library shows the save. Tap it → "Open original" hands off to the source.
-3. Search tab: type a word from the title. Browse tab: topics.
+1. Tap + → paste any link (e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ). Title/thumbnail fetch automatically → tap "Bork it" → the dial suggests a topic; tap one, then Done.
+2. Library shows the save. Tap it → "Watch on YouTube" (or "Open in …" / "Open original") hands off to the source.
+3. Search: the field at the top of the Library or Browse; type a word from the title. Browse tab: topics.
 4. Share extension (optional): Safari → Share → "bookmarker".
 5. Account: You tab → Sign in → demo account → "Backed up" appears on the You card. (Sign up is the same flow for a new address: it creates the account from the emailed code.) "Sign out" and "Delete account" are on the same card. Delete account asks for confirmation, deletes the account and all server-side data, and signs out.
 
 EXTERNAL SERVICES
 - Supabase (auth, Postgres, Edge Functions): email-code sign-in and optional backup/sync of the user's own bookmarks.
 - Resend: delivers the sign-in code emails from hello@bookmarker.lol.
-- OpenRouter → Anthropic Claude: when on-device keyword filing can't place a link, a signed-in user's link URL and title are sent from our server to suggest a topic; "Highlights" summarises up to 40 recent titles/topics. Signed-out users get on-device filing only. No API key ships in the app; calls are server-side and capped per user per day.
+- OpenRouter → Anthropic Claude: for a signed-in user's saves, the link's URL, title and the post's public caption/description (author, hashtags) are sent from our server to suggest a topic and subtopic; "Highlights" summarises up to 40 recent titles/topics. Signed-out users get on-device filing only. No API key ships in the app; calls are server-side and capped per user per day.
 - Link previews are fetched directly from the saved page (its Open Graph tags).
 - Website and privacy policy: https://bookmarker.lol (GitHub Pages).
 
@@ -457,11 +492,14 @@ archive, open the dashboard and confirm the project says ACTIVE (it does as of
 ## Screenshots
 
 Required size: 6.9" iPhone — **1320 × 2868**. The finished files are in
-`Marketing/screenshots/`, ready to upload as-is: no resizing. 1.1 is a set of
-five, in this order — `01-library.png`, `02-browse.png`, `03-topic.png`,
-`04-revisit.png`, `05-scoped.png`: the library, the topic grid, a topic page
-opened on its art, Revisit, and a scoped search showing results. The last three
-are all 1.1, which is the point of re-shooting them.
+`Marketing/screenshots/`, ready to upload as-is: no resizing. 1.4 is a set of
+five, in this order — `01-library.png`, `02-dial.png`, `03-scoped.png`,
+`04-import.png`, `05-topic.png`: the Library, the dial with a topic chosen, a
+scoped search showing results, Import, and a topic page opened on its art. That
+is the order and the captions the ASO proposal at the end of this file suggests;
+its fifth frame (the web library) isn't a simulator capture, so the topic page
+stands in. The panels are 1.4's clay grounds with ink type in the app's own
+fonts.
 
 They are *designed* screenshots — a real capture of the app inside a phone
 frame on a coloured panel with a headline — which is what nearly every top
@@ -488,12 +526,10 @@ panel now fails the script instead of running off the right edge.
 
 Two things worth knowing before you re-run them:
 
-- The Library and Revisit captures pass `-signedIn`. The seed is 39 borks,
-  which since the limit moved to 50 is one short of the countdown at 40, so
-  **signed out** those two screens capture the "Only on this phone" card and
-  its Sign up button sitting under the stats line. True, and not the first
-  frame a store listing wants. Signed in is equally true and is what those
-  screens are actually for.
+- Every capture passes `-signedIn`, and the seed runs signed in. The seed is
+  50 borks, past the signed-out limit of 20, so **signed out** each screen
+  carries "50 borks on this phone — sign up to keep saving." True, and not the
+  first frame a store listing wants.
 - `shoot` sets the starting tab with `simctl spawn … defaults write`, which
   writes the simulator's *global* preferences, not the app's sandboxed ones.
   That works only because the app never writes its own `startingTab` — with one
@@ -526,6 +562,10 @@ Three practical notes:
 ---
 
 ## PROPOSAL — ASO for 1.3 (not yet applied; owner to decide)
+
+> **Applies to the 1.4 submission.** 1.3 was never submitted, so paste the
+> Subtitle and Keywords below into the **1.4** record, and use the 1.4 promo
+> text on the day 1.4 is approved. Every line below is also true of 1.4 (19).
 
 > Drafted 6 Nov 2026 on `growth/seo-quick-wins`. Nothing above this block has
 > been changed. Every line is true of build 17 (1.3). Subtitle and Keywords
@@ -563,10 +603,10 @@ objects to them under guideline 2.3.7, replace them with
 
 **Promotional Text** (170 max — can be changed today, no build needed)
 ```
-New in 1.3: every save files itself in one tap, and the AI reads the caption to pick the topic. Import your Instagram, TikTok, X and YouTube saves and search the lot.
+New in 1.4: every save files itself in one tap, and the AI reads the caption to pick the topic. Import your Instagram, TikTok, X and YouTube saves and search the lot.
 ```
 *(166/170. "The AI" needs an account; the description says so. Swap it in on
-the day 1.3 is approved, not before — until then the live build has no dial.)*
+the day 1.4 is approved, not before — until then the live build has no dial.)*
 
 **Description — new first lines** (the only part most people read before "more")
 ```

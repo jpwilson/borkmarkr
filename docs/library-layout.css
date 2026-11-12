@@ -107,8 +107,13 @@ main, main > section, .you-col, .card-body { min-width: 0; }
 .quest-guide ol, .quest-guide-more ol { padding-left:22px; }
 .quest-guide li { padding-left:6px; }
 .quest-guide li b, .quest-guide-more li b { font-weight:600; }
-.quest-guide-more { padding:22px 0; }
-.quest-guide-more summary { cursor:pointer; font-weight:600; min-height:44px; display:flex; align-items:center; }
+/* With quests on the board, the guide folds into one slim row under it. */
+.quest-guide-more { margin:12px 0 0; padding:0 16px; background:var(--surface); border:1px solid var(--hairline); border-radius:var(--r-card); }
+.quest-guide-more summary { cursor:pointer; font-weight:600; min-height:56px; display:flex; align-items:center; justify-content:space-between; gap:12px; list-style:none; }
+.quest-guide-more summary::-webkit-details-marker { display:none; }
+.quest-guide-more summary::after { content:""; width:8px; height:8px; margin-right:4px; border:solid var(--meta); border-width:0 2px 2px 0; transform:rotate(45deg) translate(-2px,-2px); transition:transform .15s var(--ease-out); }
+.quest-guide-more[open] summary::after { transform:rotate(-135deg) translate(-2px,-2px); }
+.quest-guide-more ol { margin:0; padding-bottom:12px; }
 .quest-board { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:12px; }
 /* A quest on the board: the same card on its side — art left, the tint behind the words. */
 .quest-board .quest-card { width:100%; flex-direction:row; align-items:stretch; }

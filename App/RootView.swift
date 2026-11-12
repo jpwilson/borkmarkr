@@ -280,7 +280,12 @@ struct RootView: View {
                 Logger(subsystem: "com.jpwilson.borkmarkr", category: "migration")
                     .notice("Folded custom topic ids: \(folded, privacy: .public) rows re-keyed")
             }
-            _ = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
+            // Fetched, not the @Query: on a cold launch the query can still be
+            // empty here, which left every card of a custom topic showing only
+            // its subtopic ("Races") until Browse was opened.
+            let liveTopics = ((try? context.fetch(FetchDescriptor<CustomTopic>())) ?? []).filter { $0.deletedAt == nil }
+            let liveSubtopics = ((try? context.fetch(FetchDescriptor<CustomSubtopic>())) ?? []).filter { $0.deletedAt == nil }
+            _ = MergedTaxonomy(topics: liveTopics, subtopics: liveSubtopics)
             // The Share Extension's dial draws topic art from App Group
             // thumbnails; this keeps them there (off the main actor).
             QuickFileBridge.installArtIfNeeded(customTopics: customTopics)

@@ -467,6 +467,10 @@
   .danger-link { display: block; background: none; border: 0; color: var(--destructive); font-weight: 600; padding: 0; min-height: 44px; }
   .err { color: var(--destructive); font-size: 13px; font-weight: 500; min-height: 18px; margin: 6px 0 0; }
   .ok-msg { color: #2F6B45; font-size: 13px; font-weight: 500; min-height: 18px; margin: 6px 0 0; }
+  /* A form card starts at its first label, and an empty message takes no room:
+     the button sits 16 px under the last field until there is something to say. */
+  .you-card > .field-label:first-child { margin-top: 0; }
+  .you-card > .err:empty, .you-card > .ok-msg:empty { min-height: 0; margin: 0; }
   .hint { color: var(--meta); font-size: 13px; line-height: 18px; font-weight: 500; }
   textarea.field { height: auto; min-height: 124px; padding: 12px 14px; resize: vertical; line-height: 1.45; font: inherit; font-weight: 500; }
   .fb-kinds { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
@@ -1423,7 +1427,7 @@
             <label class="field-label" for="profile-handle">Username</label>
             <input class="field" id="profile-handle" placeholder="lowercase, 3–24 letters, numbers, _" autocomplete="off" maxlength="24">
             <p class="err" id="profile-err" role="alert"></p><p class="ok-msg" id="profile-ok" role="status"></p>
-            <button class="btn" data-act="save-profile" style="margin-top:6px">Save profile</button>
+            <button class="btn" data-act="save-profile" style="margin-top:16px">Save profile</button>
           </div>
         </div>
         <div class="you-col">
@@ -1471,7 +1475,7 @@
               <input class="field ph-no-capture" id="fb-contact" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
             </div>
             <p class="err" id="fb-err" role="alert"></p><p class="ok-msg" id="fb-ok" role="status"></p>
-            <button class="btn" data-act="send-feedback" style="margin-top:4px">Send</button>
+            <button class="btn" data-act="send-feedback" style="margin-top:16px">Send</button>
           </div>
         </div>
         <div class="you-col">
@@ -1486,9 +1490,6 @@
               <li><b>It's yours.</b> Sign in with a one-time code, no password. Your library syncs between the iPhone app and this site, and you can delete everything from the You tab.</li>
             </ol>
           </div>
-          <p class="hint">
-            <a href="/app">Get the iPhone app</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:hello@bookmarker.lol">hello@bookmarker.lol</a>
-          </p>
         </div>
       </div>
     </section>

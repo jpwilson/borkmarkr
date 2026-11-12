@@ -41,7 +41,9 @@ xcrun simctl status_bar "$SIM" override \
 # Wipe first so DebugSeed actually seeds (it no-ops on a non-empty store).
 xcrun simctl uninstall "$SIM" "$BUNDLE"
 xcrun simctl install "$SIM" "$DD/Build/Products/Debug-iphonesimulator/borkmarkr.app"
-xcrun simctl launch "$SIM" "$BUNDLE" -seed >/dev/null
+# Seed signed in: the seeded custom topic (Trail running) is only created for
+# an account, and without it its borks read "Races" with no topic.
+xcrun simctl launch "$SIM" "$BUNDLE" -seed -signedIn >/dev/null
 sleep 5
 
 # Card covers are real remote thumbnails (see `DebugSeed.Cover`), so a screen
@@ -69,6 +71,8 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
 #   -query "protein"      pre-fills the search field at the top of Browse
 #   -scopes "topics,tags" pre-selects the scope chips under it
 #   -topic fitness        opens Browse straight onto a topic page (hero band)
+#   -add URL -quickFileChosen   the Quick File dial for URL, a topic chosen
+#   -importSheet          the You tab with the import sheet up
 #   -dumpShareCard PATH   writes the rendered topic share card to a PNG
 #
 # and, for the signed-out save limit (Core/SaveLimit.swift), whose surfaces
@@ -86,22 +90,25 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
 # shipped build into one of these states.
 
 echo "Capturing to Marketing/captures:"
-# `-signedIn` on the two screens that carry the sign-in card. The seed is 39
-# borks, which is past the signed-out limit of 20, so signed out these two
-# capture the app mid-nag: "39 borks on this phone — sign up to keep saving."
-# That is a true state of the app and a terrible first frame for a store
-# listing. Signed in is equally true and is what the screens are actually for.
+# Every screen passes `-signedIn`. The seed is 50 borks, past the signed-out
+# limit of 20, so signed out each capture carries "50 borks on this phone —
+# sign up to keep saving." True, and a terrible first frame for a store
+# listing. Signed in is equally true and is what the screens are for.
 shoot library library -signedIn
-shoot browse  browse
+# The dial after a topic is chosen (1.4's Quick File). Showing it saves the
+# link, so it comes after the Library shot; the title has no "protein" in
+# it, so the search shot below is unchanged by it.
+shoot dial    library -signedIn -add "https://www.tiktok.com/@kaylawalks/video/7299999" -quickFileChosen
+shoot browse  browse  -signedIn -browseAxis topics
 # The topic page is reachable only by tapping a tile, so `-topic` is the only
-# reproducible way to capture it — and the hero band and the share menu both
-# live there.
-shoot topic   browse -topic fitness
-# Search is no longer a tab: the field lives at the top of Browse, and -query
-# pre-fills it so the capture shows results rather than the topic grid.
-shoot search  browse -query "protein"
-shoot scoped  browse -query "run" -scopes "tags"
+# reproducible way to capture it.
+shoot topic   browse  -signedIn -topic fitness
+# Search lives at the top of Browse (and the Library); -query pre-fills it so
+# the capture shows results rather than the topic grid.
+shoot search  browse  -signedIn -query "protein"
+shoot scoped  browse  -signedIn -query "run" -scopes "tags"
+shoot import  you     -signedIn -importSheet
 shoot revisit revisit -signedIn
-shoot you     you
+shoot you     you     -signedIn
 
 echo "Now: venv/bin/python Scripts/make_screenshots.py"

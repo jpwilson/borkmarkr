@@ -2016,3 +2016,13 @@ written-page header keeps "Get the app" on its first line at every width, and
 on a phone its links move to a second row that scrolls sideways. Content,
 analytics and prices were left alone: Lifetime is still $30 on /lifetime and
 in the FAQ, and $199.99 on /pro, until the owner decides.
+
+**Second pass (1.4).** The side-quest sheets use the shared clay sheet: the
+title in the header, Cancel or ✕, a coral Create or Done, and delete, rename
+and share as quiet circles. The three alternative accents became plum, dusty
+blue and sage, with white on base at 4.5:1 or better; their keys are
+unchanged, so a saved choice still resolves, and coral is still the default.
+Custom topics are installed when the app starts, so the first frame of cards
+names them ("Trail running › Races", not "Races"). The store screenshots
+follow the listing's order on clay grounds in the brand fonts, and the
+website's own screenshots show 1.4.

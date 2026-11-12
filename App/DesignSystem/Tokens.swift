@@ -131,15 +131,20 @@ struct AccentRamp: Equatable, Sendable {
         AccentRamp(key: "FF5A2D", name: "Coral",
                    base: Color(hex: "FF5A2D"), dark: Color(hex: "E8451C"),
                    tint: Color(hex: "FFE7DE"), deep: Color(hex: "AE3512")),
+        // The three alternatives are clay-family, muted to sit with paper
+        // and the topic colours: plum, dusty blue, sage. Keys and names are
+        // the 1.3 ones, so a saved choice still resolves. White on each base
+        // is ≥ 4.5:1 (5.6, 5.1, 4.6) and deep on paper ≥ 6:1. Coral is
+        // unchanged and stays the default.
         AccentRamp(key: "7C5CFC", name: "Violet",
-                   base: Color(hex: "7C5CFC"), dark: Color(hex: "6A47F0"),
-                   tint: Color(hex: "ECE7FF"), deep: Color(hex: "5538C9")),
+                   base: Color(hex: "865A7F"), dark: Color(hex: "744C6E"),
+                   tint: Color(hex: "F1E6EE"), deep: Color(hex: "6B4365")),
         AccentRamp(key: "2E8CF0", name: "Blue",
-                   base: Color(hex: "2E8CF0"), dark: Color(hex: "1F77D6"),
-                   tint: Color(hex: "E2F0FF"), deep: Color(hex: "1E66B8")),
+                   base: Color(hex: "4F7196"), dark: Color(hex: "43627F"),
+                   tint: Color(hex: "E4EAF1"), deep: Color(hex: "3D5A7A")),
         AccentRamp(key: "1FA971", name: "Green",
-                   base: Color(hex: "1FA971"), dark: Color(hex: "178A5C"),
-                   tint: Color(hex: "DFF4EA"), deep: Color(hex: "147A52")),
+                   base: Color(hex: "5B7D61"), dark: Color(hex: "4D6C53"),
+                   tint: Color(hex: "E4ECE2"), deep: Color(hex: "46634B")),
     ]
 
     static let fallback = all[0]

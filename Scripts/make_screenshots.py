@@ -36,42 +36,44 @@ W, H = 1320, 2868
 # and taxonomy hues, so the store page and the app read as the same product.
 
 PANELS = [
+    # 1.4 ("Quiet clay"): light clay grounds with ink type, the app's own
+    # palette (SYSTEM.md tints, coral as the one loud colour), in the order the
+    # ASO proposal in APPSTORE.md suggests. Its fifth frame, the web library,
+    # is not a simulator capture, so the topic page stands in for it.
     {
         "shot": "library.png",
-        "top": "#FF6B3D", "bottom": "#D8380F",
-        "head": ["Everything you", "scrolled past.", "One library."],
-        "sub": "Instagram, X, TikTok, YouTube — one library you can actually search.",
+        "top": "#FFEDE5", "bottom": "#F8D5C6", "rule": "#FF5A2D",
+        "head": ["Every save.", "One library."],
+        "sub": "Instagram, X, TikTok, YouTube and the web, in one place you can actually search.",
     },
     {
-        # Blue, not green: the Browse grid is a wall of saturated topic tiles,
-        # several of them green. A green panel behind it flattened the whole
-        # image. Blue barely appears in the taxonomy hues, so the grid pops.
-        "shot": "browse.png",
-        "top": "#3E96F5", "bottom": "#12559E",
-        "head": ["It files itself", "as you save."],
-        "sub": "50 topics, 600+ subtopics. Change anything it gets wrong.",
-    },
-    {
-        # Warm amber against the topic page's own tint band, which is green
-        # for Fitness — the two would fight if the panel were green too.
-        "shot": "topic.png",
-        "top": "#F5A623", "bottom": "#C46A05",
-        "head": ["Every topic,", "already sorted."],
-        "sub": "Open a topic and it opens on its own art, with every save under it.",
-    },
-    {
-        "shot": "revisit.png",
-        "top": "#2FBF87", "bottom": "#127150",
-        "head": ["What's worth", "another look."],
-        "sub": "What you saved and never opened, what you keep coming back to, what you were reading a month ago.",
+        "shot": "dial.png",
+        "top": "#E2EFEC", "bottom": "#C9DED9", "rule": "#2E5E57",
+        "head": ["Filed in", "one tap."],
+        "sub": "Save from any app and a dial suggests the topic. Tap to file it, then pick a subtopic if you like.",
     },
     {
         "shot": "scoped.png",
-        "top": "#8B6BFF", "bottom": "#4F2FC4",
-        "head": ["Find it again", "in seconds."],
+        "top": "#EFE9DA", "bottom": "#E0D6BE", "rule": "#5A4E38",
+        "head": ["Find anything", "you saved."],
         "sub": "Search everything at once, or narrow it to topics, subtopics or tags.",
     },
+    {
+        "shot": "import.png",
+        "top": "#E8EDF3", "bottom": "#D3DDE9", "rule": "#3D5A7A",
+        "head": ["Bring the", "thousands you", "already have."],
+        "sub": "Download your saves from Instagram, X, TikTok, YouTube or your browser, and drop the file in.",
+    },
+    {
+        "shot": "topic.png",
+        "top": "#F5EBD3", "bottom": "#EAD9B2", "rule": "#7A5A1E",
+        "head": ["Every topic,", "already sorted."],
+        "sub": "Open a topic and it opens on its own art, with every save under it.",
+    },
 ]
+
+INK = (25, 21, 16)        # Brand.ink
+META = (110, 101, 90)     # Brand.inkSecondary
 
 # ── Layout ───────────────────────────────────────────────────────────────────
 
@@ -88,8 +90,19 @@ CORNER = 108           # screen corner radius at full size
 TILT = -5.0            # degrees; negative leans left like the reference
 
 
-def font(size: int, weight: str = "Bold") -> ImageFont.FreeTypeFont:
-    """System font at a given weight, falling back through what macOS ships."""
+FONTS = ROOT / "App" / "Fonts"
+
+
+def font(size: int, weight: str = "Bold", face: str = "head") -> ImageFont.FreeTypeFont:
+    """The app's own faces (Bricolage for heads, Instrument Sans for text),
+    falling back through what macOS ships."""
+    path = FONTS / ("BricolageGrotesque.ttf" if face == "head" else "InstrumentSans.ttf")
+    try:
+        f = ImageFont.truetype(str(path), size)
+        f.set_variation_by_name(weight)
+        return f
+    except (OSError, ValueError):
+        pass
     try:
         f = ImageFont.truetype("/System/Library/Fonts/SFNS.ttf", size)
         try:
@@ -174,8 +187,8 @@ def build(panel: dict, shots: pathlib.Path, index: int) -> pathlib.Path:
     glow(base)
     draw = ImageDraw.Draw(base)
 
-    head = font(HEAD_SIZE, "Bold")
-    sub = font(SUB_SIZE, "Regular")
+    head = font(HEAD_SIZE, "Bold", "head")
+    sub = font(SUB_SIZE, "Medium", "text")
 
     y = HEAD_TOP
     for line in panel["head"]:
@@ -189,17 +202,17 @@ def build(panel: dict, shots: pathlib.Path, index: int) -> pathlib.Path:
                 f"{panel['shot']}: headline line {line!r} is {width:.0f}px wide, "
                 f"which is past the {W - MARGIN * 2}px the panel has. Break it differently."
             )
-        draw.text((MARGIN, y), line, font=head, fill=(255, 255, 255))
+        draw.text((MARGIN, y), line, font=head, fill=INK)
         y += HEAD_LEAD
 
     # Short rule under the headline — echoes the app's accent underline.
     y += 18
     draw.rounded_rectangle([MARGIN, y, MARGIN + 120, y + 9], radius=5,
-                           fill=(255, 255, 255, 200))
+                           fill=panel.get("rule", "#FF5A2D"))
     y += 52
 
     for line in wrap(panel["sub"], sub, W - MARGIN * 2, draw):
-        draw.text((MARGIN, y), line, font=sub, fill=(255, 255, 255, 214))
+        draw.text((MARGIN, y), line, font=sub, fill=META)
         y += SUB_SIZE + 14
 
     device = framed(shot)

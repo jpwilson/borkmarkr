@@ -553,8 +553,19 @@ struct NewMissionSheet: View {
     @State private var categoryID: String?
     @State private var showingPicker = false
 
+    private var canCreate: Bool { !title.trimmingCharacters(in: .whitespaces).isEmpty }
+
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            ClaySheetHeader(title: Copy.newSideQuest)
+                .overlay(alignment: .bottomTrailing) {
+                    Button("Cancel") { dismiss() }
+                        .font(.custom("Instrument Sans", size: 15, relativeTo: .subheadline).weight(.semibold))
+                        .foregroundStyle(Tokens.inkSecondary)
+                        .frame(minWidth: Tokens.minTapTarget, minHeight: Tokens.minTapTarget)
+                        .frame(height: 36)
+                }
+                .padding(.horizontal, Tokens.gutter)
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     field(label: "WORKING ON", placeholder: "Become a faster runner · Which minivan · Learn pottery", text: $title)
@@ -597,30 +608,33 @@ struct NewMissionSheet: View {
                         }
                     }
                 }
-                .padding(Tokens.gutter)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
             }
-            .background(Tokens.paper)
-            .navigationTitle(Copy.newSideQuest)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create", action: create)
-                        .fontWeight(.bold)
-                        .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
+            .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Button("Create side quest", action: create)
+                    .buttonStyle(.clayPrimary)
+                    .disabled(!canCreate)
+                    .padding(.horizontal, Tokens.gutter)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
+                    .background(Tokens.paper)
+                    .overlay(alignment: .top) { Tokens.hairline.frame(height: 1) }
             }
-            .onAppear {
-                if let seed {
-                    title = seed.title
-                    categoryID = seed.categoryID
-                    if let starterHabit = seed.habit { habit = starterHabit }
-                }
+        }
+        .background(Tokens.paper)
+        .onAppear {
+            if let seed {
+                title = seed.title
+                categoryID = seed.categoryID
+                if let starterHabit = seed.habit { habit = starterHabit }
             }
-            .sheet(isPresented: $showingPicker) {
-                TopicPickerSheet(categoryID: $categoryID, subcategory: .constant(nil))
-                    .environment(\.accent, accent)
-            }
+        }
+        .sheet(isPresented: $showingPicker) {
+            TopicPickerSheet(categoryID: $categoryID, subcategory: .constant(nil))
+                .environment(\.accent, accent)
         }
         .presentationDetents([.large])
         .claySheet()
@@ -715,7 +729,11 @@ struct MissionDetailSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // The quest's name wraps to a second line rather than truncating.
+            ClaySheetHeader(title: mission.title) { dismiss() }
+                .lineLimit(2)
+                .padding(.horizontal, Tokens.gutter)
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if mission.hasHabit { habitBlock }
@@ -795,31 +813,14 @@ struct MissionDetailSheet: View {
                         }
                     }
                 }
-                .padding(Tokens.gutter)
-                .padding(.bottom, 30)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
             }
-            .background(Tokens.paper)
-            .navigationTitle(editingTitle ? "Rename" : mission.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Button {
-                        draftTitle = mission.title
-                        editingTitle = true
-                    } label: {
-                        HStack(spacing: 5) {
-                            Text(mission.title)
-                                .font(Typo.ui(16, .bold))
-                                .foregroundStyle(Tokens.ink)
-                                .lineLimit(1)
-                            Image(systemName: "pencil")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(Tokens.inkFaint)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+            .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .bottom, spacing: 0) { footerBar }
+        }
+        .background(Tokens.paper)
             .alert("Rename side quest", isPresented: $editingTitle) {
                 TextField("Name", text: $draftTitle)
                 Button("Save") {
@@ -832,23 +833,6 @@ struct MissionDetailSheet: View {
                 }
                 Button("Cancel", role: .cancel) {}
             }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 14) {
-                        ShareLink(item: mission.shareText(from: allBookmarks)) {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-                        Button(role: .destructive) {
-                            mission.deletedAt = .now
-                            try? context.save()
-                            dismiss()
-                        } label: {
-                            Image(systemName: "trash")
-                        }
-                    }
-                }
-            }
             .sheet(item: $detail) { DetailSheet(bookmark: $0).environment(\.accent, accent) }
             .onAppear {
                 draftThoughts = mission.detail ?? ""
@@ -859,9 +843,58 @@ struct MissionDetailSheet: View {
                 #endif
             }
             .task(id: briefInputKey) { await refreshBrief() }
-        }
         .presentationDetents([.large])
         .claySheet()
+    }
+
+    /// Delete, rename and share as quiet circles beside the one main action,
+    /// as on a bork's detail sheet.
+    private var footerBar: some View {
+        HStack(spacing: 10) {
+            Button(role: .destructive) {
+                mission.deletedAt = .now
+                try? context.save()
+                dismiss()
+            } label: {
+                footerIcon("trash", color: Tokens.destructive)
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel("Delete side quest")
+
+            Button {
+                draftTitle = mission.title
+                editingTitle = true
+            } label: {
+                footerIcon("pencil", color: Tokens.ink)
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel("Rename side quest")
+
+            ShareLink(item: mission.shareText(from: allBookmarks)) {
+                footerIcon("square.and.arrow.up", color: Tokens.ink)
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel("Share this side quest")
+
+            Button("Done") { dismiss() }
+                .buttonStyle(.clayPrimary)
+        }
+        .padding(.horizontal, Tokens.gutter)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background(Tokens.paper)
+        .overlay(alignment: .top) { Tokens.hairline.frame(height: 1) }
+    }
+
+    /// A 54 pt white circle with a hairline, beside the primary pill.
+    private func footerIcon(_ symbol: String, color: Color) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 17, weight: .medium))
+            .foregroundStyle(color)
+            .frame(width: Tokens.primaryButtonHeight, height: Tokens.primaryButtonHeight)
+            .background(Tokens.surface, in: Circle())
+            .overlay(Circle().strokeBorder(Tokens.hairline, lineWidth: 1))
+            .contentShape(Circle())
     }
 
     /// Refreshes stale inputs without blocking the quest. The previous draft
