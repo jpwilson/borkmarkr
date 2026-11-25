@@ -2111,10 +2111,20 @@ at the exact same time."
   card covers or square row covers, and it rewrites the clip table itself.
   `Scripts/refresh_screenshots.sh` reruns the captures, the store panels and
   the website images in one go.
-- App Store screenshots can't animate. A neutral store set (`NEUTRAL=1
-  python3 Scripts/make_screenshots.py`) was made for the owner to choose
-  from, outside the repo; the committed set keeps the thumbnails.
+- App Store screenshots can't animate, so the owner chose the neutral set for
+  the store ("so that we don't risk Apple blocking it"): `Marketing/screenshots*`
+  are composed with `NEUTRAL=1`, and `Scripts/refresh_screenshots.sh` keeps it
+  that way. The owner approved the moving covers for the website the same day.
 - Rejected: a live HTML mock of the Library (a second UI that drifts with
   every design change) and per-cover cropped tiles (they shimmer against the
   base image while fading).
+
+## Yearly is $69.99 (design/quiet-clay, 1.4 build 23)
+
+The owner, 25 Nov 2026: "Let's change the yearly price to $69.99." With
+Lifetime at $109, Yearly at $99.99 was too close to it for the demand test to
+say anything about Yearly. $69.99 is about seven months of Monthly ($9.99), so
+the badge reads "5 months free" and the /pro note "$5.83 a month, billed
+yearly". Monthly $9.99 and Lifetime $109 are unchanged. Still a demand test:
+nothing is sold.
 

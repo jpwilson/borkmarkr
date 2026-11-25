@@ -120,7 +120,7 @@ extension ProSheet {
         var price: String {
             switch self {
             case .monthly: "$9.99"
-            case .yearly: "$99.99"
+            case .yearly: "$69.99"
             case .lifetime: "$109"
             }
         }
@@ -133,10 +133,10 @@ extension ProSheet {
             }
         }
 
-        /// A year for the price of ten months of Monthly. Only Yearly has a
-        /// deal, and the plan with one wears the tinted card.
+        /// A year for about the price of seven months of Monthly. Only Yearly
+        /// has a deal, and the plan with one wears the tinted card.
         var deal: String? {
-            self == .yearly ? "Two months free" : nil
+            self == .yearly ? "Five months free" : nil
         }
 
         /// `https://bookmarker.lol/pro?plan=yearly&from=app-you`
@@ -144,7 +144,7 @@ extension ProSheet {
             URL(string: "https://bookmarker.lol/pro?plan=\(rawValue)&from=\(origin.rawValue)")!
         }
 
-        /// "Yearly, $99.99 a year, two months free"
+        /// "Yearly, $69.99 a year, five months free"
         var spoken: String {
             [name, "\(price) \(period)", deal?.lowercased()]
                 .compactMap { $0 }

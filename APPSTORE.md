@@ -515,9 +515,9 @@ Sizes in Media Manager" reveals both.
 It builds for the iPhone 17 Pro Max simulator, seeds demo data, sets 9:41 and
 captures to `Marketing/captures/`, composes these panels (needs Pillow), and
 rebuilds the website's screenshots in `docs/img/`. Screens that show creators'
-thumbnails are also captured as `-neutral` twins with clay covers; the website
-uses those, and `NEUTRAL=1 OUT=<folder> python3 Scripts/make_screenshots.py`
-makes a neutral store set from them.
+thumbnails are also captured as `-neutral` twins with clay covers. The store
+panels use those (`NEUTRAL=1`), so no creator's thumbnail is in the listing;
+the website shows the thumbnails only as motion over the clay covers.
 
 The captures use a DEBUG-only seed (`-seed` launch argument), so nothing
 personal is ever on screen. The panel headlines live at the top of
