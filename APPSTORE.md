@@ -323,7 +323,7 @@ EXTERNAL SERVICES
 - Website and privacy policy: https://bookmarker.lol (GitHub Pages).
 
 DEVICES TESTED
-iPhone 17 Pro Max on iOS 26.6 (physical device); iPhone 17 Pro Max simulator, Xcode 26.6.
+iPhone 17 Pro Max on iOS 27.2 (physical device); iPhone 17 Pro Max, 17 Pro and 16e simulators, Xcode 27.2.
 
 REGIONS
 Identical features and content in every region. Not a regulated industry. No protected third-party material: users save links to content they chose, and the app links out to it.
