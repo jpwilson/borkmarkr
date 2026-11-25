@@ -81,7 +81,7 @@ const tables={
   missions:[{id:"fixture-quest",owner_id:owner,title:"Improve mobility",detail:"A synthetic goal",category_id:"fitness",bookmark_ids:["fixture-0"],todos:[],completed_days:[],is_archived:false,created_at:now,updated_at:now,deleted_at:null}],
   custom_topics:[],custom_subtopics:[],bookmark_opens:[],topic_art:[],collections:[]
 };
-const mime={".html":"text/html",".js":"text/javascript",".css":"text/css",".jpg":"image/jpeg",".png":"image/png",".svg":"image/svg+xml",".json":"application/json"};
+const mime={".html":"text/html",".js":"text/javascript",".css":"text/css",".jpg":"image/jpeg",".png":"image/png",".webp":"image/webp",".svg":"image/svg+xml",".json":"application/json"};
 async function cleanPath(pathname){
   const exists=async(p)=>{try{return (await fs.stat(p)).isFile();}catch{return false;}};
   const base=path.resolve(root,"."+pathname);

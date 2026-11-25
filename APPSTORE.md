@@ -511,13 +511,13 @@ A 6.5" set (1284 × 2778) is in `Marketing/screenshots-6.5/` for the other iPhon
 slot; App Store Connect shows whichever slot it feels like first — "View All
 Sizes in Media Manager" reveals both.
 
-**To regenerate after a UI change** (both scripts are in the repo):
-
-```
-bash Scripts/capture_screenshots.sh        # builds for the iPhone 17 Pro Max simulator,
-                                           # seeds demo data, sets 9:41, captures to Marketing/captures/
-python3 Scripts/make_screenshots.py        # composes the panels into Marketing/screenshots/ (needs Pillow)
-```
+**To regenerate after a UI change**, run `bash Scripts/refresh_screenshots.sh`.
+It builds for the iPhone 17 Pro Max simulator, seeds demo data, sets 9:41 and
+captures to `Marketing/captures/`, composes these panels (needs Pillow), and
+rebuilds the website's screenshots in `docs/img/`. Screens that show creators'
+thumbnails are also captured as `-neutral` twins with clay covers; the website
+uses those, and `NEUTRAL=1 OUT=<folder> python3 Scripts/make_screenshots.py`
+makes a neutral store set from them.
 
 The captures use a DEBUG-only seed (`-seed` launch argument), so nothing
 personal is ever on screen. The panel headlines live at the top of

@@ -13,7 +13,16 @@ drawn over the app's own pixels.
     Scripts/capture_screenshots.sh        # take the captures
     venv/bin/python Scripts/make_screenshots.py   # frame them
 
-Output: Marketing/screenshots/*.png at 1320x2868, ready to upload.
+Output: Marketing/screenshots/*.png at 1320x2868, ready to upload, and the
+6.5" set beside it in Marketing/screenshots-6.5/.
+
+A neutral set, every cover drawn as clay instead of a creator's thumbnail:
+
+    NEUTRAL=1 OUT=<folder> python3 Scripts/make_screenshots.py
+
+composes each panel from its capture's `-neutral` twin where there is one
+(Scripts/capture_screenshots.sh takes them) and writes the 6.5" set to
+`<folder>-6.5`.
 """
 
 import math
@@ -28,6 +37,8 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 # two-command recipe is unchanged.
 SHOTS = pathlib.Path(os.environ.get("SHOTS", ROOT / "Marketing" / "captures"))
 OUT = pathlib.Path(os.environ.get("OUT", ROOT / "Marketing" / "screenshots"))
+# NEUTRAL=1 prefers `<shot>-neutral.png`, the same screen with clay covers.
+NEUTRAL = os.environ.get("NEUTRAL") == "1"
 
 W, H = 1320, 2868
 
@@ -177,8 +188,13 @@ def framed(shot: Image.Image) -> Image.Image:
     return canvas.rotate(TILT, resample=Image.BICUBIC, expand=True)
 
 
+def capture(panel: dict, shots: pathlib.Path) -> pathlib.Path:
+    twin = shots / panel["shot"].replace(".png", "-neutral.png")
+    return twin if NEUTRAL and twin.exists() else shots / panel["shot"]
+
+
 def build(panel: dict, shots: pathlib.Path, index: int) -> pathlib.Path:
-    shot = Image.open(shots / panel["shot"])
+    shot = Image.open(capture(panel, shots))
     if shot.size != (W, H):
         raise SystemExit(f"{panel['shot']} is {shot.size}, expected {(W, H)} — "
                          "capture on an iPhone 17 Pro Max simulator.")
@@ -245,7 +261,7 @@ def main() -> None:
     if not SHOTS.exists():
         raise SystemExit(f"No captures in {SHOTS} — run Scripts/capture_screenshots.sh first")
     for i, panel in enumerate(PANELS, start=1):
-        print("wrote", build(panel, SHOTS, i))
+        print("wrote", build(panel, SHOTS, i), "from", capture(panel, SHOTS).name)
 
 
 if __name__ == "__main__":
@@ -257,7 +273,7 @@ def also_65(path):
     from PIL import Image
     im = Image.open(path).convert("RGB").resize((1284, 2790), Image.LANCZOS)
     im = im.crop((0, 6, 1284, 2784))
-    out = path.parent.parent / "screenshots-6.5" / path.name
+    out = path.parent.with_name(path.parent.name + "-6.5") / path.name
     out.parent.mkdir(parents=True, exist_ok=True)
     im.save(out, optimize=True)
     print("wrote", out)

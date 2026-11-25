@@ -2088,3 +2088,33 @@ Two owner calls on 25 Nov 2026, both delegated ("you decide and go with it").
   this change were told the price "stays $30 for you"; honouring that is the
   owner's call when a checkout exists.
 
+## Live covers: creators' thumbnails only as motion (web/live-covers, on trial)
+
+The owner, 25 Nov 2026, about the real creators' thumbnails in the
+screenshots: "every 3 or 4 seconds … a subtle smooth transition from neutral
+to the creator thumbnail, back to the neutral one. They should all do it, not
+at the exact same time."
+
+- Each screen whose capture shows creators' thumbnails is shot twice from the
+  same store, the second time with the DEBUG-only `-neutralCovers` launch
+  argument, which makes `CoverImage` draw the topic's clay instead of the
+  picture. The website publishes the neutral shot under the old file names, so
+  the indexed, static, no-JS, reduced-motion and Save-Data versions show no
+  third-party faces, and neither do the press downloads.
+- On the /app/ Library phone, `docs/live-covers.js` lays one clipped copy of
+  `/img/library-live.webp` (the thumbnail shot) over each cover and
+  cross-fades it: 1 s eased fades, each cover changing every 3.6 s, staggered
+  so no two fade together, paused off screen or by a tap, off with
+  `?covers=off`. The sheet is fetched after load.
+- Cover rectangles are found by diffing each pair, never measured by hand:
+  `Scripts/make_web_screenshots.py` fails unless a pair differs only in 4:3
+  card covers or square row covers, and it rewrites the clip table itself.
+  `Scripts/refresh_screenshots.sh` reruns the captures, the store panels and
+  the website images in one go.
+- App Store screenshots can't animate. A neutral store set (`NEUTRAL=1
+  python3 Scripts/make_screenshots.py`) was made for the owner to choose
+  from, outside the repo; the committed set keeps the thumbnails.
+- Rejected: a live HTML mock of the Library (a second UI that drifts with
+  every design change) and per-cover cropped tiles (they shimmer against the
+  base image while fading).
+

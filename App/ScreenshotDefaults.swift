@@ -232,6 +232,16 @@ enum ScreenshotDefaults {
     /// Consumer: MissionsView.
     static var openNewQuest: Bool { contains("-newQuest") }
 
+    /// `-neutralCovers` draws every save's cover as its topic's clay art, the
+    /// cover a save with no picture of its own wears. Consumer: `CoverImage`.
+    ///
+    /// The website's screenshots show the Library both ways, the real
+    /// creators' thumbnails cross-fading over the clay, and that needs the
+    /// same screen photographed twice from the same store. Switching at render
+    /// time rather than in the seed means no reseed between the two shots, so
+    /// nothing but the covers can differ.
+    static let neutralCovers: Bool = contains("-neutralCovers")
+
     /// `-toast "Filed to Fitness"` shows that toast a moment after launch,
     /// with an Undo action, so its placement above the tab bar can be
     /// photographed. Consumer: RootView (wired).

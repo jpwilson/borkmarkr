@@ -70,7 +70,8 @@ struct CoverImage: View {
     var body: some View {
         ClayCover(topicID: topicID)
             .overlay {
-                if let url { RemoteImage(url: url) }
+                // Screenshot captures only (DEBUG): the clay, never the picture.
+                if let url, !ScreenshotDefaults.neutralCovers { RemoteImage(url: url) }
             }
             .frame(maxWidth: .infinity)
             .clipped()

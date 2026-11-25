@@ -12,6 +12,8 @@
 #   Scripts/capture_screenshots.sh
 #   venv/bin/python Scripts/make_screenshots.py
 #
+# or all of it, website images included: bash Scripts/refresh_screenshots.sh
+#
 set -euo pipefail
 
 BUNDLE="com.jpwilson.borkmarkr"
@@ -74,6 +76,7 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
 #   -add URL -quickFileChosen   the Quick File dial for URL, a topic chosen
 #   -importSheet          the You tab with the import sheet up
 #   -dumpShareCard PATH   writes the rendered topic share card to a PNG
+#   -neutralCovers        draws every cover as its topic's clay, no thumbnails
 #
 # and, for the signed-out save limit (Core/SaveLimit.swift), whose surfaces
 # appear only at particular library sizes:
@@ -89,12 +92,18 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
 # None of these are parsed outside DEBUG, so no launch argument can put a
 # shipped build into one of these states.
 
-echo "Capturing to Marketing/captures:"
+echo "Capturing to $OUT:"
 # Every screen passes `-signedIn`. The seed is 50 borks, past the signed-out
 # limit of 20, so signed out each capture carries "50 borks on this phone —
 # sign up to keep saving." True, and a terrible first frame for a store
 # listing. Signed in is equally true and is what the screens are for.
 shoot library library -signedIn
+# Each screen with creator thumbnails has a `-neutral` twin: the same launch
+# with every cover drawn as its topic's clay. The website shows the Library
+# pair cross-fading (Scripts/make_web_screenshots.py diffs the two to find the
+# covers), and a neutral App Store set can be composed from the twins. A twin
+# is shot straight after its original, before anything changes the store.
+shoot library-neutral library -signedIn -neutralCovers
 # The dial after a topic is chosen (1.4's Quick File). Showing it saves the
 # link, so it comes after the Library shot; the title has no "protein" in
 # it, so the search shot below is unchanged by it.
@@ -103,10 +112,13 @@ shoot browse  browse  -signedIn -browseAxis topics
 # The topic page is reachable only by tapping a tile, so `-topic` is the only
 # reproducible way to capture it.
 shoot topic   browse  -signedIn -topic fitness
+shoot topic-neutral  browse -signedIn -topic fitness -neutralCovers
 # Search lives at the top of Browse (and the Library); -query pre-fills it so
 # the capture shows results rather than the topic grid.
 shoot search  browse  -signedIn -query "protein"
+shoot search-neutral browse -signedIn -query "protein" -neutralCovers
 shoot scoped  browse  -signedIn -query "run" -scopes "tags"
+shoot scoped-neutral browse -signedIn -query "run" -scopes "tags" -neutralCovers
 shoot import  you     -signedIn -importSheet
 shoot revisit revisit -signedIn
 shoot you     you     -signedIn
