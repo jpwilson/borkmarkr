@@ -10,7 +10,11 @@ import SwiftUI
 /// appends. They sit in a two-row grid that scrolls sideways, so the panel is
 /// the same height for three subtopics or thirty. Tag chips toggle
 /// (`QuickFileTags`) in one scrolling row, and "+ Tag" becomes a field in
-/// place. Text grows with Dynamic Type up to accessibility3.
+/// place (or, given `onAddTag`, asks the host to open one elsewhere: the Add
+/// sheet docks a second panel, `startsTyping`, above the keyboard). Return or
+/// the field's round + adds the tag and keeps the field for the next one;
+/// return on an empty field closes it. Text grows with Dynamic Type up to
+/// accessibility3.
 ///
 /// Given `onDone`, the panel ends in the coral Done (the share sheet); the
 /// Add sheet pins its own Done above the keyboard instead.
@@ -25,19 +29,29 @@ struct QuickFileRefinePanel: View {
     var draining: Bool = false
     /// Draws Done at the foot of the slab.
     var onDone: (() -> Void)?
+    /// "+ Tag" calls this instead of opening the field in place.
+    var onAddTag: (() -> Void)?
 
     @ScaledMetric(relativeTo: .subheadline) private var chipFont: CGFloat = 14.5
     @ScaledMetric(relativeTo: .subheadline) private var chipHeight: CGFloat = 44
     @ScaledMetric(relativeTo: .subheadline) private var lineFont: CGFloat = 15
     @ScaledMetric(relativeTo: .headline) private var nameFont: CGFloat = 17
+    private let startsTyping: Bool
     @State private var addingTag = false
+    /// The field has had focus since it opened (read from the fallback task,
+    /// where `FocusState` is not reliable).
+    @State private var fieldFocused = false
     @FocusState private var typing: Bool
 
     /// Room inside the scrolling rows for the chips' shadows.
     private static let bleed: CGFloat = 10
 
+    /// The panel opens with the tag field open and focused. If the field
+    /// never gets focus, the panel closes it and reports `onEditingTag(false)`
+    /// so the host is never stuck waiting for a keyboard.
     init(model: QuickFileModel, tags: QuickFileTags, source: QuickFileRefineSource, style: QuickFileStyle = .system,
-         onEditingTag: @escaping (Bool) -> Void = { _ in }, draining: Bool = false, onDone: (() -> Void)? = nil) {
+         onEditingTag: @escaping (Bool) -> Void = { _ in }, draining: Bool = false, onDone: (() -> Void)? = nil,
+         onAddTag: (() -> Void)? = nil, startsTyping: Bool = false) {
         self.model = model
         self.tags = tags
         self.source = source
@@ -45,6 +59,9 @@ struct QuickFileRefinePanel: View {
         self.onEditingTag = onEditingTag
         self.draining = draining
         self.onDone = onDone
+        self.onAddTag = onAddTag
+        self.startsTyping = startsTyping
+        _addingTag = State(initialValue: startsTyping)
     }
 
     var body: some View {
@@ -76,6 +93,7 @@ struct QuickFileRefinePanel: View {
             }
             .dynamicTypeSize(...DynamicTypeSize.accessibility3)
             .onChange(of: typing) { _, now in
+                fieldFocused = now
                 if !now {
                     tags.commitDraft()
                     withAnimation(.easeOut(duration: 0.15)) { addingTag = false }
@@ -228,31 +246,35 @@ struct QuickFileRefinePanel: View {
     @ViewBuilder
     private var addTagChip: some View {
         if addingTag {
-            TextField(QuickFileCopy.newTag, text: Binding(get: { tags.draft }, set: { tags.draft = $0 }))
-                .font(style.ui(chipFont, .semibold))
-                .foregroundStyle(QuickFileStyle.ink)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.done)
-                .focused($typing)
-                .onSubmit {
-                    if QuickFileRefine.cleanTag(tags.draft) == nil {
-                        typing = false
-                    } else {
-                        tags.commitDraft()
-                        // Stay in the field for the next one.
-                        typing = true
-                    }
+            HStack(spacing: 0) {
+                TextField(QuickFileCopy.newTag, text: Binding(get: { tags.draft }, set: { tags.draft = $0 }))
+                    .font(style.ui(chipFont, .semibold))
+                    .foregroundStyle(QuickFileStyle.ink)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.return)
+                    .focused($typing)
+                    .onSubmit(submitTag)
+                    .accessibilityLabel(QuickFileCopy.newTag)
+                if QuickFileRefine.cleanTag(tags.draft) != nil {
+                    addTagButton
+                        .transition(.opacity)
                 }
-                .padding(.horizontal, 14)
-                .frame(width: chipFont * 10, height: chipHeight)
-                .background(Color.white, in: Capsule())
-                .overlay(Capsule().strokeBorder(style.accent.opacity(0.7), lineWidth: 1.5))
-                .accessibilityLabel(QuickFileCopy.newTag)
-                .onAppear { typing = true }
+            }
+            .padding(.leading, 14)
+            .padding(.trailing, QuickFileRefine.cleanTag(tags.draft) != nil ? 0 : 14)
+            .frame(width: chipFont * 12, height: chipHeight)
+            .background(Color.white, in: Capsule())
+            .overlay(Capsule().strokeBorder(style.accent.opacity(0.7), lineWidth: 1.5))
+            .animation(.easeOut(duration: 0.12), value: QuickFileRefine.cleanTag(tags.draft) != nil)
+            .onAppear(perform: focusField)
         } else {
             Button {
-                withAnimation(.easeOut(duration: 0.15)) { addingTag = true }
+                if let onAddTag {
+                    onAddTag()
+                } else {
+                    withAnimation(.easeOut(duration: 0.15)) { addingTag = true }
+                }
             } label: {
                 HStack(spacing: 3) {
                     Image(systemName: "plus")
@@ -270,6 +292,50 @@ struct QuickFileRefinePanel: View {
             }
             .buttonStyle(QuickFilePressStyle())
             .accessibilityLabel(QuickFileCopy.newTag)
+        }
+    }
+
+    /// The accent + inside the field's capsule: a 30 pt circle on a 44 pt
+    /// target. The same as return with text in the field.
+    private var addTagButton: some View {
+        Button(action: submitTag) {
+            Image(systemName: "plus")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color.white)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(style.accent))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(QuickFilePressStyle())
+        .accessibilityLabel(QuickFileCopy.addTagButton)
+    }
+
+    /// Return or +: with text, add it and stay for the next; empty, close.
+    private func submitTag() {
+        if QuickFileRefine.cleanTag(tags.draft) == nil {
+            typing = false
+        } else {
+            tags.commitDraft()
+            typing = true
+        }
+    }
+
+    /// Focus on appear, again on the next turn if that didn't take, and if
+    /// the field still has no focus shortly after, close it so a host that
+    /// docked the panel for typing isn't left with a field and no keyboard.
+    private func focusField() {
+        typing = true
+        Task { @MainActor in
+            await Task.yield()
+            if !typing { typing = true }
+            guard startsTyping else { return }
+            try? await Task.sleep(for: .milliseconds(800))
+            if addingTag, !fieldFocused {
+                tags.commitDraft()
+                addingTag = false
+                onEditingTag(false)
+            }
         }
     }
 

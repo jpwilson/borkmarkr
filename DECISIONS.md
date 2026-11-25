@@ -2026,3 +2026,40 @@ Custom topics are installed when the app starts, so the first frame of cards
 names them ("Trail running › Races", not "Races"). The store screenshots
 follow the listing's order on clay grounds in the brand fonts, and the
 website's own screenshots show 1.4.
+
+## Typing a tag under the wheel, and a wheel that fits (design/quiet-clay, 1.4 build 21)
+
+The owner, on 1.4 (20): "you can type in a tag but there's no way to press
+Enter. You either have to exit out." Reproduced with a UI test
+(`UITests/QuickFileTagEntryTests.swift`): in the Add sheet the tag field lived
+inside the details ScrollView, and with the first typed character the scroll
+position jumped and left the field behind the keyboard. Return did add the
+tag, but neither the field nor the new chip could be seen, and the return key
+was drawn as a blue tick (`.submitLabel(.done)`), which doesn't read as Enter.
+The share sheet's wheel never had the problem: its panel sits in a fixed
+layout above the keys.
+
+- **While a tag is typed, the field is not in a ScrollView.** Tapping "+ Tag"
+  in the Add sheet drops the scroll content to the saved row and docks a
+  second `QuickFileRefinePanel` (`startsTyping`) in the bottom inset above the
+  pinned Done, which rides on the keyboard, as the share sheet's layout
+  already did. When the field loses focus the resting layout returns. Keyboard
+  avoidance inside a ScrollView is not stable once text changes, so nothing
+  that takes typing under the wheel may depend on it.
+- **Two plain ways to add.** The field has a normal return key
+  (`.submitLabel(.return)`) and, once there is text, a round accent + inside
+  its capsule ("Add tag"). Both add the tag and stay in the field for the next
+  one; return on an empty field closes it. Done still keeps whatever is in the
+  field (`finishChosen` commits the draft). Same field in both hosts.
+- **The Add sheet's wheel is sized by height too.** It was sized by width
+  only, so on 390- and 402-point-wide phones the tag row sat under the pinned
+  Done and "+ Tag" could not be seen without scrolling. `dialDiameter(size,
+  below:)` now follows `QuickFileShareView.diameter`: at most 360 pt, never
+  under 232, measured from the sheet's resting size (outside the inset,
+  ignoring the keyboard) so the wheel never resizes. The 440-wide phone keeps
+  its 360 pt wheel; a 402-wide phone gets about 283 and a 390-wide one about
+  256. A smaller wheel was chosen over a tag row nobody can find.
+- The UI test types on the real on-screen keyboard at three sizes and checks
+  that the field and each new chip stay above the keys. It runs locally, not
+  in CI, like the other UI tests.
+

@@ -24,6 +24,8 @@ enum QuickFileCopy {
     static let searchPrompt = "Search topics and subtopics"
     static let addTag = "+ Tag"
     static let newTag = "New tag"
+    /// The round button inside the tag field: the same as return.
+    static let addTagButton = "Add tag"
     static let subtopicsLabel = "Subtopic"
     static let tagsLabel = "Tags"
     static let doneHint = "Closes. It stays filed here."

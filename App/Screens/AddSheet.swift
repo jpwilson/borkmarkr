@@ -141,6 +141,13 @@ struct AddSheet: View {
     @State private var beforeChoice: BeforeChoice?
     /// Done's drain after the first choice.
     @State private var drain = QuickFileDrain()
+    /// A tag is being typed: the refine panel docks above the keyboard.
+    @State private var typingTag = false
+    /// The details step's size with no keyboard; sizes the dial.
+    @State private var restingSize = CGSize.zero
+    /// Room under the dial for the refine panel (about 235 pt) and the
+    /// pinned Done bar (78 pt), plus a little air. Grows with the text.
+    @ScaledMetric(relativeTo: .subheadline) private var belowDial: CGFloat = 323
 
     struct BeforeChoice {
         var categoryID: String?
@@ -457,35 +464,34 @@ struct AddSheet: View {
 
     // MARK: Step 2 — saved, where does it go?
 
-    /// The saved card, the dial and its reason line, and the extras folded
-    /// away. Fits a phone without scrolling, so a drag on the dial is always
-    /// a turn and never a scroll.
+    /// The saved card, the dial and its reason line, then the refine panel,
+    /// and the extras folded away. The dial is sized from the sheet's resting
+    /// height (`dialDiameter`) so that, at the default text size, everything
+    /// down to the tag row sits above the pinned Done without scrolling, and
+    /// a drag on the dial is a turn and never a scroll; at large text the
+    /// dial bottoms out and the sheet scrolls.
+    ///
+    /// While a tag is being typed the field must not live in the ScrollView
+    /// (keyboard avoidance there is not stable once text changes), so the
+    /// scroll content drops to the saved row and a second refine panel docks
+    /// in the bottom inset above Done, riding on the keyboard. When the field
+    /// loses focus the dock goes and the resting layout returns.
     private var detailsStep: some View {
-        GeometryReader { geometry in
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(spacing: 14) {
-                    if let duplicate {
-                        duplicateCard(duplicate)
-                    } else if let dial, let url = parsedURL {
-                        linkRow(url, saved: true)
+        ScrollView {
+            VStack(spacing: 14) {
+                if let duplicate {
+                    duplicateCard(duplicate)
+                } else if let dial, let url = parsedURL {
+                    linkRow(url, saved: true)
+                    if !typingTag {
                         QuickFileHeader(model: dial, style: style)
                             .padding(.top, 6)
-                        QuickFileDial(model: dial, style: style, diameter: Self.dialDiameter(geometry.size.width),
+                        QuickFileDial(model: dial, style: style, diameter: dialDiameter,
                                       onDone: dial.isChosen ? { finishChosen() } : nil)
                             .padding(.top, -6)
                         if dial.isChosen, let tagState {
                             QuickFileRefinePanel(model: dial, tags: tagState, source: refineSource, style: style,
-                                                 onEditingTag: { editing in
-                                                     guard editing else { return }
-                                                     Task { @MainActor in
-                                                         try? await Task.sleep(for: .milliseconds(300))
-                                                         withAnimation(.easeOut(duration: 0.2)) {
-                                                             proxy.scrollTo(Self.refineID, anchor: .bottom)
-                                                         }
-                                                     }
-                                                 })
-                                .id(Self.refineID)
+                                                 onAddTag: { setTypingTag(true) })
                                 .padding(.top, -12)
                                 .padding(.horizontal, -4)
                                 .transition(.opacity)
@@ -496,33 +502,57 @@ struct AddSheet: View {
                             .padding(.top, 8)
                     }
                 }
-                .padding(.horizontal, Tokens.gutter)
-                .padding(.top, 8)
-                .padding(.bottom, 28)
-                .animation(.easeOut(duration: 0.18), value: dial?.isChosen)
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollDismissesKeyboard(.interactively)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.top, 8)
+            .padding(.bottom, 28)
+            .animation(.easeOut(duration: 0.18), value: dial?.isChosen)
         }
-        }
-        // Pinned, so it is always in reach and rides above the keyboard.
-        .safeAreaInset(edge: .bottom) {
-            if duplicate == nil, dial?.isChosen == true {
-                QuickFileDoneButton(draining: drain.isDraining, style: style) { finishChosen() }
-                    .padding(.horizontal, Tokens.gutter)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
-                    .background {
-                        Tokens.paper
-                            .overlay(alignment: .top) { Tokens.hairline.frame(height: 1) }
-                            .ignoresSafeArea(edges: .bottom)
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollDismissesKeyboard(.interactively)
+        // Pinned, so it is always in reach and rides above the keyboard;
+        // while typing a tag, the panel docks on top of it.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if duplicate == nil, let dial, dial.isChosen {
+                VStack(spacing: 0) {
+                    if typingTag, let tagState {
+                        QuickFileRefinePanel(model: dial, tags: tagState, source: refineSource, style: style,
+                                             onEditingTag: { if !$0 { setTypingTag(false) } },
+                                             startsTyping: true)
+                            .padding(.horizontal, Tokens.gutter - 4)
+                            .padding(.top, 12)
+                            .transition(.opacity)
                     }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    QuickFileDoneButton(draining: drain.isDraining, style: style) { finishChosen() }
+                        .padding(.horizontal, Tokens.gutter)
+                        .padding(.top, 12)
+                        .padding(.bottom, 8)
+                }
+                .background {
+                    Tokens.paper
+                        .overlay(alignment: .top) { Tokens.hairline.frame(height: 1) }
+                        .ignoresSafeArea(edges: .bottom)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+        }
+        // The resting size: the keyboard and the Done bar don't change it.
+        .background {
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { restingSize = geometry.size }
+                    .onChange(of: geometry.size) { _, size in restingSize = size }
+            }
+            .ignoresSafeArea(.keyboard)
         }
         .background(QuickFileTouchWatcher { drain.touched() })
         // Typing doesn't reach the window's watcher.
         .onChange(of: tagState?.draft) { _, _ in drain.touched() }
+        // The dock only exists while a topic is chosen; never leave the
+        // sheet on the bare saved row if the choice goes away mid-typing.
+        .onChange(of: dial?.isChosen) { _, chosen in
+            if chosen != true { typingTag = false }
+        }
         .task(id: drain.startedAt) {
             guard drain.isDraining else { return }
             try? await Task.sleep(for: .seconds(QuickFileDrain.seconds))
@@ -531,11 +561,24 @@ struct AddSheet: View {
         }
     }
 
-    private static let refineID = "refine"
+    private func setTypingTag(_ on: Bool) {
+        guard typingTag != on else { return }
+        withAnimation(.easeOut(duration: 0.2)) { typingTag = on }
+    }
 
-    /// B's 360 pt wheel where the sheet is wide enough, 15 pt clear each side.
-    static func dialDiameter(_ width: CGFloat) -> CGFloat {
-        max(260, min(width - 30, 360))
+    private var dialDiameter: CGFloat {
+        Self.dialDiameter(restingSize, below: belowDial)
+    }
+
+    /// B's 360 pt wheel, 15 pt clear each side, smaller only when the sheet
+    /// is short: `size` is the details step's resting size (no keyboard, Done
+    /// bar included), and `below` is the room kept under the dial for the
+    /// refine panel and the pinned Done. 118 pt above the dial is the link
+    /// row and the reason line. Never under 232 pt; past that the sheet
+    /// scrolls. The same before and after choosing and with the keyboard up.
+    static func dialDiameter(_ size: CGSize, below: CGFloat = 323) -> CGFloat {
+        guard size.height > 0 else { return max(260, min(size.width - 30, 360)) }
+        return max(232, min(360, size.width - 30, size.height - 118 - below))
     }
 
     // MARK: Already saved

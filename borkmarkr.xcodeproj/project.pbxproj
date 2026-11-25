@@ -57,6 +57,7 @@
 		422219B89FCA82DFAAC61A65 /* QuickFileTouch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73FB733DE444E52D9F9539C4 /* QuickFileTouch.swift */; };
 		437A31C7D71F12BACDF1A23E /* SourcePage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3017F4E89202463E1FC026 /* SourcePage.swift */; };
 		4406B606B3693703FD41896A /* QuickFileShareSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0585326CB0436A714AD9785 /* QuickFileShareSession.swift */; };
+		449371D7E065004D4324E982 /* QuickFileTagEntryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77B3B6051737397DF674874 /* QuickFileTagEntryTests.swift */; };
 		4563A5A761361CF17ADC7BD8 /* CollectionShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C9252895BB90B4A491F45E /* CollectionShare.swift */; };
 		4676DAA69C4962CA53F43548 /* TaxonomySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DDBE1BF6D7C645FC3823A1 /* TaxonomySync.swift */; };
 		478AC008ED03817412776254 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DE193BE10A36E1AD5BAC530 /* Store.swift */; };
@@ -350,6 +351,7 @@
 		D38409E282E7E28BCBBE5326 /* SessionKeychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionKeychain.swift; sourceTree = "<group>"; };
 		D3FABFC1A9084B9C0360A43C /* BrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseView.swift; sourceTree = "<group>"; };
 		D469560AFA41606ABFDBBAF7 /* OpenSignal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSignal.swift; sourceTree = "<group>"; };
+		D77B3B6051737397DF674874 /* QuickFileTagEntryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFileTagEntryTests.swift; sourceTree = "<group>"; };
 		D95F75EDD79BF9CFAF6E1DAF /* QuickFileRefineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFileRefineTests.swift; sourceTree = "<group>"; };
 		DC6C6D52F32C5BBD1AAD9E1D /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
 		E2B89AD5B449931A41A4D130 /* QuestCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestCard.swift; sourceTree = "<group>"; };
@@ -369,7 +371,7 @@
 		FEE309497176F9F4A2D78A64 /* DetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSheet.swift; sourceTree = "<group>"; };
 		FF5B92B1C0E0EC3B07C81F24 /* QuickFileCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFileCopy.swift; sourceTree = "<group>"; };
 		FFFF0A9DC6A3394EDEBC96B6 /* QuickFileDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFileDial.swift; sourceTree = "<group>"; };
-		"TEMP_06A60E23-C088-4CAB-A8B7-91E6CC3CF611" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		"TEMP_D27475E9-0166-4DE1-B14D-73CC30C6AB5C" /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -574,6 +576,7 @@
 			children = (
 				90E32BB1E56DE2063A5A6483 /* BorkActionsTests.swift */,
 				33BFFB5F9B14996461E16910 /* LibraryScrollTests.swift */,
+				D77B3B6051737397DF674874 /* QuickFileTagEntryTests.swift */,
 			);
 			path = UITests;
 			sourceTree = "<group>";
@@ -626,10 +629,10 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		"TEMP_5D0264C3-0D51-4A83-BE96-C80AFF4C4CA8" /* borkmarkr */ = {
+		"TEMP_2BE8FE97-8751-4CF4-8A15-540A1FEE11A1" /* borkmarkr */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_06A60E23-C088-4CAB-A8B7-91E6CC3CF611" /* Config.xcconfig */,
+				"TEMP_D27475E9-0166-4DE1-B14D-73CC30C6AB5C" /* Config.xcconfig */,
 			);
 			path = borkmarkr;
 			sourceTree = "<group>";
@@ -906,6 +909,7 @@
 			files = (
 				1FF37F0AF500EF090D554B3D /* BorkActionsTests.swift in Sources */,
 				C494733331FD1E47330438B7 /* LibraryScrollTests.swift in Sources */,
+				449371D7E065004D4324E982 /* QuickFileTagEntryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1015,7 +1019,7 @@
 /* Begin XCBuildConfiguration section */
 		1A321560DE62C27A5E19BEA6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_06A60E23-C088-4CAB-A8B7-91E6CC3CF611" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_D27475E9-0166-4DE1-B14D-73CC30C6AB5C" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1102,7 +1106,7 @@
 		};
 		4B488E07B97BC063819D321E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_06A60E23-C088-4CAB-A8B7-91E6CC3CF611" /* Config.xcconfig */;
+			baseConfigurationReference = "TEMP_D27475E9-0166-4DE1-B14D-73CC30C6AB5C" /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
