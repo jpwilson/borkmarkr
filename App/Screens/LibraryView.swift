@@ -1,8 +1,13 @@
 import SwiftUI
 import SwiftData
 
-/// Home. Wordmark, "Your library" + live stats, search entry, source chips,
-/// density toggle, and the masonry feed.
+/// Home, as the approved "Quiet clay" artboard draws it (design/project/
+/// Main.dc.html): "Your library" with the counts and the avatar, the search
+/// entry, at most one slim action row (`LibraryPrompt`), the source chips,
+/// two rows of saves, the side-quest rail, then the rest of the saves.
+///
+/// The insight card ("What are you finding interesting?") left in 1.4: it
+/// lives on Revisit and You, so the Library is saves first.
 struct LibraryView: View {
     @Environment(\.scenePhase) private var enrichmentScenePhase
     let onAdd: () -> Void
@@ -12,6 +17,9 @@ struct LibraryView: View {
     /// the answer to the + button and to a share that landed over the limit,
     /// and one sheet with one owner is the only way it never double-presents.
     var onShowWall: (SaveLimitReason) -> Void = { _ in }
+    /// The avatar opens You. Until the root passes this the avatar is a
+    /// picture, as it was in 1.3.
+    var onOpenAccount: (() -> Void)? = nil
     var account: Account? = nil
     /// False while the root has a sheet up (the Add sheet, the wall and its
     /// sign-in, Sort your borks, a shared link) or the first-run tour is
@@ -39,7 +47,6 @@ struct LibraryView: View {
     @State private var detail: Bookmark?
     @State private var openJourney: Mission?
     @State private var creatingJourney = false
-    @State private var showingInsights = false
     @State private var showingBackupBanner = false
     @State private var nudge: SignInMilestone?
     /// The Pro sheet, at 100, 250 and 500 borks. See `ProNudge`.
@@ -51,10 +58,10 @@ struct LibraryView: View {
     @State private var selected: Set<String> = []
     @State private var collecting = false
     @StateObject private var previews = PreviewFetcher()
-    /// "Sort your borks", from the banner.
+    /// "Sort your borks", from the action row.
     @State private var triageDeck: TriageSheet.Deck?
-    /// The unsorted count when the banner was last waved away. It stays away
-    /// until the count goes above this.
+    /// The unsorted count when the sort row was last waved away. It stays
+    /// away until the count goes above this.
     @AppStorage("triage.snoozedAt") private var sortSnoozedAt = 0
     /// The dial hint has done its job: its ×, "Try it", or a first filing on
     /// the dial put it away for good. See `retireDialHintIfFiled`.
@@ -62,6 +69,9 @@ struct LibraryView: View {
     /// When this build first opened the Library. Only a filing since then
     /// counts as having found the dial.
     @AppStorage("dialHint.since") private var dialHintSince = 0.0
+
+    /// Saves before the side-quest rail: two rows of two.
+    private static let leadCount = 4
 
     /// Everything that counts. A waiting bork is saved and on screen, but it
     /// is not part of the library yet — not in the stats line, not in
@@ -102,84 +112,57 @@ struct LibraryView: View {
         let visible = self.visible
         let platforms = presentPlatforms
         let unsorted = TriageSheet.unfiled(live).count
-        let sorting = unsorted > sortSnoozedAt && !DialHintScreenshot.forced
-        // One card at a time: the hint waits until no other is up, and stays
-        // off the empty Library, which already says how to save.
-        let showsDialHint = DialHintScreenshot.forced || (!dialHintDone && !bookmarks.isEmpty
-            && waitingCount == 0 && !sorting && !showingBackupBanner)
+        let prompt = currentPrompt(live: live, waiting: waitingCount, unsorted: unsorted)
         GeometryReader { viewport in
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header(stats: Self.statsLine(live))
-                if waitingCount > 0 {
-                    WaitingBanner(count: waitingCount) { onShowWall(.waiting) }
-                        .padding(.horizontal, 18)
-                        .transition(.opacity)
-                }
-                if sorting {
-                    SortBanner(
-                        count: unsorted,
-                        onSort: { triageDeck = .unfiled },
-                        onSnooze: { withAnimation(Motion.gentle) { sortSnoozedAt = unsorted } }
-                    )
-                    .padding(.horizontal, 18)
-                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                }
-                if showingBackupBanner {
-                    SignInNudgeBanner(
-                        headline: SaveLimit.bannerHeadline(
-                            liveCount: live.count,
-                            signedIn: account?.isSignedIn ?? false
-                        ) ?? "Only on this phone.",
-                        dismissable: SaveLimit.bannerIsDismissable(
-                            liveCount: live.count,
-                            signedIn: account?.isSignedIn ?? false
-                        ),
-                        onSignUp: { present(.signUp) },
-                        onDismiss: {
-                            SignInNudge.dismissBanner()
-                            withAnimation(Motion.gentle) { showingBackupBanner = false }
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        header(stats: Self.statsLine(live))
+                            .padding(.horizontal, Tokens.gutter)
+                        searchEntry
+                            .padding(.horizontal, Tokens.gutter)
+                            .padding(.top, 16)
+                        if let prompt {
+                            promptRow(prompt)
+                                .padding(.horizontal, Tokens.gutter)
+                                .padding(.top, 10)
+                                .transition(.opacity)
                         }
-                    )
-                    .padding(.horizontal, 18)
-                    .transition(.opacity)
+                        if bookmarks.isEmpty {
+                            EmptyFeedState(filtered: false, onAdd: onAdd)
+                                .padding(.horizontal, Tokens.gutter)
+                                .padding(.top, Tokens.sectionGap)
+                        } else {
+                            filterRow(platforms)
+                                .padding(.top, 6)
+                            feed(visible, live: live)
+                                .padding(.top, 6)
+                        }
+                    }
+                    // Bound the scroll content to the viewport, not a child's
+                    // ideal width (loaded images and selection labels can be
+                    // much wider).
+                    .frame(width: max(0, viewport.size.width), alignment: .leading)
+                    // The tab bar is the root's safe-area inset, so the scroll
+                    // already ends above it; this is only breathing room.
+                    .padding(.bottom, Tokens.sectionGap)
                 }
-                if showsDialHint {
-                    DialHint(onTry: { retireDialHint(); onAdd() }, onDismiss: retireDialHint)
-                        .padding(.horizontal, 18)
-                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                }
-                searchEntry
-                insightsEntry
-                JourneyRail(
-                    journeys: journeys,
-                    bookmarks: live,
-                    onOpen: { openJourney = $0 },
-                    onSeeAll: onSeeJourneys,
-                    onStart: { creatingJourney = true },
-                    onAcceptSeed: acceptSeed,
-                    account: account
-                )
-                if !platforms.isEmpty { filterRow(platforms) }
-                feed(visible)
+                #if DEBUG
+                .onAppear { applyDebugAnchor(proxy) }
+                #endif
             }
-            // Bound the scroll content to the viewport, not a child's ideal
-            // width (loaded images and selection labels can be much wider).
-            .frame(width: max(0, viewport.size.width), alignment: .leading)
-            .padding(.bottom, 120)
-        }
         }
         .background(Tokens.paper)
-        // Above the dock, not under it: the dock is drawn over this view by
-        // RootView, so the bar sits in the space the feed already leaves.
+        .statusBarBand()
+        .animation(Motion.gentle, value: prompt)
         .safeAreaInset(edge: .bottom) {
             if selecting {
                 SelectionBar(count: selected.count, onShare: { collecting = true }, onCancel: endSelecting)
-                    .padding(.bottom, 92)
+                    .padding(.bottom, 8)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        // Sorting brings the count down; the banner comes back when it rises
+        // Sorting brings the count down; the row comes back when it rises
         // past where it was waved away, not merely back to it.
         .onChange(of: unsorted) { _, count in
             if count < sortSnoozedAt { sortSnoozedAt = count }
@@ -201,15 +184,6 @@ struct LibraryView: View {
         }
         .sheet(isPresented: $creatingJourney) {
             NewMissionSheet().environment(\.accent, accent)
-        }
-        .sheet(isPresented: $showingInsights) {
-            InsightsSheet(bookmarks: live, account: account) { title in
-                let quest = Mission(title: title)
-                context.insert(quest)
-                try? context.save()
-                openJourney = quest
-            }
-            .environment(\.accent, accent)
         }
         .sheet(item: $nudge) { milestone in
             SignInNudgeSheet(
@@ -247,12 +221,13 @@ struct LibraryView: View {
         }
         .onAppear {
             // Before `markRead`: a share filed on the dial is still unread.
-            // Unanimated, or the card would fade out as the Library opens.
+            // Unanimated, or the row would fade out as the Library opens.
             retireDialHintIfFiled(animated: false)
             markRead()
             readNudgePolicy()
             #if DEBUG
             applyDebugProSheet()
+            applyDebugDetail()
             #endif
         }
         // Counting from the store, not from a counter the app keeps: a bork
@@ -284,81 +259,124 @@ struct LibraryView: View {
         }
     }
 
+    // MARK: Header
+
+    /// Main.dc: "Your library" 30/34 with the counts under it, and the
+    /// avatar at the right — a 36 pt sand circle in a 44 pt target.
     private func header(stats: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                HStack(spacing: 7) {
-                    Image(systemName: "bookmark.fill")
-                        .font(.system(size: 13, weight: .black))
-                        .foregroundStyle(.white)
-                        .frame(width: 26, height: 26)
-                        .background(accent.base, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    Text("bookmarker")
-                        .font(Typo.display(17, .bold))
-                        .foregroundStyle(Tokens.ink)
-                }
-                Spacer()
-                // Your own initial, or nobody's. This was a hardcoded "J" —
-                // the founder's — on every phone, signed in or not.
-                Circle()
-                    .fill(accent.tint)
-                    .frame(width: 32, height: 32)
-                    .overlay {
-                        if let letter = Initials.letter(displayName: nil, email: account?.email) {
-                            Text(letter).font(Typo.ui(14, .bold)).foregroundStyle(accent.deep)
-                        } else {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(accent.deep)
-                        }
-                    }
-                    .accessibilityHidden(true)
-            }
-
-            Text("Your library")
-                .font(Typo.display(34, .heavy))
-                .tracking(-1.0)
-                .foregroundStyle(Tokens.ink)
-                .padding(.top, 12)
-
-            Text(stats)
-                .font(Typo.ui(12.5, .medium))
-                .foregroundStyle(Tokens.inkMeta)
+        ScreenHeader("Your library", subtitle: stats) {
+            avatar.padding(.trailing, -4)
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var avatar: some View {
+        // Your own initial, or nobody's. This was a hardcoded "J" — the
+        // founder's — on every phone, signed in or not.
+        let letter = Initials.letter(displayName: nil, email: account?.email)
+        let circle = Circle()
+            .fill(Tokens.sand)
+            .frame(width: 36, height: 36)
+            .overlay {
+                if let letter {
+                    Text(letter)
+                        .font(.custom("Instrument Sans", size: 15, relativeTo: .subheadline).weight(.semibold))
+                        .foregroundStyle(Tokens.sandInk)
+                } else {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Tokens.sandInk)
+                }
+            }
+            .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+        if let onOpenAccount {
+            Button(action: onOpenAccount) { circle.contentShape(Circle()) }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel("Your account")
+        } else {
+            circle.accessibilityHidden(true)
+        }
     }
 
     private var searchEntry: some View {
         Button(action: onSearch) {
-            HStack(spacing: 9) {
+            HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Tokens.inkFaint)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(Tokens.inkSecondary)
                 Text(Copy.searchPlaceholder)
-                    .font(Typo.ui(14))
-                    .foregroundStyle(Tokens.inkMeta)
-                Spacer()
+                    .textRole(.body, color: Tokens.inkSecondary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 13)
-            .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Tokens.hairline, lineWidth: 1)
-            )
+            .searchFieldSurface()
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 18)
+        .accessibilityLabel("Search your library")
         .accessibilityHint("Opens search at the top of Browse")
     }
 
-    private var insightsEntry: some View {
-        Button { showingInsights = true } label: {
-            InsightsEntry(bookmarks: live)
+    // MARK: The one action row
+
+    /// Which slim row, if any — `LibraryPrompt` decides (waiting > backup >
+    /// sort > dial hint). `-dialHint` forces the hint for its screenshot.
+    private func currentPrompt(live: [Bookmark], waiting: Int, unsorted: Int) -> LibraryPrompt? {
+        if DialHintScreenshot.forced { return .dialHint }
+        return LibraryPrompt.pick(
+            waiting: waiting,
+            backupDue: showingBackupBanner,
+            liveCount: live.count,
+            unsorted: unsorted,
+            sortSnoozedAt: sortSnoozedAt,
+            // Off the empty Library, which already says how to save.
+            dialHintDue: !dialHintDone && !bookmarks.isEmpty
+        )
+    }
+
+    private func promptRow(_ prompt: LibraryPrompt) -> some View {
+        SlimActionRow(
+            art: Self.art(for: prompt),
+            title: prompt.title,
+            subtitle: prompt.subtitle,
+            action: prompt.action,
+            perform: { perform(prompt) },
+            onDismiss: prompt.isDismissable ? { dismiss(prompt) } : nil
+        )
+    }
+
+    private static func art(for prompt: LibraryPrompt) -> ClayArtSource {
+        switch prompt {
+        case .waiting: .asset("brandMark")
+        case .backup: .asset("welcomeHero")
+        case .sort: .quest(.compass)
+        case .dialHint: .quest(.scroll)
         }
-        .buttonStyle(PressableStyle())
-        .padding(.horizontal, 18)
+    }
+
+    private func perform(_ prompt: LibraryPrompt) {
+        switch prompt {
+        case .waiting: onShowWall(.waiting)
+        case .backup: present(.signUp)
+        case .sort: triageDeck = .unfiled
+        case .dialHint:
+            retireDialHint()
+            onAdd()
+        }
+    }
+
+    private func dismiss(_ prompt: LibraryPrompt) {
+        switch prompt {
+        case .waiting:
+            break
+        case .backup:
+            SignInNudge.dismissBanner()
+            withAnimation(Motion.gentle) { showingBackupBanner = false }
+        case .sort(let count):
+            withAnimation(Motion.gentle) { sortSnoozedAt = count }
+        case .dialHint:
+            retireDialHint()
+        }
     }
 
     private func acceptSeed(_ seed: Mission.Seed) {
@@ -370,141 +388,159 @@ struct LibraryView: View {
         openJourney = journey
     }
 
+    // MARK: Source chips
+
+    /// Main.dc: 34 pt filter chips, 6 apart, in 44 pt targets. The view
+    /// options (cards or list, and picking borks to share) sit in one menu at
+    /// the right, outside the scrolling chips, so no chip is ever cut off by
+    /// it.
     private func filterRow(_ platforms: [Platform]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        HStack(spacing: 6) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    chip("All", active: sourceFilter == nil) { sourceFilter = nil }
+                HStack(spacing: 6) {
+                    sourceChip("All", on: sourceFilter == nil) { sourceFilter = nil }
                     ForEach(platforms, id: \.self) { platform in
-                        chip(platform.name, active: sourceFilter == platform) {
+                        sourceChip(platform.name, on: sourceFilter == platform) {
                             sourceFilter = sourceFilter == platform ? nil : platform
                         }
                     }
                 }
-                .padding(.horizontal, 18)
+                .padding(.leading, Tokens.gutter)
+                .padding(.trailing, 28)
             }
-
-            HStack(spacing: 8) {
-                Text("Your borks")
-                    .font(Typo.ui(14, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
-                Spacer(minLength: 8)
-                selectToggle
-                densityToggle
+            // The chips fade out before the menu, so the last one reads as
+            // "more this way" rather than as a chip sliced in half.
+            .mask {
+                HStack(spacing: 0) {
+                    Color.black
+                    LinearGradient(colors: [.black, .clear],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .frame(width: 28)
+                }
             }
-            .padding(.horizontal, 18)
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            viewMenu
+                .padding(.trailing, Tokens.gutter - 5)
         }
-    }
-
-    private func chip(_ label: String, active: Bool, tap: @escaping () -> Void) -> some View {
-        Button {
-            Haptics.tap()
-            withAnimation(Motion.snap) { tap() }
-        } label: {
-            Text(label)
-                .font(Typo.ui(12.5, .semibold))
-                .foregroundStyle(active ? .white : Tokens.inkSecondary)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 8)
-                .background(active ? Tokens.ink : Tokens.surface, in: Capsule())
-                .overlay(Capsule().stroke(active ? .clear : Tokens.hairline, lineWidth: 1))
-                .tappableChip()
-        }
-        .buttonStyle(ChipStyle())
-    }
-
-    private var densityToggle: some View {
-        HStack(spacing: 2) {
-            densityButton("square.grid.2x2", value: "cards")
-            densityButton("list.bullet", value: "compact")
-        }
-        .padding(3)
-        .background(Tokens.segmentTrack, in: Capsule())
-    }
-
-    /// Select mode's switch. Beside the density toggle because both change
-    /// how the feed behaves — and this one changes what a tap on a card
-    /// does, so it stays visible, and filled, for as long as it is on.
-    private var selectToggle: some View {
-        Button {
-            Haptics.tap()
-            if selecting {
-                endSelecting()
-            } else {
-                withAnimation(Motion.gentle) { selecting = true }
-            }
-        } label: {
-            Image(systemName: selecting ? "checkmark.circle.fill" : "checkmark.circle")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(selecting ? .white : Tokens.inkMeta)
-                .frame(width: 44, height: 44)
-                .background(selecting ? accent.base : Tokens.segmentTrack, in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(selecting ? "Stop picking borks" : "Pick borks to share as one link")
         #if DEBUG
         .onAppear(perform: applyDebugSelection)
         #endif
     }
 
-    private func densityButton(_ symbol: String, value: String) -> some View {
-        Button {
-            withAnimation(.easeOut(duration: 0.18)) { density = value }
-        } label: {
-            Image(systemName: symbol)
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(density == value ? Tokens.ink : Tokens.inkMeta)
-                .frame(width: 44, height: 44)
-                .background(density == value ? Tokens.surface : .clear, in: Capsule())
+    private func sourceChip(_ title: String, on: Bool, tap: @escaping () -> Void) -> some View {
+        FilterChip(title, isOn: on) {
+            Haptics.tap()
+            withAnimation(Motion.snap) { tap() }
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(value == "cards" ? "Card view" : "List view")
-        .accessibilityAddTraits(density == value ? .isSelected : [])
+    }
+
+    /// Cards or list, and select mode. Filled while select mode is on,
+    /// because select mode changes what a tap on a card does.
+    private var viewMenu: some View {
+        Menu {
+            Picker("Show borks as", selection: $density) {
+                Label("Cards", systemImage: "square.grid.2x2").tag("cards")
+                Label("List", systemImage: "list.bullet").tag("compact")
+            }
+            Divider()
+            Button {
+                if selecting {
+                    endSelecting()
+                } else {
+                    withAnimation(Motion.gentle) { selecting = true }
+                }
+            } label: {
+                Label(selecting ? "Stop picking" : "Pick borks to share",
+                      systemImage: selecting ? "xmark.circle" : "checkmark.circle")
+            }
+        } label: {
+            Image(systemName: selecting ? "checkmark" : "slider.horizontal.3")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(selecting ? .white : Tokens.ink)
+                .frame(width: 34, height: 34)
+                .background(selecting ? Tokens.ink : Tokens.surface, in: Circle())
+                .overlay(Circle().strokeBorder(selecting ? Tokens.ink : Tokens.hairline, lineWidth: 1))
+                .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(selecting ? "View options, picking borks" : "View options")
+    }
+
+    // MARK: Feed
+
+    /// Two rows of saves, the side-quest rail, the rest. In list density the
+    /// rail comes after the fourth row, the same place in the reading order.
+    @ViewBuilder
+    private func feed(_ visible: [Bookmark], live: [Bookmark]) -> some View {
+        if visible.isEmpty {
+            EmptyFeedState(filtered: true, onAdd: onAdd)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, Tokens.sectionGap)
+        } else {
+            let lead = Array(visible.prefix(Self.leadCount))
+            let rest = Array(visible.dropFirst(Self.leadCount))
+            VStack(alignment: .leading, spacing: 0) {
+                saves(lead)
+                rail(live)
+                    .id("rail")
+                    .padding(.top, Tokens.sectionGap)
+                    .padding(.bottom, rest.isEmpty ? 0 : Tokens.sectionGap)
+                if !rest.isEmpty {
+                    saves(rest).id("rest")
+                }
+            }
+        }
+    }
+
+    private func rail(_ live: [Bookmark]) -> some View {
+        JourneyRail(
+            journeys: journeys,
+            bookmarks: live,
+            onOpen: { openJourney = $0 },
+            onSeeAll: onSeeJourneys,
+            onStart: { creatingJourney = true },
+            onAcceptSeed: acceptSeed,
+            account: account
+        )
     }
 
     @ViewBuilder
-    private func feed(_ visible: [Bookmark]) -> some View {
-        if visible.isEmpty {
-            EmptyFeedState(filtered: sourceFilter != nil, onAdd: onAdd)
-                .padding(.top, 50)
-        } else if density == "compact" {
+    private func saves(_ items: [Bookmark]) -> some View {
+        if density == "compact" {
             LazyVStack(spacing: 8) {
-                ForEach(visible) { bookmark in
+                ForEach(items) { bookmark in
                     Button { open(bookmark) } label: {
                         BookmarkRow(bookmark: bookmark)
-                            .selectable(selecting, selected: selected.contains(bookmark.id), radius: 18)
+                            .selectable(selecting, selected: selected.contains(bookmark.id))
                     }
                     .buttonStyle(PressableStyle())
                     .borkActions(bookmark, enabled: !selecting)
+                    .accessibilityIdentifier("bork-card")
                     .frame(maxWidth: .infinity)
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
         } else {
-            // Two lazy columns: only the cards on screen are built.
-            MasonryVStack(
-                items: visible,
-                spacing: 12,
-                estimatedHeight: { BookmarkCard.cachedEstimate(for: $0, columnWidth: Self.columnWidth) }
-            ) { bookmark in
-                Button { open(bookmark) } label: {
-                    BookmarkCard(bookmark: bookmark)
-                        .selectable(selecting, selected: selected.contains(bookmark.id))
+            // Every card is the same height at a given width, so a plain lazy
+            // grid lines up — and builds only the rows on screen.
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: Tokens.gridGap, alignment: .top),
+                          GridItem(.flexible(), spacing: Tokens.gridGap, alignment: .top)],
+                spacing: Tokens.gridGap
+            ) {
+                ForEach(items) { bookmark in
+                    Button { open(bookmark) } label: {
+                        BookmarkCard(bookmark: bookmark)
+                            .selectable(selecting, selected: selected.contains(bookmark.id))
+                    }
+                    .buttonStyle(PressableStyle())
+                    .borkActions(bookmark, enabled: !selecting)
+                    .accessibilityIdentifier("bork-card")
+                    .frame(maxWidth: .infinity, alignment: .top)
                 }
-                .buttonStyle(PressableStyle())
-                .borkActions(bookmark, enabled: !selecting)
-                .accessibilityIdentifier("bork-card")
-                .frame(maxWidth: .infinity, alignment: .top)
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Tokens.gutter)
         }
-    }
-
-    /// Only feeds the height *estimate* that balances the two columns, so an
-    /// approximation from screen width is plenty — it never sets a real frame.
-    private static var columnWidth: CGFloat {
-        let screen = UIScreen.main.bounds.width
-        return (screen - 36 - 12) / 2
     }
 
     /// Asks `SignInNudge` what the signed-out cues should be doing, from the
@@ -577,7 +613,7 @@ struct LibraryView: View {
     /// none of the Library's own sheets either.
     private var screenIsClear: Bool {
         canInterrupt && nudge == nil && !showingPro && !showingAuth && detail == nil
-            && openJourney == nil && !creatingJourney && !showingInsights
+            && openJourney == nil && !creatingJourney
             && triageDeck == nil && !collecting
     }
 
@@ -661,6 +697,28 @@ struct LibraryView: View {
             showingPro = true
         }
     }
+
+    /// `-detail 0` / `-detail <stableID>` — see `ScreenshotDefaults.openDetail`.
+    private func applyDebugDetail() {
+        guard let wanted = ScreenshotDefaults.openDetail, detail == nil else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(700))
+            if let index = Int(wanted), bookmarks.indices.contains(index) {
+                detail = bookmarks[index]
+            } else {
+                detail = bookmarks.first { $0.id == wanted }
+            }
+        }
+    }
+
+    /// `-libraryAt rail|rest` — see `ScreenshotDefaults.libraryAnchor`.
+    private func applyDebugAnchor(_ proxy: ScrollViewProxy) {
+        guard let anchor = ScreenshotDefaults.libraryAnchor else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(900))
+            proxy.scrollTo(anchor, anchor: .top)
+        }
+    }
     #endif
 
     private func markRead() {
@@ -671,192 +729,50 @@ struct LibraryView: View {
     }
 }
 
-/// "3 borks to sort": the door into triage, wearing the clay compass. Its ×
-/// snoozes it until the count goes up again.
-private struct SortBanner: View {
-    let count: Int
-    let onSort: () -> Void
-    let onSnooze: () -> Void
-
-    @Environment(\.accent) private var accent
-
-    var body: some View {
-        Button(action: onSort) {
-            HStack(spacing: 13) {
-                QuestArt(motif: .compass)
-                    .frame(width: 62, height: 62)
-                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("\(count) \(Copy.borks(count)) to sort")
-                        .font(Typo.display(17, .bold))
-                        .foregroundStyle(Tokens.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("One tap each · about \(Self.estimate(count))")
-                        .font(Typo.ui(12.5, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 6)
-                Text("Sort")
-                    .font(Typo.ui(13.5, .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .frame(height: 34)
-                    .background(accent.base, in: Capsule())
-                    .shadow(color: accent.base.opacity(0.3), radius: 8, y: 4)
-            }
-            .padding(12)
-            .padding(.trailing, 4)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .cardSurface(radius: 20)
-        }
-        .buttonStyle(PressableStyle())
-        .accessibilityLabel("\(count) \(Copy.borks(count)) to sort")
-        .accessibilityHint("Opens Sort your borks, one tap each")
-        .overlay(alignment: .topTrailing) {
-            Button(action: onSnooze) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .heavy))
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .frame(width: 22, height: 22)
-                    .background(Tokens.paper, in: Circle())
-                    .overlay(Circle().stroke(Tokens.hairline, lineWidth: 1))
-                    .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .offset(x: 14, y: -14)
-            .accessibilityLabel("Not now")
-        }
-    }
-
-    /// About three seconds a bork, said the way a person would.
-    static func estimate(_ count: Int) -> String {
-        let seconds = max(5, count * 3)
-        return seconds < 60 ? "\(seconds) seconds" : "\(Int((Double(seconds) / 60).rounded(.up))) min"
-    }
-}
-
-/// Where the dial lives, said once. It only comes up after a save, so
-/// someone who has heard of it can search every tab and not find it. The
-/// sort card's clay compass and shape, since both are about where a bork
-/// goes; unlike that card, only "Try it" is a button, so a tap on the words
-/// opens nothing.
-private struct DialHint: View {
-    let onTry: () -> Void
-    let onDismiss: () -> Void
-
-    @Environment(\.accent) private var accent
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 13) {
-            QuestArt(motif: .compass)
-                .frame(width: 62, height: 62)
-                .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 5) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("File every bork in one tap")
-                        .font(Typo.display(17, .bold))
-                        .foregroundStyle(Tokens.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("Tap + and paste a link, or share from any app. A dial comes up — tap a topic, or just leave our guess.")
-                        .font(Typo.ui(12.5, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .accessibilityElement(children: .combine)
-                Button(action: onTry) {
-                    Text("Try it")
-                        .font(Typo.ui(13.5, .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .frame(minHeight: 34)
-                        .background(accent.base, in: Capsule())
-                        .shadow(color: accent.base.opacity(0.3), radius: 8, y: 4)
-                        .frame(minHeight: Tokens.minTapTarget)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(PressableStyle())
-                .accessibilityLabel("Try it")
-                .accessibilityHint("Opens Add a link")
-            }
-            // Clear of the ×, which sits on the corner.
-            .padding(.trailing, 10)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 12)
-        // The 44pt tap area already reaches 5pt below the pill.
-        .padding(.bottom, 7)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(radius: 20)
-        .overlay(alignment: .topTrailing) {
-            Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .heavy))
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .frame(width: 22, height: 22)
-                    .background(Tokens.paper, in: Circle())
-                    .overlay(Circle().stroke(Tokens.hairline, lineWidth: 1))
-                    .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .offset(x: 14, y: -14)
-            .accessibilityLabel("Hide this tip")
-        }
-    }
-}
-
+/// An empty Library, or a source filter with nothing in it. The clay scene a
+/// first save would sit beside, then how to make one.
 private struct EmptyFeedState: View {
-    @Environment(\.accent) private var accent
     let filtered: Bool
     let onAdd: () -> Void
 
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: filtered ? "line.3.horizontal.decrease.circle" : "bookmark")
-                .font(.system(size: 40, weight: .light))
-                .foregroundStyle(accent.base.opacity(0.75))
+        VStack(spacing: 0) {
+            if !filtered {
+                ClayArtImage(source: .asset("welcomeHero"))
+                    .frame(width: 132, height: 132)
+                    .clipShape(RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous))
+                    .padding(.bottom, 20)
+            }
 
             Text(filtered ? "Nothing from this app yet" : "Everything you save, in one place")
-                .font(Typo.display(18, .bold))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.sectionTitle, color: Tokens.ink)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(filtered
                  ? "Try another source."
                  : "In Instagram, X, TikTok or YouTube — tap Share, then bookmarker.")
-                .font(Typo.ui(13.5))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 46)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 6)
+                .padding(.horizontal, 12)
 
             if !filtered {
-                Button(action: onAdd) {
-                    Text("Paste a link")
-                        .font(Typo.ui(14, .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 22)
-                        .padding(.vertical, 12)
-                        .background(accent.base, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 4)
+                Button("Paste a link", action: onAdd)
+                    .buttonStyle(.clayPrimary)
+                    .padding(.top, 22)
+                    .padding(.horizontal, 28)
             }
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, filtered ? 12 : 24)
     }
 }
 
 /// Screenshot hook. `-dialHint` shows the dial hint on its own, whatever its
 /// state, over a seeded library whose unfiled saves would otherwise keep it
-/// behind the sort card. Always false outside DEBUG. Belongs in
-/// `ScreenshotDefaults`, which this round does not touch; move it when that
-/// file is next edited.
+/// behind the sort row. Always false outside DEBUG.
 private enum DialHintScreenshot {
     static var forced: Bool {
         #if DEBUG

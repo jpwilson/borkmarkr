@@ -1,0 +1,32 @@
+name: Library prompt tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/LibraryPrompt.swift"
+      - "Core/SaveLimit.swift"
+      - "Core/Copy.swift"
+      - "App/Screens/LibraryView.swift"
+      - "Scripts/test_library_prompt.swift"
+      - ".github/workflows/library-prompt-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/LibraryPrompt.swift"
+      - "Core/SaveLimit.swift"
+      - "Core/Copy.swift"
+      - "App/Screens/LibraryView.swift"
+      - "Scripts/test_library_prompt.swift"
+      - ".github/workflows/library-prompt-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run library prompt checks
+        run: |
+          swiftc -parse-as-library -o /tmp/library-prompt-tests \
+            Core/Copy.swift Core/SaveLimit.swift Core/LibraryPrompt.swift \
+            Scripts/test_library_prompt.swift
+          /tmp/library-prompt-tests

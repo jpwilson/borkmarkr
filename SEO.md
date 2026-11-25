@@ -7,7 +7,7 @@ a search index and then quotes pages that are crawlable, plainly written and
 well linked. So the work is: be in every index, be readable as plain HTML,
 state facts on pages that match the questions people actually ask.
 
-Last reviewed: 21 October 2026.
+Last reviewed: 6 November 2026.
 
 ---
 
@@ -68,7 +68,7 @@ JSON-LD mirrors the visible text and nothing more:
 
 - The only price that may appear is the real one. The app is free on the App
   Store (`price: "0"`, USD), confirmed against the live iTunes lookup for app
-  id `6799805479`. The `$30` on `/lifetime` is a *reservation* for a future
+  id `6799805479`. The `$109` on `/lifetime` is a *reservation* for a future
   paid version — payments are not switched on and no card is taken — so it is
   never an `Offer`.
 - **No `aggregateRating`, ever.** The App Store listing has a single rating.
@@ -113,6 +113,19 @@ If you are editing copy, these are the traps:
   and Smart Spaces", not "no tags by design".
 - There is **no iCloud sync**. Signing in (email + six-digit code) backs the
   library up and makes it readable on the web.
+- Filing is **not** "keyword-only with a model for the leftovers" any more.
+  Since 1.3 every save made by hand gets a Quick File dial (seven likely
+  topics, best guess in the centre, one tap files it) and, signed in, the
+  model's opinion once, weighed as evidence rather than an override
+  (DECISIONS.md, "The AI judges every save made by hand"). Imports keep the old
+  rule: the model only for what the on-device pass is unsure of.
+- "Instagram, TikTok and X publish no metadata" is out of date. TikTok and X
+  oEmbed are read by the iPhone app (`Core/LinkPreview.swift`): TikTok gives
+  caption, creator and cover; X gives post text, usually no image. Instagram
+  still returns nothing. The web's `preview` function reads Open Graph only, so
+  say "the iPhone app reads" when claiming TikTok/X captions.
+- Pinterest import exists only in the web app (`docs/import.js`), not in
+  `Core/Importers.swift`, and only the web importer takes a .zip.
 - There is **no premium tier**. `APPSTORE.md` is explicit: "There is no paid
   tier and nothing in the app costs money."
 - bookmarker is **not iOS-only** — there is an iPhone app and a web app that
@@ -139,7 +152,7 @@ Only two paths are closed:
   expiry, served by the Cloudflare Worker in `cloudflare/collection-proxy.js`.
 - `/web/` — a redirect stub that already carries `noindex`.
 
-`docs/sitemap.xml` lists the 16 canonical, indexable, 200-returning URLs with
+`docs/sitemap.xml` lists the 18 canonical, indexable, 200-returning URLs with
 `lastmod`. Redirect stubs (`/get/`, `/web/`) and `/c/<slug>` are deliberately
 absent.
 
@@ -189,8 +202,9 @@ placeholder tokens. When you are ready:
 3. Bing matters more than its market share suggests: it feeds Copilot,
    DuckDuckGo and part of ChatGPT's search.
 
-**Apple** — nothing to do; Applebot is allowed and `/app/` already carries the
-`apple-itunes-app` meta tag with app id `6799805479`.
+**Apple** — nothing to do; Applebot is allowed and every page (check-seo
+asserts it on the marketing pages) carries the `apple-itunes-app` Smart App
+Banner meta with app id `6799805479`.
 
 ## 6. IndexNow
 
@@ -246,7 +260,7 @@ competitor's own site.
 ## 8. Checks
 
 ```bash
-node Scripts/check-seo.mjs    # 402 assertions over the committed HTML
+node Scripts/check-seo.mjs    # 507 assertions over the committed HTML
 npm install && npm run test:sync
 node Scripts/test_palace.mjs
 for t in Scripts/test_*.mjs; do node "$t" >/dev/null || echo "FAIL $t"; done

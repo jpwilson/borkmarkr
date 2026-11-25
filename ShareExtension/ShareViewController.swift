@@ -9,8 +9,9 @@ import UniformTypeIdentifiers
 /// and exactly as before — tap 1 is `Store.enqueue`, nothing waits on a
 /// ranking. Once it is written, the watchdog stands down, the run is recorded
 /// as saved, and the card gives way to the dial (`QuickFileShareView`). Tap 2
-/// re-enqueues the same inbox file as the person's own filing; "Not now"
-/// keeps the guess. With "Ask where it goes after sharing" turned off in the
+/// re-enqueues the same inbox file as the person's own filing and the sheet
+/// stays for subtopics and tags, each re-enqueued as it changes, until Done
+/// (or its drain); there is no Undo. "Not now" keeps the guess. With "Ask where it goes after sharing" turned off in the
 /// app, the one-tap exit below is unchanged. The dial ranks from the
 /// snapshot the app leaves in the App Group: no SwiftData, no OCR, and topic
 /// art only as 240 px thumbnails. Signed in, it also reads the page and asks
@@ -230,10 +231,11 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    /// The exit once the dial is up: "Not now", the drain, the cap, or a
-    /// filing that has had its moment. The outcome was recorded when the save
-    /// was written; this only hands the host its screen back, once, after
-    /// stopping the page read and the model so nothing lands after it.
+    /// The exit once the dial is up: "Not now", Done, either drain, or the
+    /// cap. The outcome was recorded when the save was written; this only
+    /// hands the host its screen back, once, after keeping a tag still being
+    /// typed and stopping the page read and the model so nothing lands after
+    /// it.
     @MainActor
     private func close() {
         guard !done else { return }
@@ -242,7 +244,7 @@ final class ShareViewController: UIViewController {
         extensionContext?.completeRequest(returningItems: nil)
     }
 
-    /// Swiped away: the same stop as `close`.
+    /// Swiped away: the same stop as `close`, typed tag included.
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         quickFile?.close()
@@ -305,13 +307,14 @@ private final class ResumeOnce<T: Sendable>: @unchecked Sendable {
 
 /// The one piece of UI the extension has, over the host app's screen.
 ///
-/// Busy: the app's card surface — white on paper, 20pt corners, a hairline —
-/// with a spinner, what it's doing, and a Cancel. Done: the app's toast
+/// Busy: the app's card surface — white, 18 pt corners, a hairline, and the
+/// warm drop of a thing that floats over someone else's app — with a
+/// spinner, what it's doing, and a Cancel. Done: the app's toast
 /// (`ToastView` in RootView.swift): ink, white text, the tick in the same
-/// green, so the two halves of a share look like one product. The palette is
-/// `App/DesignSystem/Tokens.swift` by value, because the extension target
-/// does not compile `App/`, and the type is the system font because the
-/// app's fonts are bundled with the app, not with this.
+/// green, so the two halves of a share look like one product. The colours
+/// are `Brand` (Core/BrandTokens.swift), the same values `Tokens` reads.
+/// The type is `QuickFileStyle.uiFont`: Instrument Sans when the extension's
+/// copy registered, SF Rounded when it didn't.
 private final class StatusCard: UIView {
     var onCancel: (() -> Void)?
 
@@ -322,23 +325,25 @@ private final class StatusCard: UIView {
     private let cancel = UIButton(type: .system)
 
     enum Palette {
-        static let paper = UIColor(red: 0xF6 / 255, green: 0xF3 / 255, blue: 0xEE / 255, alpha: 1)
-        static let ink = UIColor(red: 0x19 / 255, green: 0x15 / 255, blue: 0x10 / 255, alpha: 1)
-        static let inkSecondary = UIColor(red: 0x6E / 255, green: 0x65 / 255, blue: 0x5A / 255, alpha: 1)
-        static let surface = UIColor.white
-        static let hairline = UIColor(red: 0xEA / 255, green: 0xE4 / 255, blue: 0xDA / 255, alpha: 1)
-        static let toastCheck = UIColor(red: 0x7B / 255, green: 0xE3 / 255, blue: 0xA4 / 255, alpha: 1)
-        static let coral = UIColor(red: 0xFF / 255, green: 0x5A / 255, blue: 0x2D / 255, alpha: 1)
+        static let paper = UIColor(Brand.paper)
+        static let ink = UIColor(Brand.ink)
+        static let inkSecondary = UIColor(Brand.inkSecondary)
+        static let surface = UIColor(Brand.surface)
+        static let hairline = UIColor(Brand.hairline)
+        static let toastCheck = UIColor(Brand.toastCheck)
+        static let coral = UIColor(Brand.coral)
+        static let shadow = UIColor(Brand.shadow)
     }
 
     init() {
         super.init(frame: .zero)
-        layer.cornerRadius = 20
+        layer.cornerRadius = 18
         layer.cornerCurve = .continuous
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.10
-        layer.shadowRadius = 18
-        layer.shadowOffset = CGSize(width: 0, height: 8)
+        // The slab's lift: 0 10 24 / .12, warm.
+        layer.shadowColor = Palette.shadow.cgColor
+        layer.shadowOpacity = 0.12
+        layer.shadowRadius = 12
+        layer.shadowOffset = CGSize(width: 0, height: 10)
         layer.borderWidth = 1
 
         spinner.hidesWhenStopped = true
@@ -346,7 +351,8 @@ private final class StatusCard: UIView {
         icon.setContentHuggingPriority(.required, for: .horizontal)
         icon.isHidden = true
 
-        label.font = .systemFont(ofSize: 15, weight: .semibold)
+        label.font = QuickFileStyle.uiFont(15, .semibold, relativeTo: .subheadline)
+        label.adjustsFontForContentSizeCategory = true
         label.numberOfLines = 0
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
@@ -363,7 +369,7 @@ private final class StatusCard: UIView {
         config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20)
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
             var attributes = attributes
-            attributes.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
+            attributes.font = QuickFileStyle.uiFont(15, .semibold, relativeTo: .subheadline)
             return attributes
         }
         cancel.configuration = config

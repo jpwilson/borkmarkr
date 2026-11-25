@@ -88,10 +88,24 @@ struct TopicPickerSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                ClaySheetHeader(title: "Pick a topic")
+                    .overlay(alignment: .bottomTrailing) {
+                        HStack(spacing: 4) {
+                            Button("Cancel", action: cancel)
+                                .font(.custom("Instrument Sans", size: 15, relativeTo: .subheadline).weight(.semibold))
+                                .foregroundStyle(Tokens.inkSecondary)
+                                .frame(minWidth: Tokens.minTapTarget, minHeight: Tokens.minTapTarget)
+                            Button("Done") { dismiss() }
+                                .buttonStyle(.clayQuiet)
+                        }
+                        .frame(height: 36)
+                        .padding(.trailing, -6)
+                    }
+                    .padding(.horizontal, Tokens.gutter)
                 searchField
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, Tokens.gutter)
                     .padding(.top, 8)
-                    .padding(.bottom, 10)
+                    .padding(.bottom, 12)
 
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -113,7 +127,7 @@ struct TopicPickerSheet: View {
 
                             if rows.isEmpty, !trimmedFilter.isEmpty { nothingCalledCard }
                         }
-                        .padding(.horizontal, 18)
+                        .padding(.horizontal, Tokens.gutter)
                         .padding(.bottom, 24)
                     }
                     .scrollDismissesKeyboard(.interactively)
@@ -141,17 +155,7 @@ struct TopicPickerSheet: View {
                 }
             }
             .background(Tokens.paper)
-            .navigationTitle("Pick a topic")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: cancel)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                        .fontWeight(.semibold)
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .alert("New subtopic",
                    isPresented: Binding(get: { newSubtopicTopic != nil },
                                         set: { if !$0 { newSubtopicTopic = nil } })) {
@@ -235,7 +239,7 @@ struct TopicPickerSheet: View {
             }
         }
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
         .onAppear {
             if !didSnapshot {
                 snapshotCategory = categoryID
@@ -251,10 +255,10 @@ struct TopicPickerSheet: View {
     private var searchField: some View {
         HStack(spacing: 9) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(accent.base)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Tokens.inkSecondary)
             TextField("Find a topic or subtopic", text: $filter)
-                .font(Typo.ui(14.5))
+                .textRole(.body)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .submitLabel(.search)
@@ -270,12 +274,10 @@ struct TopicPickerSheet: View {
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .searchFieldSurface()
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(searchFocused ? accent.base.opacity(0.55) : Tokens.hairline, lineWidth: searchFocused ? 1.5 : 1)
+            RoundedRectangle(cornerRadius: Tokens.searchRadius, style: .continuous)
+                .strokeBorder(accent.base.opacity(searchFocused ? 0.6 : 0), lineWidth: 1.5)
         )
     }
 
@@ -319,8 +321,7 @@ struct TopicPickerSheet: View {
             }
         } else {
             Text("Nothing called \u{201C}\(trimmedFilter)\u{201D}.")
-                .font(Typo.ui(13, .medium))
-                .foregroundStyle(Tokens.inkMeta)
+                .textRole(.meta)
                 .padding(.top, 6)
         }
     }
@@ -328,29 +329,28 @@ struct TopicPickerSheet: View {
     private func makeCard(title: String, line: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "plus")
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 32, height: 32)
+                .frame(width: 36, height: 36)
                 .background(accent.base, in: Circle())
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(Typo.display(15, .bold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: Tokens.ink)
                     .lineLimit(2)
                 Text(line)
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(accent.deep)
+                    .textRole(.meta)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.tint, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+            RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
+                .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
         )
     }
 
@@ -374,21 +374,20 @@ struct TopicPickerSheet: View {
                 Text(canAddTopicFromFilter
                      ? "Add topic \u{201C}\(trimmedFilter)\u{201D}"
                      : "New topic")
-                    .font(Typo.ui(14, .semibold))
+                    .textRole(.chip)
                     .lineLimit(1)
             }
             .foregroundStyle(accent.deep)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 13)
+            .frame(maxWidth: .infinity, minHeight: 48)
             .padding(.horizontal, 14)
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
                     .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
             )
-            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous))
         }
         .buttonStyle(PressableStyle())
-        .padding(.horizontal, 18)
+        .padding(.horizontal, Tokens.gutter)
         .padding(.top, 10)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
@@ -415,26 +414,28 @@ struct TopicPickerSheet: View {
                     }
                 } label: {
                     HStack(spacing: 10) {
-                        Circle().fill(topic.palette.dot).frame(width: 10, height: 10)
+                        ClayArtImage(source: .topic(topic.id))
+                            .frame(width: 32, height: 32)
+                            .clipShape(Circle())
                         Text(topic.name)
-                            .font(Typo.ui(14.5, .semibold))
-                            .foregroundStyle(Tokens.ink)
+                            .textRole(.cardTitle, color: Tokens.ink)
                         if custom {
                             Text("yours")
-                                .font(Typo.ui(10, .bold))
+                                .font(Typo.ui(11, .semibold))
                                 .foregroundStyle(topic.palette.deep)
-                                .padding(.horizontal, 6)
+                                .padding(.horizontal, 7)
                                 .padding(.vertical, 2)
                                 .background(topic.palette.tint, in: Capsule())
                         }
                         Spacer()
                         Text("\(subs.count)")
-                            .font(Typo.ui(11.5, .medium))
-                            .foregroundStyle(Tokens.inkMeta)
+                            .textRole(.meta)
                         Image(systemName: isOpen ? "chevron.up" : "chevron.right")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Tokens.inkFaint)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Tokens.inkSecondary)
                     }
+                    .frame(minHeight: 36)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 
@@ -479,7 +480,7 @@ struct TopicPickerSheet: View {
                 // The two ways to add under this topic, as chips among the
                 // chips — the web's "+ Add a subtopic" pill — not a line of
                 // small text under them.
-                FlowLayout(spacing: 6) {
+                FlowLayout(spacing: Tokens.chipGap) {
                     addChip(label: "Add a subtopic", palette: topic.palette) {
                         newSubtopicTopic = topic
                         newSubtopicName = trimmedFilter
@@ -499,31 +500,32 @@ struct TopicPickerSheet: View {
                     dismiss()
                 } label: {
                     Text("Just \(topic.name) — no subtopic")
-                        .font(Typo.ui(12, .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
+                        .textRole(.chip, color: Tokens.inkSecondary)
+                        .frame(minHeight: Tokens.minTapTarget)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(13)
-        .cardSurface(radius: 16)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .cardSurface(radius: Tokens.cardRadius)
     }
 
     /// The Add sheet's dashed "+ New side quest" chip, in the topic's palette.
     private func addChip(label: String, palette: CategoryPalette, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 4) {
-                Image(systemName: "plus").font(.system(size: 10, weight: .bold))
+                Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
                 Text(label)
-                    .font(Typo.ui(12, .semibold))
+                    .textRole(.chip)
                     .lineLimit(1)
             }
             .foregroundStyle(palette.deep)
-            .padding(.horizontal, 11)
-            .padding(.vertical, 7)
+            .padding(.horizontal, 12)
+            .frame(minHeight: ChipSize.topic.height)
             .overlay(
-                Capsule().strokeBorder(palette.deep.opacity(0.45),
-                                       style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                Capsule().strokeBorder(palette.mid,
+                                       style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
             )
             .tappableChip()
         }
@@ -651,22 +653,25 @@ struct FlowChips: View {
 
     var body: some View {
         let palette = tint()
-        FlowLayout(spacing: 6) {
+        FlowLayout(spacing: Tokens.chipGap) {
             ForEach(items, id: \.self) { item in
                 let isCustom = custom.contains { $0.caseInsensitiveCompare(item) == .orderedSame }
                 let isHit = highlighted.contains { $0.caseInsensitiveCompare(item) == .orderedSame }
                 Button { onPick(item) } label: {
                     Text(item)
-                        .font(Typo.ui(12, .semibold))
-                        .foregroundStyle(palette.deep)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .textRole(.chip, color: palette.deep)
+                        .lineLimit(1)
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: ChipSize.topic.height)
                         .background(palette.tint, in: Capsule())
                         .overlay(
-                            Capsule().strokeBorder(palette.deep.opacity(isHit ? 0.85 : 0), lineWidth: 1.5)
+                            Capsule().strokeBorder(palette.deep.opacity(isHit ? 1 : 0), lineWidth: 1.5)
                         )
+                        .frame(minHeight: Tokens.minTapTarget)
+                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ChipStyle())
+                .accessibilityAddTraits(isHit ? .isSelected : [])
                 .contextMenu {
                     if isCustom {
                         Button("Rename") { onRename?(item) }
@@ -678,40 +683,4 @@ struct FlowChips: View {
     }
 }
 
-/// Minimal flow layout — SwiftUI has no built-in wrapping stack.
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 6
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0
-
-        for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
-            if x + size.width > maxWidth, x > 0 {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-        }
-        return CGSize(width: maxWidth, height: y + rowHeight)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
-
-        for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
-            if x + size.width > bounds.maxX, x > bounds.minX {
-                x = bounds.minX
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-        }
-    }
-}
+// `FlowLayout` lives in Core/Layout/FlowLayout.swift (shared with the refine panel).

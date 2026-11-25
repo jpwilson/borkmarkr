@@ -22,6 +22,9 @@ import UIKit
 ///     -quickFileShareKey    ask with the app's share key, as a share sheet
 ///                           does once the token it borrows has run out (the
 ///                           app gets one when it syncs, signed in)
+///     -quickFileChosen      open already chosen on the top candidate, so the
+///                           refine panel can be photographed (simctl can't
+///                           tap); no drain, as nothing was touched on screen
 struct QuickFileHarness: View {
     let url: URL
 
@@ -77,7 +80,7 @@ struct QuickFileHarness: View {
                 session: share.session,
                 style: Self.style,
                 onNotNow: { close("Not now: kept \(Self.describe(share.session.kept)).") },
-                onDone: { close("Filed to \(QuickFileCopy.label($0)) as your pick.") }
+                onDone: { close("Done: filed to \(QuickFileCopy.label($0)) as your pick, tagged \(Self.tagLine(share.session)).") }
             )
             .presentationDetents([.large])
             .onDisappear { share.session.close() }
@@ -94,6 +97,9 @@ struct QuickFileHarness: View {
             : FilingSnapshot.loadShared() ?? Self.demoSnapshot(now: .now)
         let session = QuickFileShareSession(saved: draft, snapshot: snapshot) { draft in
             print("[QuickFileHarness] would enqueue \(Self.describe(draft))")
+        }
+        if ScreenshotDefaults.quickFileChosen, let top = session.model.candidates.first {
+            session.model.file(top)
         }
         outcome = nil
         share = Share(session: session)
@@ -121,7 +127,12 @@ struct QuickFileHarness: View {
     private static func describe(_ draft: BookmarkDraft) -> String {
         let topic = draft.categoryID.map { QuickFileCopy.topicName($0) } ?? "unfiled"
         let sub = draft.subcategory.map { " › \($0)" } ?? ""
-        return "\(topic)\(sub) (\(draft.filingSource ?? "automatic"))"
+        let tags = draft.tags.isEmpty ? "" : " #" + draft.tags.joined(separator: " #")
+        return "\(topic)\(sub) (\(draft.filingSource ?? "automatic"))\(tags)"
+    }
+
+    private static func tagLine(_ session: QuickFileShareSession) -> String {
+        session.tags.chosen.isEmpty ? "nothing" : "#" + session.tags.chosen.joined(separator: " #")
     }
 
     /// Three filings of @kaylawalks (two Mobility, one Running) and two

@@ -1,7 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// Library (and You) door into the weekly read.
+/// The door into the weekly read: the hero card on You, the compact row at the
+/// top of Revisit (it left the Library in 1.4).
 ///
 /// The question is the label. The live headline is the pop — it names the
 /// actual thread in the last seven days, not a marketing heading.
@@ -26,67 +27,61 @@ struct InsightsEntry: View {
     }
 
     private func heroCard(_ report: SmartInsights.Report) -> some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 5) {
+        HStack(alignment: .center, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(Copy.insightsQuestion)
-                    .font(Typo.display(18, .bold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.sectionTitle, color: Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text(report.count == 0 ? Copy.insightsFallback : report.headline)
-                    .font(Typo.ui(13, .semibold))
-                    .foregroundStyle(accent.deep)
+                    .textRole(.cardTitle, color: accent.deep)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if report.count > 0 {
                     Text(report.summary)
-                        .font(Typo.ui(12, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .textRole(.meta)
                         .lineLimit(2)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 4)
-
-            QuestArt(motif: .scroll)
-                .frame(width: 78, height: 78)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            ClayArtImage(source: .quest(.scroll))
+                .frame(width: 76, height: 76)
+                .background(Tokens.clayGround)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .padding(14)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: [accent.tint, accent.tint.opacity(0.45)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing),
-            in: RoundedRectangle(cornerRadius: 20, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(accent.base.opacity(0.28), lineWidth: 1)
-        )
-        .shadow(color: accent.base.opacity(0.12), radius: 16, y: 8)
+        .cardSurface()
+        .accessibilityElement(children: .combine)
     }
 
+    /// Revisit's opener: the question and this week's thread on one white row.
     private func compactCard(_ report: SmartInsights.Report) -> some View {
-        HStack(spacing: 11) {
-            QuestArt(motif: .scroll)
+        HStack(spacing: 12) {
+            ClayArtImage(source: .quest(.scroll))
                 .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            VStack(alignment: .leading, spacing: 2) {
+                .background(Tokens.clayGround)
+                .clipShape(RoundedRectangle(cornerRadius: Tokens.thumbRadius, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
                 Text(Copy.insightsQuestion)
-                    .font(Typo.ui(14, .bold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: Tokens.ink)
                     .lineLimit(2)
                 Text(report.count == 0 ? Copy.insightsFallback : report.headline)
-                    .font(Typo.ui(12, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta, color: accent.deep)
                     .lineLimit(2)
             }
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Tokens.inkFaint)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Tokens.inkSecondary)
         }
-        .padding(14)
-        .cardSurface(radius: 18)
+        .padding(.leading, 12)
+        .padding(.trailing, 16)
+        .padding(.vertical, 10)
+        .frame(minHeight: 64)
+        .cardSurface()
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
     }
 }

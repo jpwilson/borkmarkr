@@ -8,7 +8,7 @@
   <meta name="description" content="bookmarker is a bookmark manager for iPhone. Save any link from Instagram, X, TikTok or YouTube with one tap; it files itself into topics and stays searchable. Works offline. No ads, no tracking.">
   <link rel="canonical" href="https://bookmarker.lol/app/">
   <meta name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#14110E" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: dark)">
   <meta name="color-scheme" content="light dark">
 
   <meta property="og:type" content="website">
@@ -30,7 +30,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="preload" as="image" href="/img/library.webp" type="image/webp">
   <script>document.documentElement.classList.add("js");</script>
 
@@ -49,39 +49,14 @@
   } catch (e) {}
 </script>
   <style>
-    /* ---------- tokens ---------- */
-    :root {
-      --paper: #F6F3EE;
-      --ink: #191510;
-      --ink-2: #6E655A;
-      --hairline: #EAE4DA;
-      --surface: #FFFFFF;
-      --coral: #FF5A2D;
-      --coral-dark: #E8451C;
-      /* coral darkened only where it has to carry small text on paper (WCAG AA) */
-      --accent-text: #C93A12;
-      --coral-tint: #FFE9E1;
-      --shadow-phone: 0 40px 80px -30px rgba(25, 21, 16, .45), 0 12px 28px -12px rgba(25, 21, 16, .25);
-      --shadow-card: 0 1px 2px rgba(25, 21, 16, .04), 0 12px 32px -16px rgba(25, 21, 16, .14);
+    /* ---------- this page's own layout values ----------
+       Colours, radii and type come from /tokens.css ("Quiet clay"), linked
+       last. Light paper only, like the app. */
+    body {
       --nav-h: 64px;
       --sp: clamp(4.5rem, 9vw, 8.5rem);
       --gutter: clamp(1.25rem, 4vw, 2.5rem);
-      --radius: 22px;
-      --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --paper: #14110E;
-        --ink: #F2EEE8;
-        --ink-2: #A39A8D;
-        --hairline: #2A241E;
-        --surface: #1C1814;
-        --accent-text: #FF7A55;
-        --coral-tint: #33190F;
-        --shadow-phone: 0 40px 80px -30px rgba(0, 0, 0, .8), 0 12px 28px -12px rgba(0, 0, 0, .5);
-        --shadow-card: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px -16px rgba(0, 0, 0, .5);
-      }
+      --shadow-phone: 0 40px 80px -30px rgba(25, 21, 16, .45), 0 12px 28px -12px rgba(25, 21, 16, .25);
     }
 
     /* ---------- base ---------- */
@@ -93,6 +68,7 @@
       background: var(--paper);
       color: var(--ink);
       font-family: var(--font-body);
+      font-weight: 500;
       font-size: 17px;
       line-height: 1.55;
       font-feature-settings: "ss01";
@@ -102,9 +78,9 @@
     img, svg { display: block; max-width: 100%; }
     h1, h2, h3, h4 {
       font-family: var(--font-head);
-      font-weight: 800;
+      font-weight: 700;
       font-optical-sizing: auto;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.02em;
       line-height: 1.02;
       margin: 0;
       text-wrap: balance;
@@ -120,7 +96,7 @@
       font-weight: 600;
       letter-spacing: .1em;
       text-transform: uppercase;
-      color: var(--accent-text);
+      color: var(--coral-deep);
       margin-bottom: 1rem;
     }
     .h1 { font-size: clamp(2.7rem, 1.5rem + 3.5vw, 4.75rem); }
@@ -133,36 +109,34 @@
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
       min-height: 48px; padding: 0 1.25rem;
-      border-radius: 14px; border: 1px solid transparent;
+      border-radius: var(--r-chip); border: 1px solid transparent;
       font: inherit; font-weight: 600; font-size: 1rem; line-height: 1;
       text-decoration: none; cursor: pointer; white-space: nowrap;
       transition: transform .18s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
     }
     .btn:active { transform: translateY(1px); }
-    .btn-primary { background: var(--ink); color: var(--paper); }
+    .btn-primary { background: var(--coral); color: #fff; }
     .btn-primary:hover { background: var(--coral-dark); color: #fff; }
-    .btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--hairline); box-shadow: var(--shadow-card); }
+    .btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--hairline); }
     .btn-ghost:hover { border-color: var(--ink-2); }
-    .btn-sm { min-height: 44px; padding: 0 1.05rem; font-size: .95rem; border-radius: 12px; }
+    .btn-sm { min-height: 44px; padding: 0 1.15rem; font-size: .95rem; border-radius: var(--r-chip); }
     .btn svg { width: 18px; height: 18px; flex: none; }
     .btn[disabled] { opacity: .55; cursor: default; transform: none; }
 
     /* ---------- nav ---------- */
     .nav {
       position: sticky; top: 0; z-index: 20;
-      background: color-mix(in srgb, var(--paper) 84%, transparent);
-      -webkit-backdrop-filter: saturate(160%) blur(14px);
-      backdrop-filter: saturate(160%) blur(14px);
+      background: var(--paper);
       border-bottom: 1px solid var(--hairline);
     }
     .nav-in { display: flex; align-items: center; gap: 1.5rem; height: var(--nav-h); }
     .brand { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; min-height: 44px; }
     .brand img { width: 30px; height: 30px; border-radius: 8px; }
-    .brand span { font-family: var(--font-head); font-weight: 800; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .brand span { font-family: var(--font-head); font-weight: 700; font-size: 1.2rem; letter-spacing: -0.01em; }
     .nav-links { display: flex; gap: .25rem; margin-inline: auto; }
     .nav-links a {
       display: inline-flex; align-items: center; min-height: 44px; padding: 0 .8rem;
-      font-size: .95rem; font-weight: 500; color: var(--ink-2); text-decoration: none; border-radius: 10px;
+      font-size: .95rem; font-weight: 600; color: var(--ink-2); text-decoration: none; border-radius: var(--r-chip);
     }
     .nav-links a:hover { color: var(--ink); }
     .nav .btn { margin-left: auto; }
@@ -206,7 +180,7 @@
     .hero-art { position: relative; }
     .hero-art::before {
       content: ""; position: absolute; inset: -8% 0; z-index: -1; pointer-events: none;
-      background: radial-gradient(closest-side, color-mix(in srgb, var(--coral) 16%, transparent), transparent 70%);
+      background: radial-gradient(closest-side, color-mix(in srgb, var(--clay-ground) 70%, transparent), transparent 70%);
     }
     .fan { position: relative; width: min(100%, 560px); aspect-ratio: 560 / 620; margin-inline: auto; }
     .fan .phone { position: absolute; }
@@ -241,25 +215,25 @@
     .problem { display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(2rem, 5vw, 5rem); align-items: center; }
     .problem .big { font-size: clamp(1.15rem, 1rem + .7vw, 1.45rem); color: var(--ink-2); margin-top: 1.25rem; max-width: 40ch; }
     .defcard {
-      background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius);
-      padding: 1.6rem 1.7rem 1.5rem; box-shadow: var(--shadow-card); position: relative;
+      background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-card);
+      padding: 1.6rem 1.7rem 1.5rem; position: relative;
     }
     .defcard::before { content: ""; position: absolute; left: 1.7rem; top: 0; width: 44px; height: 4px; background: var(--coral); border-radius: 0 0 4px 4px; }
-    .def-word { font-family: var(--font-head); font-weight: 800; font-size: 2rem; letter-spacing: -0.03em; line-height: 1; }
+    .def-word { font-family: var(--font-head); font-weight: 700; font-size: 2rem; letter-spacing: -0.03em; line-height: 1; }
     .def-word small { font-family: var(--font-body); font-weight: 500; font-size: .85rem; letter-spacing: .02em; color: var(--ink-2); margin-left: .6rem; font-style: italic; }
     .defcard p + p { margin-top: .75rem; }
-    .def-ex { font-family: var(--font-head); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; color: var(--accent-text); }
+    .def-ex { font-family: var(--font-head); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; color: var(--coral-deep); }
     @media (max-width: 760px) { .problem { grid-template-columns: 1fr; } }
 
     /* features */
     .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
     .feature {
-      background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius);
-      padding: 1.6rem 1.5rem 1.7rem; box-shadow: var(--shadow-card);
+      background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-card);
+      padding: 1.6rem 1.5rem 1.7rem;
     }
     .feature .icon {
       width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
-      background: var(--coral-tint); color: var(--accent-text); margin-bottom: 1.25rem;
+      background: var(--tint); color: var(--coral-deep); margin-bottom: 1.25rem;
     }
     .feature .icon svg { width: 22px; height: 22px; }
     .feature h3 { margin-bottom: .5rem; }
@@ -273,9 +247,9 @@
     .step::before {
       content: ""; position: absolute; top: -1px; left: 0; width: 56px; height: 3px; background: var(--coral);
     }
-    .step .num { display: block; font-family: var(--font-head); font-weight: 800; font-size: .9rem; letter-spacing: .08em; color: var(--accent-text); margin-bottom: 1.5rem; }
+    .step .num { display: block; font-family: var(--font-body); font-weight: 700; font-size: .8rem; letter-spacing: .08em; color: var(--coral-deep); margin-bottom: 1.5rem; }
     .step h3 { font-size: 1.6rem; margin-bottom: .6rem; }
-    .step h3 .brandword { color: var(--accent-text); }
+    .step h3 .brandword { color: var(--coral-deep); }
     .step p { color: var(--ink-2); }
     .step kbd {
       font: inherit; font-size: .9em; font-weight: 600; color: var(--ink);
@@ -285,8 +259,8 @@
 
     /* import */
     .import {
-      background: var(--surface); border: 1px solid var(--hairline); border-radius: calc(var(--radius) + 6px);
-      padding: clamp(1.75rem, 4vw, 3.5rem); box-shadow: var(--shadow-card);
+      background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-sheet);
+      padding: clamp(1.75rem, 4vw, 3.5rem);
       display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 4vw, 4rem); align-items: center;
     }
     .import .section-head { margin-bottom: 0; }
@@ -297,39 +271,34 @@
       font-size: .92rem; font-weight: 600; padding: .5rem .85rem; border-radius: 999px;
       background: var(--paper); border: 1px solid var(--hairline); color: var(--ink);
     }
-    .chip.topic { border-color: transparent; background: color-mix(in srgb, var(--c) 16%, var(--paper)); }
-    .chip.topic::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+    .chip.topic { border-color: transparent; background: var(--pt); color: var(--pd); }
+    .chip.topic::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--pm); }
     .chip.more { background: transparent; border-style: dashed; color: var(--ink-2); font-weight: 500; }
     .flow-arrow { display: flex; align-items: center; gap: .6rem; color: var(--ink-2); font-size: .9rem; font-weight: 500; }
-    .flow-arrow svg { width: 22px; height: 22px; color: var(--accent-text); }
+    .flow-arrow svg { width: 22px; height: 22px; color: var(--coral-deep); }
     .flow-label { font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: .5rem; }
     @media (max-width: 860px) { .import { grid-template-columns: 1fr; } }
 
     /* privacy */
     .privacy {
-      background: var(--ink); color: var(--paper);
-      border-radius: calc(var(--radius) + 6px);
+      background: var(--surface); color: var(--ink); border: 1px solid var(--hairline);
+      border-radius: var(--r-sheet);
       padding: clamp(2rem, 5vw, 4.5rem);
       display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(2rem, 5vw, 5rem); align-items: center;
       overflow: hidden; position: relative;
     }
-    .privacy .eyebrow { color: var(--coral); }
+    .privacy .eyebrow { color: var(--coral-deep); }
     .privacy .h2 { color: inherit; }
     .privacy-list { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; gap: 1.25rem; }
     .privacy-list li { display: grid; grid-template-columns: 28px 1fr; gap: .9rem; align-items: start; }
     .privacy-list svg { width: 24px; height: 24px; color: var(--coral); margin-top: 2px; }
     .privacy-list strong { display: block; font-weight: 600; margin-bottom: .15rem; }
-    .privacy-list span { color: color-mix(in srgb, var(--paper) 70%, var(--ink)); }
-    .privacy .link { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; margin-top: 1.5rem; font-weight: 600; color: var(--paper); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--paper) 40%, transparent); }
+    .privacy-list span { color: var(--ink-2); }
+    .privacy .link { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; margin-top: 1.5rem; font-weight: 600; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--hairline); }
     .privacy .link:hover { border-color: var(--coral); }
     .privacy .link svg { width: 16px; height: 16px; }
     .privacy-art { position: relative; height: 100%; min-height: 380px; }
     .privacy-art .phone { position: absolute; width: min(300px, 72%); left: 50%; top: 2.75rem; transform: translateX(-50%) rotate(4deg); }
-    @media (prefers-color-scheme: dark) {
-      .privacy { background: var(--surface); color: var(--ink); border: 1px solid var(--hairline); }
-      .privacy-list span { color: var(--ink-2); }
-      .privacy .link { color: var(--ink); border-color: var(--hairline); }
-    }
     @media (max-width: 860px) {
       .privacy { grid-template-columns: 1fr; padding-bottom: 0; }
       .privacy-art { min-height: 0; height: 300px; margin-inline: calc(-1 * clamp(2rem, 5vw, 4.5rem)); }
@@ -339,8 +308,8 @@
     /* get the app */
     .get { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .panel {
-      background: var(--surface); border: 1px solid var(--hairline); border-radius: calc(var(--radius) + 6px);
-      padding: clamp(1.75rem, 4vw, 3rem); box-shadow: var(--shadow-card);
+      background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-sheet);
+      padding: clamp(1.75rem, 4vw, 3rem);
       display: flex; flex-direction: column; min-width: 0;
     }
     .panel .h2 { font-size: clamp(1.8rem, 1.2rem + 1.6vw, 2.5rem); }
@@ -353,7 +322,7 @@
     .field { display: flex; gap: .6rem; margin-top: 1.5rem; }
     .field input {
       flex: 1 1 auto; min-width: 0; min-height: 48px; padding: 0 1rem;
-      border-radius: 14px; border: 1px solid var(--hairline); background: var(--paper); color: var(--ink);
+      border-radius: var(--r-search); border: 1px solid var(--hairline); background: var(--surface); color: var(--ink);
       font: inherit; font-size: 1rem;
     }
     .field input::placeholder { color: color-mix(in srgb, var(--ink-2) 70%, transparent); }
@@ -362,7 +331,7 @@
     .hp { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); opacity: 0; pointer-events: none; }
     .form-msg { margin-top: .8rem; font-size: .95rem; min-height: 1.4em; color: var(--ink-2); }
     .form-msg.ok { color: var(--ink); font-weight: 500; }
-    .form-msg.err { color: var(--accent-text); font-weight: 500; }
+    .form-msg.err { color: var(--destructive); font-weight: 500; }
     @media (max-width: 860px) { .get { grid-template-columns: 1fr; } .get > * { min-width: 0; } }
     @media (max-width: 480px) { .field { flex-direction: column; } .field .btn { width: 100%; } .panel > .btn { width: 100%; white-space: normal; text-align: center; } }
 
@@ -420,14 +389,17 @@
   ],
   "description": "bookmarker is a free bookmark manager for iPhone that collects everything you save on Instagram, X (Twitter), TikTok, YouTube and the open web into one library, files every save into a topic and subtopic automatically, and lets you search it again later.",
   "featureList": [
-    "Save any link from any app through the iOS share sheet",
-    "Automatic filing into 50 topics and 612 subtopics, always overridable",
+    "Save any link from any iPhone app through the share sheet, by pasting it, or in the web app",
+    "Quick File: after each save, a dial of the seven likeliest topics with the best guess in the middle; one tap files it",
+    "Signed in, an AI model reads the caption of every save you make and suggests a topic and subtopic",
+    "50 topics and 612 subtopics, plus topics and subtopics of your own",
+    "Sort your borks: anything unfiled or uncertain, one card at a time",
     "Browse by topic or by the app a save came from",
-    "Search titles, accounts, tags, notes, topics and links",
-    "Dated notes on any save",
-    "Counts how often you reopen something",
-    "Import browser bookmarks and X, Instagram, TikTok and YouTube data exports",
-    "Share a collection of saves as a link",
+    "Search titles, accounts, post text, tags, notes, topics and links",
+    "Dated notes on any save, and a count of how often you reopen it",
+    "Import Instagram, TikTok, X and YouTube data exports and browser bookmarks (Pinterest too, in the web app)",
+    "Share a set of saves as a link anyone can open",
+    "Web app at bookmarker.lol with the same library",
     "Works offline; the first 20 saves need no account"
   ],
   "offers": {
@@ -485,6 +457,7 @@
   ]
 }
 </script>
+<link rel="stylesheet" href="/tokens.css">
 </head>
 
 <body id="top">
@@ -515,7 +488,7 @@
         <h1 class="h1" id="hero-title">The folder your feeds never gave you.</h1>
         <p class="lede">Everything you save on Instagram, X, TikTok and YouTube, in one library you can actually search.</p>
         <div class="cta-row">
-          <a class="btn btn-primary" data-appstore href="#get">
+          <a class="btn btn-primary" data-appstore href="https://apps.apple.com/app/id6799805479">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
             Download on the App Store
           </a>
@@ -530,16 +503,16 @@
             <div class="bezel"><div class="screen">
               <picture>
                 <source srcset="/img/browse.webp" type="image/webp">
-                <img src="/img/browse.png" width="405" height="880" alt="The Browse tab: a grid of topics such as Recipes, Nutrition, Fitness, AI, Health and Cars, each showing how many borks it holds." decoding="async">
+                <img src="/img/browse.jpg" width="600" height="1304" alt="The Browse tab: topics such as Fitness, Crypto and Trail running, each on its own clay art with how many borks it holds." decoding="async">
               </picture>
               <span class="island" aria-hidden="true"></span>
             </div></div>
           </div>
           <div class="phone p-main">
-            <div class="bezel"><div class="screen">
+            <div class="bezel"><div class="screen" data-live="library">
               <picture>
                 <source srcset="/img/library.webp" type="image/webp">
-                <img src="/img/library.png" width="405" height="880" alt="The Library tab: 18 borks across 8 apps and 14 topics, a search field, a weekly summary card, side quests, and a filter row for X, Instagram, TikTok and YouTube." fetchpriority="high" decoding="async">
+                <img src="/img/library.jpg" width="600" height="1304" alt="The Library tab: 50 borks across 8 apps and 17 topics, a search field, a prompt to sort 8 borks, filter chips for X, Instagram, TikTok and YouTube, and a grid of saves with their topic underneath." fetchpriority="high" decoding="async">
               </picture>
               <span class="island" aria-hidden="true"></span>
             </div></div>
@@ -547,8 +520,8 @@
           <div class="phone p-right">
             <div class="bezel"><div class="screen">
               <picture>
-                <source srcset="/img/search.webp" type="image/webp">
-                <img src="/img/search.png" width="405" height="880" alt="The Search tab: results for “protein” from YouTube and Instagram, each with the account that posted it and a tag." decoding="async">
+                <source srcset="/img/dial.webp" type="image/webp">
+                <img src="/img/dial.jpg" width="600" height="1304" alt="The dial after saving a TikTok: Fitness › Mobility chosen in the middle of seven likely topics, with subtopics and tags to add underneath and a Done button." decoding="async">
               </picture>
               <span class="island" aria-hidden="true"></span>
             </div></div>
@@ -588,8 +561,8 @@
         </article>
         <article class="feature reveal" data-delay="1">
           <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 12h18"/></svg></div>
-          <h3 class="h3">It files itself</h3>
-          <p>Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. Fifty topics, six hundred subtopics, and you can add your own.</p>
+          <h3 class="h3">It files itself, in one tap</h3>
+          <p>Every bork lands in a topic and subtopic — Fitness › Mobility, Recipes › Meal prep. The moment you save, a dial offers the seven likeliest topics: one tap files it, or leave it and our best guess stands. Signed in, the AI reads the caption and suggests one too. Fifty topics, six hundred subtopics, and your own.</p>
         </article>
         <article class="feature reveal" data-delay="2">
           <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg></div>
@@ -645,7 +618,7 @@
         <div class="section-head">
           <p class="eyebrow">Import</p>
           <h2 class="h2" id="import-title">Bring what you already saved.</h2>
-          <p class="muted">Import your browser bookmarks, or the data export from X, Instagram, TikTok or YouTube. Thousands of old saves become a sorted, searchable library in one step.</p>
+          <p class="muted">Import your browser bookmarks, or the data export from Instagram, TikTok, X or YouTube (and Pinterest, in the web app). Thousands of old saves become one searchable library in one step, and anything that needs a topic waits in Sort your borks, one tap each.</p>
         </div>
         <div class="flow" aria-label="What you can import, and where it ends up">
           <div>
@@ -665,11 +638,11 @@
           <div>
             <p class="flow-label">Into</p>
             <div class="chips">
-              <span class="chip topic" style="--c:#C2545A">Fitness</span>
-              <span class="chip topic" style="--c:#1FA971">Recipes</span>
-              <span class="chip topic" style="--c:#2E8CF0">Cars</span>
-              <span class="chip topic" style="--c:#7C5CFC">Learn</span>
-              <span class="chip topic" style="--c:#FF5A2D">Make</span>
+              <span class="chip topic" style="--pt:#E3EADB;--pm:#8FA37E;--pd:#3F5237">Fitness</span>
+              <span class="chip topic" style="--pt:#F4E6C4;--pm:#D9A441;--pd:#6E4E0E">Recipes</span>
+              <span class="chip topic" style="--pt:#F3DDD2;--pm:#C8674A;--pd:#7A3420">Cars</span>
+              <span class="chip topic" style="--pt:#E4E0F1;--pm:#968AC2;--pd:#463D71">Learn</span>
+              <span class="chip topic" style="--pt:#F5DECF;--pm:#CE7245;--pd:#793919">Make</span>
               <span class="chip more">+ 45 more topics</span>
             </div>
           </div>
@@ -706,7 +679,7 @@
             <div class="bezel"><div class="screen">
               <picture>
                 <source srcset="/img/you.webp" type="image/webp">
-                <img src="/img/you.png" width="405" height="880" alt="" loading="lazy" decoding="async">
+                <img src="/img/you.jpg" width="600" height="1304" alt="" loading="lazy" decoding="async">
               </picture>
               <span class="island"></span>
             </div></div>
@@ -723,7 +696,7 @@
           <h2 class="h2" id="get-title">bookmarker for iPhone</h2>
           <p class="muted">Free, and works without an account for your first 20 saves. After that, signing up is free too — an email and a six-digit code — and makes it unlimited, backed up, and readable on the web. On your iPhone, scan the code and tap the button.</p>
           <div class="store-row">
-            <a class="btn btn-primary" data-appstore href="#get">
+            <a class="btn btn-primary" data-appstore href="https://apps.apple.com/app/id6799805479">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
               Download on the App Store
             </a>
@@ -736,7 +709,7 @@
         <form class="panel beta-panel reveal" data-delay="1" id="beta" novalidate>
           <p class="eyebrow">Stay in the loop</p>
           <h2 class="h2">Hear what ships next</h2>
-          <p class="muted">Leave your email and we’ll write when something big ships — bulk import, new platforms. Nothing else, ever.</p>
+          <p class="muted">Leave your email and we’ll write when something big ships — new platforms, new features. Nothing else, ever.</p>
           <div class="beta">
             <label for="email" class="sr-only">Email address</label>
             <div class="field">
@@ -754,7 +727,7 @@
     <section class="wrap section" id="lifetime" aria-labelledby="lifetime-title">
       <div class="panel reveal" style="text-align:center">
         <p class="eyebrow">Founders price</p>
-        <h2 class="h2" id="lifetime-title">Own it forever — $30</h2>
+        <h2 class="h2" id="lifetime-title">Own it forever — $109</h2>
         <p class="muted" style="max-width:34rem;margin-left:auto;margin-right:auto">One payment, no subscription: the iPhone app, the web app, the AI filing, and every future feature. The founders price is capped at the first hundred people.</p>
         <p><a class="btn btn-primary" href="/lifetime">Get lifetime access</a></p>
         <p class="muted" style="font-size:.85em">Payments aren't live yet — this reserves your price. No card today.</p>
@@ -779,6 +752,8 @@
         <a href="/vs-mymind">vs mymind</a>
         <a href="/how-to-organize-twitter-bookmarks">Organise X bookmarks</a>
         <a href="/how-to-search-twitter-bookmarks">Search X bookmarks</a>
+        <a href="/how-to-organize-instagram-saved-posts">Organise Instagram saved posts</a>
+        <a href="/how-to-search-tiktok-favorites">Search TikTok favourites</a>
         <a href="/palace/">Library Island</a>
         <a href="/press/">Press</a>
         <a href="/privacy">Privacy</a>
@@ -855,5 +830,6 @@
       });
     })();
   </script>
+  <script src="/live-covers.js" defer></script>
 </body>
 </html>

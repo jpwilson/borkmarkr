@@ -15,11 +15,16 @@ import Foundation
 /// - Signed in, `enrich` reads the page and asks the model while the dial is
 ///   up, by the Add sheet's rules. Each answer re-ranks the dial, and the
 ///   guess that stays follows it, still unconfirmed.
-/// - Tap 2 rewrites it with the chosen topic as `"user"`, which `Store.save`
-///   lets win over any guess. Undo puts the guess back.
+/// - Tap 2 chooses: the inbox file is rewritten with the chosen topic as
+///   `"user"`, which `Store.save` lets win over any guess, and the sheet
+///   stays for the refine panel. Another topic, a subtopic chip or a tag
+///   rewrites it again. Late answers keep coming while it is up; they never
+///   move a choice, but their subtopics and tags reach the panel.
 ///
 /// Every write replaces the same inbox file (`Store.enqueue` names it after
 /// the bookmark's identity), so the inbox only ever holds the latest answer.
+/// Each one is composed whole (`current()`): what stays, the choice over it,
+/// and the tags.
 @MainActor
 final class QuickFileShareSession {
     let saved: BookmarkDraft
@@ -28,6 +33,13 @@ final class QuickFileShareSession {
     private(set) var kept: BookmarkDraft
     private(set) var input: FilingInput
     let model: QuickFileModel
+    /// The save's tags while the sheet is up: the Categorizer's, then the
+    /// model's, and whatever the person turns on, off or types.
+    let tags: QuickFileTags
+    /// What was chosen on the dial, if anything. It wins over `kept`'s filing.
+    private(set) var chosen: FilingCandidate?
+    /// Where the refine panel's lists come from: the snapshot.
+    let refineSource: QuickFileRefineSource
     /// Every topic for More…: the built-ins, then yours A–Z.
     let topics: [Topic]
     /// The sheet has gone. Nothing more is written.
@@ -39,9 +51,8 @@ final class QuickFileShareSession {
     private let rankedAt: Date
     private let customSubs: [String: [String]]
     private let enqueue: (BookmarkDraft) throws -> Void
-    /// Bumps on every filing and every undo. An answer asked for before
-    /// either is not kept.
-    private var generation = 0
+    /// The last draft written, so closing writes only if something changed.
+    private var written: BookmarkDraft?
     private var enriching: Task<Void, Never>?
 
     init(saved: BookmarkDraft, snapshot: FilingSnapshot?, now: Date = .now,
@@ -54,6 +65,7 @@ final class QuickFileShareSession {
                                 description: nil, author: saved.author, ocrText: nil)
         let ranking = FilingSuggest.rank(input, memory: memory, taxonomyOrder: order, now: now)
 
+        // Tap 1 enqueued `saved` already.
         var kept = saved
         if let guess = Self.refiled(saved, by: ranking) {
             kept = guess
@@ -69,13 +81,23 @@ final class QuickFileShareSession {
         self.topics = Taxonomy.all + custom.sorted {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
-        self.customSubs = snapshot?.customSubs ?? [:]
+        let customSubs = snapshot?.customSubs ?? [:]
+        self.customSubs = customSubs
         self.enqueue = enqueue
-        self.model = QuickFileModel(ranking: ranking, input: input)
+        self.written = kept
+        self.model = QuickFileModel(ranking: ranking, input: input, mode: .refine)
+        self.tags = QuickFileTags(chosen: saved.tags, suggested: saved.tags)
+        let subUse = snapshot?.subUse ?? [:]
+        let recent = snapshot?.recentTags ?? [:]
+        self.refineSource = QuickFileRefineSource(
+            subs: { id in Self.subs(of: id, custom: customSubs) },
+            used: { subUse[$0] ?? [] },
+            recentTags: { QuickFileRefine.recentTags(in: recent, categoryID: $0, subcategory: $1) }
+        )
 
         QuickFileArt.preload(ranking.candidates.map(\.categoryID))
         model.onConfirm = { [weak self] candidate in self?.file(candidate) }
-        model.onUndo = { [weak self] _ in self?.unfile() }
+        tags.onChange = { [weak self] in self?.write() }
     }
 
     var title: String { saved.title }
@@ -91,10 +113,21 @@ final class QuickFileShareSession {
     /// A topic's subtopics as the app's picker lists them: built-in and
     /// yours in one A–Z run (`MergedTaxonomy.subs`, from the snapshot).
     func subs(for topic: Topic) -> [String] {
-        let yours = (customSubs[topic.id] ?? []).filter { name in
+        Self.subs(of: topic, custom: customSubs)
+    }
+
+    private static func subs(of topic: Topic, custom: [String: [String]]) -> [String] {
+        let yours = (custom[topic.id] ?? []).filter { name in
             !topic.subs.contains { $0.caseInsensitiveCompare(name) == .orderedSame }
         }
         return TopicPickerQuery.alphabetical(topic.subs + yours)
+    }
+
+    private static func subs(of topicID: String, custom: [String: [String]]) -> [String] {
+        guard let topic = Taxonomy.category(id: topicID) else {
+            return TopicPickerQuery.alphabetical(custom[topicID] ?? [])
+        }
+        return subs(of: topic, custom: custom)
     }
 
     // MARK: Late answers
@@ -106,8 +139,12 @@ final class QuickFileShareSession {
         enriching = Task { await enrich(caller: caller) }
     }
 
-    /// The sheet is going: stop asking, and write nothing more.
+    /// The sheet is going: a tag still in the field is kept, then nothing
+    /// more is asked or written.
     func close() {
+        guard !closed else { return }
+        tags.commitDraft()
+        write()
         closed = true
         enriching?.cancel()
     }
@@ -118,14 +155,16 @@ final class QuickFileShareSession {
     /// made by hand gets its judgement once, as one more piece of evidence.
     /// The Add sheet's rules: every answer reaches the dial through `offer`;
     /// the page changes what stays only while the dial is untouched, the
-    /// model's answer touched or not, unless something was filed (or filed
-    /// and undone) since asking. The answer settles the save (so does a page
+    /// model's answer touched or not; a choice made meanwhile wins over both
+    /// (`current()`), and the answer's tags join the panel's (`QuickFileTags.
+    /// suggest`). It keeps asking after a choice, for the panel's subtopics
+    /// and tags. The answer settles the save (so does a page
     /// that leaves the ranking sure when there are no words to ask about):
     /// the page's findings go with it, marked as read, so `PreviewFetcher`
     /// doesn't read and ask again as soon as the app opens. A question the
     /// sheet closes on leaves the save unsettled, for `PreviewFetcher` to
-    /// ask when the app next opens. No network once filed or with no server
-    /// configured; signed out, there is no one to call this as.
+    /// ask when the app next opens. No network with no server configured;
+    /// signed out, there is no one to call this as.
     func enrich(
         caller: Supabase.Caller,
         read: @Sendable (URL) async -> LinkPreview.Result? = {
@@ -135,7 +174,7 @@ final class QuickFileShareSession {
             await SmartCategorizer.suggest($0, caller: $1, within: .milliseconds(6500))
         }
     ) async {
-        guard Supabase.isConfigured, model.filed == nil, !closed else { return }
+        guard Supabase.isConfigured, !closed else { return }
 
         let page = await read(saved.url)
         guard !closed else { return }
@@ -153,19 +192,17 @@ final class QuickFileShareSession {
             if let guess { keep(guess) }
         }
 
-        guard model.filed == nil, !closed, Self.hasWords(input) else { return }
+        guard !closed, Self.hasWords(input) else { return }
         let request = SmartCategorizer.Context(url: input.url, title: input.title, author: input.author,
                                                text: input.text, description: input.description)
-        let asked = generation
         model.isAsking = true
         let answer = await judge(request, caller)
         model.isAsking = false
         guard let answer, !closed else { return }
         let answered = rank(ai: answer)
         reoffer(answered)
-        guard generation == asked else { return }
         var next = Self.refiled(kept, by: answered) ?? kept
-        next.tags = Self.merged(next.tags, answer.tags)
+        tags.suggest(answer.tags)
         if let page { next = Self.reading(page, into: next) }
         // Settled even when the page ran out of time, or `PreviewFetcher`
         // would ask again as soon as the app opens. Its usual retry reads
@@ -185,28 +222,47 @@ final class QuickFileShareSession {
         model.offer(ranking, input: input)
     }
 
-    /// What stays becomes `draft`: never over a filing, never once the sheet
-    /// has closed.
+    /// What stays becomes `draft`, with any choice over it. Nothing once the
+    /// sheet has closed.
     private func keep(_ draft: BookmarkDraft) {
-        guard model.filed == nil, !closed else { return }
+        guard !closed else { return }
         kept = draft
-        try? enqueue(draft)
+        write()
     }
 
     // MARK: Filing
 
     private func file(_ candidate: FilingCandidate) {
-        generation &+= 1
-        var draft = kept
-        draft.categoryID = candidate.categoryID
-        draft.subcategory = candidate.subcategory
-        draft.filingSource = "user"
-        try? enqueue(draft)
+        chosen = candidate
+        write()
     }
 
-    private func unfile() {
-        generation &+= 1
-        try? enqueue(kept)
+    /// The draft as it stands: what stays, the choice over it as `"user"`,
+    /// and the tags. Tags the person touched replace the bork's, less any
+    /// they turned off (`tagsRemoved`, since the extension can't see the
+    /// bork's own).
+    func current() -> BookmarkDraft {
+        var draft = kept
+        if let chosen {
+            draft.categoryID = chosen.categoryID
+            draft.subcategory = chosen.subcategory
+            draft.filingSource = "user"
+        }
+        draft.tags = tags.chosen
+        if tags.edited {
+            draft.tagsEdited = true
+            draft.tagsRemoved = tags.removed
+        }
+        return draft
+    }
+
+    /// Rewrites the inbox file, unless nothing changed since the last write.
+    private func write() {
+        guard !closed else { return }
+        let draft = current()
+        if let written, Self.same(written, draft) { return }
+        try? enqueue(draft)
+        written = draft
     }
 
     // MARK: Rules
@@ -263,10 +319,10 @@ final class QuickFileShareSession {
         return draft
     }
 
-    /// Existing tags stay; new ones join. Platform names stay out.
-    private static func merged(_ existing: [String], _ incoming: [String]) -> [String] {
-        var out = existing
-        for tag in incoming where !out.contains(tag) && !Platform.isSiteName(tag) { out.append(tag) }
-        return out
+    private static func same(_ a: BookmarkDraft, _ b: BookmarkDraft) -> Bool {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        guard let left = try? encoder.encode(a), let right = try? encoder.encode(b) else { return false }
+        return left == right
     }
 }

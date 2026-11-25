@@ -1,40 +1,62 @@
 import SwiftUI
 
-// Moved verbatim from App/DesignSystem/Tokens.swift so the Share Extension,
-// which compiles Core but not App, draws topics in exactly the app's colours.
-// Quick File's dial, its chips and its picker all colour from here.
+// A topic's colours as SwiftUI `Color`s, for the app and the Share Extension
+// (which compiles Core but not App). The maths is `ClayRecipe` in
+// Core/ClayPalette.swift — Foundation only, ported line for line to
+// docs/palette.js — so a topic is the same colour on the phone and the web.
 
 // MARK: - Topic colour
 
-/// Derived colours for a category hue.
+/// A topic's clay colours (design/SYSTEM.md, "Topic colours: the clay palette").
 ///
-/// **Performance note.** The spec expresses these as HSL strings recomputed per
-/// render. With a masonry feed of hundreds of cards that's thousands of colour
-/// conversions per scroll. These are computed once per category and cached —
-/// 50 entries, built lazily on first use.
+/// - `tint`: surfaces — chips, slabs, tile footers. Text on it is `deep`.
+/// - `mid`: the 8 pt dot, rings, small fills. **Never put white text on it.**
+/// - `deep`: text on `tint`, and the fill behind white text (selected chip,
+///   lit slab, check badge).
+///
+/// Built from the exact bytes `ClayRecipe` gives, via `Color(.sRGB, …)`, so the
+/// phone draws the hex the web draws. Built once per built-in topic (see
+/// `Topic.palettes`).
 struct CategoryPalette: Sendable {
     let tint: Color
+    let mid: Color
     let deep: Color
-    let dot: Color
-    let coverTop: Color
-    let coverBottom: Color
+    /// The bytes behind the colours, for contrast checks and the web.
+    let clay: ClayColours
+
+    init(_ clay: ClayColours) {
+        self.clay = clay
+        tint = Self.color(clay.tint)
+        mid = Self.color(clay.mid)
+        deep = Self.color(clay.deep)
+    }
 
     init(hue: Double) {
-        let h = hue / 360
-        tint = Color(hue: h, saturation: 0.55, brightness: 0.97)
-        deep = Color(hue: h, saturation: 0.46, brightness: 0.42)
-        dot = Color(hue: h, saturation: 0.50, brightness: 0.70)
-        coverTop = Color(hue: h, saturation: 0.52, brightness: 0.62)
-        coverBottom = Color(hue: h, saturation: 0.60, brightness: 0.30)
+        self.init(ClayRecipe.colours(hue: hue))
+    }
+
+    /// The dot colour — the old name for `mid`.
+    var dot: Color { mid }
+
+    /// Covers now use clay art, never a gradient. Kept so 1.3 call sites
+    /// compile until their owners move off them; the lead removes these last.
+    @available(*, deprecated, message: "Covers use ClayCover / clay art now; use mid.")
+    var coverTop: Color { mid }
+    @available(*, deprecated, message: "Covers use ClayCover / clay art now; use deep.")
+    var coverBottom: Color { deep }
+
+    /// Sand: Unfiled, More…, the ground under clay art.
+    static let neutral = CategoryPalette(ClayRecipe.neutral)
+
+    private static func color(_ c: ClayRGB) -> Color {
+        Color(.sRGB, red: c.red, green: c.green, blue: c.blue, opacity: 1)
     }
 }
 
 extension Topic {
     /// Built once for all 50 topics, immutably — a `static let` is initialised
     /// lazily and thread-safely by the runtime, so this needs no lock and is
-    /// concurrency-safe under Swift 6 strict checking. A mutable memo cache
-    /// would be shared global state and would need isolation for no benefit:
-    /// the table is tiny and fully enumerable up front.
+    /// concurrency-safe under Swift 6 strict checking.
     private static let palettes: [String: CategoryPalette] = Dictionary(
         uniqueKeysWithValues: Taxonomy.all.map { ($0.id, CategoryPalette(hue: $0.hue)) }
     )
@@ -44,8 +66,8 @@ extension Topic {
     }
 }
 
-/// Fallback palette for uncategorised items — neutral, deliberately dull so it
-/// reads as "not filed yet" rather than as a category of its own.
+/// The palette for things not filed yet: Sand, deliberately quiet, so it reads
+/// as "not filed" rather than as a topic of its own.
 enum NeutralPalette {
-    static let value = CategoryPalette(hue: 40)
+    static let value = CategoryPalette.neutral
 }

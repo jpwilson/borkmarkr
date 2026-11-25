@@ -156,6 +156,9 @@ enum SaveLimit {
     /// "17 of 20". `nil` signed in, where there is nothing to be out of.
     static func youCount(liveCount: Int, signedIn: Bool) -> String? {
         guard !signedIn else { return nil }
+        // Past the limit (borks saved before it existed, or kept from a
+        // signed-in library), "50 of 20" reads as a bug. Say the fact instead.
+        if liveCount > limit { return "\(liveCount) borks on this phone" }
         return "\(liveCount) of \(limit)"
     }
 

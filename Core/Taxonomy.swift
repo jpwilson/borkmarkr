@@ -174,7 +174,7 @@ enum Taxonomy {
             "Weight loss", "Muscle gain", "Vitamins", "Meal timing",
             "Sports nutrition", "Fibre", "Sugar", "Food labels",
         ]),
-        Topic(id: "fitness", name: "Fitness", hue: 152, subs: [
+        Topic(id: "fitness", name: "Fitness", hue: 96, subs: [
             "Running", "Strength", "Mobility", "Stretching", "Yoga", "Pilates",
             "HIIT", "Calisthenics", "Cardio", "Home workouts", "Recovery",
             "Warm-ups", "Form check", "Programming", "Gym gear", "Injury prep",

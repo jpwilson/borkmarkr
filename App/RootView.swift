@@ -133,6 +133,7 @@ struct RootView: View {
                         tab = .browse
                     },
                     onShowWall: { wall = $0 },
+                    onOpenAccount: { tab = .you },
                     account: account,
                     // Every sheet the root owns, so a milestone sheet never
                     // goes up behind one of them.
@@ -159,22 +160,31 @@ struct RootView: View {
             .environment(\.account, account)
             .environment(\.sideQuests, sideQuests)
 
+            if let toast {
+                ToastView(text: toast, action: toastAction) {
+                    withAnimation(.easeOut(duration: 0.2)) { self.toast = nil }
+                }
+                // 12 pt above the tab bar, which the safe-area inset below
+                // has already lifted this ZStack's bottom edge past.
+                .padding(.bottom, 12)
+                .padding(.horizontal, Tokens.gutter)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        // The flat tab bar is a bottom safe-area inset, not a layer drawn over
+        // the content: every ScrollView stops above it, so nothing scrolls
+        // under it or peeks beside it (1.3's floating dock needed every screen
+        // to pad `.bottom, 120`). The keyboard is ignored so the bar stays
+        // down behind it rather than riding up on top of it.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             TabDock(
                 tab: $tab,
                 onAdd: requestAdd,
                 signedOutDot: SignInNudge.showsBadge(signedIn: account.isSignedIn, borks: borkCount)
             )
-                .containerRelativeFrame(.horizontal)
-                .environment(\.accent, accent)
-
-            if let toast {
-                ToastView(text: toast, action: toastAction) {
-                    withAnimation(.easeOut(duration: 0.2)) { self.toast = nil }
-                }
-                .padding(.bottom, 96)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            .environment(\.accent, accent)
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .environment(\.accent, accent)
         .tint(accent.base)
         .preferredColorScheme(.light)
@@ -270,7 +280,12 @@ struct RootView: View {
                 Logger(subsystem: "com.jpwilson.borkmarkr", category: "migration")
                     .notice("Folded custom topic ids: \(folded, privacy: .public) rows re-keyed")
             }
-            _ = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
+            // Fetched, not the @Query: on a cold launch the query can still be
+            // empty here, which left every card of a custom topic showing only
+            // its subtopic ("Races") until Browse was opened.
+            let liveTopics = ((try? context.fetch(FetchDescriptor<CustomTopic>())) ?? []).filter { $0.deletedAt == nil }
+            let liveSubtopics = ((try? context.fetch(FetchDescriptor<CustomSubtopic>())) ?? []).filter { $0.deletedAt == nil }
+            _ = MergedTaxonomy(topics: liveTopics, subtopics: liveSubtopics)
             // The Share Extension's dial draws topic art from App Group
             // thumbnails; this keeps them there (off the main actor).
             QuickFileBridge.installArtIfNeeded(customTopics: customTopics)
@@ -307,6 +322,27 @@ struct RootView: View {
                     // After the seed and the first frame, or the sheet is dropped.
                     try? await Task.sleep(for: .milliseconds(700))
                     triage = TriageSheet.Deck(rawValue: ScreenshotDefaults.triageDeck ?? "") ?? .unfiled
+                }
+            }
+            if let mode = ScreenshotDefaults.openAuth {
+                hasOnboarded = true
+                presentWallAuth(mode.lowercased() == "signin" ? .signIn : .signUp)
+            }
+            if let kind = ScreenshotDefaults.openWall {
+                hasOnboarded = true
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(700))
+                    switch kind {
+                    case "waiting": wall = .waiting
+                    case "addSheet": wall = .addSheet
+                    default: wall = .add
+                    }
+                }
+            }
+            if let text = ScreenshotDefaults.toast {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(900))
+                    showToast(text, action: ToastAction(title: "Undo") {})
                 }
             }
             if let slug = CollectionsDebug.incomingSlug {
@@ -511,7 +547,15 @@ struct RootView: View {
     }
 }
 
-/// Floating dock: Library · Browse · [+] · Revisit · You.
+/// The tab bar: Library · Browse · [+] · Revisit · You (SYSTEM.md, Main.dc).
+///
+/// Flat and pinned to the bottom: paper, a hairline on top, no shadow, five
+/// equal slots 56 pt tall above the home indicator; the + is a 52 pt coral
+/// circle in line with the tabs. Labels 11/13 semibold; the selected tab is in
+/// the accent's deep, the others in secondary. Mounted by RootView as a bottom
+/// `safeAreaInset`, so content never runs under it.
+///
+/// UI tests find the tabs by their labels (Library / Browse / Revisit / You).
 struct TabDock: View {
     @Binding var tab: AppTab
     let onAdd: () -> Void
@@ -522,88 +566,78 @@ struct TabDock: View {
     @Environment(\.accent) private var accent
 
     var body: some View {
-        ZStack {
-            HStack(spacing: 0) {
-                item(.library)
-                item(.browse)
-                Spacer().frame(width: 62)
-                item(.revisit)
-                item(.you)
-            }
-            .frame(height: 64)
-            .background(
-                RoundedRectangle(cornerRadius: Tokens.dockRadius, style: .continuous)
-                    // Paper UNDER the glass, not instead of it.
-                    //
-                    // `.ultraThinMaterial` alone takes its lightness from
-                    // whatever is behind it, and the feed scrolls behind the
-                    // dock. Over a dark media cover the material went dark too
-                    // and the inactive tabs — `inkFaint` on nothing — vanished
-                    // completely: a screenshot of the Library caught "Browse"
-                    // as an invisible gap between Library and the + button.
-                    //
-                    // An opaque fill would fix the contrast and kill the depth.
-                    // A near-opaque paper layer beneath the material keeps the
-                    // translucency reading as glass while pinning the effective
-                    // background light, so contrast no longer depends on what
-                    // the user happens to have scrolled to.
-                    .fill(Tokens.paper.opacity(0.82))
-                    .background(
-                        RoundedRectangle(cornerRadius: Tokens.dockRadius, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Tokens.dockRadius, style: .continuous)
-                            .stroke(Tokens.hairline, lineWidth: 1)
-                    )
-                    .shadow(color: Color(hex: "191510").opacity(0.30), radius: 22, y: 14)
-            )
-
+        HStack(spacing: 0) {
+            item(.library)
+            item(.browse)
             Button(action: onAdd) {
                 Image(systemName: "plus")
-                    .font(.system(size: 21, weight: .bold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.white)
-                    .frame(width: 50, height: 50)
+                    .frame(width: Tokens.addButton, height: Tokens.addButton)
                     .background(accent.base, in: Circle())
-                    .overlay(Circle().stroke(Tokens.paper, lineWidth: 3))
-                    .shadow(color: accent.base.opacity(0.45), radius: 10, y: 6)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: Tokens.tabBarHeight)
+                    .contentShape(Rectangle())
             }
-            .offset(y: -24)
+            .buttonStyle(PressableStyle(scale: 0.94))
             .accessibilityLabel("Save a link")
+            item(.revisit)
+            item(.you)
         }
-        .padding(.horizontal, 14)
-        .padding(.bottom, 14)
+        .padding(.horizontal, 8)
+        .frame(height: Tokens.tabBarHeight)
+        .frame(maxWidth: .infinity)
+        .background {
+            Tokens.paper
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Tokens.hairline).frame(height: 1)
+                }
+                .ignoresSafeArea(edges: .bottom)
+        }
+    }
+
+    /// Main.dc's line icons: outline, 1.75 stroke, the same when selected
+    /// (only the colour changes).
+    private static func outline(_ target: AppTab) -> String {
+        switch target {
+        case .library: "bookmark"
+        case .browse: "square.grid.2x2"
+        case .revisit: "clock.arrow.circlepath"
+        case .you: "person"
+        }
     }
 
     private func item(_ target: AppTab) -> some View {
-        Button {
+        let on = tab == target
+        return Button {
             tab = target
         } label: {
             VStack(spacing: 3) {
-                Image(systemName: target.symbol)
-                    .font(.system(size: 17, weight: .semibold))
+                Image(systemName: Self.outline(target))
+                    .font(.system(size: 21, weight: .regular))
+                    .frame(height: 24)
                     .overlay(alignment: .topTrailing) {
                         if target == .you, signedOutDot {
                             Circle()
                                 .fill(accent.base)
                                 .frame(width: 7, height: 7)
                                 .overlay(Circle().stroke(Tokens.paper, lineWidth: 1.5))
-                                .offset(x: 5, y: -3)
+                                .offset(x: 5, y: -1)
                         }
                     }
                 Text(target.title)
-                    .font(Typo.ui(9.5, .semibold))
+                    .font(.custom("Instrument Sans", size: 11).weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            // `inkFaint` is a decorative grey — 2.4:1 on paper, and this is a
-            // primary navigation control, not a hint. `inkSecondary` reads as
-            // clearly unselected while staying legible.
-            .foregroundStyle(tab == target ? accent.base : Tokens.inkSecondary)
+            .foregroundStyle(on ? accent.deep : Tokens.inkSecondary)
             .frame(maxWidth: .infinity)
-            .frame(height: 64)
+            .frame(height: Tokens.tabBarHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(tab == target ? [.isSelected] : [])
+        .accessibilityLabel(target.title)
+        .accessibilityAddTraits(on ? [.isSelected] : [])
         .accessibilityHint(target == .you && signedOutDot
                            ? "Not signed in — your borks are only on this phone" : "")
     }
@@ -656,6 +690,6 @@ struct ToastView: View {
         .padding(.trailing, action == nil ? 18 : 10)
         .padding(.vertical, action == nil ? 12 : 0)
         .background(Tokens.toastBG, in: Capsule())
-        .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
+        .lift(.toast)
     }
 }

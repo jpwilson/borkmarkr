@@ -42,52 +42,48 @@ struct DetailSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            ClaySheetHeader(title: "Saved from \(bookmark.platform.name)") { dismiss() }
+                .padding(.horizontal, Tokens.gutter)
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 18) {
                     hero
-                    titleBlock
-                    breadcrumb
+                    VStack(alignment: .leading, spacing: 12) {
+                        titleBlock
+                        breadcrumb
+                    }
                     journeyRow
                     tagEditor
                     noteBlock
                     moreFromCreator
-                    savedLine
-                    Button {
-                        Task {
-                            refreshingPreview = true
-                            bookmark.enrichmentVersion = nil; bookmark.enrichmentAttempts = 0; bookmark.previewFetchedAt = nil
-                            await previews.fetchMissing(for: [bookmark], in: context)
-                            refreshingPreview = false
+                    VStack(alignment: .leading, spacing: 4) {
+                        savedLine
+                        Button {
+                            Task {
+                                refreshingPreview = true
+                                bookmark.enrichmentVersion = nil; bookmark.enrichmentAttempts = 0; bookmark.previewFetchedAt = nil
+                                await previews.fetchMissing(for: [bookmark], in: context)
+                                refreshingPreview = false
+                            }
+                        } label: {
+                            Label(refreshingPreview ? "Refreshing the preview…" : "Refresh the preview",
+                                  systemImage: "arrow.clockwise")
                         }
-                    } label: {
-                        Label(refreshingPreview ? "Refreshing the preview…" : "Refresh the preview",
-                              systemImage: "arrow.clockwise")
-                            .font(Typo.ui(12.5, .semibold))
-                            .foregroundStyle(Tokens.inkMeta)
+                        .buttonStyle(.clayQuiet)
+                        .disabled(refreshingPreview)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(refreshingPreview)
                 }
-                .padding(18)
-                .padding(.bottom, 24)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 10)
+                .padding(.bottom, 20)
             }
-            .background(Tokens.paper)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingSingleShare = true } label: {
-                        Image(systemName: "square.and.arrow.up")
-                    }.accessibilityLabel("Share this bork")
-                }
-            }
-            .safeAreaInset(edge: .bottom) { footerBar }
+            .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .bottom, spacing: 0) { footerBar }
         }
+        .background(Tokens.paper)
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
         .sheet(item: $nested) { other in
             DetailSheet(bookmark: other).environment(\.accent, accent)
         }
@@ -127,51 +123,37 @@ struct DetailSheet: View {
     private var hero: some View {
         if bookmark.isTextPost {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 7) {
+                HStack(spacing: 8) {
                     PlatformBadge(platform: bookmark.platform, size: 26, pageURL: bookmark.url)
                     Text(bookmark.displayAuthor ?? bookmark.platform.name)
-                        .font(Typo.ui(13, .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
+                        .textRole(.meta)
                 }
                 Text(bookmark.text ?? bookmark.title)
-                    .font(Typo.ui(15))
-                    .foregroundStyle(Tokens.bodyOnWhite)
+                    .textRole(.body, color: Tokens.bodyOnWhite)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .cardSurface()
         } else {
-            ZStack(alignment: .topLeading) {
-                CoverImage(url: bookmark.imageURL, palette: palette)
-                    .frame(height: 200)
-                    .clipped()
-
-                PlatformBadge(platform: bookmark.platform, size: 26)
-                    .padding(12)
-
-                if let duration = bookmark.durationLabel {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            HStack(spacing: 5) {
-                                Image(systemName: "play.fill").font(.system(size: 9, weight: .black))
-                                Text(duration).font(Typo.ui(12, .bold))
-                            }
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(.ultraThinMaterial, in: Capsule())
-                            .environment(\.colorScheme, .dark)
-                        }
-                    }
-                    .padding(12)
-                    .frame(height: 200)
+            // The card's cover, larger: picture over the topic's clay art,
+            // the platform mark top-left, the duration bottom-right.
+            CoverImage(url: bookmark.imageURL, topicID: bookmark.categoryID)
+                .frame(height: 220)
+                .overlay(alignment: .topLeading) {
+                    PlatformBadge(platform: bookmark.platform, size: 26)
+                        .padding(12)
                 }
-            }
-            .frame(height: 200)
-            .clipShape(RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous))
+                .overlay(alignment: .bottomTrailing) {
+                    if let duration = bookmark.durationLabel {
+                        DurationChip(text: duration).padding(12)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
+                        .strokeBorder(Tokens.hairline, lineWidth: 1)
+                )
         }
     }
 
@@ -180,15 +162,21 @@ struct DetailSheet: View {
         VStack(alignment: .leading, spacing: 5) {
             if editingTitle {
                 TextField("Title", text: $draftTitle, axis: .vertical)
-                    .font(Typo.display(20, .bold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.sectionTitle, color: Tokens.ink)
                     .textFieldStyle(.plain)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous)
+                        .strokeBorder(Tokens.hairline, lineWidth: 1))
                 HStack {
                     Button("Cancel") { editingTitle = false }
-                        .font(Typo.ui(13, .semibold))
+                        .font(.custom("Instrument Sans", size: 15, relativeTo: .subheadline).weight(.semibold))
+                        .foregroundStyle(Tokens.inkSecondary)
+                        .frame(minHeight: Tokens.minTapTarget)
                     Spacer()
                     Button("Save", action: commitTitle)
-                        .font(Typo.ui(13, .bold))
+                        .buttonStyle(.clayQuiet)
                 }
             } else {
                 // Tap the title to fix it. A fetched title is usually right but
@@ -202,14 +190,14 @@ struct DetailSheet: View {
                         // `Name on Instagram: "caption"` or a title made from
                         // the URL; editing still writes the stored title.
                         Text(bookmark.displayTitle)
-                            .font(Typo.display(20, .bold))
-                            .foregroundStyle(Tokens.ink)
+                            .textRole(.sectionTitle, color: Tokens.ink)
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.leading)
                         Image(systemName: "pencil")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(Tokens.inkFaint)
-                            .padding(.top, 6)
+                            .padding(.top, 5)
+                            .accessibilityLabel("Edit title")
                         Spacer(minLength: 0)
                     }
                 }
@@ -218,14 +206,13 @@ struct DetailSheet: View {
 
             HStack(spacing: 6) {
                 Text([bookmark.displayAuthor, bookmark.platform.name].compactMap { $0 }.joined(separator: " · "))
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
                 if bookmark.openCount > 0 {
                     Text("· opened \(bookmark.openCount)×")
-                        .font(Typo.ui(12, .medium))
-                        .foregroundStyle(accent.deep)
+                        .textRole(.meta, color: accent.deep)
                 }
             }
+            .padding(.top, 2)
         }
     }
 
@@ -243,37 +230,21 @@ struct DetailSheet: View {
 
     @ViewBuilder
     private var breadcrumb: some View {
-        Button { showingPicker = true } label: {
-            HStack(spacing: 6) {
-                if let category = bookmark.category {
-                    Text(category.name)
-                        .font(Typo.ui(12.5, .semibold))
-                        .foregroundStyle(palette.deep)
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 6)
-                        .background(palette.tint, in: Capsule())
-                    if let sub = bookmark.subcategory {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(Tokens.inkFaint)
-                        Text(sub)
-                            .font(Typo.ui(12.5, .semibold))
-                            .foregroundStyle(Tokens.inkSecondary)
-                    }
-                } else {
-                    Image(systemName: "folder.badge.plus")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("File under a topic")
-                        .font(Typo.ui(13, .semibold))
+        // The topic chip in its own clay colours; tap to refile.
+        HStack(spacing: 8) {
+            if let category = bookmark.category {
+                TopicChip(
+                    [category.name, bookmark.subcategory].compactMap { $0 }.joined(separator: " › "),
+                    palette: palette, isOn: false
+                ) { showingPicker = true }
+                .accessibilityHint("Change the topic")
+            } else {
+                FilterChip("File under a topic", isOn: false, symbol: "folder.badge.plus", size: .topic) {
+                    showingPicker = true
                 }
-                Image(systemName: "pencil")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Tokens.inkFaint)
-                Spacer()
             }
-            .foregroundStyle(Tokens.inkSecondary)
+            Spacer(minLength: 0)
         }
-        .buttonStyle(.plain)
     }
 
     private var onJourneys: [Mission] {
@@ -283,97 +254,96 @@ struct DetailSheet: View {
     private var journeyRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button { showingJourneys = true } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "flag.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                HStack(spacing: 12) {
+                    ClayArtImage(source: .quest(.compass))
+                        .frame(width: 36, height: 36)
+                        .background(Tokens.clayGround)
+                        .clipShape(RoundedRectangle(cornerRadius: Tokens.thumbRadius, style: .continuous))
                     Text(onJourneys.isEmpty ? "Add to a side quest" : "On \(Copy.countedSideQuests(onJourneys.count))")
-                        .font(Typo.ui(13, .semibold))
-                    Spacer()
-                    Image(systemName: "plus")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Tokens.inkFaint)
+                        .textRole(.cardTitle, color: Tokens.ink)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: onJourneys.isEmpty ? "plus" : "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(accent.deep)
                 }
-                .foregroundStyle(Tokens.inkSecondary)
+                .padding(.leading, 12)
+                .padding(.trailing, 16)
+                .padding(.vertical, 8)
+                .frame(minHeight: Tokens.slimRowHeight)
+                .cardSurface()
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableStyle(scale: 0.99))
 
             if !onJourneys.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Tokens.chipGap) {
                         ForEach(onJourneys) { journey in
-                            Text(journey.title)
-                                .font(Typo.ui(11.5, .semibold))
-                                .foregroundStyle((journey.topic?.palette ?? NeutralPalette.value).deep)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background((journey.topic?.palette ?? NeutralPalette.value).tint, in: Capsule())
+                            TopicChip(journey.title, palette: journey.topic?.palette ?? NeutralPalette.value,
+                                      isOn: false, size: .filter) { showingJourneys = true }
                         }
                     }
                 }
+                .scrollClipDisabled()
             }
         }
     }
 
     private var tagEditor: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        // The refine panel's tag language: a tag on the bork is an ink pill
+        // (tap to take it off), a suggestion is a sand pill (tap to add).
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Tags")
+                .textRole(.label, color: Tokens.inkSecondary)
+                .padding(.leading, 4)
+
             if !bookmark.tags.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Tokens.chipGap) {
                         ForEach(bookmark.tags, id: \.self) { tag in
-                            Button {
+                            TagChip(tag, isOn: true, size: .filter) {
                                 bookmark.tags = bookmark.tags.filter { $0 != tag }
                                 bookmark.tagsEdited = true
                                 bookmark.touch()
                                 try? context.save()
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Text("#\(tag)").font(Typo.ui(11.5, .semibold))
-                                    Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
-                                }
-                                .foregroundStyle(Tokens.inkSecondary)
-                                .padding(.horizontal, 9)
-                                .padding(.vertical, 5)
-                                .background(Tokens.mutedControl, in: Capsule())
                             }
-                            .buttonStyle(.plain)
+                            .accessibilityHint("Removes the tag")
                         }
                     }
                 }
+                .scrollClipDisabled()
             }
 
             HStack(spacing: 8) {
-                TextField("+ tag", text: $tagDraft)
-                    .font(Typo.ui(13))
+                Text("#").textRole(.body, color: Tokens.inkFaint)
+                TextField("Add a tag", text: $tagDraft)
+                    .textRole(.body, color: Tokens.ink)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .onSubmit(commitTag)
                 Button("Add", action: commitTag)
-                    .font(Typo.ui(12.5, .semibold))
+                    .buttonStyle(.clayQuiet)
                     .disabled(tagDraft.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(Tokens.surface, in: Capsule())
-            .overlay(Capsule().stroke(Tokens.hairline, lineWidth: 1))
+            .padding(.leading, 16)
+            .padding(.trailing, 8)
+            .frame(minHeight: 48)
+            .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous)
+                .strokeBorder(Tokens.hairline, lineWidth: 1))
 
             if !tagSuggestions.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Tokens.chipGap) {
                         ForEach(tagSuggestions, id: \.self) { suggestion in
-                            Button {
+                            TagChip(suggestion, isOn: false, size: .filter) {
                                 tagDraft = suggestion
                                 commitTag()
-                            } label: {
-                                Text("#\(suggestion)")
-                                    .font(Typo.ui(11.5, .semibold))
-                                    .foregroundStyle(Tokens.inkSecondary)
-                                    .padding(.horizontal, 9).padding(.vertical, 5)
-                                    .background(Tokens.mutedControl, in: Capsule())
                             }
-                            .buttonStyle(ChipStyle())
+                            .accessibilityHint("Adds the tag")
                         }
                     }
                 }
+                .scrollClipDisabled()
             }
         }
     }
@@ -408,23 +378,25 @@ struct DetailSheet: View {
         if editingNote {
             VStack(alignment: .leading, spacing: 10) {
                 TextField("Why does this matter?", text: $draftNote, axis: .vertical)
-                    .font(Typo.ui(14.5))
+                    .textRole(.body, color: Tokens.noteInk)
                     .lineLimit(3...8)
                 DatePicker("Date", selection: $draftDate, displayedComponents: .date)
-                    .font(Typo.ui(12.5, .medium))
+                    .textRole(.meta)
                 HStack {
                     Button("Cancel") { editingNote = false }
-                        .font(Typo.ui(13, .semibold))
+                        .font(.custom("Instrument Sans", size: 15, relativeTo: .subheadline).weight(.semibold))
+                        .foregroundStyle(Tokens.inkSecondary)
+                        .frame(minHeight: Tokens.minTapTarget)
                     Spacer()
                     Button("Save note", action: commitNote)
-                        .font(Typo.ui(13, .bold))
+                        .buttonStyle(.clayQuiet)
                 }
             }
-            .padding(14)
-            .background(noteGradient, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(16)
+            .background(Tokens.noteTop, in: RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Tokens.noteBorder, lineWidth: 1)
+                RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
+                    .strokeBorder(Tokens.noteBorder, lineWidth: 1)
             )
         } else if bookmark.hasNote {
             Button { beginEditing() } label: {
@@ -436,50 +408,44 @@ struct DetailSheet: View {
                         .background(Tokens.noteIconBG, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     VStack(alignment: .leading, spacing: 4) {
                         Text(bookmark.noteText ?? "")
-                            .font(Typo.ui(14))
-                            .foregroundStyle(Tokens.noteInk)
+                            .textRole(.body, color: Tokens.noteInk)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
                         if let date = bookmark.noteDate {
                             Text(RelativeDate.full(date))
-                                .font(Typo.ui(11, .medium))
-                                .foregroundStyle(Tokens.noteMeta)
+                                .textRole(.meta, color: Tokens.noteInk.opacity(0.8))
                         }
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(14)
-                .background(noteGradient, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(16)
+                .background(Tokens.noteTop, in: RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Tokens.noteBorder, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
+                        .strokeBorder(Tokens.noteBorder, lineWidth: 1)
                 )
             }
             .buttonStyle(.plain)
         } else {
             Button { beginEditing() } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "plus.circle")
+                    Image(systemName: "plus")
                         .font(.system(size: 13, weight: .semibold))
                     Text("Add a note")
-                        .font(Typo.ui(13.5, .semibold))
+                        .textRole(.chip, color: Tokens.inkSecondary)
                     Spacer()
                 }
                 .foregroundStyle(Tokens.inkSecondary)
-                .padding(14)
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity, minHeight: Tokens.slimRowHeight)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
                         .strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                 )
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
-    }
-
-    private var noteGradient: LinearGradient {
-        LinearGradient(colors: [Tokens.noteTop, Tokens.noteBottom],
-                       startPoint: .top, endPoint: .bottom)
     }
 
     /// Other borks from the same creator — the way people actually look for
@@ -491,39 +457,36 @@ struct DetailSheet: View {
                 .filter { $0.id != bookmark.id && $0.displayAuthor == creator }
                 .prefix(10))
             if !others.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("More from \(creator)")
-                        .font(Typo.ui(13, .bold))
-                        .foregroundStyle(Tokens.inkSecondary)
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionHeader("More from \(creator)")
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(alignment: .top, spacing: 10) {
+                        HStack(alignment: .top, spacing: Tokens.gridGap) {
                             ForEach(others) { other in
                                 Button { nested = other } label: { CreatorTile(bookmark: other) }
                                     .buttonStyle(PressableStyle())
                             }
                         }
-                        .padding(.vertical, 2)
                     }
+                    .scrollClipDisabled()
                 }
+                .padding(.top, 4)
             }
         }
     }
 
     private var savedLine: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             Text("Liked \(RelativeDate.full(bookmark.savedAt)) · from \(bookmark.platform.name)")
-                .font(Typo.ui(11.5, .medium))
-                .foregroundStyle(Tokens.inkMeta)
+                .textRole(.meta)
             if let posted = bookmark.postedAt {
                 Text("Posted \(RelativeDate.full(posted))")
-                    .font(Typo.ui(11.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
             } else if bookmark.platform == .instagram || bookmark.platform == .tiktok {
                 Text("Posted date isn’t published by \(bookmark.platform.name)")
-                    .font(Typo.ui(11, .medium))
-                    .foregroundStyle(Tokens.inkFaint)
+                    .textRole(.meta)
             }
         }
+        .padding(.top, 4)
     }
 
     private var footerBar: some View {
@@ -531,36 +494,43 @@ struct DetailSheet: View {
             Button(role: .destructive) {
                 confirmingDelete = true
             } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Tokens.destructive)
-                    .frame(width: 50, height: 48)
-                    .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous)
-                            .stroke(Tokens.hairline, lineWidth: 1)
-                    )
+                footerIcon("trash", color: Tokens.destructive)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel("Delete")
+
+            Button { showingSingleShare = true } label: {
+                footerIcon("square.and.arrow.up", color: Tokens.ink)
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel("Share this bork")
 
             Button {
                 BorkOpener.open(bookmark, in: context, using: openURL)
             } label: {
                 HStack(spacing: 7) {
-                    Text(bookmark.platform.openLabel).font(Typo.ui(15, .bold))
-                    Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .bold))
+                    Text(bookmark.platform.openLabel)
+                    Image(systemName: "arrow.up.right").font(.system(size: 13, weight: .semibold))
                 }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                .shadow(color: accent.base.opacity(0.32), radius: 14, y: 8)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.clayPrimary)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
-        .background(.ultraThinMaterial)
+        .padding(.horizontal, Tokens.gutter)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background(Tokens.paper)
+        .overlay(alignment: .top) { Tokens.hairline.frame(height: 1) }
+    }
+
+    /// A 54 pt white circle with a hairline, beside the primary pill.
+    private func footerIcon(_ symbol: String, color: Color) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 17, weight: .medium))
+            .foregroundStyle(color)
+            .frame(width: Tokens.primaryButtonHeight, height: Tokens.primaryButtonHeight)
+            .background(Tokens.surface, in: Circle())
+            .overlay(Circle().strokeBorder(Tokens.hairline, lineWidth: 1))
+            .contentShape(Circle())
     }
 
     private func beginEditing() {
@@ -595,28 +565,20 @@ private struct CreatorTile: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ZStack {
-                if bookmark.isTextPost && bookmark.imageURL == nil {
-                    LinearGradient(colors: [Color(hex: "2A2C33"), Color(hex: "111318")],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                    Text(bookmark.text ?? bookmark.displayTitle)
-                        .font(Typo.ui(11, .medium))
-                        .foregroundStyle(.white.opacity(0.85))
-                        .lineLimit(6)
-                        .padding(10)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                } else {
-                    CoverImage(url: bookmark.imageURL, palette: bookmark.category?.palette ?? NeutralPalette.value)
+            // A text post wears its topic's clay art, as on the card.
+            CoverImage(url: bookmark.imageURL, topicID: bookmark.categoryID)
+                .frame(width: 118, height: 148)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Tokens.hairline, lineWidth: 1)
+                )
+                .overlay(alignment: .topLeading) {
+                    PlatformBadge(platform: bookmark.platform, size: 18, pageURL: bookmark.url).padding(7)
                 }
-            }
-            .frame(width: 118, height: 148)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(alignment: .topLeading) {
-                PlatformBadge(platform: bookmark.platform, size: 18, pageURL: bookmark.url).padding(7)
-            }
 
             Text(bookmark.displayTitle)
-                .font(Typo.ui(11.5, .semibold))
+                .font(.custom("Instrument Sans", size: 13, relativeTo: .footnote).weight(.semibold))
                 .foregroundStyle(Tokens.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)

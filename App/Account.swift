@@ -184,7 +184,16 @@ final class Account: ObservableObject {
             UserDefaults.standard.set(lastSynced, forKey: lastSyncKey)
             lastError = nil
         } catch {
-            lastError = error.localizedDescription
+            // The raw text ("Expected 3 parts in JWT; got 1") is for the log;
+            // the You tab and the share sheet show it as a person would say it.
+            #if DEBUG
+            Logger(subsystem: "com.jpwilson.borkmarkr", category: "sync")
+                .error("Sync failed: \(String(describing: error), privacy: .public)")
+            #endif
+            // A cancelled sync still failed (callers like sharing wait on
+            // it), so it keeps a message rather than PlainError's "".
+            let message = PlainError.message(error, doing: "back up")
+            lastError = message.isEmpty ? PlainError.message(nil, doing: "back up") : message
         }
     }
 

@@ -1,0 +1,50 @@
+name: Clay palette tests
+
+on:
+  pull_request:
+    paths:
+      - "Core/ClayPalette.swift"
+      - "Core/Taxonomy.swift"
+      - "docs/palette.js"
+      - "docs/taxonomy.js"
+      - "Scripts/gen_clay_palette_fixture.swift"
+      - "Scripts/test_clay_palette.swift"
+      - "Scripts/test_clay_palette.mjs"
+      - "Scripts/fixtures/clay_palette_cases.json"
+      - ".github/workflows/clay-palette-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Core/ClayPalette.swift"
+      - "Core/Taxonomy.swift"
+      - "docs/palette.js"
+      - "docs/taxonomy.js"
+      - "Scripts/gen_clay_palette_fixture.swift"
+      - "Scripts/test_clay_palette.swift"
+      - "Scripts/test_clay_palette.mjs"
+      - "Scripts/fixtures/clay_palette_cases.json"
+      - ".github/workflows/clay-palette-tests.yml"
+
+jobs:
+  swiftc:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run the clay palette checks
+        run: |
+          swiftc -parse-as-library -o /tmp/clay-palette-tests \
+            Core/ClayPalette.swift Core/Taxonomy.swift \
+            Scripts/test_clay_palette.swift
+          /tmp/clay-palette-tests
+
+  # The web half. Both read Scripts/fixtures/clay_palette_cases.json, so a
+  # topic is the same colour on the iPhone and on the web, byte for byte.
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run the clay palette checks
+        run: node Scripts/test_clay_palette.mjs

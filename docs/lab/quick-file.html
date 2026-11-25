@@ -14,20 +14,9 @@
 <link rel="icon" href="../favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-    --paper: #F6F3EE; --surface: #FFFFFF; --ink: #191510; --ink-2: #5B554D;
-    --meta: #8A8378; --faint: #A39A8D; --hairline: #EAE4DA;
-    --coral: #FF5A2D; --coral-dark: #E8451C; --accent-text: #C93A12; --tint: #FFE9E1;
-    --destructive: #C0392B; --control: #EEE8DE; --dashed: #D7CDBD;
-    --note-top: #FFFBEA; --note-bottom: #FFF5D8; --note-border: #F0E0AC; --note-ink: #4A4130;
-    --shadow-card: 0 1px 2px rgba(25,21,16,.04), 0 10px 26px -14px rgba(25,21,16,.16);
-    --radius: 18px; --nav-h: 60px; --tabbar-h: 62px; --banner-h: 0px;
-    --ease-out: cubic-bezier(.2, .7, .2, 1);
-    --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  }
+:root { --nav-h: 60px; --tabbar-h: 56px; --banner-h: 0px; }
 * { box-sizing: border-box; }
 html { color-scheme: light; }
 body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font-body);
@@ -37,7 +26,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 h1, h2, h3 { font-family: var(--font-head); letter-spacing: -.02em; }
 :focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
 .pg { width: 12px; height: 12px; fill: currentColor; display: inline-block; vertical-align: -1px; flex: 0 0 auto; }
-.pg-txt { font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+.pg-txt { font-size: 10px; font-weight: 700; letter-spacing: .04em; }
 .badge { position: absolute; left: 10px; top: 10px; width: 26px; height: 26px; display: grid; place-items: center;
   background: rgba(25,21,16,.66); color: #fff; border-radius: 8px; }
 .badge .pg { width: 13px; height: 13px; }
@@ -53,36 +42,36 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
 
 /* ── The lab ── */
 .lab-top { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; max-width: 1180px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 28px) 6px; }
-.lab-brand { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font: 800 18px var(--font-head); }
+.lab-brand { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font: 700 18px var(--font-head); }
 .lab-brand img { width: 28px; height: 28px; border-radius: 8px; }
 .lab-title { flex: 1 1 260px; min-width: 0; }
 .lab-title h1 { margin: 0; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.02; letter-spacing: -.035em; }
 .lab-title p { margin: 4px 0 0; color: var(--ink-2); font-size: 15px; }
 .lab-title .tag { display: inline-flex; align-items: center; height: 20px; margin-left: 8px; padding: 0 8px; border-radius: 999px; vertical-align: 6px;
-  background: var(--ink); color: var(--paper); font: 800 10px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
+  background: var(--ink); color: var(--paper); font: 700 10px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
 .lab-modes { display: flex; gap: 3px; padding: 3px; border-radius: 999px; background: var(--control); }
-.lab-modes button { height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-weight: 650; font-size: 14px; white-space: nowrap; }
+.lab-modes button { height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-weight: 600; font-size: 14px; white-space: nowrap; }
 .lab-modes button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(25,21,16,.08); }
 .lab-main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: clamp(20px, 3vw, 40px); align-items: start;
   max-width: 1180px; margin: 0 auto; padding: 14px clamp(16px, 3vw, 28px) 48px; }
 .lab-stage { display: flex; justify-content: center; }
 /* The share sheet, as it rises over somebody else's app. */
-.lab-phone { position: relative; width: min(392px, 100%); padding: 18px 20px 20px; border-radius: 34px; background: var(--surface);
+.lab-phone { position: relative; width: min(400px, 100%); padding: 18px 16px 20px; border-radius: 28px; background: var(--paper);
   box-shadow: 0 1px 2px rgba(25,21,16,.05), 0 40px 80px -40px rgba(25,21,16,.45), 0 0 0 1px var(--hairline); }
 .lab-grab { width: 38px; height: 5px; margin: -6px auto 14px; border-radius: 999px; background: #DBD2C4; }
 .lab-saved { display: flex; justify-content: center; }
 .lab-saved span { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 15px; border-radius: 999px;
   background: var(--ink); color: var(--paper); font-weight: 700; font-size: 13.5px; }
-.lab-saved i { font-style: normal; color: #7BE3A4; font-weight: 900; }
+.lab-saved i { font-style: normal; color: #7BE3A4; font-weight: 700; }
 .lab-item { display: flex; align-items: center; gap: 11px; margin: 14px 2px 0; }
 .lab-item .badge { position: static; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; background: var(--ink); }
 .lab-item b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14.5px; line-height: 1.3; font-weight: 700; }
 .lab-item small { display: block; margin-top: 2px; color: var(--meta); font-size: 12px; font-weight: 600; }
-.lab-head { margin: 16px 0 20px; text-align: center; color: var(--accent-text); font-size: 13px; font-weight: 800; }
-.lab-notnow { display: block; width: 100%; height: 46px; margin-top: 14px; border: 0; border-radius: 999px; background: var(--control);
-  color: var(--ink-2); font-weight: 700; font-size: 14.5px; }
+.lab-head { margin: 16px 0 14px; text-align: center; color: var(--coral-deep); font: 600 13px/18px var(--font-body); }
+.lab-notnow { display: block; width: 100%; height: 54px; margin-top: 16px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface);
+  color: var(--ink); font-weight: 600; font-size: 16px; }
 .lab-done { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 34px 6px 10px; text-align: center; }
-.lab-done b { font: 800 22px/1.15 var(--font-head); letter-spacing: -.02em; }
+.lab-done b { font: 700 22px/1.15 var(--font-head); letter-spacing: -.02em; }
 .lab-done-acts { display: flex; gap: 8px; }
 .lab-done-acts button { height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--control); font-weight: 700; }
 .lab-done-acts .go { background: var(--coral); color: #fff; }
@@ -104,10 +93,10 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
 .lab-scores { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .lab-scores td { padding: 7px 4px; border-top: 1px solid var(--hairline); vertical-align: top; }
 .lab-scores tr:first-child td { border-top: 0; }
-.lab-scores td:first-child { width: 18px; color: var(--meta); font-weight: 800; }
+.lab-scores td:first-child { width: 18px; color: var(--meta); font-weight: 700; }
 .lab-scores .t { font-weight: 700; }
 .lab-scores .t small { display: block; color: var(--meta); font-weight: 600; }
-.lab-scores .n { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+.lab-scores .n { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .lab-scores tr.on td { background: var(--tint); }
 .lab-scores tr.on td:first-child { border-radius: 8px 0 0 8px; } .lab-scores tr.on td:last-child { border-radius: 0 8px 8px 0; }
 .lab-dot { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; vertical-align: 0; }
@@ -143,67 +132,72 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
 <style>/* bookmarker — Quick File on the web: the dial, the Add sheet once the link
    is saved, the "Drop to bork it" overlay and the "Sort your borks" deck.
 
-   Loaded after library-layout.css. Light paper, always, in the iPhone's own
-   tokens (the page's :root). Motion is transform and opacity only, nothing on
-   the save or file path runs past 300 ms, and under reduced motion (the media
-   query, or .qf-reduced on an ancestor) everything is a short crossfade. */
+   Loaded after library-layout.css. Light paper, always, in the "Quiet clay"
+   tokens (docs/tokens.css). The wheel is direction B (design/SYSTEM.md and
+   B-QuickFile.dc.html): its numbers are B's 360 px artboard, in cqw of the
+   dial (1cqw = 3.6 px at full size). Motion is transform and opacity only,
+   nothing on the save or file path runs past 300 ms, and under reduced
+   motion (the media query, or .qf-reduced on an ancestor) everything is a
+   short crossfade. */
 
 /* ── The dial ─────────────────────────────────────────────────────────── */
-/* --qf-rest: how much of a topic's tint a resting segment shows over warm
-   white. The iPhone's tints are strong pastels, made for chips; seven of them
-   round a ring want softening so the highlighted segment and the clay art lead. */
-.qf { --qf-size: clamp(272px, 78vw, 340px); --qf-rest: 56%; --qf-white: #FFFCF7;
+.qf { --qf-size: 360px; --qf-white: #fff;
   container: qf / inline-size; width: 100%; display: flex; flex-direction: column; align-items: center;
   text-align: center; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-.qf[data-mode="triage"] { --qf-size: clamp(256px, 72vw, 316px); }
+.qf[data-mode="triage"] { --qf-size: 340px; }
 .qf-dial { position: relative; container: qfd / inline-size; flex: 0 0 auto;
   width: min(var(--qf-size), 100cqw); aspect-ratio: 1; }
-/* The contact shadow: the ring sits on the paper like a clay coin. */
-.qf-dial::before { content: ""; position: absolute; inset: 1.5%; border-radius: 50%; pointer-events: none;
-  box-shadow: 0 20px 38px -20px rgba(25,21,16,.42), 0 3px 8px -3px rgba(25,21,16,.14); }
 .qf-ring { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
 
-.qf-seg { --qf-c: var(--control, #EEE8DE); --qf-on: var(--ink, #191510);
-  fill: color-mix(in srgb, var(--qf-c) var(--qf-rest), var(--qf-white)); stroke: color-mix(in srgb, var(--qf-c) var(--qf-rest), var(--qf-white));
-  stroke-width: 6; stroke-linejoin: round; transform-box: view-box; transform-origin: 0 0;
-  transition: fill .14s ease, stroke .14s ease, transform .2s cubic-bezier(.3,1.4,.5,1), opacity .16s ease; }
-.qf-seg.is-on { fill: var(--qf-on); stroke: var(--qf-on); transform: scale(1.025); }
-.qf-seg.is-pressed { transform: scale(.975); }
-.qf-seg.is-on.is-pressed { transform: scale(1.01); }
+/* Slabs: the topic's clay tint with B's white top edge, one warm drop under
+   the whole ring. The lit one is its deep colour, raised 5 px, with a drop in
+   that colour. */
+.qf-segs { filter: var(--qf-rest-f); }
+.qf-seg { --qf-c: var(--sand, #ECE5D8); --qf-on: var(--sand-ink, #5A4E38);
+  fill: var(--qf-c); stroke: var(--qf-c); stroke-width: 10; stroke-linejoin: round;
+  filter: var(--qf-edge-f); transform-box: view-box; transform-origin: 0 0;
+  transition: fill .14s ease, stroke .14s ease, transform .2s cubic-bezier(.3,1.3,.5,1), opacity .16s ease; }
+.qf-seg.is-on { fill: var(--qf-on); stroke: var(--qf-on); filter: var(--qf-lit-f); transform: translateY(-2.8px); }
+.qf-seg.is-pressed { transform: scale(.98); }
+.qf-seg.is-on.is-pressed { transform: translateY(-1.4px) scale(.99); }
 .qf-seg.is-empty { fill: var(--paper, #F6F3EE); stroke: var(--paper, #F6F3EE); }
-.qf-seg-more { fill: var(--control, #EEE8DE); stroke: var(--control, #EEE8DE); }
-.qf-seg-more.is-on { fill: var(--ink, #191510); stroke: var(--ink, #191510); }
-.qf-sheen { pointer-events: none; transition: opacity .12s ease; }
+.qf-seg-more { --qf-c: var(--off-white, #FBF8F2); }
+.qf-lit-drop { flood-color: var(--qf-lit, #2A3A24); }
 
-/* The evidence ring round the middle: solid is a strong guess, dashed a thin
-   one, a faint hairline nothing at all. */
-.qf-ev { fill: none; stroke: var(--dashed, #D7CDBD); stroke-width: 2.9; transition: stroke .16s ease; }
-.qf-ev.is-thin { stroke-dasharray: 2.9 2.35; }
-.qf-ev.is-none { stroke: var(--dashed, #D7CDBD) !important; stroke-width: 1.3; stroke-dasharray: 2 2.6; }
+/* The evidence ring round the middle, 2 px in the topic's mid: solid is a
+   strong guess, dashed a thin one, a faint dashed hairline nothing at all. */
+.qf-ev { fill: none; stroke: var(--dashed, #D7CDBD); stroke-width: 1.1; transition: stroke .16s ease; }
+.qf-ev.is-thin { stroke-dasharray: 2.4 1.9; }
+.qf-ev.is-none { stroke: var(--dashed, #D7CDBD) !important; stroke-width: .8; stroke-dasharray: 1.6 2.2; }
 
-/* The bead: coral, white-rimmed, riding just outside the rim by the
-   highlighted segment, clear of every label. */
-.qf-bead-arm { transform-box: view-box; transform-origin: 0 0;
-  transition: transform .2s cubic-bezier(.3,1.45,.5,1), opacity .14s ease; }
-.qf-bead-arm.is-instant { transition: opacity .14s ease; }
-.qf-bead-arm.is-off { opacity: 0; }
-.qf-bead { fill: var(--coral, #FF5A2D); stroke: #fff; stroke-width: 1.7;
-  filter: drop-shadow(0 1px 1.4px rgba(25,21,16,.38)); }
-
-/* Labels: always horizontal, the topic in small caps over the subtopic. */
+/* Labels: always horizontal. The art disc, the topic in small caps, the
+   subtopic under it, all in the topic's deep colour (white when lit). */
 .qf-labels { position: absolute; inset: 0; pointer-events: none; }
-.qf-lab { position: absolute; width: 24%; transform: translate(-50%, -50%); display: flex; flex-direction: column;
-  align-items: center; gap: 1px; color: var(--qf-ink, var(--ink-2, #5B554D)); line-height: 1.12; transition: color .14s ease; }
+.qf-lab { position: absolute; width: 26.7%; height: 23.3%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--qf-ink, var(--sand-ink, #5A4E38)); transition: color .14s ease, transform .2s cubic-bezier(.3,1.3,.5,1); }
+.qf-lab.is-on { color: #fff; transform: translate(-50%, calc(-50% - 1.39cqw)); }
+.qf-disc { flex: 0 0 auto; display: grid; place-items: center; width: 10cqw; height: 10cqw; margin-bottom: 1.67cqw;
+  border-radius: 50%; object-fit: cover; background: var(--clay-ground, #E8E0CB);
+  box-shadow: 0 0 0 2px #fff, 0 4px 10px rgba(120,84,50,.20); font-style: normal; }
+.qf-disc-ini { background: #fff; color: var(--qf-ink, var(--sand-ink, #5A4E38));
+  font: 700 clamp(13px, 4.4cqw, 16px)/1 var(--font-head); }
+.qf-lab.is-on .qf-disc-ini { color: var(--qf-on, var(--ink)); }
+.qf-disc-more { background: #fff; color: var(--sand-ink, #5A4E38); box-shadow: 0 4px 10px rgba(120,84,50,.16); }
+.qf-disc-more .qf-mag { width: 50%; height: 50%; stroke-width: 1.75; }
 .qf-lab small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font: 800 clamp(8.5px, 3cqw, 10.5px)/1.15 var(--font-body); letter-spacing: .055em; text-transform: uppercase; opacity: .8; }
-.qf-lab b { max-width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  overflow-wrap: anywhere; font: 650 clamp(10.5px, 3.8cqw, 13px)/1.14 var(--font-body); }
-.qf-lab b.qf-solo { font-weight: 750; }
-.qf-lab.is-on { color: #fff; }
-.qf-lab-more { color: var(--ink-2, #5B554D); gap: 3px; }
-.qf-lab-more .qf-mag { display: block; width: clamp(13px, 4.6cqw, 17px); height: clamp(13px, 4.6cqw, 17px); }
-.qf-lab-more b { font-weight: 700; }
-.qf-badge { position: absolute; top: -9px; right: 4%; font-style: normal; font-size: 12px; line-height: 1;
+  font: 700 clamp(8px, 2.64cqw, 9.5px)/1.26 var(--font-body); letter-spacing: .07em; text-transform: uppercase; }
+.qf-lab.is-on small { opacity: .86; }
+.qf-lab b { max-width: 100%; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 700 clamp(11px, 3.75cqw, 13.5px)/1.19 var(--font-body); }
+/* A long subtopic gets two short lines rather than an ellipsis. */
+.qf-lab.is-long b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow-wrap: anywhere; font-size: clamp(10px, 3.3cqw, 12px); line-height: 1.12; }
+.qf-lab.is-long .qf-disc { width: 8.6cqw; height: 8.6cqw; margin-bottom: 1.2cqw; }
+.qf-lab-more { color: var(--sand-ink, #5A4E38); }
+.qf-ico { flex: none; vertical-align: -0.2em; }
+#add-sorted-icon { display: inline-flex; }
+.qf-badge { position: absolute; top: -2px; right: 8%; font-style: normal; font-size: 12px; line-height: 1;
   filter: drop-shadow(0 1px 1px rgba(25,21,16,.25)); }
 
 /* The listbox lies over the ring: it takes focus, pointers and keys. */
@@ -214,76 +208,96 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
 .qf-opt, .qf-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
   clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
-/* The middle: a raised paper button with the topic's clay picture in it. */
-.qf-hub { position: absolute; left: 29%; top: 29%; z-index: 2; width: 42%; height: 42%; padding: 0; border: 0;
+/* The middle: a raised white disc with the topic's clay art (84 of 132). */
+.qf-hub { position: absolute; left: 31.67%; top: 31.67%; z-index: 2; width: 36.67%; height: 36.67%; padding: 0; border: 0;
   border-radius: 50%; background: var(--surface, #fff); color: var(--ink, #191510); overflow: hidden;
   display: grid; place-items: center; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -2px 6px rgba(25,21,16,.05),
-    0 12px 22px -12px rgba(25,21,16,.5), 0 0 0 1px rgba(25,21,16,.06);
+  box-shadow: var(--lift-hub, inset 0 2px 0 rgba(255,255,255,.9), inset 0 -3px 6px rgba(120,84,50,.08), 0 14px 28px rgba(120,84,50,.20), 0 2px 4px rgba(120,84,50,.10));
   transition: transform .1s ease, background-color .18s ease; }
-.qf-hub:active { transform: scale(.95); }
+.qf-hub:active { transform: scale(.97); }
 .qf-hub:focus-visible { outline: 3px solid var(--coral, #FF5A2D); outline-offset: 3px; }
-.qf-hub-in { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 84%; padding-top: 1%; }
-.qf-art { position: relative; flex: 0 0 auto; width: clamp(38px, 16.5cqw, 56px); aspect-ratio: 1; margin-bottom: 4%;
-  border-radius: 50%; overflow: hidden; display: grid; place-items: center; color: var(--ink-2, #5B554D);
-  background: color-mix(in srgb, var(--qf-art-bg, #EEE8DE) 50%, #fff);
-  box-shadow: inset 0 0 0 1px rgba(25,21,16,.05); }
-.qf-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.3);
-  mix-blend-mode: multiply; }
-.qf-ini { font: 800 clamp(15px, 6cqw, 22px)/1 var(--font-head); font-style: normal; }
-/* The letter is only the fallback: the clay multiplies, so it would show through. */
+.qf-hub-in { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 84%; }
+.qf-art { position: relative; flex: 0 0 auto; width: 23.33cqw; aspect-ratio: 1; max-width: 100%;
+  border-radius: 50%; overflow: hidden; display: grid; place-items: center; color: var(--qf-art-ink, var(--sand-ink, #5A4E38));
+  background: var(--clay-ground, #E8E0CB); box-shadow: inset 0 0 0 1px rgba(0,0,0,.02);
+  transition: width .16s ease; }
+.qf-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.qf-ini { font: 700 clamp(20px, 8cqw, 30px)/1 var(--font-head); font-style: normal; }
 .qf-art:has(img:not([hidden])) .qf-ini { visibility: hidden; }
-.qf-art .qf-mag { display: none; width: 46%; height: 46%; }
-.qf-mag { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.qf-art .qf-mag { display: none; width: 42%; height: 42%; stroke-width: 1.9; }
+.qf-mag { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.qf-art.is-more { background: var(--sand, #ECE5D8); }
 .qf-art.is-more .qf-mag { display: block; }
 .qf-art.is-none { background: var(--paper, #F6F3EE); box-shadow: inset 0 0 0 1.5px var(--dashed, #D7CDBD); }
-.qf-art.is-none .qf-ini { color: var(--meta, #8A8378); font-size: clamp(18px, 7cqw, 26px); }
-.qf-hub-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font: 800 clamp(14px, 5.6cqw, 19px)/1.06 var(--font-head); letter-spacing: -.02em; }
+.qf-hub-name, .qf-hub-sub { display: none; }
+/* Named (no slab lit): a smaller picture and the topic in Bricolage. */
+.qf-hub.is-named .qf-art { width: 14cqw; }
+.qf-hub.is-named .qf-hub-name { display: block; }
+.qf-hub.is-named .qf-hub-sub:not([hidden]) { display: block; }
+.qf-hub-name { max-width: 100%; margin-top: 2.2cqw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 700 clamp(13px, 4.7cqw, 17px)/1.08 var(--font-head); letter-spacing: -.01em; }
 .qf-hub-name.is-long { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  font-size: clamp(12px, 4.3cqw, 15.5px); line-height: 1.04; }
-.qf-hub-sub { max-width: 100%; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font: 600 clamp(10.5px, 3.8cqw, 13px)/1.15 var(--font-body); color: var(--ink-2, #5B554D); }
-.qf-hub-tip { margin-top: 5px; font: 800 clamp(7.5px, 2.6cqw, 9.5px)/1 var(--font-body); letter-spacing: .08em;
-  text-transform: uppercase; color: var(--accent-text, #C93A12); }
-.qf-hub.is-none .qf-hub-name { font-size: clamp(12px, 4.3cqw, 15px); color: var(--ink-2, #5B554D); }
+  font-size: clamp(11.5px, 3.9cqw, 14px); line-height: 1.04; }
+.qf-hub.is-named .qf-hub-name.is-long { display: -webkit-box; }
+.qf-hub-sub { max-width: 100%; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 500 clamp(10.5px, 3.4cqw, 12.5px)/1.15 var(--font-body); color: var(--meta, #6E655A); }
+.qf-hub.is-none .qf-hub-name { font: 600 clamp(11.5px, 3.6cqw, 13px)/1.15 var(--font-body); letter-spacing: 0; color: var(--meta, #6E655A); }
+/* "Tap to file", for the first three filings: small caps in the band under the picture. */
+.qf-hub-tip { position: absolute; left: 0; right: 0; bottom: 5.5%; font: 700 clamp(7.5px, 2.3cqw, 8.5px)/1 var(--font-body);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--coral-deep, #AE3512); pointer-events: none; }
+.qf-hub.is-named .qf-hub-tip { display: none; }
 .qf-hub-done { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 3px;
   color: #fff; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
-.qf-hub-done svg { width: 38%; height: auto; fill: none; stroke: currentColor; stroke-width: 2.6;
+.qf-hub-done svg { width: 36%; height: auto; fill: none; stroke: currentColor; stroke-width: 2.5;
   stroke-linecap: round; stroke-linejoin: round; }
 .qf-hub-done path { stroke-dasharray: 24; stroke-dashoffset: 24; }
-.qf-hub-done b { font: 800 clamp(12px, 4.2cqw, 15px)/1 var(--font-head); letter-spacing: -.01em; }
+.qf-hub-done b { font: 700 clamp(12px, 4.2cqw, 15px)/1 var(--font-head); }
 
-/* Under the dial: why, the subtopics, and anything that arrived late. */
-.qf-reason { min-height: 1.45em; max-width: 100%; margin: 18px 0 0; padding: 0 8px;
-  color: var(--ink-2, #5B554D); font-size: 13.5px; font-weight: 600; line-height: 1.45; }
-.qf-reason.is-filed { color: #1F7A4D; font-weight: 700; }
-.qf-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; max-width: 100%; min-height: 36px; margin-top: 9px; }
-.qf-chip { max-width: 100%; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap; font: 650 13px/1 var(--font-body); cursor: pointer;
-  background: color-mix(in srgb, var(--qf-c, var(--control, #EEE8DE)) var(--qf-rest), var(--qf-white)); }
-.qf-chip-just { background: var(--surface, #fff); color: var(--ink-2, #5B554D); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
+/* Under the dial (triage and the lab): why, the subtopics, and anything that
+   arrived late. Subtopic chips are topic chips: tint and deep. */
+.qf-reason { min-height: 1.45em; max-width: 100%; margin: 16px 0 0; padding: 0 8px;
+  color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); }
+.qf-reason.is-filed { color: var(--ink, #191510); font-weight: 600; }
+.qf-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 100%; min-height: 36px; margin-top: 10px; }
+.qf-chip { max-width: 100%; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; font: 600 14px/1 var(--font-body); cursor: pointer;
+  background: var(--qf-c, var(--sand, #ECE5D8)); }
+.qf-chip-just { background: var(--surface, #fff); color: var(--ink, #191510); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
+.qf-chip:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
 .qf-also-row:not(:empty) { margin-top: 8px; }
-.qf-also { height: 34px; padding: 0 14px; border-radius: 999px; cursor: pointer; background: var(--tint, #FFE9E1);
-  border: 1.5px dashed color-mix(in srgb, var(--coral, #FF5A2D) 50%, transparent); color: var(--accent-text, #C93A12);
-  font: 650 13px/1 var(--font-body); }
+.qf-also { height: 36px; padding: 0 14px; border-radius: 999px; cursor: pointer; background: var(--surface, #fff);
+  border: 1.5px dashed var(--dashed, #D7CDBD); color: var(--coral-deep, #AE3512); font: 600 13.5px/1 var(--font-body); }
 .qf-also i { font-style: normal; }
-.qf-also b { font-weight: 800; }
-.qf-help { margin: 8px 0 0; color: var(--meta, #8A8378); font-size: 12px; transition: opacity .2s ease; }
+.qf-also b { font-weight: 700; }
+.qf-help { margin: 8px 0 0; color: var(--meta, #6E655A); font: 500 12px/16px var(--font-body); transition: opacity .2s ease; }
 .qf.is-touched .qf-help { opacity: 0; }
 .qf[data-mode="triage"] .qf-help { display: none; }   /* the deck says it once, over the cards */
 
-/* Filed: the ring folds into the middle, which fills and ticks. */
+/* Filed (triage, the lab): the ring folds into the middle, which fills with
+   the topic's deep colour and ticks. */
 .qf.is-filed .qf-seg { transform: scale(.82); opacity: 0; transition: transform .16s ease-in, opacity .16s ease-in; }
-.qf.is-filed .qf-lab, .qf.is-filed .qf-bead-arm, .qf.is-filed .qf-sheen { opacity: 0; transition: opacity .1s ease; }
+.qf.is-filed .qf-lab { opacity: 0; transition: opacity .1s ease; }
 .qf.is-filed .qf-hub { background: var(--qf-filled, var(--ink, #191510)); transform: none; }
 .qf.is-filed .qf-hub-in { opacity: 0; transition: opacity .1s ease; }
 .qf.is-filed .qf-hub-done { opacity: 1; }
 .qf.is-filed .qf-hub-done path { animation: qf-check .22s .05s cubic-bezier(.2,.7,.2,1) forwards; }
 .qf.is-filed.is-instant .qf-hub-done path { animation: none; stroke-dashoffset: 0; }
-.qf.is-filed .qf-ev { stroke: var(--qf-filled, var(--ink)) !important; stroke-dasharray: none; stroke-width: 3.4; }
+.qf.is-filed .qf-ev { stroke: var(--qf-filled, var(--ink)) !important; stroke-dasharray: none; stroke-width: 1.6; }
 .qf.is-filed .qf-chips, .qf.is-filed .qf-also-row, .qf.is-filed .qf-help { visibility: hidden; }
 .qf.is-filed .qf-list { cursor: default; }
+/* Chosen (the Add sheet's refine): nothing folds. The ring stays live for a
+   re-choice, a check badge in the topic's deep colour sits on the picture's
+   shoulder while the middle shows the choice, and the host's panel takes the
+   place of the line and the chips. 30 of 360, centred 31, 29 off the middle. */
+.qf-hub-check { position: absolute; left: 58.6%; top: 58.1%; z-index: 3; width: 8.33%; aspect-ratio: 1;
+  transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center; pointer-events: none;
+  background: var(--qf-check, var(--ink, #191510)); color: #fff;
+  box-shadow: 0 0 0 3px #fff, 0 4px 8px color-mix(in srgb, var(--qf-check, #191510) 25%, transparent); }
+.qf-hub-check[hidden] { display: none; }
+.qf-hub-check svg { width: 53%; height: auto; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+/* With the name showing, the picture is smaller and the badge moves in with it. */
+.qf-dial:has(.qf-hub.is-named) .qf-hub-check { left: 54.9%; top: 51.4%; width: 6.1%; box-shadow: 0 0 0 2.5px #fff, 0 3px 6px color-mix(in srgb, var(--qf-check, #191510) 25%, transparent); }
+.qf.is-chosen .qf-reason, .qf.is-chosen .qf-chips, .qf.is-chosen .qf-also-row, .qf.is-chosen .qf-help { display: none; }
 @keyframes qf-check { to { stroke-dashoffset: 0; } }
 @keyframes qf-seg-in { from { transform: scale(.9); opacity: 0; } }
 @keyframes qf-hub-in { from { transform: scale(.92); opacity: 0; } }
@@ -296,51 +310,55 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
   .qf-chip, .qf-also { transition: transform .12s ease; }
   .qf-chip:active, .qf-also:active { transform: scale(.96); }
 }
-/* Reduced motion: crossfades of 120 ms, nothing scales, the check is just there. */
+/* Reduced motion: crossfades of 120 ms. The lit slab still sits raised (that
+   is its state, not a movement); it just gets there without travelling. */
 @media (prefers-reduced-motion: reduce) {
   .qf-seg { transition: fill .12s ease, stroke .12s ease, opacity .12s ease; }
-  .qf-seg.is-on, .qf-seg.is-pressed, .qf-seg.is-on.is-pressed, .qf.is-filed .qf-seg { transform: none; }
-  .qf-bead-arm { transition: opacity .12s ease; }
+  .qf-lab { transition: color .12s ease; }
+  .qf-seg.is-pressed, .qf.is-filed .qf-seg { transform: none; }
+  .qf-seg.is-on.is-pressed { transform: translateY(-2.8px); }
   .qf-hub:active { transform: none; }
   .qf.is-filed .qf-hub-done path { animation: none; stroke-dashoffset: 0; }
 }
 .qf-reduced .qf-seg { transition: fill .12s ease, stroke .12s ease, opacity .12s ease; }
-.qf-reduced .qf-seg.is-on, .qf-reduced .qf-seg.is-pressed, .qf-reduced .qf.is-filed .qf-seg { transform: none; }
-.qf-reduced .qf-bead-arm { transition: opacity .12s ease; }
+.qf-reduced .qf-lab { transition: color .12s ease; }
+.qf-reduced .qf-seg.is-pressed, .qf-reduced .qf.is-filed .qf-seg { transform: none; }
+.qf-reduced .qf-seg.is-on.is-pressed { transform: translateY(-2.8px); }
 .qf-reduced .qf-hub:active { transform: none; }
 .qf-reduced .qf.is-in .qf-seg, .qf-reduced .qf.is-in .qf-hub, .qf-reduced .qf.is-in .qf-lab { animation: qf-fade .12s ease-out backwards; }
 .qf-reduced .qf.is-filed .qf-hub-done path { animation: none; stroke-dashoffset: 0; }
 
-/* Under 300 px there is no room for a ring: the same listbox, as a ranked list. */
+/* Under 300 px there is no room for a ring: the same listbox, as a ranked
+   list of hairline rows (.qf-list-mode forces it, for the lab). */
 @container qf (max-width: 299px) {
   .qf-dial { width: 100%; aspect-ratio: auto; }
-  .qf-dial::before, .qf-ring, .qf-labels, .qf-hub, .qf-help { display: none; }
-  .qf-list { position: static; display: flex; flex-direction: column; gap: 6px; padding: 3px; border-radius: 16px;
+  .qf-ring, .qf-labels, .qf-hub, .qf-hub-check, .qf-help { display: none !important; }
+  .qf-list { position: static; display: flex; flex-direction: column; gap: 6px; padding: 3px; border-radius: 18px;
     clip-path: none; touch-action: auto; }
   .qf-list:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
   .qf-opt { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; clip-path: none;
-    white-space: normal; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px;
-    border-radius: 14px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); text-align: left; }
+    white-space: normal; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 12px;
+    border-radius: 18px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); text-align: left; }
   .qf-opt[aria-selected="true"] { box-shadow: inset 0 0 0 2px var(--ink, #191510); }
   .qf-opt[hidden] { display: none; }
 }
 .qf-list-mode .qf-dial { width: 100%; aspect-ratio: auto; }
-.qf-list-mode .qf-dial::before, .qf-list-mode .qf-ring, .qf-list-mode .qf-labels, .qf-list-mode .qf-hub, .qf-list-mode .qf-help { display: none; }
-.qf-list-mode .qf-list { position: static; display: flex; flex-direction: column; gap: 6px; padding: 3px; border-radius: 16px;
+.qf-list-mode .qf-ring, .qf-list-mode .qf-labels, .qf-list-mode .qf-hub, .qf-list-mode .qf-hub-check, .qf-list-mode .qf-help { display: none !important; }
+.qf-list-mode .qf-list { position: static; display: flex; flex-direction: column; gap: 6px; padding: 3px; border-radius: 18px;
   clip-path: none; touch-action: auto; }
 .qf-list-mode .qf-list:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
 .qf-list-mode .qf-opt { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; clip-path: none;
-  white-space: normal; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px;
-  border-radius: 14px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); text-align: left; }
+  white-space: normal; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 12px;
+  border-radius: 18px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); text-align: left; }
 .qf-list-mode .qf-opt[aria-selected="true"] { box-shadow: inset 0 0 0 2px var(--ink, #191510); }
 .qf-list-mode .qf-opt[hidden] { display: none; }
-.qf-opt-dot { flex: 0 0 auto; width: 12px; height: 12px; border-radius: 50%; }
-.qf-opt-dot.qf-opt-more { width: 22px; height: 22px; display: grid; place-items: center; background: var(--control, #EEE8DE); }
+.qf-opt-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; }
+.qf-opt-dot.qf-opt-more { width: 24px; height: 24px; display: grid; place-items: center; background: var(--sand, #ECE5D8); color: var(--sand-ink, #5A4E38); }
 .qf-opt-dot .qf-mag { width: 13px; height: 13px; }
 .qf-opt-t { display: flex; flex-direction: column; min-width: 0; }
-.qf-opt-t b { font-size: 14px; font-weight: 700; }
-.qf-opt-t b span { color: var(--ink-2, #5B554D); font-weight: 600; }
-.qf-opt-t small { color: var(--meta, #8A8378); font-size: 12px; }
+.qf-opt-t b { font: 600 15px/20px var(--font-body); }
+.qf-opt-t b span { color: var(--meta, #6E655A); font-weight: 500; }
+.qf-opt-t small { color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); }
 .qf-opt .qf-badge { position: static; margin-left: auto; }
 
 /* ── The Add sheet, once the link is saved ────────────────────────────── */
@@ -354,19 +372,84 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
 #add-dialog .add-saved .add-card-body { flex: 1; min-width: 0; padding: 0; }
 #add-dialog .add-saved .add-card-title { -webkit-line-clamp: 2; font-size: 14.5px; line-height: 1.28; }
 .add-ok { display: inline-flex; align-items: center; gap: 4px; height: 20px; margin-bottom: 4px; padding: 0 8px;
-  border-radius: 999px; background: #E3F4EA; color: #1F7A4D; font-size: 11px; font-weight: 800; letter-spacing: .02em; }
+  border-radius: 999px; background: #E3F4EA; color: #1F7A4D; font: 700 11px/1 var(--font-body); letter-spacing: .02em; }
 .add-filing-h { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 14px 0 2px;
-  color: var(--accent-text, #C93A12); font-size: 13px; font-weight: 800; }
-#add-dial { margin: 0 auto; padding-top: 18px; }   /* room for the bead at twelve o'clock */
+  color: var(--coral-deep, #AE3512); font: 600 13px/18px var(--font-body); }
+/* The wheel may use 14 of the sheet's 22 px of padding each side, so on a
+   phone it is B's 360 and a little wider than the refine slab under it. */
+#add-dial { margin: 0 -14px; padding-top: 6px; }   /* room for the lit slab's lift at twelve o'clock */
 .add-more { margin-top: 14px; border-top: 1px solid var(--hairline, #EAE4DA); }
 .add-more > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 46px; cursor: pointer;
-  color: var(--ink-2, #5B554D); font-size: 13.5px; font-weight: 700; }
+  color: var(--ink-2, #6E655A); font: 600 14px/1.3 var(--font-body); }
 .add-more > summary::-webkit-details-marker { display: none; }
 .add-more > summary::after { content: ""; width: 8px; height: 8px; margin: 0 4px 0 auto; border: solid currentColor;
   border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-2px, -2px); transition: transform .16s ease; }
 .add-more[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
 .add-more .sorted { margin-top: 4px; }
-#add-remove { background: var(--surface, #fff); color: var(--destructive, #C0392B); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
+/* Refine: under the dial once a topic is chosen, on B's white slab (radius
+   28, 20/16/16). "Filed to …"; the topic's subtopics as a two-row grid that
+   scrolls sideways (late chips only ever join the end); a hairline; the tags,
+   one row that scrolls; "+ Tag" dashed. The markup is docs/index.html's
+   (#add-refine…); every rule here goes by its ids and classes. */
+.add-refine { margin: 2px -2px 0; padding: 20px 16px 16px; text-align: left;
+  background: var(--surface, #fff); border-radius: var(--r-slab, 28px);
+  box-shadow: var(--lift-slab, inset 0 1px 0 rgba(255,255,255,.7), 0 10px 24px rgba(120,84,50,.12)); }
+.add-refine[hidden] { display: none; }
+.add-refine-h { margin: 0 2px; color: var(--ink, #191510); font: 700 17px/22px var(--font-head); letter-spacing: -.01em;
+  overflow-wrap: anywhere; }
+/* If the host wraps the path ("Filed to <b>Fitness › Mobility</b>"), the
+   lead-in drops to Instrument 15/600 in secondary, as in B. */
+.add-refine-h:has(b) { color: var(--meta, #6E655A); font: 600 15px/20px var(--font-body); letter-spacing: 0; }
+.add-refine-h b { color: var(--ink, #191510); font: 700 17px/20px var(--font-head); letter-spacing: -.01em; }
+.refine-row { display: flex; flex-wrap: nowrap; gap: 8px; margin: 12px -16px 0; padding: 2px 16px 10px; overflow-x: auto;
+  scrollbar-width: none; overscroll-behavior-x: contain; scroll-padding-inline: 16px; }
+.refine-row::-webkit-scrollbar { display: none; }
+.refine-row[hidden] { display: none; }
+#add-refine-subs { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, 44px); grid-auto-columns: max-content;
+  justify-content: start; justify-items: stretch; gap: 8px; padding-bottom: 12px; }
+#add-refine-subs[hidden] { display: none; }
+/* The hairline between subtopics and tags, inset to the slab's text. */
+#add-refine-tags { position: relative; margin-top: 2px; padding-top: 14px; gap: 6px; }
+#add-refine-subs:not([hidden]) + #add-refine-tags { background: linear-gradient(var(--hairline, #EAE4DA), var(--hairline, #EAE4DA)) 18px 0 / calc(100% - 36px) 1px no-repeat; }
+.refine-row .qf-chip, .refine-row .tag-chip, .refine-row input { flex: 0 0 auto; }
+#add-refine .qf-chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; max-width: 70vw; height: 44px; padding: 0 15px;
+  border-radius: 22px; font: 600 14.5px/1 var(--font-body);
+  box-shadow: var(--lift-pill, inset 0 1px 0 rgba(255,255,255,.7), 0 3px 8px rgba(120,84,50,.10)); }
+#add-refine .qf-chip.is-on { background: var(--qf-on, var(--ink, #191510)); color: #fff !important; padding-left: 13px;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.28), 0 6px 12px color-mix(in srgb, var(--qf-on, #191510) 22%, transparent); }
+/* The check in front of the chosen subtopic. */
+#add-refine .qf-chip.is-on::before { content: ""; flex: 0 0 auto; width: 16px; height: 16px; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.5 12.5l4 4L18.5 7.5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.5 12.5l4 4L18.5 7.5'/%3E%3C/svg%3E") center / contain no-repeat; }
+/* Tags: "#tag" pills, off on sand, on in ink. */
+#add-refine .tag-chip { display: inline-flex; align-items: center; height: 44px; min-height: 44px; padding: 0 13px; border: 0;
+  border-radius: 22px; cursor: pointer; background: var(--sand, #ECE5D8); color: var(--ink, #191510);
+  font: 600 14px/1 var(--font-body); white-space: nowrap;
+  box-shadow: var(--lift-pill, inset 0 1px 0 rgba(255,255,255,.7), 0 3px 8px rgba(120,84,50,.10)); }
+#add-refine .tag-chip.on { background: var(--ink, #191510); color: #fff;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.18), 0 6px 12px rgba(25,21,16,.18); }
+#add-refine .tag-chip:focus-visible, #add-refine .qf-chip:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
+#add-refine .tag-chip.refine-plus { padding: 0 14px 0 12px; background: transparent !important; color: var(--meta, #6E655A) !important;
+  box-shadow: none; border: 1.5px dashed var(--dashed, #D7CDBD); }
+#add-refine .refine-row input { width: 9.5em; height: 44px; padding: 0 14px; border: 1px solid var(--hairline, #EAE4DA); border-radius: 22px;
+  background: var(--surface, #fff); color: var(--ink, #191510); font: 600 14px/1 var(--font-body); outline: none; }
+#add-refine .refine-row input:focus { border-color: var(--coral, #FF5A2D); }
+.refine-row input[hidden] { display: none; }
+/* Done: the coral pill, 58 tall. It drains: a white 18% band across the
+   button shrinks to nothing over the six seconds before the sheet closes by
+   itself. A transition, never an animation: closeDlg waits on the dialog's
+   animationend, and those bubble. */
+#add-done { position: relative; overflow: hidden; isolation: isolate; height: 58px; min-height: 58px; border: 0;
+  border-radius: 28px; background: var(--coral, #FF5A2D); color: #fff; font: 600 17px/1 var(--font-body);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.4), 0 10px 20px rgba(200,80,40,.28); }
+/* At rest the band is full and invisible, so stopping a drain changes where
+   the transform ends and the running transition is dropped, not finished. */
+#add-done::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: rgba(255,255,255,.18); opacity: 0; transform: scaleX(1); transform-origin: left center; }
+#add-done.is-full::before { opacity: 1; }
+#add-done.is-full.is-draining::before { transform: scaleX(0); transition: transform 6s linear; }
+#add-remove { height: 58px; min-height: 58px; border: 0; border-radius: 28px; background: var(--surface, #fff); color: var(--destructive, #C0392B);
+  box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); font: 600 16px/1 var(--font-body); }
 
 /* ── "Drop to bork it": a link dragged over the page ──────────────────── */
 #drop-overlay { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; pointer-events: none;
@@ -375,11 +458,11 @@ dialog::backdrop { background: rgba(25,21,16,.42); backdrop-filter: blur(2px); }
 #drop-overlay::before { content: ""; position: absolute; inset: 14px; border-radius: 30px;
   border: 2.5px dashed color-mix(in srgb, var(--coral, #FF5A2D) 70%, transparent); }
 .drop-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 22px 34px 26px; border-radius: 30px; background: var(--surface, #fff); text-align: center;
-  box-shadow: 0 34px 70px -30px rgba(25,21,16,.5), 0 0 0 1px var(--hairline, #EAE4DA); }
-.drop-card img { width: 176px; height: 176px; margin-bottom: 6px; border-radius: 26px; object-fit: cover; }
-.drop-card b { font: 800 27px/1.1 var(--font-head); letter-spacing: -.025em; }
-.drop-card span { color: var(--ink-2, #5B554D); font-size: 14px; }
+  padding: 22px 34px 26px; border-radius: var(--r-sheet, 28px); background: var(--surface, #fff); text-align: center;
+  box-shadow: var(--lift-sheet, 0 -8px 30px rgba(25,21,16,.10)), 0 0 0 1px var(--hairline, #EAE4DA); }
+.drop-card img { width: 176px; height: 176px; margin-bottom: 6px; border-radius: 24px; object-fit: cover; background: var(--clay-ground, #E8E0CB); }
+.drop-card b { font: 700 27px/1.1 var(--font-head); letter-spacing: -.02em; }
+.drop-card span { color: var(--meta, #6E655A); font: 500 14px/1.4 var(--font-body); }
 @media (prefers-reduced-motion: no-preference) {
   #drop-overlay:not([hidden]) { animation: qf-fade .16s ease-out; }
   #drop-overlay:not([hidden]) .drop-card { animation: drop-pop .3s cubic-bezier(.3,1.4,.5,1); }
@@ -395,73 +478,74 @@ dialog.triage[open] { display: flex; flex-direction: column; }
 dialog.triage::backdrop { background: rgba(25,21,16,.5); }
 .tri-top { flex: 0 0 auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
   padding: 14px 18px 8px; }
-.tri-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px;
+.tri-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 44px; padding: 0 18px;
   border: 0; border-radius: 999px; background: var(--surface, #fff); color: var(--ink, #191510); cursor: pointer;
-  box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); font: 700 14px/1 var(--font-body); white-space: nowrap; }
+  box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); font: 600 15px/1 var(--font-body); white-space: nowrap; }
 .tri-btn[disabled] { opacity: .45; cursor: default; }
 .tri-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.tri-btn kbd { font: 700 10.5px/1 var(--font-body); padding: 3px 5px; border-radius: 5px; background: var(--control, #EEE8DE); color: var(--ink-2, #5B554D); }
-.tri-done { justify-self: start; background: var(--ink, #191510); color: var(--paper, #F6F3EE); box-shadow: none; }
+.tri-btn kbd { font: 600 10.5px/1 var(--font-body); padding: 3px 5px; border-radius: 5px; background: var(--sand, #ECE5D8); color: var(--sand-ink, #5A4E38); }
+.tri-done { justify-self: start; }
 .tri-undo { justify-self: end; }
 .tri-title { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
-.tri-title h2 { margin: 0; font: 800 21px/1.1 var(--font-head); letter-spacing: -.025em; white-space: nowrap; }
-.tri-count { display: flex; align-items: center; gap: 9px; color: var(--meta, #8A8378); font-size: 12.5px; font-weight: 700;
+.tri-title h2 { margin: 0; font: 700 19px/24px var(--font-head); white-space: nowrap; }
+.tri-count { display: flex; align-items: center; gap: 9px; color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body);
   font-variant-numeric: tabular-nums; }
 .tri-bar { width: 120px; height: 5px; border-radius: 999px; background: var(--hairline, #EAE4DA); overflow: hidden; }
 .tri-bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--coral, #FF5A2D);
   transition: width .24s var(--ease-out, ease); }
 .tri-decks { flex: 0 0 auto; display: flex; gap: 3px; width: min(440px, calc(100% - 36px)); margin: 6px auto 0; padding: 3px;
   border-radius: 999px; background: var(--control, #EEE8DE); }
-.tri-decks button { flex: 1; min-width: 0; height: 36px; border: 0; border-radius: 999px; background: none; cursor: pointer;
-  color: var(--ink-2, #5B554D); font: 650 13.5px/1 var(--font-body); white-space: nowrap; }
+.tri-decks button { flex: 1; min-width: 0; height: 38px; border: 0; border-radius: 999px; background: none; cursor: pointer;
+  color: var(--ink-2, #6E655A); font: 600 14px/1 var(--font-body); white-space: nowrap; }
 .tri-decks button[aria-selected="true"] { background: var(--surface, #fff); color: var(--ink, #191510); box-shadow: 0 1px 2px rgba(25,21,16,.08); }
-.tri-decks .n { margin-left: 4px; opacity: .55; font-weight: 600; }
+.tri-decks .n { margin-left: 4px; opacity: .7; font-weight: 500; }
 .tri-tally { flex: 0 0 auto; display: flex; justify-content: center; gap: 6px; min-height: 30px; margin: 12px 18px 0;
   overflow-x: auto; scrollbar-width: none; }
 .tri-tally::-webkit-scrollbar { display: none; }
-.tri-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px 0 4px;
-  border-radius: 999px; font-size: 12.5px; font-weight: 700; }
-.tri-chip img, .tri-chip .tri-chip-ini { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; mix-blend-mode: multiply;
-  background: rgba(255,255,255,.55); }
-.tri-chip .tri-chip-ini { display: grid; place-items: center; mix-blend-mode: normal; font: 800 11px/1 var(--font-head); }
-.tri-chip b { font-weight: 800; font-variant-numeric: tabular-nums; }
-.tri-hint { margin: 0; color: var(--meta, #8A8378); font-size: 12.5px; font-weight: 600; align-self: center; }
+.tri-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 4px;
+  border-radius: 999px; font: 600 13px/1 var(--font-body); }
+.tri-chip img, .tri-chip .tri-chip-ini { width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
+  background: var(--clay-ground, #E8E0CB); box-shadow: 0 0 0 1.5px #fff; }
+.tri-chip .tri-chip-ini { display: grid; place-items: center; background: #fff; font: 700 11px/1 var(--font-head); }
+.tri-chip b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.tri-hint { margin: 0; color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); align-self: center; }
 .tri-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center; gap: clamp(20px, 4vw, 56px); padding: 8px clamp(18px, 4vw, 48px) 20px; overflow-y: auto; }
 .tri-stack { position: relative; justify-self: end; width: min(360px, 100%); display: grid; }
 .tri-stack > * { grid-area: 1 / 1; }
-.tri-peek { align-self: end; height: 80px; border-radius: 22px; background: var(--surface, #fff);
-  box-shadow: var(--shadow-card), 0 0 0 1px var(--hairline, #EAE4DA); transform-origin: 50% 100%;
+.tri-peek { align-self: end; height: 80px; border-radius: var(--r-card, 18px); background: var(--surface, #fff);
+  box-shadow: 0 0 0 1px var(--hairline, #EAE4DA); transform-origin: 50% 100%;
   transform: translateY(calc(var(--k) * 11px)) scale(calc(1 - var(--k) * .05)); opacity: calc(1 - var(--k) * .28); }
-.tri-card { position: relative; z-index: 2; overflow: hidden; border-radius: 22px; background: var(--surface, #fff);
-  box-shadow: 0 1px 2px rgba(25,21,16,.05), 0 22px 44px -22px rgba(25,21,16,.4), 0 0 0 1px var(--hairline, #EAE4DA); }
-.tri-cover { position: relative; aspect-ratio: 7 / 8; max-height: 260px; width: 100%; overflow: hidden; }
+/* The card in hand: a flat card, white with a hairline, as everywhere. */
+.tri-card { position: relative; z-index: 2; overflow: hidden; border-radius: var(--r-card, 18px); background: var(--surface, #fff);
+  box-shadow: 0 0 0 1px var(--hairline, #EAE4DA); }
+.tri-cover { position: relative; aspect-ratio: 4 / 3; max-height: 270px; width: 100%; overflow: hidden; background: var(--clay-ground, #E8E0CB); }
 .tri-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
 .tri-card .badge { z-index: 1; }
 .tri-dur { position: absolute; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px;
-  border-radius: 999px; background: rgba(25,21,16,.66); color: #fff; font-size: 10.5px; font-weight: 800; }
-.tri-card-body { padding: 14px 16px 16px; }
-.tri-who { display: flex; align-items: center; gap: 6px; color: var(--meta, #8A8378); font-size: 12px; font-weight: 700; min-width: 0; }
+  border-radius: 6px; background: rgba(25,21,16,.72); color: #fff; font: 600 11.5px/1 var(--font-body); font-variant-numeric: tabular-nums; }
+.tri-card-body { padding: 12px 16px 16px; }
+.tri-who { display: flex; align-items: center; gap: 6px; color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); min-width: 0; }
 .tri-who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tri-who .pg { width: 12px; height: 12px; flex: 0 0 auto; }
-.tri-title-t { margin-top: 5px; font: 700 16px/1.3 var(--font-body); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+.tri-title-t { margin-top: 4px; font: 600 16px/21px var(--font-body); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
   overflow: hidden; overflow-wrap: anywhere; }
-.tri-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; color: var(--meta, #8A8378); font-size: 12px; font-weight: 600; }
-.tri-filed { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 750; }
-.tri-filed.is-none { background: var(--paper, #F6F3EE); color: var(--ink-2, #5B554D); box-shadow: inset 0 0 0 1px var(--dashed, #D7CDBD); }
-/* A poster: no picture, so the topic's tint and a clay stamp do the work. */
+.tri-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); }
+.tri-filed { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font: 600 12.5px/1 var(--font-body); }
+.tri-filed.is-none { background: var(--surface, #fff); color: var(--ink-2, #6E655A); box-shadow: inset 0 0 0 1px var(--dashed, #D7CDBD); }
+/* A poster: no picture, so the topic's clay tint and its art do the work. */
 .tri-poster { display: flex; flex-direction: column; min-height: 230px; padding: 18px 18px 16px;
-  background: radial-gradient(120% 80% at 15% 0%, rgba(255,255,255,.55), transparent 60%), var(--tri-tint, #F1EBE1); color: var(--tri-deep, #5B554D); }
-.tri-poster.is-unfiled { background: radial-gradient(120% 80% at 15% 0%, rgba(255,255,255,.7), transparent 60%), #F1EBE1;
-  box-shadow: 0 1px 2px rgba(25,21,16,.05), 0 22px 44px -22px rgba(25,21,16,.4), inset 0 0 0 1.5px var(--dashed, #D7CDBD); }
-.tri-poster-top { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 750; min-width: 0; }
+  background: var(--tri-tint, #ECE5D8); color: var(--tri-deep, #5A4E38); }
+.tri-poster.is-unfiled { box-shadow: 0 0 0 1px var(--hairline, #EAE4DA); }
+.tri-poster-top { display: flex; align-items: center; gap: 8px; font: 600 13px/18px var(--font-body); min-width: 0; }
 .tri-poster-top .badge { position: static; flex: 0 0 auto; }
 .tri-poster-top span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tri-poster-title { flex: 1; margin: 18px 0 16px; color: var(--ink, #191510); font: 800 22px/1.14 var(--font-head);
-  letter-spacing: -.02em; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.tri-poster-foot { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
-.tri-stamp { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.6); display: grid; place-items: center; }
-.tri-stamp img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.3); mix-blend-mode: multiply; }
+.tri-poster-title { flex: 1; margin: 18px 0 16px; color: var(--ink, #191510); font: 700 22px/1.16 var(--font-head);
+  letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.tri-poster-foot { display: flex; align-items: center; gap: 8px; font: 600 13px/18px var(--font-body); }
+.tri-stamp { width: 36px; height: 36px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; background: #fff; display: grid; place-items: center;
+  box-shadow: 0 0 0 2px #fff; }
+.tri-stamp img { width: 100%; height: 100%; object-fit: cover; }
 .tri-stamp .pg { width: 14px; height: 14px; }
 .tri-poster-foot .when { margin-left: auto; opacity: .75; }
 /* The platform's mark, large and faint in the corner: a poster, not an empty box. */
@@ -471,19 +555,19 @@ dialog.triage::backdrop { background: rgba(25,21,16,.5); }
 .tri-wm .pg-txt { font-size: 64px; }
 .tri-poster > :not(.tri-wm) { position: relative; }
 .tri-side { justify-self: start; width: min(380px, 100%); display: flex; flex-direction: column; align-items: center; }
-.tri-head { margin: 0 0 20px; color: var(--accent-text, #C93A12); font-size: 13px; font-weight: 800; }
+.tri-head { display: flex; align-items: center; gap: 6px; margin: 0 0 14px; color: var(--coral-deep, #AE3512); font: 600 13px/18px var(--font-body); }
 .tri-dial { width: 100%; }
 .tri-actions { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
 .tri-remove { color: var(--destructive, #C0392B); }
 /* The end: the compass, and how long it took. */
 .tri-end { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 6px; padding: 24px; text-align: center; }
-.tri-end-art { width: min(220px, 52vw); aspect-ratio: 1; border-radius: 32px; object-fit: cover; margin-bottom: 10px;
-  box-shadow: 0 24px 48px -26px rgba(25,21,16,.45); }
-.tri-end h2 { margin: 0; font: 800 clamp(26px, 4vw, 34px)/1.08 var(--font-head); letter-spacing: -.03em; }
-.tri-end-sub { margin: 2px 0 14px; color: var(--ink-2, #5B554D); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tri-end-art { width: min(220px, 52vw); aspect-ratio: 1; border-radius: 28px; object-fit: cover; margin-bottom: 10px;
+  background: var(--clay-ground, #E8E0CB); }
+.tri-end h2 { margin: 0; font: 700 30px/34px var(--font-head); letter-spacing: -.02em; }
+.tri-end-sub { margin: 2px 0 14px; color: var(--meta, #6E655A); font: 500 15px/21px var(--font-body); font-variant-numeric: tabular-nums; }
 .tri-end-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.tri-end-acts .btn { width: auto; min-width: 180px; padding: 0 22px; }
+.tri-end-acts .btn { width: auto; min-width: 180px; height: 54px; padding: 0 24px; border-radius: 999px; font: 600 16px/1 var(--font-body); }
 .tri-end-acts .btn.ghost { background: var(--surface, #fff); color: var(--ink, #191510); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -527,6 +611,7 @@ dialog.triage::backdrop { background: rgba(25,21,16,.5); }
   ::view-transition-group(tri-fly), ::view-transition-old(tri-fly), ::view-transition-new(tri-fly) { animation-duration: .12s; }
 }
 </style>
+<link rel="stylesheet" href="../tokens.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1179,7 +1264,7 @@ const TAXONOMY = [
  {
   "id": "fitness",
   "name": "Fitness",
-  "hue": 152.0,
+  "hue": 96.0,
   "subs": [
    "Running",
    "Strength",
@@ -2868,76 +2953,238 @@ const TagRecency = (() => {
 /* Node (the parser tests) rather than a browser. */
 if (typeof module === "object" && module.exports) module.exports = { Zip, Importer, Filer, TagRecency };
 </script>
-<script>/* bookmarker — a topic's colours, from its hue.
+<script>/* bookmarker — a topic's clay colours, from its hue.
  *
- * An exact port of CategoryPalette in App/DesignSystem/Tokens.swift, so a
- * topic is the same colour on the web as on the iPhone. The Swift builds each
- * colour with SwiftUI's Color(hue:saturation:brightness:), which is HSB (also
- * called HSV), not the HSL that CSS speaks; the same numbers fed to hsl() come
- * out noticeably different. So the HSB is converted here and every colour is
- * handed back as a CSS hex string. It matches what SwiftUI resolves, byte for
- * byte, except where a channel lands exactly on a half (brightness .30 or .70
- * times 255), where the two can round 1/255 apart.
+ * A line-for-line port of Core/ClayPalette.swift (ClayRecipe), so a topic is
+ * the same colour on the web as on the iPhone, byte for byte. The fixture
+ * Scripts/fixtures/clay_palette_cases.json pins both: Scripts/test_clay_palette
+ * .swift and Scripts/test_clay_palette.mjs read it. Change one port, change the
+ * other, regenerate the fixture (Scripts/gen_clay_palette_fixture.swift).
  *
- *   tint(h)        chip and tile background          HSB(h, .55, .97)
- *   deep(h)        text on the tint                  HSB(h, .46, .42)
- *   solid(h)       the topic's dot colour            HSB(h, .50, .70)
- *   coverTop(h)    cover gradient, top-left          HSB(h, .52, .62)
- *   coverBottom(h) cover gradient, bottom-right      HSB(h, .60, .30)
- *   gradient(h)    the whole cover, as CoverImage draws it: a CSS background
- *                  image (white 16% radial highlight at the top-left corner,
- *                  over coverTop → coverBottom corner to corner)
- *   chip(h)        "background:<tint>;color:<deep>", a drop-in style attribute
+ * The recipe (design/SYSTEM.md, "Topic colours: the clay palette"):
+ *   1. hue h → today's dot colour sRGB HSB(h, .5, .7) → its OKLCH hue: the
+ *      topic's place on the circle;
+ *   2. the seven coloured SYSTEM.md rows, measured in OKLCH, are anchors pinned
+ *      at the place of the topic each was drawn for (Health → Rose, Cars →
+ *      Terracotta, Recipes → Ochre, Garden → Sage, Nutrition → Teal, Travel →
+ *      Dusty blue, AI → Lilac); L, C and H of each role interpolate linearly
+ *      between the two anchors either side, wrapping round;
+ *   3. out of gamut: chroma binary-searched down, 24 halvings;
+ *   4. gamma-encode, round to 8 bits, "#RRGGBB".
+ * Sand (the "not filed" colour) is the SYSTEM.md row exactly.
  *
- * NEUTRAL_HUE is NeutralPalette's 40: unfiled things, deliberately dull.
- * Hues are degrees, as in taxonomy.js. No DOM, so it loads in node as it is.
+ *   tint(h)    surfaces: chips, slabs, tile footers. Text on it is deep(h).
+ *   mid(h)     the 8 px dot, rings, small fills. Never under white text.
+ *   deep(h)    text on the tint; the fill behind white text.
+ *   solid(h)   = mid(h), the old name.
+ *   chip(h)    "background:<tint>;color:<deep>", a drop-in style attribute.
+ *   of(hue)    { tint, mid, deep } for a hue, or Sand for null/undefined.
+ *   neutral    Sand: { tint, mid, deep }.
+ *   gradient(h), coverTop(h), coverBottom(h): kept so old callers still draw;
+ *              gradient is now the flat tint (covers use clay art instead).
+ *
+ * NEUTRAL_HUE (40) is kept for callers that still pass a number for "unfiled";
+ * they should move to Palette.of(null) / Palette.neutral, which is Sand.
+ * No DOM, so it loads in node as it is.
  */
 "use strict";
 
 const Palette = (() => {
 
-  /* SwiftUI's HSB → sRGB, every component 0…1, hue wrapped into one turn. */
-  function hsb(hue, saturation, brightness) {
-    const degrees = ((Number(hue) || 0) % 360 + 360) % 360;
-    const h = (degrees / 360) * 6;
-    const i = Math.floor(h);
-    const f = h - i;
-    const v = brightness, s = saturation;
-    const p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
-    const [r, g, b] = [[v, t, p], [q, v, p], [p, v, t], [p, q, v], [t, p, v], [v, p, q]][i % 6];
-    const hex = (x) => Math.round(x * 255).toString(16).padStart(2, "0");
-    return `#${hex(r)}${hex(g)}${hex(b)}`;
+  /* ── The reference rows (design/SYSTEM.md) ── */
+
+  const row = (family, topicHue, tint, mid, deep) => ({ family, topicHue, colours: { tint, mid, deep } });
+
+  /* Hues are the topics in Core/Taxonomy.swift: Health 352, Cars & motors 11,
+     Recipes 42, Garden 96, Nutrition 146, Travel 202, AI 256. */
+  const references = Object.freeze([
+    row("Rose", 352, "#F4DCDD", "#D48A8F", "#7A3338"),
+    row("Terracotta", 11, "#F3DDD2", "#C8674A", "#7A3420"),
+    row("Ochre", 42, "#F4E6C4", "#D9A441", "#6E4E0E"),
+    row("Sage", 96, "#E3EADB", "#8FA37E", "#3F5237"),
+    row("Teal", 146, "#D8EAE6", "#6FA89C", "#2C5A50"),
+    row("Dusty blue", 202, "#DCE7F0", "#7FA3C2", "#2F4E68"),
+    row("Lilac", 256, "#E6DFF0", "#9A86BF", "#4A3A70"),
+    row("Sand", null, "#ECE5D8", "#B5A68A", "#5A4E38"),
+  ]);
+
+  /* Not filed yet, More…, the ground under clay art: the Sand row exactly. */
+  const neutral = Object.freeze({ tint: "#ECE5D8", mid: "#B5A68A", deep: "#5A4E38" });
+
+  /* ── The recipe ── */
+
+  const rgbOf = (hex) => {
+    const d = hex.charAt(0) === "#" ? hex.slice(1) : hex;
+    const value = d.length === 6 ? (parseInt(d, 16) || 0) : 0;
+    return [(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF];
+  };
+
+  function lch(hex) {
+    const [r, g, b] = rgbOf(hex);
+    const lab = toOKLab(r / 255, g / 255, b / 255);
+    return { l: lab[0], c: Math.sqrt(lab[1] * lab[1] + lab[2] * lab[2]), h: degrees(lab[1], lab[2]) };
   }
 
-  /* Built once per hue, like Topic.palettes on the phone. */
+  let anchorCache = null;
+  function anchors() {
+    if (anchorCache) return anchorCache;
+    anchorCache = references
+      .filter((ref) => ref.topicHue !== null)
+      .map((ref) => ({
+        at: okHue(ref.topicHue),
+        tint: lch(ref.colours.tint), mid: lch(ref.colours.mid), deep: lch(ref.colours.deep),
+      }))
+      .sort((x, y) => x.at - y.at);
+    return anchorCache;
+  }
+
+  /* The OKLCH hue (0..<360) of sRGB HSB(h, 0.5, 0.7) — today's dot colour. */
+  function okHue(hue) {
+    const [r, g, b] = hsb(hue, 0.5, 0.7);
+    const lab = toOKLab(r, g, b);
+    return degrees(lab[1], lab[2]);
+  }
+
+  /* A topic's colours from its stored hue. */
+  function colours(hue) {
+    const at = okHue(hue);
+    return {
+      tint: encode(role(at, "tint")),
+      mid: encode(role(at, "mid")),
+      deep: encode(role(at, "deep")),
+    };
+  }
+
+  /* WCAG 2 contrast ratio, 1…21, of two "#RRGGBB" strings. */
+  function contrast(a, b) {
+    const x = luminance(a), y = luminance(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  }
+
+  /* ── Interpolation ── */
+
+  function role(at, pick) {
+    const A = anchors();
+    const n = A.length;
+    let i = n - 1;
+    for (let j = 0; j < n; j++) if (A[j].at <= at) i = j;
+    const a = A[i], b = A[(i + 1) % n];
+    const h0 = a.at;
+    let h1 = b.at;
+    if (h1 <= h0) h1 += 360;
+    let x = at;
+    if (x < h0) x += 360;
+    const t = (x - h0) / (h1 - h0);
+    const p = a[pick], q = b[pick];
+    let qh = q.h;
+    if (qh < p.h) qh += 360;
+    const h = (p.h + (qh - p.h) * t) % 360;
+    return { l: p.l + (q.l - p.l) * t, c: p.c + (q.c - p.c) * t, h };
+  }
+
+  /* ── Colour maths (OKLab, Björn Ottosson 2020) ── */
+
+  function encode(colour) {
+    const rad = colour.h * Math.PI / 180;
+    const ca = Math.cos(rad), sa = Math.sin(rad);
+    const linear = (c) => fromOKLab(colour.l, c * ca, c * sa);
+    let rgb = linear(colour.c);
+    if (!inGamut(rgb)) {
+      let lo = 0, hi = colour.c;
+      for (let k = 0; k < 24; k++) {
+        const mid = (lo + hi) / 2;
+        if (inGamut(linear(mid))) lo = mid; else hi = mid;
+      }
+      rgb = linear(lo);
+    }
+    return "#" + rgb.map((c) => byte(c).toString(16).padStart(2, "0")).join("").toUpperCase();
+  }
+
+  const inGamut = (c) => c[0] >= 0 && c[0] <= 1 && c[1] >= 0 && c[1] <= 1 && c[2] >= 0 && c[2] <= 1;
+
+  function byte(linear) {
+    const c = Math.min(1, Math.max(0, linear));
+    const encoded = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+    return Math.round(Math.min(1, Math.max(0, encoded)) * 255);
+  }
+
+  const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+
+  function toOKLab(red, green, blue) {
+    const r = toLinear(red), g = toLinear(green), b = toLinear(blue);
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+            1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
+  }
+
+  function fromOKLab(L, a, b) {
+    const l1 = L + 0.3963377774 * a + 0.2158037573 * b;
+    const m1 = L - 0.1055613458 * a - 0.0638541728 * b;
+    const s1 = L - 0.0894841775 * a - 1.2914855480 * b;
+    const l = l1 * l1 * l1, m = m1 * m1 * m1, s = s1 * s1 * s1;
+    return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+            -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+            -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+  }
+
+  /* HSB (HSV) → sRGB 0…1, as SwiftUI's Color(hue:saturation:brightness:). */
+  function hsb(hue, s, v) {
+    const wrapped = ((Number(hue) || 0) % 360 + 360) % 360;
+    const x = wrapped / 60;
+    const i = Math.floor(x);
+    const f = x - i;
+    const p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+      case 0: return [v, t, p];
+      case 1: return [q, v, p];
+      case 2: return [p, v, t];
+      case 3: return [p, q, v];
+      case 4: return [t, p, v];
+      default: return [v, p, q];
+    }
+  }
+
+  function degrees(a, b) {
+    const d = Math.atan2(b, a) * 180 / Math.PI;
+    return d < 0 ? d + 360 : d;
+  }
+
+  function luminance(hex) {
+    const [r, g, b] = rgbOf(hex);
+    return 0.2126 * toLinear(r / 255) + 0.7152 * toLinear(g / 255) + 0.0722 * toLinear(b / 255);
+  }
+
+  /* ── The page-facing API: built once per hue, like Topic.palettes ── */
+
   const cache = new Map();
   function palette(hue) {
     const key = Number(hue) || 0;
     let entry = cache.get(key);
     if (!entry) {
-      entry = Object.freeze({
-        tint: hsb(key, 0.55, 0.97),
-        deep: hsb(key, 0.46, 0.42),
-        dot: hsb(key, 0.50, 0.70),
-        coverTop: hsb(key, 0.52, 0.62),
-        coverBottom: hsb(key, 0.60, 0.30),
-      });
+      entry = Object.freeze(colours(key));
       cache.set(key, entry);
     }
     return entry;
   }
 
+  const of = (hue) => (hue === null || hue === undefined ? neutral : palette(hue));
   const tint = (hue) => palette(hue).tint;
+  const mid = (hue) => palette(hue).mid;
   const deep = (hue) => palette(hue).deep;
-  const solid = (hue) => palette(hue).dot;
-  const coverTop = (hue) => palette(hue).coverTop;
-  const coverBottom = (hue) => palette(hue).coverBottom;
-  const gradient = (hue) =>
-    "radial-gradient(circle 180px at 0 0, rgba(255,255,255,.16), rgba(255,255,255,0)), "
-    + `linear-gradient(to bottom right, ${coverTop(hue)}, ${coverBottom(hue)})`;
+  const solid = mid;
+  const coverTop = mid;
+  const coverBottom = deep;
+  const gradient = (hue) => `linear-gradient(${tint(hue)}, ${tint(hue)})`;
   const chip = (hue) => `background:${tint(hue)};color:${deep(hue)}`;
 
-  return Object.freeze({ tint, deep, solid, coverTop, coverBottom, gradient, chip, NEUTRAL_HUE: 40 });
+  return Object.freeze({
+    tint, mid, deep, solid, chip, of, neutral, NEUTRAL_HUE: 40,
+    gradient, coverTop, coverBottom,
+    colours, okHue, contrast, references,
+  });
 })();
 
 if (typeof globalThis === "object") globalThis.Palette = Palette;
@@ -3614,15 +3861,16 @@ if (typeof module === "object" && module.exports) module.exports = { FilingKeys,
  *
  * One more tap after a save. Seven likely topics sit on a ring: the best guess
  * at twelve o'clock and in the middle, the next six clockwise, More… at half
- * past ten. The ring never turns. A coral bead runs round the rim to whichever
- * segment is highlighted, and whatever the middle shows is exactly what a tap
+ * past ten. The ring never turns. The highlighted slab fills with its topic's
+ * deep colour and lifts, and whatever the middle shows is exactly what a tap
  * on it files. The scroll wheel, a trackpad, the arrow keys, J and K, or a
  * finger dragged round the ring turn it; a tap on a segment files that one;
  * 1–7 file by rank; 8 or / opens every topic; Esc keeps the guess.
  *
  *   QuickFileDial.mount(host, { ranking, topic, mode, onConfirm, onMore,
- *                               onLater, input })
- *     → { offer(r), turn(n), confirm(), focus(), destroy(), touched, highlighted }
+ *                               onLater, input, refine, chosen })
+ *     → { offer(r), turn(n), confirm(), focus(), destroy(), touched, highlighted,
+ *         choose(c, how), setSub(sub), suggestedSubs(id), chosen }
  *
  *   ranking      FilingSuggest.rank()'s answer
  *   topic(id)    → { id, name, hue, art, subs? }; art is a URL, a list of URLs
@@ -3632,6 +3880,12 @@ if (typeof module === "object" && module.exports) module.exports = { FilingKeys,
  *                       when a chip was used); how says which gesture filed it
  *   input        optional, the FilingInput the ranking came from; the reason
  *                line needs its URL to name a website
+ *   refine       the Add sheet's "pick, refine, done": a tap chooses and the
+ *                ring stays live, so another topic re-chooses and the host's
+ *                panel sets the subtopic. Off (triage, the lab) a tap files
+ *                and the ring folds, exactly as before.
+ *   chosen       refine only: a candidate that is already yours (a re-save of
+ *                a bork you filed). The dial opens chosen, and says nothing.
  *
  * Late answers (the preview, the model) arrive through offer(). A dial nobody
  * has touched crossfades to the new order; a touched one never moves under the
@@ -3640,7 +3894,11 @@ if (typeof module === "object" && module.exports) module.exports = { FilingKeys,
  * before it changed.
  *
  * Colours come from window.Palette, the port of the iPhone's CategoryPalette,
- * so a topic is the colour it is in the app. Plan 2 §A1 is the spec. Nothing
+ * so a topic is the colour it is in the app; a topic with no hue is Sand
+ * (Palette.neutral). The look is "Quiet clay" direction B (design/SYSTEM.md,
+ * B-QuickFile.dc.html): clay-tint slabs each carrying the topic's art, the lit
+ * slab in its deep colour and lifted, a raised white hub with the art and a
+ * deep check badge. Nothing
  * here touches the network; the only storage is a three-use counter for the
  * "Tap to file" hint. `quickfile:turn` and `quickfile:confirm` DOM events
  * fire on the host for anyone listening (the lab page's tick).
@@ -3650,14 +3908,16 @@ if (typeof module === "object" && module.exports) module.exports = { FilingKeys,
 const QuickFileDial = (() => {
 
   /* ── Geometry: a 200-unit dial centred on 0,0 ──────────────────────────
-     The centre disc is 0.42 of the diameter, the ring runs from 0.235 of it to
-     the edge (a unit inside, so a lifted segment stays on the canvas). Each
-     segment is stroked in its own colour with round joins, which rounds its
-     corners; the path is inset by that stroke so the drawn edge lands on these
-     radii, and each radial edge is pushed sideways so the paper gap between
-     neighbours is the same width from the inside to the outside. */
+     Direction B's 360 px wheel, scaled by 100/180: slabs from r 76 to r 168
+     (42.2 → 93.3), a 132 px hub (36.7), corners of 9 (5), a 7 px paper gap
+     (half of it, 1.95, either side). Each slab is stroked in its own colour
+     with round joins, which rounds its corners; the path is inset by that
+     stroke so the drawn edge lands on these radii, and each radial edge is
+     pushed sideways so the gap is the same width from the inside out. Labels
+     sit on an ellipse (117 across, 124 up and down) as B's do, and the lit
+     slab rises 5 px (2.8). */
   const SLOTS = 8, MORE = 7, NOTCH = 45;
-  const R = { outer: 99, inner: 47, hub: 42, evidence: 44.6, label: 73, bead: 105, round: 3, gap: 1.25 };
+  const R = { outer: 93.3, inner: 42.2, hub: 36.7, evidence: 39.6, labelX: 65, labelY: 68.9, round: 5, gap: 1.95 };
   const TAP_SLOP = 10;       // px: a press that travels less than this is a tap
   const HOVER_SLOP = 6;      // px of travel inside the ring before hover counts
   const HYSTERESIS = 4;      // degrees either side of a notch's midpoint (8° in all)
@@ -3673,8 +3933,9 @@ const QuickFileDial = (() => {
   const coarseMQ = media("(pointer: coarse)");
   const fineMQ = media("(hover: hover) and (pointer: fine)");
 
-  const NEUTRAL = { tint: () => "#EEE8DE", deep: () => "#5B554D", solid: () => "#A39A8D" };
-  const palette = () => (typeof Palette === "object" && Palette) || NEUTRAL;
+  /* A topic's { tint, mid, deep }; no hue (an unknown or unfiled topic) is Sand. */
+  const colours = (hue) => (hue === null || hue === undefined || hue === "" || !Number.isFinite(Number(hue))
+    ? Palette.neutral : Palette.of(Number(hue)));
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const rad = (deg) => (deg * Math.PI) / 180;
@@ -3687,11 +3948,20 @@ const QuickFileDial = (() => {
   function bumpUses() { try { localStorage.setItem(USES, String(Math.min(99, uses() + 1))); } catch { /* a hint, nothing more */ } }
 
   /* ── Copy shared by every place the dial appears ── */
+  /* Each state's icon is an inline stroke SVG (never an emoji), drawn in
+     currentColor so it takes the header's colour. Hosts set it as markup. */
+  const ico = (size, body) => `<svg class="qf-ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${body}</svg>`;
+  const ICON = {
+    spark: '<path d="M12 3.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"/><path d="M18.5 15.5v4M16.5 17.5h4"/>',
+    guess: '<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.6a2.4 2.4 0 1 1 3.3 2.2c-.6.3-1 .8-1 1.4v.4"/><path d="M12 16.5v.2"/>',
+    folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h3.8l2 2h7.2a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+    check: '<circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.3l2.5 2.5 5-5.2"/>',
+  };
   const HEADER = {
-    strong: { icon: "✨", text: "Sorted for you" },
-    thin: { icon: "🤔", text: "Our best guess — turn to change" },
-    none: { icon: "📂", text: "Where does this go?" },
-    yours: { icon: "✅", text: "Filed by you" },
+    strong: { icon: ico(16, ICON.spark), text: "Sorted for you" },
+    thin: { icon: ico(16, ICON.guess), text: "Our best guess — turn to change" },
+    none: { icon: ico(16, ICON.folder), text: "Where does this go?" },
+    yours: { icon: ico(16, ICON.check), text: "Filed by you" },
   };
   /** The header above the dial: DECISIONS' four filing states. */
   function header(ranking, { yours = false } = {}) {
@@ -3727,9 +3997,10 @@ const QuickFileDial = (() => {
     return `M${fmt(x1)} ${fmt(y1)}A${ro} ${ro} 0 0 1 ${fmt(x2)} ${fmt(y2)}`
       + `L${fmt(x3)} ${fmt(y3)}A${ri} ${ri} 0 0 0 ${fmt(x4)} ${fmt(y4)}Z`;
   }
-  /* Where a segment's label sits, as percentages of the dial. */
-  function spot(radius, slot) {
-    const [x, y] = at(radius, slot * NOTCH);
+  /* Where a slab's label sits, as percentages of the dial. */
+  function spot(slot) {
+    const a = rad(slot * NOTCH);
+    const x = R.labelX * Math.sin(a), y = -R.labelY * Math.cos(a);
     return { left: `${fmt(50 + x / 2)}%`, top: `${fmt(50 + y / 2)}%` };
   }
   /* atan2 radians (screen: 0 at three o'clock, clockwise) → segment index. */
@@ -3752,37 +4023,55 @@ const QuickFileDial = (() => {
     img.src = url;
   }
 
-  const MAG = `<svg class="qf-mag" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>`;
-  const CHECK = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.6l4.6 4.6L19.2 7.6"/></svg>`;
+  const MAG = `<svg class="qf-mag" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>`;
+  const CHECK = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4 4L18.5 7.5"/></svg>`;
+  const initial = (name) => esc((String(name || "?").trim().charAt(0) || "?").toUpperCase());
+  /* A slab's 36 px art disc: the topic's clay art, or its letter when it has
+     none (or every picture failed; see the error listener in mount). */
+  function disc(t) {
+    const urls = artList(t && t.art);
+    if (!urls.length) return `<i class="qf-disc qf-disc-ini">${initial(t && t.name)}</i>`;
+    return `<img class="qf-disc" alt="" draggable="false" decoding="async" src="${esc(urls[0])}" data-chain="${esc(JSON.stringify(urls))}" data-ini="${initial(t && t.name)}">`;
+  }
 
   function template(id, mode) {
     let segs = "", labels = "", options = "";
     for (let s = 0; s < SLOTS; s++) {
       segs += `<path class="qf-seg${s === MORE ? " qf-seg-more" : ""}" data-slot="${s}" style="--i:${s}" d="${segmentPath(s)}"/>`;
-      const p = spot(R.label, s);
+      const p = spot(s);
       labels += `<span class="qf-lab${s === MORE ? " qf-lab-more" : ""}" data-slot="${s}" style="left:${p.left};top:${p.top};--i:${s}"></span>`;
       options += `<div class="qf-opt" role="option" id="${id}-o${s}" data-slot="${s}" aria-selected="false"></div>`;
     }
-    return `<div class="qf" data-mode="${mode}">
+    // B's three SVG filters, in dial units: the warm drop under the resting
+    // ring, the 1.5 px white top edge on every slab, and the lit slab's own
+    // drop in its deep colour (--qf-lit, set on .qf as the highlight moves).
+    const box = `filterUnits="userSpaceOnUse" x="-115" y="-115" width="230" height="240"`;
+    const edge = `<feOffset in="SourceAlpha" dy=".83" result="o"/><feComposite in="SourceAlpha" in2="o" operator="out" result="edge"/>`
+      + `<feFlood flood-color="#fff" flood-opacity=".7"/><feComposite in2="edge" operator="in" result="hl"/>`;
+    return `<div class="qf" data-mode="${mode}" style="--qf-rest-f:url(#${id}-rest);--qf-edge-f:url(#${id}-edge);--qf-lit-f:url(#${id}-lit)">
   <div class="qf-dial">
     <svg class="qf-ring" viewBox="-100 -100 200 200" aria-hidden="true" focusable="false">
-      <defs><radialGradient id="${id}-sheen" cx="32%" cy="18%" r="85%"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+      <defs>
+        <filter id="${id}-rest" ${box}><feDropShadow dx="0" dy="4.44" stdDeviation="5" flood-color="#785432" flood-opacity=".16"/></filter>
+        <filter id="${id}-edge" ${box}>${edge}<feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="hl"/></feMerge></filter>
+        <filter id="${id}-lit" ${box}>${edge}<feMerge result="lit"><feMergeNode in="SourceGraphic"/><feMergeNode in="hl"/></feMerge>
+          <feDropShadow in="lit" class="qf-lit-drop" dx="0" dy="4.44" stdDeviation="3.9" flood-opacity=".28"/></filter>
+      </defs>
       <g class="qf-segs">${segs}</g>
-      <circle class="qf-sheen" r="${R.outer}" fill="url(#${id}-sheen)"/>
       <circle class="qf-ev" r="${R.evidence}"/>
-      <g class="qf-bead-arm"><circle class="qf-bead" cx="0" cy="${-R.bead}" r="3.4"/></g>
     </svg>
     <div class="qf-labels" aria-hidden="true">${labels}</div>
     <div class="qf-list" role="listbox" tabindex="0" id="${id}-list" aria-label="Where it goes" aria-describedby="${id}-help">${options}</div>
     <button type="button" class="qf-hub">
       <span class="qf-hub-in">
         <span class="qf-art"><i class="qf-ini" aria-hidden="true"></i><img alt="" draggable="false" decoding="async" hidden>${MAG}</span>
+        <span class="qf-hub-tip">Tap to file</span>
         <span class="qf-hub-name"></span>
         <span class="qf-hub-sub"></span>
-        <span class="qf-hub-tip">Tap to file</span>
       </span>
       <span class="qf-hub-done" aria-hidden="true">${CHECK}<b>Filed</b></span>
     </button>
+    <span class="qf-hub-check" aria-hidden="true" hidden>${CHECK}</span>
   </div>
   <p class="qf-reason"></p>
   <div class="qf-chips" role="group" aria-label="Or pick a subtopic"></div>
@@ -3800,9 +4089,14 @@ const QuickFileDial = (() => {
     const input = opts.input || null;
 
     let ranking = { candidates: [], preselect: null, evidence: "none" }, cands = [];
-    let committed = null, hover = null, touched = false, filed = null, destroyed = false;
+    // `chosen` is what was filed. Without refine that ends the dial (folded);
+    // with it the ring stays live and a later tap re-chooses.
+    const refine = !!opts.refine;
+    let committed = null, hover = null, touched = false, chosen = null, destroyed = false;
+    let latest = null;   // the newest ranking offered, after a choice too
+    const folded = () => !!chosen && !refine;
     let badge = null, also = null, guard = null, gesture = null, hoverFrom = null;
-    let beadAngle = 0, lastSlide = 0, lastBuzz = 0;
+    let lastSlide = 0, lastBuzz = 0;
     const wheel = { acc: 0, last: 0, lockUntil: 0 };
     const timers = new Set();
     const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); if (!destroyed) fn(); }, ms); timers.add(t); };
@@ -3811,8 +4105,8 @@ const QuickFileDial = (() => {
     const root = host.firstElementChild;
     const q = (sel) => root.querySelector(sel);
     const dial = q(".qf-dial"), list = q(".qf-list"), hub = q(".qf-hub"), hubIn = q(".qf-hub-in");
-    const ring = q(".qf-ring"), labelsEl = q(".qf-labels"), ev = q(".qf-ev"), beadArm = q(".qf-bead-arm");
-    const art = q(".qf-art"), artImg = art.querySelector("img"), ini = q(".qf-ini");
+    const ring = q(".qf-ring"), labelsEl = q(".qf-labels"), ev = q(".qf-ev");
+    const art = q(".qf-art"), artImg = art.querySelector("img"), ini = q(".qf-ini"), hubCheck = q(".qf-hub-check");
     const hubName = q(".qf-hub-name"), hubSub = q(".qf-hub-sub"), hubTip = q(".qf-hub-tip");
     const reasonEl = q(".qf-reason"), chipsEl = q(".qf-chips"), alsoEl = q(".qf-also-row");
     const helpEl = q(".qf-help"), liveEl = q(".qf-sr");
@@ -3843,8 +4137,11 @@ const QuickFileDial = (() => {
 
     /* ── Painting ── */
     function shown() {
-      if (filed) return { kind: "filed", c: filed };
+      if (folded()) return { kind: "filed", c: chosen };
       const h = highlighted();
+      // Chosen: the middle shows the choice unless you are pointing at
+      // another topic, which a tap would choose instead.
+      if (chosen && (h === null || (h !== MORE && cands[h]?.categoryID === chosen.categoryID))) return { kind: "chosen", c: chosen, slot: h };
       if (h === null) return { kind: "none" };
       if (h === MORE) return { kind: "more" };
       return { kind: "cand", c: cands[h], slot: h };
@@ -3853,12 +4150,14 @@ const QuickFileDial = (() => {
       && (a.kind !== "cand" || (a.c.categoryID === b.c.categoryID && (a.c.subcategory ?? null) === (b.c.subcategory ?? null)));
 
     function paintRing() {
-      const P = palette();
       const count = cands.length;
       for (let s = 0; s < SLOTS; s++) {
         const seg = segs[s], lab = labels[s], opt = options[s];
         if (s === MORE) {
-          lab.innerHTML = `${MAG}<b>More…</b>`;
+          const sand = Palette.neutral;
+          seg.style.setProperty("--qf-on", sand.deep);
+          lab.style.setProperty("--qf-ink", sand.deep);
+          lab.innerHTML = `<span class="qf-disc qf-disc-more">${MAG}</span><small>All topics</small><b>More…</b>`;
           opt.setAttribute("aria-label", "More topics. Every topic, and the ones you made.");
           opt.innerHTML = `<span class="qf-opt-dot qf-opt-more">${MAG}</span><span class="qf-opt-t"><b>More topics</b><small>Every topic, and yours</small></span>`;
           continue;
@@ -3867,20 +4166,22 @@ const QuickFileDial = (() => {
         seg.classList.toggle("is-empty", !c);
         opt.hidden = !c;
         if (!c) { lab.innerHTML = ""; opt.removeAttribute("aria-label"); opt.innerHTML = ""; continue; }
-        const t = topicOf(c.categoryID) || { name: c.categoryID, hue: P.NEUTRAL_HUE ?? 40 };
-        const hue = t.hue ?? 40;
-        seg.style.setProperty("--qf-c", P.tint(hue));
-        seg.style.setProperty("--qf-on", P.deep(hue));
-        lab.style.setProperty("--qf-ink", P.deep(hue));
+        const t = topicOf(c.categoryID) || { name: c.categoryID, hue: null };
+        const pal = colours(t.hue);
+        seg.style.setProperty("--qf-c", pal.tint);
+        seg.style.setProperty("--qf-on", pal.deep);
+        lab.style.setProperty("--qf-ink", pal.deep);
         const name = esc(t.name);
-        lab.innerHTML = (c.subcategory
+        const big = c.subcategory || t.name || "";
+        lab.classList.toggle("is-long", big.length > 13);
+        lab.innerHTML = disc(t) + (c.subcategory
           ? `<small>${name}</small><b>${esc(c.subcategory)}</b>`
-          : `<b class="qf-solo">${name}</b>`) + (badge === s ? `<i class="qf-badge" title="Also likely">✨</i>` : "");
+          : `<b class="qf-solo">${name}</b>`) + (badge === s ? `<i class="qf-badge" title="Also likely">${ico(12, ICON.spark)}</i>` : "");
         const why = reasonFor(c);
         opt.setAttribute("aria-label", `${t.name}${c.subcategory ? ", " + c.subcategory : ""}${why ? ". " + why : ""}. ${s + 1} of ${count}`);
-        opt.innerHTML = `<span class="qf-opt-dot" style="background:${P.solid(hue)}"></span>`
+        opt.innerHTML = `<span class="qf-opt-dot" style="background:${pal.mid}"></span>`
           + `<span class="qf-opt-t"><b>${name}${c.subcategory ? ` <span>› ${esc(c.subcategory)}</span>` : ""}</b>${why ? `<small>${esc(why)}</small>` : ""}</span>`
-          + (badge === s ? `<i class="qf-badge">✨</i>` : "");
+          + (badge === s ? `<i class="qf-badge">${ico(12, ICON.spark)}</i>` : "");
         warm(t.art);
       }
     }
@@ -3890,21 +4191,13 @@ const QuickFileDial = (() => {
       catch { return ""; }
     }
 
-    function moveBead(slot, dir, instant) {
-      const target = slot * NOTCH;
-      let delta = ((target - beadAngle) % 360 + 360) % 360;   // clockwise distance, 0…359
-      if (dir < 0 && delta > 0) delta -= 360;
-      else if (dir === 0 && delta > 180) delta -= 360;
-      beadAngle += delta;
-      beadArm.classList.toggle("is-instant", !!instant);
-      beadArm.style.transform = `rotate(${beadAngle}deg)`;
-    }
-
     function setArt(t) {
       const urls = artList(t && t.art);
       art.classList.remove("is-more", "is-none");
       ini.textContent = t ? (t.name || "?").trim().charAt(0).toUpperCase() : "?";
-      art.style.setProperty("--qf-art-bg", palette().tint(t ? t.hue ?? 40 : 40));
+      const pal = colours(t ? t.hue : null);
+      art.style.setProperty("--qf-art-bg", pal.tint);
+      art.style.setProperty("--qf-art-ink", pal.deep);
       if (!urls.length) { artImg.hidden = true; artImg.removeAttribute("src"); return; }
       artImg.dataset.chain = JSON.stringify(urls);
       if (artImg.getAttribute("src") !== urls[0]) artImg.src = urls[0];
@@ -3919,27 +4212,53 @@ const QuickFileDial = (() => {
       if (next) artImg.src = next; else { artImg.hidden = true; artImg.removeAttribute("src"); }
     });
 
+    /* A slab's picture that fails tries the next in its list, then becomes
+       the topic's letter. (error doesn't bubble; capture sees it.) */
+    labelsEl.addEventListener("error", (e) => {
+      const img = e.target;
+      if (!(img instanceof Element) || !img.classList.contains("qf-disc")) return;
+      const failed = img.getAttribute("src");
+      if (failed) deadArt.add(failed);
+      let chain = [];
+      try { chain = JSON.parse(img.dataset.chain || "[]"); } catch { chain = []; }
+      const next = chain.find((u) => !deadArt.has(u));
+      if (next) { img.src = next; return; }
+      const i = document.createElement("i");
+      i.className = "qf-disc qf-disc-ini";
+      i.textContent = img.dataset.ini || "?";
+      img.replaceWith(i);
+    }, true);
+
+    /* The middle shows the topic's art. Its name shows only when no slab is
+       lit (a pick from More… that isn't on the ring, or nothing yet): a lit
+       slab already says it. */
     function paintHub(dir, animate) {
       const view = shown();
-      const P = palette();
+      const lit = highlighted() !== null && !folded();
       hub.classList.toggle("is-more", view.kind === "more");
       hub.classList.toggle("is-none", view.kind === "none");
       ev.classList.remove("is-strong", "is-thin", "is-none");
-      if (view.kind === "cand") {
-        const t = topicOf(view.c.categoryID) || { name: view.c.categoryID, hue: 40 };
+      hubCheck.hidden = view.kind !== "chosen";
+      if (view.kind === "cand" || view.kind === "chosen") {
+        const t = topicOf(view.c.categoryID) || { name: view.c.categoryID, hue: null };
+        const pal = colours(t.hue);
         setArt(t);
+        hub.classList.toggle("is-named", !lit);
         hubName.textContent = t.name;
         hubName.classList.toggle("is-long", (t.name || "").length > 11);
         hubSub.textContent = view.c.subcategory || "";
         hubSub.hidden = !view.c.subcategory;
-        hubTip.hidden = !showTip;
+        hubTip.hidden = !showTip || view.kind === "chosen";
+        hubCheck.style.setProperty("--qf-check", pal.deep);
         const state = evidenceOf(view.c, view.slot, ranking);
         ev.classList.add(`is-${state}`);
-        ev.style.stroke = state === "none" ? "" : P.solid(t.hue ?? 40);
-        hub.setAttribute("aria-label", `File under ${label(view.c, t)}`);
+        ev.style.stroke = state === "none" ? "" : pal.mid;
+        hub.setAttribute("aria-label", `${view.kind === "chosen" ? "Filed under" : "File under"} ${label(view.c, t)}`);
       } else if (view.kind === "more") {
         art.classList.add("is-more"); artImg.hidden = true; ini.textContent = "";
-        art.style.setProperty("--qf-art-bg", "var(--control, #EEE8DE)");
+        art.style.setProperty("--qf-art-bg", "var(--sand, #ECE5D8)");
+        art.style.setProperty("--qf-art-ink", "var(--sand-ink, #5A4E38)");
+        hub.classList.remove("is-named");
         hubName.textContent = "More topics"; hubName.classList.remove("is-long");
         hubSub.textContent = "Search them all"; hubSub.hidden = false; hubTip.hidden = true;
         ev.classList.add("is-none"); ev.style.stroke = "";
@@ -3947,6 +4266,8 @@ const QuickFileDial = (() => {
       } else if (view.kind === "none") {
         art.classList.add("is-none"); artImg.hidden = true; ini.textContent = "?";
         art.style.setProperty("--qf-art-bg", "var(--paper, #F6F3EE)");
+        art.style.setProperty("--qf-art-ink", "var(--meta, #6E655A)");
+        hub.classList.add("is-named");
         hubName.textContent = "Turn to choose"; hubName.classList.remove("is-long");
         hubSub.textContent = ""; hubSub.hidden = true; hubTip.hidden = true;
         ev.classList.add("is-none"); ev.style.stroke = "";
@@ -3971,24 +4292,25 @@ const QuickFileDial = (() => {
         return;
       }
       reasonEl.classList.remove("is-filed");
+      if (chosen) { reasonEl.textContent = ""; return; }   // the host's panel says where it went
       if (view.kind === "more") reasonEl.textContent = "Every topic, and the ones you made";
       else if (view.kind === "none") reasonEl.textContent = "";   // the middle already says "Turn to choose"
       else reasonEl.textContent = reasonFor(view.c);
       if (view.kind === "cand") {
-        const c = view.c, t = topicOf(c.categoryID) || { name: c.categoryID, hue: 40, subs: [] };
-        const P = palette(), hue = t.hue ?? 40;
+        const c = view.c, t = topicOf(c.categoryID) || { name: c.categoryID, hue: null, subs: [] };
+        const pal = colours(t.hue);
         const subs = [];
         for (const s of [...(c.altSubs || []), ...(t.subs || [])]) {
           if (subs.length >= 3) break;
           if (s && s !== c.subcategory && !subs.includes(s)) subs.push(s);
         }
         chipsEl.innerHTML = subs.map((s) =>
-          `<button type="button" class="qf-chip" data-sub="${esc(s)}" style="--qf-c:${P.tint(hue)};color:${P.deep(hue)}">${esc(s)}</button>`).join("")
+          `<button type="button" class="qf-chip" data-sub="${esc(s)}" style="--qf-c:${pal.tint};--qf-on:${pal.deep};color:${pal.deep}">${esc(s)}</button>`).join("")
           + (c.subcategory ? `<button type="button" class="qf-chip qf-chip-just" data-sub="">Just ${esc(t.name)}</button>` : "");
       }
       if (also) {
         const t = topicOf(also.categoryID);
-        alsoEl.innerHTML = `<button type="button" class="qf-also"><i aria-hidden="true">✨</i> Also likely: <b>${esc(label(also, t))}</b></button>`;
+        alsoEl.innerHTML = `<button type="button" class="qf-also"><i aria-hidden="true">${ico(14, ICON.spark)}</i> Also likely: <b>${esc(label(also, t))}</b></button>`;
       }
     }
 
@@ -4000,8 +4322,11 @@ const QuickFileDial = (() => {
         labels[s].classList.toggle("is-on", on);
         options[s].setAttribute("aria-selected", String(on));
       }
-      if (h === null) { list.removeAttribute("aria-activedescendant"); beadArm.classList.add("is-off"); }
-      else { list.setAttribute("aria-activedescendant", options[h].id); beadArm.classList.remove("is-off"); moveBead(h, dir, instant); }
+      if (h === null) list.removeAttribute("aria-activedescendant");
+      else {
+        list.setAttribute("aria-activedescendant", options[h].id);
+        root.style.setProperty("--qf-lit", segs[h].style.getPropertyValue("--qf-on") || Palette.neutral.deep);
+      }
       paintHub(dir, animate);
       paintBelow();
     }
@@ -4029,7 +4354,7 @@ const QuickFileDial = (() => {
       return from;
     }
     function stepBy(n, how) {
-      if (filed || !n) return;
+      if (folded() || !n) return;
       touch();
       const dir = n > 0 ? 1 : -1;
       const before = highlighted();
@@ -4043,7 +4368,7 @@ const QuickFileDial = (() => {
       emit("quickfile:turn", { highlighted: s, how });
     }
     function jump(slot, how) {
-      if (filed || slot === null || !exists(slot)) return;
+      if (folded() || slot === null || !exists(slot)) return;
       touch();
       const before = highlighted();
       hover = null; hoverFrom = null; guard = null;
@@ -4067,17 +4392,18 @@ const QuickFileDial = (() => {
 
     /* ── Filing ── */
     function more() {
-      if (filed) return;
+      if (folded()) return;
       touch();
       if (highlighted() !== MORE) { committed = MORE; hover = null; paintHighlight(0, { animate: false }); }
       opts.onMore?.();
     }
     function confirm(c, how) {
-      if (filed || destroyed || !c) return;
+      if (folded() || destroyed || !c) return;
+      if (refine) { choose(c, how); return; }
       const t = topicOf(c.categoryID);
-      filed = c; gesture = null; hover = null; guard = null;
+      chosen = c; gesture = null; hover = null; guard = null;
       root.classList.add("is-filed");
-      root.style.setProperty("--qf-filled", palette().deep(t?.hue ?? 40));
+      root.style.setProperty("--qf-filled", colours(t ? t.hue : null).deep);
       if (reduced()) root.classList.add("is-instant");
       hub.setAttribute("aria-label", `Filed under ${label(c, t)}`);
       paintBelow();
@@ -4087,16 +4413,58 @@ const QuickFileDial = (() => {
       emit("quickfile:confirm", { candidate: c, how });
       opts.onConfirm?.(c, how);
     }
+    /* Refine: written at once and nothing folds. The same topic and subtopic
+       again is nothing; the ring's highlight goes to the chosen topic, or
+       nowhere for a More… or "Also likely" pick that isn't on it. */
+    function choose(c, how) {
+      if (destroyed || !c) return;
+      if (chosen && chosen.categoryID === c.categoryID && (chosen.subcategory ?? null) === (c.subcategory ?? null)) return;
+      const first = !chosen, t = topicOf(c.categoryID);
+      chosen = c; gesture = null; hover = null; guard = null; also = null;
+      const slot = cands.findIndex((x) => x.categoryID === c.categoryID);
+      committed = slot >= 0 ? slot : null;
+      root.classList.add("is-chosen");
+      paintHighlight(0, { animate: false });
+      announce(`Filed under ${label(c, t)}. Subtopics and tags below.`);
+      buzz(first ? 12 : 6);
+      if (first) bumpUses();
+      emit("quickfile:confirm", { candidate: c, how });
+      opts.onConfirm?.(c, how);
+    }
+    /* Refine: a subtopic chip under the dial. The chosen one again clears it. */
+    function setSub(sub) {
+      if (!refine || !chosen) return;
+      const next = sub && sub !== chosen.subcategory ? sub : null;
+      choose({ ...chosen, subcategory: next }, "sub");
+    }
+    /* The subtopics the ring suggested for a topic, then any a later answer
+       adds. Never reordered, so chips drawn from it don't jump. */
+    const subMemo = new Map();
+    function suggestedSubs(topicID) {
+      const out = subMemo.get(topicID) || [];
+      const add = (x) => { if (x && !out.some((y) => y.toLowerCase() === x.toLowerCase())) out.push(x); };
+      for (const r of [ranking, latest]) {
+        const c = r?.candidates?.find((x) => x.categoryID === topicID);
+        if (c) { add(c.subcategory); (c.altSubs || []).forEach(add); }
+      }
+      subMemo.set(topicID, out);
+      return out.slice();
+    }
     function fileSlot(slot, how) {
-      if (filed) return;
+      if (folded()) return;
       if (slot === MORE) { more(); return; }
       const c = cands[slot];
       if (!c) return;
+      // The chosen topic's own segment keeps the subtopic a chip set.
+      if (chosen && c.categoryID === chosen.categoryID) {
+        if (committed !== slot || hover !== null) { committed = slot; hover = null; paintHighlight(0, { animate: false }); }
+        return;
+      }
       if (committed !== slot || hover !== null) { committed = slot; hover = null; paintHighlight(0, { animate: false }); }
       confirm(c, how);
     }
     function fileMiddle(how, guarded) {
-      if (filed) return;
+      if (folded()) return;
       if (guarded && guard && now() - guard.at < GUARD_MS) {
         const before = guard.view;
         guard = null;
@@ -4105,13 +4473,26 @@ const QuickFileDial = (() => {
         return;
       }
       const view = shown();
+      if (view.kind === "chosen") return;   // what it already is
       if (view.kind === "cand") confirm(view.c, how); else more();
     }
 
     /* ── Late answers ── */
     function offer(r) {
-      if (filed || destroyed || !r || !Array.isArray(r.candidates) || !r.candidates.length) return;
+      if (folded() || destroyed || !r || !Array.isArray(r.candidates) || !r.candidates.length) return;
+      latest = r;
       const oldBest = cands[0], best = r.candidates[0];
+      // Chosen: a late answer never moves the choice. A topic it prefers that
+      // is on the ring gets the badge; the host takes its subtopics and tags.
+      if (chosen) {
+        const slot = best ? cands.findIndex((c) => c.categoryID === best.categoryID) : -1;
+        const next = slot >= 0 && best.categoryID !== chosen.categoryID ? slot : null;
+        if (next === badge) return;
+        badge = next;
+        paintRing();
+        paintHighlight(0, { animate: false, instant: true });
+        return;
+      }
       const sameBest = oldBest && best && oldBest.categoryID === best.categoryID
         && (oldBest.subcategory ?? null) === (best.subcategory ?? null);
       if (!touched) {
@@ -4155,7 +4536,7 @@ const QuickFileDial = (() => {
       if (seg) seg.classList.toggle("is-pressed", on);
     }
     list.addEventListener("pointerdown", (e) => {
-      if (filed || e.button > 0 || isList()) return;
+      if (folded() || e.button > 0 || isList()) return;
       const p = polar(e);
       if (p.r > R.outer + 2 || p.r < R.hub) return;
       if (e.pointerType === "mouse") { e.preventDefault(); list.focus({ preventScroll: true }); }
@@ -4181,7 +4562,7 @@ const QuickFileDial = (() => {
         while (turned < (g.notches - 0.5) * NOTCH - HYSTERESIS) { g.notches--; stepBy(-1, "drag"); }
         return;
       }
-      if (e.pointerType !== "mouse" || filed || isList()) return;
+      if (e.pointerType !== "mouse" || folded() || isList()) return;
       const p = polar(e);
       if (p.r < R.inner - 2 || p.r > R.outer + 2) { hoverFrom = null; setHover(null); return; }
       if (!hoverFrom) { hoverFrom = { x: p.x, y: p.y }; return; }
@@ -4202,7 +4583,7 @@ const QuickFileDial = (() => {
     list.addEventListener("pointercancel", (e) => endGesture(e, true));
     list.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse" && !gesture) { hoverFrom = null; setHover(null); } });
     list.addEventListener("click", (e) => {   // the narrow list layout: rows are taps
-      if (!isList() || filed) return;
+      if (!isList() || folded()) return;
       const opt = e.target.closest("[role=option]");
       if (opt) fileSlot(Number(opt.dataset.slot), "list");
     });
@@ -4218,7 +4599,7 @@ const QuickFileDial = (() => {
 
     /* ── Input: wheel and trackpad (only while the pointer is over the dial) ── */
     dial.addEventListener("wheel", (e) => {
-      if (filed || isList()) return;
+      if (folded() || isList()) return;
       e.preventDefault();
       const t = now();
       if (t - wheel.last > WHEEL.idle) wheel.acc = 0;
@@ -4242,7 +4623,7 @@ const QuickFileDial = (() => {
 
     /* ── Input: keys (focus on the dial) ── */
     list.addEventListener("keydown", (e) => {
-      if (filed || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (folded() || e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key;
       let handled = true;
       if (k === "ArrowRight" || k === "ArrowDown" || k === "j" || k === "J") stepBy(1, "key");
@@ -4259,6 +4640,12 @@ const QuickFileDial = (() => {
 
     /* ── Go ── */
     setRanking(opts.ranking);
+    if (refine && opts.chosen && opts.chosen.categoryID) {
+      chosen = opts.chosen;
+      const slot = cands.findIndex((x) => x.categoryID === chosen.categoryID);
+      committed = slot >= 0 ? slot : null;
+      root.classList.add("is-chosen");
+    }
     root.classList.add("is-in");
     if (reduced()) root.classList.add("is-reduced-in");
     paintHighlight(0, { animate: false, instant: true });
@@ -4276,12 +4663,59 @@ const QuickFileDial = (() => {
         timers.clear();
         host.innerHTML = "";
       },
+      choose(c, how) { if (refine) choose(c, how || "api"); else confirm(c, how || "api"); },
+      setSub,
+      suggestedSubs,
       get touched() { return touched; },
       get highlighted() { return highlighted(); },
+      get chosen() { return chosen; },
     };
   }
 
-  return Object.freeze({ mount, header, label, evidenceOf, HEADER, SLOTS, MORE });
+  /* ── The refine panel's order (Core/QuickFile/QuickFileRefine.swift) ──
+     Pure, and checked against the iPhone by Scripts/test_quick_file_refine.mjs
+     over the shared fixture. */
+  const key = (x) => String(x ?? "").trim().toLowerCase();
+  const siteName = (t) => { try { return typeof Filer === "object" && !!Filer && Filer.isSiteName(t); } catch { return false; } };
+  /** Subtopic chips: the suggested ones (only names in `all`, spelt as `all`
+      spells them), then your most-used, then the rest of `all` in its order. */
+  function subtopicChips(all, suggested = [], used = []) {
+    const canon = new Map();
+    for (const name of all || []) if (key(name) && !canon.has(key(name))) canon.set(key(name), name);
+    const out = [], seen = new Set();
+    for (const name of [...(suggested || []), ...(used || []), ...(all || [])]) {
+      const k = key(name);
+      if (!canon.has(k) || seen.has(k)) continue;
+      seen.add(k);
+      out.push(canon.get(k));
+    }
+    return out;
+  }
+  /** Tag chips, lowercased, each once: tags already on it that nothing
+      offers (typed, or there before), then this link's suggestions, then
+      your recent ones. A site name is never offered; one you have stays. */
+  function tagChips(chosen = [], suggested = [], recent = []) {
+    const on = new Set((chosen || []).map(key).filter(Boolean));
+    const offered = [...(suggested || []), ...(recent || [])].map(key).filter((t) => t && !siteName(t));
+    const offeredSet = new Set(offered);
+    const own = (chosen || []).map(key).filter((t) => t && !offeredSet.has(t));
+    const out = [], seen = new Set();
+    for (const tag of [...own, ...offered]) {
+      if (seen.has(tag)) continue;
+      seen.add(tag);
+      out.push({ tag, on: on.has(tag) });
+    }
+    return out;
+  }
+  /** "#Morning  Run " → "morning run": no #, trimmed, lowercase, single
+      spaces, at most 30 characters. Nothing left is null. */
+  function cleanTag(raw) {
+    const tag = String(raw ?? "").replace(/#/g, "").trim().toLowerCase().replace(/\s+/g, " ").slice(0, 30).trim();
+    return tag || null;
+  }
+
+  return Object.freeze({ mount, header, label, evidenceOf, HEADER, SLOTS, MORE,
+    refine: Object.freeze({ subtopicChips, tagChips, cleanTag }) });
 })();
 
 if (typeof globalThis === "object") globalThis.QuickFileDial = QuickFileDial;
@@ -4346,6 +4780,10 @@ const Triage = (() => {
   const reduced = () => (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches)
     || !!document.querySelector(".qf-reduced");
   const firstArt = (art) => (Array.isArray(art) ? art.find(Boolean) : art) || null;
+  /* A topic's clay colours; no topic (or no hue) is Sand, Palette.neutral. */
+  const coloursOf = (t) => (t && t.hue !== null && t.hue !== undefined && Number.isFinite(Number(t.hue))
+    ? Palette.of(Number(t.hue)) : Palette.neutral);
+  const chipStyle = (pal) => `background:${pal.tint};color:${pal.deep}`;
   const cssId = (s) => (typeof CSS === "object" && CSS.escape ? CSS.escape(s) : String(s).replace(/["\\]/g, "\\$&"));
 
   /* ── What counts ──────────────────────────────────────────────────────── */
@@ -4587,21 +5025,19 @@ const Triage = (() => {
       ui.tally.innerHTML = `<p class="tri-hint">${fine ? "Turn the dial · 1–7 files · S skips · Z undoes" : "Tap a topic, or turn the dial and tap the middle"}</p>`;
       return;
     }
-    const P = Palette;
     ui.tally.innerHTML = [...S.tallies].map(([id, n]) => {
-      const t = topic(id), hue = t ? t.hue : P.NEUTRAL_HUE, art = firstArt(t && t.art);
-      return `<span class="tri-chip" data-topic="${esc(id)}" style="${P.chip(hue)}">`
+      const t = topic(id), art = firstArt(t && t.art);
+      return `<span class="tri-chip" data-topic="${esc(id)}" style="${chipStyle(coloursOf(t))}">`
         + (art ? `<img src="${esc(art)}" alt="">` : `<span class="tri-chip-ini">${esc((t?.name || id).charAt(0))}</span>`)
         + `${esc(t ? t.name : id)} <b>${n}</b></span>`;
     }).join("");
   }
 
   function cardHTML(r, rise) {
-    const P = Palette;
     const d = call("display", r) || { title: r.title || r.url, author: r.author };
     const title = d.title || r.title || r.url || "Untitled";
     const t = topic(r.category_id);
-    const hue = t ? t.hue : P.NEUTRAL_HUE;
+    const pal = coloursOf(t);
     const g = call("glyph", r.platform) || "";
     const plat = call("platform", r.platform) || r.platform || "";
     const when = call("date", r.saved_at) || "";
@@ -4612,15 +5048,15 @@ const Triage = (() => {
     const dur = secs ? `<span class="tri-dur"><span aria-hidden="true">▶</span>${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}</span>` : "";
     if (pic && !badPics.has(pic)) {
       return `<article class="${cls} tri-media" data-id="${esc(r.id)}">
-        <div class="tri-cover" style="background-image:${P.gradient(hue)}"><img src="${esc(pic)}" alt="" decoding="async"><span class="badge" role="img" aria-label="${esc(plat)}">${g}</span>${dur}</div>
+        <div class="tri-cover"><img src="${esc(pic)}" alt="" decoding="async"><span class="badge" role="img" aria-label="${esc(plat)}">${g}</span>${dur}</div>
         <div class="tri-card-body"><div class="tri-who">${g}<span>${esc(d.author || plat)}</span></div>
           <div class="tri-title-t">${esc(title)}</div>
-          <div class="tri-meta"><span class="tri-filed${t ? "" : " is-none"}"${t ? ` style="${P.chip(hue)}"` : ""}>${esc(where)}</span><span>${esc(when)}</span></div></div>
+          <div class="tri-meta"><span class="tri-filed${t ? "" : " is-none"}"${t ? ` style="${chipStyle(pal)}"` : ""}>${esc(where)}</span><span>${esc(when)}</span></div></div>
       </article>`;
     }
     const art = firstArt(t && t.art);
     const kind = KIND_WORD[r.kind] || plat;
-    return `<article class="${cls} tri-poster${t ? "" : " is-unfiled"}" data-id="${esc(r.id)}" style="--tri-tint:color-mix(in srgb, ${P.tint(hue)} 58%, #fff);--tri-deep:${P.deep(hue)}">
+    return `<article class="${cls} tri-poster${t ? "" : " is-unfiled"}" data-id="${esc(r.id)}" style="--tri-tint:${pal.tint};--tri-deep:${pal.deep}">
       <span class="tri-wm" aria-hidden="true">${g}</span>
       <div class="tri-poster-top"><span class="badge" role="img" aria-label="${esc(plat)}">${g}</span><span>${esc(kind)}${d.author ? ` · ${esc(d.author)}` : ""}</span></div>
       <div class="tri-poster-title">${esc(title)}</div>
@@ -4650,7 +5086,7 @@ const Triage = (() => {
   function paintHead(r, ranking) {
     const pin = pinOf(r);
     const h = QuickFileDial.header(ranking, { yours: pin?.reason === "yours" });
-    ui.head.textContent = `${h.icon} ${h.text}`;
+    ui.head.innerHTML = `${h.icon}<span>${h.text}</span>`; // fixed copy and inline SVG from QuickFileDial.header
   }
   function destroyDial() {
     if (S && S.dial) { S.dial.destroy(); S.dial = null; }
@@ -4947,7 +5383,7 @@ function show(i) {
   $("sheet").hidden = false; $("done").hidden = true;
   state.ranking = rankOf(s, null);
   const h = QuickFileDial.header(state.ranking);
-  $("head").textContent = h.icon + " " + h.text;
+  $("head").innerHTML = h.icon + " <span>" + h.text + "</span>";
   state.dial = QuickFileDial.mount($("dial-host"), {
     ranking: state.ranking, topic, mode: "sheet", input: inputOf(s),
     onConfirm: (c) => filed(c),
@@ -4961,7 +5397,7 @@ function show(i) {
       const r = rankOf(s, s.ai);
       const touched = state.dial.touched;
       state.dial.offer(r);
-      if (!touched) { state.ranking = r; const h2 = QuickFileDial.header(r); $("head").textContent = h2.icon + " " + h2.text; }
+      if (!touched) { state.ranking = r; const h2 = QuickFileDial.header(r); $("head").innerHTML = h2.icon + " <span>" + h2.text + "</span>"; }
       paintScores(r, state.dial.highlighted);
       toast("The model answered: " + label({ categoryID: s.ai.topic, subcategory: s.ai.subtopic }) + " (" + s.ai.confidence + ")");
     }, 1500);

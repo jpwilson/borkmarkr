@@ -13,10 +13,14 @@ import UIKit
 /// its page is read and a "Bork it" button is offered, and nothing is saved
 /// until that is tapped, so a half-typed link never becomes a bork.
 ///
-/// **Tap 2 files.** The sheet becomes the saved card, the Quick File dial and
-/// its reason line. A tap on the dial files as `"user"`, closes the sheet and
-/// leaves a "Saved to Fitness › Running · Undo" toast, whose Undo takes the
-/// whole save back. "Done" keeps the guess.
+/// **Tap 2 chooses.** The sheet becomes the saved card, the Quick File dial and
+/// its reason line. A tap on the dial is written as `"user"` at once and the
+/// sheet stays: the refine panel takes the reason line's place (subtopic
+/// chips, tag chips, "+ Tag") and Done is pinned at the bottom. Another
+/// topic on the dial re-chooses. Done, its six-second drain (stopped for
+/// good by any touch after the choice) or a swipe closes the sheet with a
+/// "Saved to Fitness › Running · Undo" toast, whose Undo takes the whole
+/// save back. Before a choice, the toolbar's "Done" keeps the guess.
 /// The preview, on-screen text and the model's answer arrive while the dial
 /// is up and re-rank it (an untouched dial re-deals, a touched one only gains
 /// a ✨), and update the saved bork through `Store.save`'s merge rules —
@@ -53,15 +57,16 @@ struct AddSheet: View {
     @Query(filter: #Predicate<CustomTopic> { $0.deletedAt == nil })
     private var customTopics: [CustomTopic]
 
+    /// Your own subtopics, for the refine panel's chips.
+    @Query(filter: #Predicate<CustomSubtopic> { $0.deletedAt == nil })
+    private var customSubtopics: [CustomSubtopic]
+
     enum Step { case paste, details }
 
     @State private var step = Step.paste
     @State private var urlText = ""
     @State private var title = ""
     @State private var author: String?
-    @State private var tags: [String] = []
-    @State private var userTagsEdited = false
-    @State private var tagDraft = ""
     @State private var noteOpen = false
     @State private var note = ""
     @State private var noteDate = Date.now
@@ -126,9 +131,33 @@ struct AddSheet: View {
     @State private var extrasOpen = false
     /// Filed, done, removed or swiped away: the sheet has had its say.
     @State private var finished = false
+    /// The bork's tags from tap 1 on: the Categorizer's, the page's and the
+    /// model's as they land, and the refine panel's toggles. Written as they
+    /// change (`writeTags`).
+    @State private var tagState: QuickFileTags?
+    /// Where the refine panel's subtopic and tag lists come from.
+    @State private var refineSource = QuickFileRefineSource.none
+    /// The bork as it was before the first choice on this sheet, for Undo.
+    @State private var beforeChoice: BeforeChoice?
+    /// Done's drain after the first choice.
+    @State private var drain = QuickFileDrain()
+    /// A tag is being typed: the refine panel docks above the keyboard.
+    @State private var typingTag = false
+    /// The details step's size with no keyboard; sizes the dial.
+    @State private var restingSize = CGSize.zero
+    /// Room under the dial for the refine panel (about 235 pt) and the
+    /// pinned Done bar (78 pt), plus a little air. Grows with the text.
+    @ScaledMetric(relativeTo: .subheadline) private var belowDial: CGFloat = 323
+
+    struct BeforeChoice {
+        var categoryID: String?
+        var subcategory: String?
+        var source: String?
+        var tags: [String]
+        var tagsEdited: Bool?
+    }
 
     private var style: QuickFileStyle { .app(accent) }
-    private static let savedGreen = Color(hex: "1D8A50")
 
     /// Borks that count against the signed-out limit. `allBookmarks` also
     /// feeds tag suggestions, where a waiting bork's tags are perfectly good
@@ -147,43 +176,19 @@ struct AddSheet: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                switch step {
-                case .paste: pasteStep
-                case .details: detailsStep
+            VStack(spacing: 0) {
+                sheetHeader
+                    .padding(.horizontal, Tokens.gutter)
+                Group {
+                    switch step {
+                    case .paste: pasteStep
+                    case .details: detailsStep
+                    }
                 }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
             .background(Tokens.paper)
-            .navigationTitle(saved != nil ? "Saved to bookmarker" : "Add a link")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if saved != nil {
-                    // Saved already, so there is nothing to cancel: "Done"
-                    // keeps it (and the guess), and the one way back is a
-                    // deliberate "Remove this save".
-                    if createdHere {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Menu {
-                                Button(role: .destructive, action: removeSave) {
-                                    Label("Remove this save", systemImage: "trash")
-                                }
-                            } label: {
-                                Image(systemName: "ellipsis.circle")
-                                    .font(.system(size: 17, weight: .semibold))
-                            }
-                            .accessibilityLabel("More")
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done", action: done)
-                            .fontWeight(.semibold)
-                    }
-                } else {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .alert("Couldn't save", isPresented: .constant(error != nil)) {
                 Button("OK") { error = nil }
             } message: {
@@ -191,7 +196,7 @@ struct AddSheet: View {
             }
         }
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
         // More… on the dial. It opens with nothing picked, so closing it
         // (Cancel, or swiping it away) files nothing; a pick files.
         .sheet(isPresented: $showingPicker, onDismiss: filePick) {
@@ -227,6 +232,49 @@ struct AddSheet: View {
         .onDisappear(perform: finishIfNeeded)
     }
 
+    // MARK: Header
+
+    /// A's sheet header: the grabber band, then the title at 17/600 on the
+    /// left. Before tap 1 the one way out is Cancel; once saved there is
+    /// nothing to cancel, so "Done" keeps it (and the guess) and the one way
+    /// back is a deliberate "Remove this save" in the ⋯ menu. Once something
+    /// is chosen, Done is pinned under the panel instead.
+    private var sheetHeader: some View {
+        ClaySheetHeader(title: saved != nil ? "Saved to bookmarker" : "Add a link")
+            .overlay(alignment: .bottomTrailing) {
+                HStack(spacing: 2) {
+                    if saved != nil {
+                        if createdHere {
+                            Menu {
+                                Button(role: .destructive, action: removeSave) {
+                                    Label("Remove this save", systemImage: "trash")
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Tokens.ink)
+                                    .frame(width: 36, height: 36)
+                                    .background(Tokens.surface, in: Circle())
+                                    .overlay(Circle().strokeBorder(Tokens.hairline, lineWidth: 1))
+                                    .frame(width: Tokens.minTapTarget, height: Tokens.minTapTarget)
+                                    .contentShape(Rectangle())
+                            }
+                            .accessibilityLabel("More")
+                        }
+                        if dial?.isChosen != true {
+                            Button("Done", action: done)
+                                .buttonStyle(.clayQuiet)
+                        }
+                    } else {
+                        Button("Cancel") { dismiss() }
+                            .buttonStyle(.clayQuiet)
+                    }
+                }
+                .frame(height: 36)
+                .padding(.trailing, -6)
+            }
+    }
+
     // MARK: Step 1 — paste
 
     /// No "Fetch preview" button. Paste a link and it just goes — a button
@@ -256,18 +304,18 @@ struct AddSheet: View {
                     .submitLabel(.go)
                     .onSubmit(saveNow)
                     .padding(14)
-                    .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .frame(minHeight: 48)
+                    .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(parsedURL != nil ? accent.base.opacity(0.5) : Tokens.hairline,
+                        RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous)
+                            .stroke(parsedURL != nil ? accent.base.opacity(0.6) : Tokens.hairline,
                                     lineWidth: parsedURL != nil ? 1.5 : 1)
                     )
 
                 if urlText.isEmpty && clipboardHasContent {
                     HStack(spacing: 12) {
                         Text("Paste the link you copied")
-                            .font(Typo.ui(13, .semibold))
-                            .foregroundStyle(Tokens.ink)
+                            .textRole(.cardTitle, color: Tokens.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 8)
                         PasteButton(payloadType: PastedLink.self) { links in
@@ -285,8 +333,10 @@ struct AddSheet: View {
                         .frame(minWidth: 104, minHeight: 36, alignment: .trailing)
                         .accessibilityLabel("Paste the link you copied")
                     }
-                    .padding(13)
-                    .cardSurface(radius: 16)
+                    .padding(.vertical, 10)
+                    .padding(.leading, 14)
+                    .padding(.trailing, 10)
+                    .cardSurface(radius: Tokens.cardRadius)
                 }
 
                 // A typed link that has paused: what it is, and the button
@@ -294,16 +344,8 @@ struct AddSheet: View {
                 if typedReady, let url = parsedURL {
                     VStack(spacing: 12) {
                         linkRow(url, saved: false)
-                        Button(action: saveTyped) {
-                            Text(Copy.saveVerb)
-                                .font(Typo.ui(15, .bold))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                                .shadow(color: accent.base.opacity(0.34), radius: 16, y: 8)
-                        }
-                        .buttonStyle(PressableStyle(scale: 0.97))
+                        Button(Copy.saveVerb, action: saveTyped)
+                            .buttonStyle(.clayPrimary)
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -311,11 +353,13 @@ struct AddSheet: View {
                 HStack(spacing: 6) {
                     Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold))
                     Text("Saving from another app? Use the share sheet.")
-                        .font(Typo.ui(12.5, .medium))
+                        .textRole(.meta)
                 }
                 .foregroundStyle(Tokens.inkSecondary)
             }
-            .padding(18)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.top, 8)
+            .padding(.bottom, 20)
             .animation(.easeOut(duration: 0.2), value: typedReady)
         }
         .task {
@@ -420,9 +464,18 @@ struct AddSheet: View {
 
     // MARK: Step 2 — saved, where does it go?
 
-    /// The saved card, the dial and its reason line, and the extras folded
-    /// away. Fits a phone without scrolling, so a drag on the dial is always
-    /// a turn and never a scroll.
+    /// The saved card, the dial and its reason line, then the refine panel,
+    /// and the extras folded away. The dial is sized from the sheet's resting
+    /// height (`dialDiameter`) so that, at the default text size, everything
+    /// down to the tag row sits above the pinned Done without scrolling, and
+    /// a drag on the dial is a turn and never a scroll; at large text the
+    /// dial bottoms out and the sheet scrolls.
+    ///
+    /// While a tag is being typed the field must not live in the ScrollView
+    /// (keyboard avoidance there is not stable once text changes), so the
+    /// scroll content drops to the saved row and a second refine panel docks
+    /// in the bottom inset above Done, riding on the keyboard. When the field
+    /// loses focus the dock goes and the resting layout returns.
     private var detailsStep: some View {
         ScrollView {
             VStack(spacing: 14) {
@@ -430,19 +483,102 @@ struct AddSheet: View {
                     duplicateCard(duplicate)
                 } else if let dial, let url = parsedURL {
                     linkRow(url, saved: true)
-                    QuickFileHeader(model: dial, style: style)
-                        .padding(.top, 10)
-                    QuickFileDial(model: dial, style: style, diameter: 300)
-                    QuickFileDialFooter(model: dial, style: style)
-                    extras
-                        .padding(.top, 8)
+                    if !typingTag {
+                        QuickFileHeader(model: dial, style: style)
+                            .padding(.top, 6)
+                        QuickFileDial(model: dial, style: style, diameter: dialDiameter,
+                                      onDone: dial.isChosen ? { finishChosen() } : nil)
+                            .padding(.top, -6)
+                        if dial.isChosen, let tagState {
+                            QuickFileRefinePanel(model: dial, tags: tagState, source: refineSource, style: style,
+                                                 onAddTag: { setTypingTag(true) })
+                                .padding(.top, -12)
+                                .padding(.horizontal, -4)
+                                .transition(.opacity)
+                        } else {
+                            QuickFileDialFooter(model: dial, style: style)
+                        }
+                        extras
+                            .padding(.top, 8)
+                    }
                 }
             }
-            .padding(18)
-            .padding(.bottom, 30)
+            .padding(.horizontal, Tokens.gutter)
+            .padding(.top, 8)
+            .padding(.bottom, 28)
+            .animation(.easeOut(duration: 0.18), value: dial?.isChosen)
         }
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
+        // Pinned, so it is always in reach and rides above the keyboard;
+        // while typing a tag, the panel docks on top of it.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if duplicate == nil, let dial, dial.isChosen {
+                VStack(spacing: 0) {
+                    if typingTag, let tagState {
+                        QuickFileRefinePanel(model: dial, tags: tagState, source: refineSource, style: style,
+                                             onEditingTag: { if !$0 { setTypingTag(false) } },
+                                             startsTyping: true)
+                            .padding(.horizontal, Tokens.gutter - 4)
+                            .padding(.top, 12)
+                            .transition(.opacity)
+                    }
+                    QuickFileDoneButton(draining: drain.isDraining, style: style) { finishChosen() }
+                        .padding(.horizontal, Tokens.gutter)
+                        .padding(.top, 12)
+                        .padding(.bottom, 8)
+                }
+                .background {
+                    Tokens.paper
+                        .overlay(alignment: .top) { Tokens.hairline.frame(height: 1) }
+                        .ignoresSafeArea(edges: .bottom)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        // The resting size: the keyboard and the Done bar don't change it.
+        .background {
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { restingSize = geometry.size }
+                    .onChange(of: geometry.size) { _, size in restingSize = size }
+            }
+            .ignoresSafeArea(.keyboard)
+        }
+        .background(QuickFileTouchWatcher { drain.touched() })
+        // Typing doesn't reach the window's watcher.
+        .onChange(of: tagState?.draft) { _, _ in drain.touched() }
+        // The dock only exists while a topic is chosen; never leave the
+        // sheet on the bare saved row if the choice goes away mid-typing.
+        .onChange(of: dial?.isChosen) { _, chosen in
+            if chosen != true { typingTag = false }
+        }
+        .task(id: drain.startedAt) {
+            guard drain.isDraining else { return }
+            try? await Task.sleep(for: .seconds(QuickFileDrain.seconds))
+            guard !Task.isCancelled, drain.isDue(at: .now) else { return }
+            finishChosen()
+        }
+    }
+
+    private func setTypingTag(_ on: Bool) {
+        guard typingTag != on else { return }
+        withAnimation(.easeOut(duration: 0.2)) { typingTag = on }
+    }
+
+    private var dialDiameter: CGFloat {
+        Self.dialDiameter(restingSize, below: belowDial)
+    }
+
+    /// B's 360 pt wheel, 15 pt clear each side, smaller only when the sheet
+    /// is short: `size` is the details step's resting size (no keyboard, Done
+    /// bar included), and `below` is the room kept under the dial for the
+    /// refine panel and the pinned Done. 118 pt above the dial is the link
+    /// row and the reason line. Never under 232 pt; past that the sheet
+    /// scrolls. The same before and after choosing and with the keyboard up.
+    static func dialDiameter(_ size: CGSize, below: CGFloat = 323) -> CGFloat {
+        guard size.height > 0 else { return max(260, min(size.width - 30, 360)) }
+        return max(232, min(360, size.width - 30, size.height - 118 - below))
     }
 
     // MARK: Already saved
@@ -497,120 +633,77 @@ struct AddSheet: View {
         let when = DuplicateSave.savedPhrase(daysAgo: days) ?? "saved \(RelativeDate.calendar(bork.savedAt))"
         let filed = DuplicateSave.filedPhrase(topic: topic?.name, subtopic: bork.subcategory)
 
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Already in your library")
-                    .font(Typo.display(16, .semibold))
-                    .foregroundStyle(Tokens.ink)
-                Text("\(filed) · \(when)")
-                    .font(Typo.ui(12.5, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .textRole(.sectionTitle, color: Tokens.ink)
+                    .accessibilityAddTraits(.isHeader)
+                HStack(spacing: 6) {
+                    TopicDot(palette: palette)
+                    Text("\(filed) · \(when)")
+                        .textRole(.meta)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
-            HStack(alignment: .top, spacing: 12) {
-                CoverImage(url: bork.imageURL, palette: palette)
-                    .frame(width: 64, height: 64)
-                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(bork.title.isEmpty ? "Untitled" : bork.title)
-                        .font(Typo.display(14, .semibold))
-                        .foregroundStyle(Tokens.ink)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.leading)
-                    Text(bork.displayAuthor ?? bork.url?.host ?? bork.platform.name)
-                        .font(Typo.ui(11.5, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 0)
-            }
+            savedRow(cover: CoverImage(url: bork.imageURL, topicID: bork.categoryID),
+                     title: bork.title.isEmpty ? "Untitled" : bork.title,
+                     meta: bork.displayAuthor.map { "\($0) · \(bork.platform.name)" }
+                         ?? bork.url?.host ?? bork.platform.name)
 
-            VStack(spacing: 9) {
-                Button { openingDuplicate = bork } label: {
-                    Text("Open it")
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                }
-                .buttonStyle(.plain)
-
-                Button { saveAgain(over: bork) } label: {
-                    Text("Save again anyway")
-                        .font(Typo.ui(14, .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous)
-                                .stroke(Tokens.hairline, lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
+            VStack(spacing: 10) {
+                Button("Open it") { openingDuplicate = bork }
+                    .buttonStyle(.clayPrimary)
+                Button("Save again anyway") { saveAgain(over: bork) }
+                    .buttonStyle(.claySecondary)
             }
         }
-        .padding(15)
-        .cardSurface(radius: 18)
     }
 
-    /// The thing itself, compact: cover, who made it, the title, and — once
-    /// tap 1 has happened — a green "Saved". This is the confirmation: you see
-    /// the post, not a form about it. Compact so the dial fits under it.
-    private func linkRow(_ url: URL, saved isSaved: Bool) -> some View {
-        let platform = Platform.detect(from: url)
-        let palette = Taxonomy.category(id: saved?.categoryID)?.palette ?? NeutralPalette.value
-        let creator = (Bookmark.isPlaceholderAuthor(author, url: url, platform: platform)
-                       ? Platform.handle(in: url) : author) ?? url.host ?? platform.name
-
-        return HStack(alignment: .center, spacing: 12) {
-            ZStack(alignment: .topLeading) {
-                CoverImage(url: imageURL, palette: palette)
-                PlatformBadge(platform: platform, size: 18, pageURL: url)
-                    .padding(5)
-            }
-            .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(creator == platform.name ? creator : "\(creator) · \(platform.name)")
-                    .font(Typo.ui(11.5, .semibold))
-                    .foregroundStyle(Tokens.inkMeta)
+    /// A's saved row: white, hairline, 62 pt, a 44 pt cover at radius 10,
+    /// the title at 15/600 over "@author · Platform" in meta.
+    private func savedRow<Cover: View>(cover: Cover, title: String, meta: String,
+                                       note: String? = nil) -> some View {
+        HStack(spacing: 12) {
+            cover
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: Tokens.thumbRadius, style: .continuous))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title)
+                    .textRole(.cardTitle, color: Tokens.ink)
                     .lineLimit(1)
-                Text(title.isEmpty ? Categorizer.fallbackTitle(for: url) : title)
-                    .font(Typo.display(15, .semibold))
-                    .foregroundStyle(Tokens.ink)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .animation(.easeOut(duration: 0.2), value: title)
-                if isSaved {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12, weight: .bold))
-                        Text("Saved")
-                            .font(Typo.ui(12, .bold))
-                        if previewFetched && !titleWasFetched {
-                            Text("· couldn't read the page")
-                                .font(Typo.ui(11, .medium))
-                                .foregroundStyle(Tokens.inkMeta)
-                        }
-                    }
-                    .foregroundStyle(Self.savedGreen)
-                }
+                (Text(meta) + Text(note.map { " · \($0)" } ?? ""))
+                    .textRole(.meta)
+                    .lineLimit(1)
             }
             Spacer(minLength: 0)
         }
-        .padding(11)
+        .padding(.leading, 10)
+        .padding(.trailing, 14)
+        .frame(minHeight: 62)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(radius: 18)
+        .cardSurface(radius: Tokens.cardRadius)
         .accessibilityElement(children: .combine)
     }
 
-    /// "Tags, note, side quest", folded away under the dial. The whole point
+    /// The thing itself, compact: A's saved row — cover, title, who made it.
+    /// Under the "Saved to bookmarker" header this is the confirmation: you
+    /// see the post, not a form about it. Compact so the dial fits under it.
+    private func linkRow(_ url: URL, saved isSaved: Bool) -> some View {
+        let platform = Platform.detect(from: url)
+        let creator = (Bookmark.isPlaceholderAuthor(author, url: url, platform: platform)
+                       ? Platform.handle(in: url) : author) ?? url.host ?? platform.name
+        return savedRow(cover: CoverImage(url: imageURL, topicID: saved?.categoryID),
+                        title: title.isEmpty ? Categorizer.fallbackTitle(for: url) : title,
+                        meta: creator == platform.name ? creator : "\(creator) · \(platform.name)",
+                        note: isSaved && previewFetched && !titleWasFetched ? "couldn't read the page" : nil)
+            .animation(.easeOut(duration: 0.2), value: title)
+    }
+
+    /// "Note, side quest, title", folded away under the dial. The whole point
     /// is that you don't type, so these are one tap away rather than in the
     /// way; whatever is set here is written to the bork as the sheet closes.
+    /// Tags live in the refine panel.
     private var extras: some View {
         VStack(alignment: .leading, spacing: 16) {
             Button {
@@ -619,28 +712,23 @@ struct AddSheet: View {
                 HStack(spacing: 8) {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 12, weight: .bold))
-                    Text("Tags, note, side quest")
-                        .font(Typo.ui(13.5, .semibold))
+                    Text("Note, side quest, title")
+                        .textRole(.chip)
                     Spacer()
                     Image(systemName: "chevron.down")
                         .font(.system(size: 11, weight: .bold))
                         .rotationEffect(.degrees(extrasOpen ? 180 : 0))
                 }
                 .foregroundStyle(Tokens.inkSecondary)
-                .padding(.horizontal, 14)
-                .frame(height: 46)
-                .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Tokens.hairline, lineWidth: 1)
-                )
+                .padding(.horizontal, 16)
+                .frame(minHeight: Tokens.slimRowHeight)
+                .cardSurface(radius: Tokens.cardRadius)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityValue(extrasOpen ? "Open" : "Closed")
 
             if extrasOpen {
-                tagsEditor
                 journeyAttach
                 titleField
                 noteSection
@@ -649,111 +737,25 @@ struct AddSheet: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var tagsEditor: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            Text("TAGS")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
-
-            if !tags.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(tags, id: \.self) { tag in
-                            Button {
-                                tags.removeAll { $0 == tag }
-                                userTagsEdited = true
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Text("#\(tag)").font(Typo.ui(11.5, .semibold))
-                                    Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
-                                }
-                                .foregroundStyle(accent.deep)
-                                .padding(.horizontal, 9)
-                                .padding(.vertical, 5)
-                                .background(accent.tint, in: Capsule())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-
-            HStack(spacing: 8) {
-                TextField("+ tag", text: $tagDraft)
-                    .font(Typo.ui(13))
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .onSubmit(commitTag)
-                Button("Add", action: commitTag)
-                    .font(Typo.ui(12.5, .semibold))
-                    .disabled(tagDraft.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(Tokens.surface, in: Capsule())
-            .overlay(Capsule().stroke(Tokens.hairline, lineWidth: 1))
-
-            if !tagSuggestions.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(tagSuggestions, id: \.self) { suggestion in
-                            Button {
-                                tagDraft = suggestion
-                                commitTag()
-                            } label: {
-                                Text("#\(suggestion)")
-                                    .font(Typo.ui(11.5, .semibold))
-                                    .foregroundStyle(Tokens.inkSecondary)
-                                    .padding(.horizontal, 9).padding(.vertical, 5)
-                                    .background(Tokens.mutedControl, in: Capsule())
-                            }
-                            .buttonStyle(ChipStyle())
-                        }
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     private var journeyAttach: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("ALSO ON A SIDE QUEST")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
+            Text("Also on a side quest")
+                .textRole(.label)
             Text("Optional. Topics file what this is. A side quest is why you kept it.")
-                .font(Typo.ui(12))
-                .foregroundStyle(Tokens.inkMeta)
+                .textRole(.meta)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
+                HStack(spacing: Tokens.chipGap) {
                     ForEach(journeys) { journey in
                         let on = selectedJourneyIDs.contains(journey.id)
-                        Button {
+                        FilterChip(journey.title, isOn: on) {
                             if on { selectedJourneyIDs.remove(journey.id) }
                             else { selectedJourneyIDs.insert(journey.id) }
-                        } label: {
-                            Text(journey.title)
-                                .font(Typo.ui(12, .semibold))
-                                .foregroundStyle(on ? .white : Tokens.inkSecondary)
-                                .padding(.horizontal, 11)
-                                .padding(.vertical, 7)
-                                .background(on ? accent.base : Tokens.mutedControl, in: Capsule())
                         }
-                        .buttonStyle(ChipStyle())
                     }
-                    Button { showingNewJourney = true } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus").font(.system(size: 10, weight: .bold))
-                            Text(Copy.newSideQuest)
-                                .font(Typo.ui(12, .semibold))
-                        }
-                        .foregroundStyle(accent.deep)
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 7)
-                        .overlay(Capsule().strokeBorder(Tokens.dashed, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                    TagChip(Copy.newSideQuest, isOn: false, isAdd: true, size: .filter) {
+                        showingNewJourney = true
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -772,7 +774,7 @@ struct AddSheet: View {
                 HStack(spacing: 6) {
                     Image(systemName: "pencil").font(.system(size: 11, weight: .semibold))
                     Text(titleWasFetched ? "Edit title" : "Write a title")
-                        .font(Typo.ui(13, .semibold))
+                        .textRole(.chip)
                     Spacer()
                 }
                 .foregroundStyle(Tokens.inkSecondary)
@@ -784,13 +786,12 @@ struct AddSheet: View {
 
     private var titleEditor: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("TITLE")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
+            Text("Title")
+                .textRole(.label)
             TextField("What is this?", text: $title, axis: .vertical)
-                .font(Typo.ui(14.5))
+                .textRole(.body)
                 .padding(14)
-                .cardSurface(radius: 16)
+                .cardSurface(radius: Tokens.fieldRadius)
         }
     }
 
@@ -798,25 +799,21 @@ struct AddSheet: View {
         VStack(alignment: .leading, spacing: 9) {
             Toggle(isOn: $noteOpen.animation(.easeOut(duration: 0.18))) {
                 Text("Add a note")
-                    .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
+                    .textRole(.chip, color: Tokens.inkSecondary)
             }
             if noteOpen {
                 TextField("Why does this matter?", text: $note, axis: .vertical)
-                    .font(Typo.ui(14.5))
+                    .textRole(.body)
                     .lineLimit(3...6)
                     .padding(14)
-                    .background(
-                        LinearGradient(colors: [Tokens.noteTop, Tokens.noteBottom],
-                                       startPoint: .top, endPoint: .bottom),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    )
+                    .background(Tokens.noteTop, in: RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous)
                             .stroke(Tokens.noteBorder, lineWidth: 1)
                     )
                 DatePicker("Note date", selection: $noteDate, displayedComponents: .date)
-                    .font(Typo.ui(12.5, .medium))
+                    .textRole(.meta)
+                    .tint(accent.base)
             }
         }
     }
@@ -872,7 +869,6 @@ struct AddSheet: View {
         if title.isEmpty { title = Categorizer.fallbackTitle(for: url) }
         if author == nil { author = Categorizer.fallbackAuthor(for: url) }
         let offline = Categorizer.suggest(url: url, title: title, description: pageDescription, author: author)
-        tags = offline.tags
         pin = existing.flatMap { QuickFileBridge.pin(for: $0) }
         let ranking = rank(url)
 
@@ -892,7 +888,7 @@ struct AddSheet: View {
         var draft = BookmarkDraft(
             url: url, title: title, author: author,
             platform: Platform.detect(from: url), kind: nil,
-            categoryID: categoryID, subcategory: subcategory, tags: tags,
+            categoryID: categoryID, subcategory: subcategory, tags: offline.tags,
             text: SavedContent.excerpt(pageDescription),
             durationSeconds: duration
         )
@@ -906,19 +902,43 @@ struct AddSheet: View {
             let bork = try Store.save(draft, in: context)
             saved = bork
             createdHere = existing == nil
+            let tagState = QuickFileTags(chosen: bork.tags, suggested: offline.tags, edited: bork.tagsEdited == true)
+            tagState.onChange = { writeTags(to: bork) }
+            self.tagState = tagState
+            refineSource = makeRefineSource()
             dial = makeDial(ranking, url: url)
+            #if DEBUG
+            // `-quickFileChosen`: as if the top candidate had been tapped and
+            // then the screen touched, so the sheet holds still for a capture.
+            if ScreenshotDefaults.quickFileChosen, let dial, !dial.isChosen, let top = dial.candidates.first {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(700))
+                    dial.file(top)
+                    drain.touched()
+                }
+            }
+            #endif
             Haptics.tap()
             withAnimation(.easeOut(duration: 0.22)) { step = .details }
             Task { await enrich(url, bork: bork) }
         } catch {
             didSave = false
-            self.error = error.localizedDescription
+            let line = PlainError.message(error, doing: "save")
+            self.error = line.isEmpty ? nil : line
         }
     }
 
+    /// A save you had already filed opens chosen on that filing: the panel
+    /// at once, nothing written, nothing draining.
     private func makeDial(_ ranking: FilingRanking, url: URL) -> QuickFileModel {
-        let model = QuickFileModel(ranking: ranking, input: input(for: url))
-        model.onConfirm = { candidate in file(candidate) }
+        var yours: FilingCandidate?
+        if let pin, pin.reason == .yours, var lead = ranking.candidates.first(where: { $0.categoryID == pin.categoryID }) {
+            lead.subcategory = pin.subcategory
+            yours = lead
+        }
+        let model = QuickFileModel(ranking: ranking, input: input(for: url), mode: .refine, chosen: yours)
+        drain = QuickFileDrain(alreadyChosen: yours != nil)
+        model.onConfirm = { candidate in choose(candidate) }
         model.onMore = {
             pickedTopic = nil
             pickedSub = nil
@@ -993,10 +1013,8 @@ struct AddSheet: View {
             let fetched = await LinkPreview.fetch(for: url, within: .seconds(3))
             Self.writePreview(fetched, url: url, to: bork)
             apply(fetched, for: url)
-            if !userTagsEdited {
-                let offline = Categorizer.suggest(url: url, title: title, description: pageDescription, author: author)
-                tags = Self.merged(tags, offline.tags)
-            }
+            let offline = Categorizer.suggest(url: url, title: title, description: pageDescription, author: author)
+            if tagState?.suggest(offline.tags) == true { writeTags(to: bork) }
             rerank(url)
         }
         readOnScreenText(bork)
@@ -1032,15 +1050,15 @@ struct AddSheet: View {
     }
 
     /// The model, once for every save, however sure the ranking already is,
-    /// and never waited on; not for a save you have already filed or taken
-    /// back. Silent on every failure: signed out, offline, quota spent. Its
+    /// and never waited on, also after a choice (its subtopic and tags feed
+    /// the refine panel; it never moves the choice). Silent on every failure: signed out, offline, quota spent. Its
     /// answer is one more piece of evidence: it re-ranks the dial (sure
     /// keywords or your history with a creator can still win), and becomes
     /// the stored guess if the bork's filing is still the app's and nothing
     /// has touched it since asking — even if the sheet has closed, where it
     /// used to be lost.
     private func askModel(_ url: URL, bork: Bookmark) async {
-        guard let dial, dial.filed == nil, bork.deletedAt == nil,
+        guard dial != nil, bork.deletedAt == nil,
               let account, let session = await account.currentSession() else { return }
         let request = SmartCategorizer.Context(url: url, title: title, author: author, description: pageDescription)
         let asked = input(for: url)
@@ -1050,17 +1068,18 @@ struct AddSheet: View {
         let stamp = bork.updatedAt
         guard let answer = await SmartCategorizer.suggest(request, session: session) else { return }
         aiAnswer = answer
-        if !userTagsEdited { tags = Self.merged(tags, answer.tags) }
         rerank(url)
         let ranking = FilingSuggest.rank(asked, memory: known, ai: answer, pinned: lead, taxonomyOrder: topics)
         Self.keepGuess(ranking, on: bork, unchangedSince: stamp)
+        // After the guess, whose stamp check a tag write would spoil.
+        if tagState?.suggest(answer.tags) == true { writeTags(to: bork) }
     }
 
     /// A late answer reaches the dial through `offer` (an untouched dial
     /// re-deals, a touched one only gains a ✨ or an "Also likely" chip) and,
     /// while the dial is untouched, the stored guess follows what it shows.
     private func rerank(_ url: URL) {
-        guard let dial, dial.filed == nil else { return }
+        guard let dial else { return }
         let latest = input(for: url)
         let ranking = FilingSuggest.rank(latest, memory: memory, ai: aiAnswer, pinned: pin, taxonomyOrder: order)
         QuickFileAppArt.preload(ranking.candidates.map(\.categoryID))
@@ -1084,59 +1103,84 @@ struct AddSheet: View {
         try? bork.modelContext?.save()
     }
 
-    /// Existing tags stay; new ones join. Platform names stay out.
-    private static func merged(_ existing: [String], _ incoming: [String]) -> [String] {
-        var out = existing
-        for tag in incoming where !out.contains(tag) && !Platform.isSiteName(tag) { out.append(tag) }
-        return out
+    /// The tags as `tagState` has them, by `Store.save`'s rules: once you
+    /// have touched them they replace the bork's, before that they only join.
+    private func writeTags(to bork: Bookmark) {
+        guard let tagState, bork.deletedAt == nil else { return }
+        var changed = false
+        if tagState.edited {
+            if bork.tags != tagState.chosen || bork.tagsEdited != true {
+                bork.tags = tagState.chosen
+                bork.tagsEdited = true
+                changed = true
+            }
+        } else if bork.tagsEdited != true {
+            let added = tagState.chosen.filter { !bork.tags.contains($0) }
+            if !added.isEmpty {
+                bork.tags = Array(Set(bork.tags + added)).sorted()
+                changed = true
+            }
+        }
+        guard changed else { return }
+        bork.touch()
+        try? bork.modelContext?.save()
     }
 
-    /// Tags you've used on this category + subcategory, newest first — not
-    /// the library's global greatest hits. Platform names stay out because
-    /// the source is already on the card.
-    private var tagSuggestions: [String] {
-        let filing = dial?.filed ?? dial?.centre
-        return TagRecency.suggestions(
-            in: allBookmarks.map {
-                .init(categoryID: $0.categoryID, subcategory: $0.subcategory, tags: $0.tags, at: $0.updatedAt)
-            },
-            categoryID: filing?.categoryID,
-            subcategory: filing?.subcategory,
-            excluding: Set(tags),
-            prefix: tagDraft
+    /// The refine panel's lists, from the library as it is at tap 1: every
+    /// subtopic (built-in and yours), your most-used ones, and the tags you
+    /// used lately on a filing (`TagRecency`, as the old tag field had them).
+    private func makeRefineSource() -> QuickFileRefineSource {
+        let merged = MergedTaxonomy(topics: customTopics, subtopics: customSubtopics)
+        let uses: [QuickFileRefine.Use] = allBookmarks.compactMap { bork in
+            guard bork.filingSource == "user", let id = bork.categoryID else { return nil }
+            return QuickFileRefine.Use(categoryID: id, subcategory: bork.subcategory, at: bork.updatedAt)
+        }
+        let used = QuickFileRefine.subUse(uses)
+        let items = allBookmarks.map {
+            TagRecency.Item(categoryID: $0.categoryID, subcategory: $0.subcategory, tags: $0.tags, at: $0.updatedAt)
+        }
+        return QuickFileRefineSource(
+            subs: { id in merged.topic(id: id).map { merged.subs(for: $0) } ?? [] },
+            used: { used[$0] ?? [] },
+            recentTags: { TagRecency.suggestions(in: items, categoryID: $0, subcategory: $1, limit: 12) }
         )
     }
 
-    private func commitTag() {
-        let cleaned = tagDraft
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "#", with: "")
-            .lowercased()
-        guard !cleaned.isEmpty, !tags.contains(cleaned) else { tagDraft = ""; return }
-        tags.append(cleaned)
-        userTagsEdited = true
-        tagDraft = ""
-    }
+    // MARK: Tap 2 — choose, refine, done
 
-    // MARK: Tap 2 — file, or leave
-
-    /// Tap 2: a key on the dial, its centre, a subtopic chip, the "Also
-    /// likely" chip or a pick from More…. Written as yours at once; the sheet
-    /// stays just long enough for the check to land, then a toast offers Undo.
-    /// Undo takes back everything the sheet did: a bork it made leaves the
-    /// library ("Save removed"), one that was already there gets its filing
-    /// back.
-    private func file(_ candidate: FilingCandidate) {
+    /// Tap 2, and every change after it: a key on the dial, its centre, a
+    /// subtopic chip, the "Also likely" chip or a pick from More…. Written as
+    /// yours at once, and the sheet stays for the refine panel. The bork as
+    /// it was before the first choice is kept for Undo; the first choice
+    /// starts Done's drain.
+    private func choose(_ candidate: FilingCandidate) {
         guard let bork = saved, !finished else { return }
-        finished = true
-        let before = (categoryID: bork.categoryID, subcategory: bork.subcategory, source: bork.filingSource)
+        if beforeChoice == nil {
+            beforeChoice = BeforeChoice(categoryID: bork.categoryID, subcategory: bork.subcategory,
+                                        source: bork.filingSource, tags: bork.tags, tagsEdited: bork.tagsEdited)
+        }
         bork.categoryID = candidate.categoryID
         bork.subcategory = candidate.subcategory
         bork.filingSource = "user"
-        writeExtras(to: bork)
         bork.touch()
         try? context.save()
         QuickFileBridge.scheduleSnapshot(context: context)
+        drain.chose(at: .now, assistive: UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning)
+    }
+
+    /// Done, its drain, or a swipe after a choice: the extras are written and
+    /// a toast offers Undo. Undo takes back everything the sheet did: a bork
+    /// it made leaves the library ("Save removed"), one that was already
+    /// there gets its filing and tags back.
+    private func finishChosen(dismissing: Bool = true) {
+        guard let bork = saved, !finished, let before = beforeChoice else {
+            if dismissing, !finished { done() }
+            return
+        }
+        tagState?.commitDraft()
+        finished = true
+        if writeExtras(to: bork) { bork.touch() }
+        try? context.save()
 
         let store = context
         let created = createdHere
@@ -1146,6 +1190,8 @@ struct AddSheet: View {
             bork.categoryID = before.categoryID
             bork.subcategory = before.subcategory
             bork.filingSource = before.source
+            bork.tags = before.tags
+            bork.tagsEdited = before.tagsEdited
             // A tombstone, like any delete, under the guess it was saved
             // with, so pasting the link again starts over.
             if created { bork.deletedAt = .now }
@@ -1154,18 +1200,18 @@ struct AddSheet: View {
             QuickFileBridge.scheduleSnapshot(context: store)
             if created { report("Save removed", nil) }
         }
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(380))
-            dismiss()
-            onSaved(created ? Self.savedLine(for: bork) : QuickFileCopy.filed(candidate), undo)
-            ReviewPrompter.reached(.borkSaved, requestReview)
-        }
+        if dismissing { dismiss() }
+        let line = created ? nil : dial?.filed.map(QuickFileCopy.filed)
+        onSaved(line ?? Self.savedLine(for: bork), undo)
+        ReviewPrompter.reached(.borkSaved, requestReview)
     }
 
     /// "Done": the bork stays as saved, filed under our guess, plus whatever
     /// the extras say.
     private func done() {
         guard let bork = saved, !finished else { return dismiss() }
+        if beforeChoice != nil { return finishChosen() }
+        tagState?.commitDraft()
         finished = true
         if writeExtras(to: bork) { bork.touch() }
         try? context.save()
@@ -1177,6 +1223,8 @@ struct AddSheet: View {
     /// Swiped away after tap 1: the same as "Done".
     private func finishIfNeeded() {
         guard let bork = saved, !finished else { return }
+        if beforeChoice != nil { return finishChosen(dismissing: false) }
+        tagState?.commitDraft()
         finished = true
         if writeExtras(to: bork) { bork.touch() }
         try? context.save()
@@ -1199,30 +1247,18 @@ struct AddSheet: View {
         })
     }
 
-    /// A pick from More… is tap 2.
+    /// A pick from More… chooses, or re-chooses.
     private func filePick() {
-        guard let topic = pickedTopic, let dial, dial.filed == nil else { return }
+        guard let topic = pickedTopic, let dial else { return }
         dial.file(dial.candidate(topicID: topic, subcategory: pickedSub))
     }
 
     /// The extras, written through to the bork as the sheet closes. Says
-    /// whether anything changed, so an untouched bork isn't restamped.
+    /// whether anything changed, so an untouched bork isn't restamped. Tags
+    /// are written as they change (`writeTags`).
     @discardableResult
     private func writeExtras(to bork: Bookmark) -> Bool {
         var changed = false
-        if userTagsEdited {
-            if bork.tags != tags || bork.tagsEdited != true {
-                bork.tags = tags
-                bork.tagsEdited = true
-                changed = true
-            }
-        } else if bork.tagsEdited != true {
-            let added = tags.filter { !bork.tags.contains($0) }
-            if !added.isEmpty {
-                bork.tags = Array(Set(bork.tags + added)).sorted()
-                changed = true
-            }
-        }
         let typed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         if editingTitle, !typed.isEmpty, typed != bork.title {
             bork.title = typed

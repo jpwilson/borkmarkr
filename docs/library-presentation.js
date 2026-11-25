@@ -5,14 +5,14 @@ const LibraryPresentation = {
      is Grid, which is what "cards" has always meant. */
   density(value) { return value === "list" || value === "compact" ? value : "cards"; },
   /* Columns from the grid's own width, so the rail and the gutters are
-     already paid for: Grid cards are 200px or wider (2 to 6), Compact tiles
-     about 140px (3 to 8), List is one column. The +14/+10 is one gap, since
+     already paid for: Grid cards are 196px or wider (2 to 6), Compact tiles
+     about 140px (3 to 8), List is one column. The +12/+10 is one gap, since
      n columns need only n-1 of them. */
   gridColumns(width, density) {
     const w = Math.max(0, Number(width) || 0);
     if (density === "list") return 1;
     if (density === "compact") return Math.min(8, Math.max(3, Math.floor((w + 10) / 150)));
-    return Math.min(6, Math.max(2, Math.floor((w + 14) / 214)));
+    return Math.min(6, Math.max(2, Math.floor((w + 12) / 208)));
   },
   /* One post saved from two apps, shown once. Rows (newest first) join when
      they share a picture, or, on different platforms, the same creator and

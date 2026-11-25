@@ -7,7 +7,12 @@ import UIKit.UIGestureRecognizerSubclass
 ///
 /// The save has already happened (tap 1), so nothing here can lose it. The
 /// dial's centre sits a little below the middle, where a thumb rests; one more
-/// tap files it. "Not now" keeps the guess. It drains over six seconds of no
+/// tap chooses. The sheet then stays: the refine panel takes the footer's
+/// place (subtopics, tags), the ring stays live for another topic, and Done
+/// closes. Done drains over six seconds of no touching after the first
+/// choice; any touch after it stops that for good, and the minute's cap
+/// still closes an idle sheet. There is no Undo here any more: the choice is
+/// the person's own, and the dial changes it. Before a choice, "Not now" keeps the guess. It drains over six seconds of no
 /// touching, then closes, unless the model is still answering about a guess
 /// that isn't sure yet, which it waits for until nine seconds after it
 /// appeared (a sure guess is asked about too, but not waited for), or the
@@ -15,14 +20,16 @@ import UIKit.UIGestureRecognizerSubclass
 /// a half. Any touch anywhere
 /// stops the drain for good; a minute without a touch closes the sheet
 /// anyway. Under VoiceOver or Switch Control nothing is timed at all,
-/// including the moment after filing, which then waits for Undo or Done.
+/// including after a choice, which then waits for Done.
 ///
 /// More… swaps the dial for `QuickFileMoreList` in place. The view takes over
-/// `model.onMore` for that; the host keeps `onConfirm` and `onUndo`.
+/// `model.onMore` for that; the host keeps `onConfirm`.
 struct QuickFileShareView: View {
     let title: String
     let platformName: String
     let model: QuickFileModel
+    let tags: QuickFileTags
+    var refineSource: QuickFileRefineSource
     var style: QuickFileStyle
     var idleSeconds: Double
     var topics: [Topic]
@@ -30,8 +37,10 @@ struct QuickFileShareView: View {
     let onNotNow: () -> Void
     var onDone: (FilingCandidate) -> Void
 
-    /// How long "Filed to …" and its Undo stay before the sheet closes.
-    static let filedHold: Duration = .milliseconds(900)
+    /// Room kept under the dial for the refine panel with its Done (B: about
+    /// 315 pt at the default text size), so the dial is sized once and never
+    /// moves or resizes as the panel arrives. It grows with the text.
+    @ScaledMetric(relativeTo: .subheadline) private var belowDial: CGFloat = 318
     /// No touch for this long and the sheet closes, keeping the guess.
     static let hardCap: TimeInterval = 60
     /// Past the drain, an untouched sheet whose guess isn't sure yet waits
@@ -42,21 +51,25 @@ struct QuickFileShareView: View {
     /// drain closes the sheet.
     static let redealHold: TimeInterval = 1.5
 
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
-    @Environment(\.accessibilitySwitchControlEnabled) private var switchControl
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showingMore = false
     @State private var draining = false
     @State private var drainLeft: CGFloat = 1
     @State private var started = false
     @State private var closed = false
     @State private var clock = QuickFileIdleClock()
+    @State private var drain = QuickFileDrain()
+    @State private var editingTag = false
 
-    init(title: String, platformName: String, model: QuickFileModel, style: QuickFileStyle = .system,
+    init(title: String, platformName: String, model: QuickFileModel, tags: QuickFileTags,
+         refineSource: QuickFileRefineSource = .none, style: QuickFileStyle = .system,
          idleSeconds: Double = 6, topics: [Topic] = Taxonomy.all, subs: @escaping (Topic) -> [String] = { $0.subs },
          onNotNow: @escaping () -> Void, onDone: @escaping (FilingCandidate) -> Void = { _ in }) {
         self.title = title
         self.platformName = platformName
         self.model = model
+        self.tags = tags
+        self.refineSource = refineSource
         self.style = style
         self.idleSeconds = idleSeconds
         self.topics = topics
@@ -87,114 +100,134 @@ struct QuickFileShareView: View {
         .background(QuickFileTouchWatcher { interacted() })
         .environment(\.colorScheme, .light)
         .onAppear { start() }
-        .onChange(of: model.filed) { _, filed in landed(filed) }
+        .onChange(of: model.confirmations) { _, _ in chose() }
+        // Typing doesn't reach the window's watcher.
+        .onChange(of: tags.draft) { _, _ in interacted() }
         .task { await runClock() }
+        .task(id: drain.startedAt) { await runDrain() }
     }
 
     // MARK: Layout
 
-    /// As big as the sheet allows: 320 pt on most phones, smaller only when
-    /// the sheet is short, never so small a key is hard to hit.
-    static func diameter(for size: CGSize) -> CGFloat {
-        max(232, min(320, size.width - 64, size.height - 344))
-    }
-
-    private func main(_ size: CGSize) -> some View {
-        VStack(spacing: 0) {
-            savedPill
-                .padding(.top, 14)
-            Spacer(minLength: 8)
-                .frame(maxHeight: 26)
-            titleBlock
-            Spacer(minLength: 10)
-            QuickFileHeader(model: model, style: style)
-                .padding(.bottom, 12)
-            QuickFileDial(model: model, style: style, diameter: Self.diameter(for: size), onLater: { notNow() })
-            Group {
-                if let filed = model.filed {
-                    filedLine(filed)
-                } else {
-                    QuickFileDialFooter(model: model, style: style)
-                }
-            }
-            .frame(minHeight: 66, alignment: .top)
-            .padding(.top, 14)
-            .animation(.easeOut(duration: 0.18), value: model.filed)
-            Spacer(minLength: 10)
-                .frame(maxHeight: 36)
-            bottomBar
-        }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 10)
-        .frame(width: size.width, height: size.height)
-    }
-
-    private var savedPill: some View {
-        HStack(spacing: 7) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(QuickFileStyle.toastCheck)
-            Text(QuickFileCopy.saved)
-                .font(style.ui(14, .semibold))
-                .foregroundStyle(Color.white)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(QuickFileStyle.ink, in: Capsule())
-        .shadow(color: QuickFileStyle.ink.opacity(0.18), radius: 10, y: 5)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var titleBlock: some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(style.ui(17, .semibold))
-                .foregroundStyle(QuickFileStyle.ink)
-                .lineLimit(2)
-            Text(platformName)
-                .font(style.ui(13, .medium))
-                .foregroundStyle(QuickFileStyle.inkSecondary)
-                .lineLimit(1)
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-    }
-
-    private func filedLine(_ filed: FilingCandidate) -> some View {
-        Text(QuickFileCopy.filed(filed))
-            .font(style.ui(17, .semibold))
-            .foregroundStyle(QuickFileStyle.ink)
-            .multilineTextAlignment(.center)
-            .lineLimit(2)
-            .transition(.opacity)
+    /// As big as the sheet allows: B's 360 pt on a 6.1" phone and up, smaller
+    /// only when the sheet is short, never so small a slab is hard to hit.
+    /// The same in every state, so the dial never resizes under a thumb.
+    /// `below` is the room kept for the refine panel and its Done.
+    static func diameter(for size: CGSize, below: CGFloat = 318) -> CGFloat {
+        max(232, min(360, size.width - 30, size.height - 118 - below))
     }
 
     @ViewBuilder
-    private var bottomBar: some View {
-        if let filed = model.filed {
-            HStack(spacing: 10) {
-                Button { model.undo() } label: {
-                    capsule(fill: Color.white, stroke: QuickFileStyle.hairline) {
-                        Label(QuickFileCopy.undo, systemImage: "arrow.uturn.backward")
-                            .font(style.ui(16, .semibold))
-                            .foregroundStyle(style.accentDeep)
-                    }
-                }
-                .buttonStyle(QuickFilePressStyle())
-                if voiceOver || switchControl {
-                    Button { finishFiled(filed) } label: {
-                        capsule(fill: QuickFileStyle.ink, stroke: QuickFileStyle.ink) {
-                            Text(QuickFileCopy.done)
-                                .font(style.ui(16, .semibold))
-                                .foregroundStyle(Color.white)
-                        }
-                    }
-                    .buttonStyle(QuickFilePressStyle())
+    private func main(_ size: CGSize) -> some View {
+        if typeSize.isAccessibilitySize {
+            // The ranked list has no drag, so the whole sheet can scroll.
+            ScrollView {
+                layout(size, fixed: false)
+            }
+        } else {
+            layout(size, fixed: true)
+                .frame(width: size.width, height: size.height)
+        }
+    }
+
+    /// Top-aligned, so nothing above the panel moves when it arrives: the
+    /// saved row, the evidence line, the dial, then the footer (with "Not
+    /// now" pinned at the foot) or the refine slab with Done in it.
+    private func layout(_ size: CGSize, fixed: Bool) -> some View {
+        VStack(spacing: 0) {
+            savedRow
+                .padding(.top, 14)
+                .padding(.horizontal, 4)
+            if editingTag {
+                // The keyboard is up: the dial gives way to one line saying
+                // where it went, and the panel rides above the keys.
+                chosenSummary
+                    .padding(.top, 14)
+                Spacer(minLength: 10)
+            } else {
+                QuickFileHeader(model: model, style: style)
+                    .padding(.top, 12)
+                    .padding(.bottom, 6)
+                QuickFileDial(model: model, style: style, diameter: Self.diameter(for: size, below: belowDial),
+                              onLater: { notNow() }, onDone: { finishChosen() })
+            }
+            Group {
+                if model.isChosen {
+                    QuickFileRefinePanel(model: model, tags: tags, source: refineSource, style: style,
+                                         onEditingTag: { editing in
+                                             withAnimation(.easeOut(duration: 0.2)) { editingTag = editing }
+                                         },
+                                         draining: drain.isDraining, onDone: { finishChosen() })
+                        .padding(.top, editingTag ? 0 : -6)
+                        .transition(.opacity)
+                } else {
+                    QuickFileDialFooter(model: model, style: style)
+                        .padding(.top, 10)
+                        .padding(.horizontal, 4)
                 }
             }
-            .transition(.opacity)
-        } else {
+            .animation(.easeOut(duration: 0.18), value: model.isChosen)
+            if fixed {
+                Spacer(minLength: 10)
+            }
+            if !model.isChosen {
+                notNowButton
+                    .padding(.horizontal, 4)
+                    .padding(.top, fixed ? 0 : 16)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 10)
+    }
+
+    /// While typing a tag: the topic's picture and where it went.
+    @ViewBuilder
+    private var chosenSummary: some View {
+        if let filed = model.filed {
+            HStack(spacing: 10) {
+                QuickFileArtDisc(topicID: filed.categoryID, size: 32, style: style)
+                Text(title)
+                    .font(style.ui(15, .semibold))
+                    .foregroundStyle(QuickFileStyle.ink)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// "Saved to bookmarker" and where it came from, in one calm row: B's
+    /// header layout in A's type (17/600 over 13/500 secondary), with a
+    /// 44 pt sand tile carrying the save's check.
+    private var savedRow: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Brand.sand)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Brand.sandInk)
+            }
+            .frame(width: 44, height: 44)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(QuickFileCopy.saved)
+                    .font(style.ui(17, .semibold))
+                    .foregroundStyle(QuickFileStyle.ink)
+                    .lineLimit(1)
+                Text(platformName)
+                    .font(style.ui(13, .medium))
+                    .foregroundStyle(QuickFileStyle.inkSecondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(QuickFileCopy.saved). \(title), \(platformName)")
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    @ViewBuilder
+    private var notNowButton: some View {
+        if !model.isChosen {
             Button { notNow() } label: {
                 ZStack {
                     Color.white
@@ -219,15 +252,6 @@ struct QuickFileShareView: View {
         }
     }
 
-    private func capsule<Content: View>(fill: Color, stroke: Color, @ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .frame(maxWidth: .infinity)
-            .frame(height: 54)
-            .background(fill, in: Capsule())
-            .overlay(Capsule().strokeBorder(stroke, lineWidth: 1))
-            .contentShape(Capsule())
-    }
-
     // MARK: Flow
 
     private func start() {
@@ -240,9 +264,11 @@ struct QuickFileShareView: View {
         withAnimation(.linear(duration: idleSeconds)) { drainLeft = 0 }
     }
 
-    /// Any touch, anywhere: the drain stops for good and the idle clock restarts.
+    /// Any touch, anywhere: the drain stops for good and the idle clock
+    /// restarts. After a choice, Done's drain stops for good too.
     private func interacted() {
         clock.last = .now
+        drain.touched()
         guard draining else { return }
         withAnimation(.easeOut(duration: 0.2)) { draining = false }
     }
@@ -258,8 +284,8 @@ struct QuickFileShareView: View {
         if draining, !Self.assistiveTechRunning, !showingMore, model.filed == nil { return notNow() }
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(1))
-            // Busy in the list, already filed, or using assistive tech: not idle.
-            if Self.assistiveTechRunning || showingMore || model.filed != nil {
+            // Busy in the list, or using assistive tech: not idle.
+            if Self.assistiveTechRunning || showingMore {
                 clock.last = .now
                 continue
             }
@@ -292,20 +318,24 @@ struct QuickFileShareView: View {
         onNotNow()
     }
 
-    private func landed(_ filed: FilingCandidate?) {
-        guard let filed else { return }
+    /// A topic was chosen: "Not now" has had its say, and Done drains from
+    /// the first choice (`QuickFileDrain`).
+    private func chose() {
+        guard model.isChosen else { return }
         if draining { draining = false }
-        UIAccessibility.post(notification: .announcement, argument: QuickFileCopy.filed(filed))
-        guard !Self.assistiveTechRunning else { return }
-        Task {
-            try? await Task.sleep(for: Self.filedHold)
-            guard model.filed == filed else { return }
-            finishFiled(filed)
-        }
+        drain.chose(at: .now, assistive: Self.assistiveTechRunning)
     }
 
-    private func finishFiled(_ filed: FilingCandidate) {
-        guard !closed else { return }
+    private func runDrain() async {
+        guard drain.isDraining else { return }
+        try? await Task.sleep(for: .seconds(QuickFileDrain.seconds))
+        guard !Task.isCancelled, drain.isDue(at: .now) else { return }
+        finishChosen()
+    }
+
+    /// Done, its drain, or VoiceOver's Done.
+    private func finishChosen() {
+        guard !closed, let filed = model.filed else { return }
         closed = true
         onDone(filed)
     }
@@ -331,67 +361,8 @@ extension QuickFileShareView {
     /// The extension's screen for a share session.
     init(session: QuickFileShareSession, style: QuickFileStyle = .system,
          onNotNow: @escaping () -> Void, onDone: @escaping (FilingCandidate) -> Void = { _ in }) {
-        self.init(title: session.title, platformName: session.platformName, model: session.model, style: style,
+        self.init(title: session.title, platformName: session.platformName, model: session.model,
+                  tags: session.tags, refineSource: session.refineSource, style: style,
                   topics: session.topics, subs: { session.subs(for: $0) }, onNotNow: onNotNow, onDone: onDone)
-    }
-}
-
-/// When someone last touched the screen. A reference, so noting a touch
-/// doesn't redraw anything.
-@MainActor
-final class QuickFileIdleClock {
-    var last = Date()
-}
-
-/// Notices every touch on screen without taking part in any of them: a
-/// recogniser on the window that reports touch-down and fails at once, so it
-/// never delays, cancels or competes with the dial, the buttons or the list.
-private struct QuickFileTouchWatcher: UIViewRepresentable {
-    let onTouch: () -> Void
-
-    func makeUIView(context: Context) -> Watcher { Watcher(onTouch: onTouch) }
-
-    func updateUIView(_ view: Watcher, context: Context) { view.onTouch = onTouch }
-
-    final class Watcher: UIView {
-        var onTouch: () -> Void
-        private var recognizer: QuickFileTouchDown?
-
-        init(onTouch: @escaping () -> Void) {
-            self.onTouch = onTouch
-            super.init(frame: .zero)
-            isUserInteractionEnabled = false
-        }
-
-        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-        override func didMoveToWindow() {
-            super.didMoveToWindow()
-            if let recognizer {
-                recognizer.view?.removeGestureRecognizer(recognizer)
-                self.recognizer = nil
-            }
-            guard let window else { return }
-            let recognizer = QuickFileTouchDown { [weak self] in self?.onTouch() }
-            window.addGestureRecognizer(recognizer)
-            self.recognizer = recognizer
-        }
-    }
-}
-
-private final class QuickFileTouchDown: UIGestureRecognizer {
-    private let onTouch: () -> Void
-
-    init(onTouch: @escaping () -> Void) {
-        self.onTouch = onTouch
-        super.init(target: nil, action: nil)
-        cancelsTouchesInView = false
-        delaysTouchesBegan = false
-        delaysTouchesEnded = false
-    }
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
-        onTouch()
-        state = .failed
     }
 }

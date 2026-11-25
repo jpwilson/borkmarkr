@@ -11,7 +11,8 @@ import UIKit
 /// App Group, because it may never open SwiftData itself:
 ///
 /// - the **snapshot** (`<AppGroup>/quickfile/snapshot-v1.json`): your memory,
-///   plus your own topics and subtopics so it can draw and offer them;
+///   plus your own topics and subtopics so it can draw and offer them, and
+///   for the refine panel your most-used subtopics and recent tags;
 /// - a **240 px thumbnail** of every topic's clay scene
 ///   (`<AppGroup>/quickfile/art/<id>.jpg`), so its dial's hub has the art
 ///   without the asset catalogue or a full-size decode.
@@ -115,15 +116,24 @@ enum QuickFileBridge {
         for entry in (try? context.fetch(FetchDescriptor<CustomSubtopic>())) ?? [] where entry.deletedAt == nil {
             subs[entry.categoryID, default: []].append(entry.name)
         }
+        let live = FetchDescriptor<Bookmark>(predicate: #Predicate { $0.deletedAt == nil })
+        let tagged: [TagRecency.Item] = ((try? context.fetch(live)) ?? []).compactMap { bookmark in
+            guard !bookmark.tags.isEmpty else { return nil }
+            return TagRecency.Item(categoryID: bookmark.categoryID, subcategory: bookmark.subcategory,
+                                   tags: bookmark.tags, at: bookmark.updatedAt)
+        }
 
         Task.detached(priority: .utility) {
             let items = rows.map {
                 FilingHistoryItem(categoryID: $0.categoryID, subcategory: $0.subcategory,
                                   author: $0.author, url: URL(string: $0.url), at: $0.at)
             }
+            let uses = rows.map { QuickFileRefine.Use(categoryID: $0.categoryID, subcategory: $0.subcategory, at: $0.at) }
             let snapshot = FilingSnapshot(memory: .build(from: items, now: .now),
                                           customTopics: topics,
-                                          customSubs: subs.mapValues { $0.sorted() })
+                                          customSubs: subs.mapValues { $0.sorted() },
+                                          subUse: QuickFileRefine.subUse(uses),
+                                          recentTags: QuickFileRefine.recentTagTable(tagged))
             try? snapshot.writeShared()
         }
     }

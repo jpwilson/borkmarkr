@@ -16,10 +16,16 @@ struct InsightsSheet: View {
     @State private var loading = false
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            ClaySheetHeader(title: "What's interesting") { dismiss() }
+                .padding(.horizontal, Tokens.gutter)
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    picker
+                VStack(alignment: .leading, spacing: 12) {
+                    ClaySegmented(
+                        selection: $window,
+                        options: SmartInsights.Window.allCases.map { ($0, $0.label) }
+                    )
+                    .padding(.bottom, 4)
                     if let report {
                         reportView(report)
                     } else if loading {
@@ -31,110 +37,78 @@ struct InsightsSheet: View {
                         .padding(.top, 40)
                     }
                 }
-                .padding(18)
-                .padding(.bottom, 24)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 28)
             }
-            .background(Tokens.paper)
-            .navigationTitle("What's interesting")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
-            }
-            .task(id: window) { await refresh() }
         }
+        .background(Tokens.paper)
+        .task(id: window) { await refresh() }
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
-    }
-
-    private var picker: some View {
-        HStack(spacing: 3) {
-            ForEach(SmartInsights.Window.allCases) { option in
-                Button {
-                    withAnimation(.easeOut(duration: 0.18)) { window = option }
-                } label: {
-                    Text(option.label)
-                        .font(Typo.ui(13.5, .semibold))
-                        .foregroundStyle(window == option ? Tokens.ink : Tokens.inkMeta)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 34)
-                        .background(window == option ? Tokens.surface : .clear, in: Capsule())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(3)
-        .background(Tokens.segmentTrack, in: Capsule())
+        .claySheet()
     }
 
     @ViewBuilder
     private func reportView(_ report: SmartInsights.Report) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(report.headline)
-                .font(Typo.display(24, .heavy))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.screenTitle, color: Tokens.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Text(report.summary)
-                .font(Typo.ui(15))
-                .foregroundStyle(Tokens.bodyOnWhite)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Text(Copy.countedBorks(report.count))
-                    .font(Typo.ui(11.5, .semibold))
-                    .foregroundStyle(accent.deep)
+                    .textRole(.meta, color: accent.deep)
                 if report.fromModel {
-                    Text("Read by Sonnet 5")
-                        .font(Typo.ui(11, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
+                    Text("· Read by Sonnet 5").textRole(.meta)
                 } else if account?.isSignedIn != true {
-                    Text("Sign up for a sharper read")
-                        .font(Typo.ui(11, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
+                    Text("· Sign up for a sharper read").textRole(.meta)
                 }
             }
+            .padding(.top, 2)
         }
-        .padding(16)
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.tint.opacity(0.5), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(accent.base.opacity(0.2), lineWidth: 1)
-        )
 
         if let spike = report.spike, !spike.isEmpty {
             Text(spike)
-                .font(Typo.ui(14, .semibold))
-                .foregroundStyle(Tokens.ink)
-                .padding(14)
+                .textRole(.cardTitle, color: Tokens.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .cardSurface(radius: 16)
+                .cardSurface()
         }
 
         if !report.themes.isEmpty {
-            Text("THEMES")
-                .font(Typo.ui(10, .heavy)).tracking(0.6)
-                .foregroundStyle(Tokens.mutedHeading)
-            ForEach(report.themes) { theme in
-                HStack(alignment: .top, spacing: 10) {
-                    Text("\(theme.count)")
-                        .font(Typo.display(18, .heavy))
-                        .foregroundStyle(accent.deep)
-                        .frame(width: 36, alignment: .leading)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(theme.name)
-                            .font(Typo.ui(14.5, .semibold))
-                            .foregroundStyle(Tokens.ink)
-                        if !theme.why.isEmpty {
-                            Text(theme.why)
-                                .font(Typo.ui(12.5))
-                                .foregroundStyle(Tokens.inkSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+            Text("Themes")
+                .textRole(.label, color: Tokens.inkSecondary)
+                .padding(.top, 8)
+            VStack(spacing: 0) {
+                ForEach(Array(report.themes.enumerated()), id: \.offset) { offset, theme in
+                    if offset > 0 { Tokens.hairline.frame(height: 1).padding(.leading, 64) }
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Text("\(theme.count)")
+                            .textRole(.sectionTitle, color: accent.deep)
+                            .monospacedDigit()
+                            .frame(width: 36, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(theme.name)
+                                .textRole(.cardTitle, color: Tokens.ink)
+                            if !theme.why.isEmpty {
+                                Text(theme.why)
+                                    .textRole(.meta)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
+                        Spacer(minLength: 0)
                     }
-                    Spacer(minLength: 0)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .accessibilityElement(children: .combine)
                 }
-                .padding(14)
-                .cardSurface(radius: 16)
             }
+            .cardSurface()
         }
 
         if let quest = report.suggestedQuest, !quest.isEmpty {
@@ -142,24 +116,30 @@ struct InsightsSheet: View {
                 onStartQuest?(quest)
                 dismiss()
             } label: {
-                HStack {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Start a side quest")
-                            .font(Typo.ui(11.5, .semibold))
-                            .foregroundStyle(accent.deep)
+                HStack(spacing: 12) {
+                    ClayArtImage(source: .quest(.compass))
+                        .frame(width: 44, height: 44)
+                        .background(Tokens.clayGround)
+                        .clipShape(RoundedRectangle(cornerRadius: Tokens.thumbRadius, style: .continuous))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Start a side quest").textRole(.meta)
                         Text(quest)
-                            .font(Typo.display(16, .bold))
-                            .foregroundStyle(Tokens.ink)
+                            .textRole(.cardTitle, color: Tokens.ink)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    Spacer()
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(accent.base)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(accent.deep)
                 }
-                .padding(14)
-                .cardSurface(radius: 16)
+                .padding(.leading, 12)
+                .padding(.trailing, 16)
+                .padding(.vertical, 10)
+                .frame(minHeight: Tokens.slimRowHeight)
+                .cardSurface()
             }
-            .buttonStyle(PressableStyle())
+            .buttonStyle(PressableStyle(scale: 0.99))
+            .padding(.top, 8)
         }
     }
 

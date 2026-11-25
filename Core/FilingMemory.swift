@@ -353,6 +353,11 @@ struct FilingSnapshot: Codable, Sendable {
     var customTopics: [SnapshotTopic]
     /// Custom subtopic names by topic id.
     var customSubs: [String: [String]]
+    /// Your most-used subtopics by topic id (`QuickFileRefine.subUse`), for
+    /// the refine panel. Optional, so a file from an older app still reads.
+    var subUse: [String: [String]]? = nil
+    /// Recent tags by filing (`QuickFileRefine.recentTagTable`).
+    var recentTags: [String: [String]]? = nil
 
     /// `<AppGroup>/quickfile/snapshot-v1.json`. The group id is spelled out
     /// rather than read from `Store.appGroupID` because Store imports

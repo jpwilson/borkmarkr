@@ -27,8 +27,8 @@ settings:
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "1.3"
-    CURRENT_PROJECT_VERSION: "17"
+    MARKETING_VERSION: "1.4"
+    CURRENT_PROJECT_VERSION: "23"
 
 targets:
   borkmarkr:
@@ -126,7 +126,17 @@ targets:
   ShareExtension:
     type: app-extension
     platform: iOS
-    sources: [ShareExtension, Core]
+    sources:
+      - ShareExtension
+      - Core
+      # The app's two brand faces, the same files (Quick File in the share
+      # sheet draws in them; QuickFileStyle.system falls back to SF Rounded
+      # if they don't register). Its own commit, so it can be reverted alone
+      # if device memory disagrees.
+      - path: App/Fonts/BricolageGrotesque.ttf
+        buildPhase: resources
+      - path: App/Fonts/InstrumentSans.ttf
+        buildPhase: resources
     settings:
       base:
         # Must nest under the app's identifier or the embed step fails.
@@ -149,6 +159,9 @@ targets:
       properties:
         CFBundleDisplayName: Save to bookmarker
         CFBundleShortVersionString: $(MARKETING_VERSION)
+        UIAppFonts:
+          - BricolageGrotesque.ttf
+          - InstrumentSans.ttf
         # Only standard TLS (URLSession over HTTPS) — exempt from export compliance.
         # Answers App Store Connect's encryption question once, here, instead of on
         # every single upload.

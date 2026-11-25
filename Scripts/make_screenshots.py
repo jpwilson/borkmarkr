@@ -13,7 +13,16 @@ drawn over the app's own pixels.
     Scripts/capture_screenshots.sh        # take the captures
     venv/bin/python Scripts/make_screenshots.py   # frame them
 
-Output: Marketing/screenshots/*.png at 1320x2868, ready to upload.
+Output: Marketing/screenshots/*.png at 1320x2868, ready to upload, and the
+6.5" set beside it in Marketing/screenshots-6.5/.
+
+A neutral set, every cover drawn as clay instead of a creator's thumbnail:
+
+    NEUTRAL=1 OUT=<folder> python3 Scripts/make_screenshots.py
+
+composes each panel from its capture's `-neutral` twin where there is one
+(Scripts/capture_screenshots.sh takes them) and writes the 6.5" set to
+`<folder>-6.5`.
 """
 
 import math
@@ -28,6 +37,8 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 # two-command recipe is unchanged.
 SHOTS = pathlib.Path(os.environ.get("SHOTS", ROOT / "Marketing" / "captures"))
 OUT = pathlib.Path(os.environ.get("OUT", ROOT / "Marketing" / "screenshots"))
+# NEUTRAL=1 prefers `<shot>-neutral.png`, the same screen with clay covers.
+NEUTRAL = os.environ.get("NEUTRAL") == "1"
 
 W, H = 1320, 2868
 
@@ -36,42 +47,44 @@ W, H = 1320, 2868
 # and taxonomy hues, so the store page and the app read as the same product.
 
 PANELS = [
+    # 1.4 ("Quiet clay"): light clay grounds with ink type, the app's own
+    # palette (SYSTEM.md tints, coral as the one loud colour), in the order the
+    # ASO proposal in APPSTORE.md suggests. Its fifth frame, the web library,
+    # is not a simulator capture, so the topic page stands in for it.
     {
         "shot": "library.png",
-        "top": "#FF6B3D", "bottom": "#D8380F",
-        "head": ["Everything you", "scrolled past.", "One library."],
-        "sub": "Instagram, X, TikTok, YouTube — one library you can actually search.",
+        "top": "#FFEDE5", "bottom": "#F8D5C6", "rule": "#FF5A2D",
+        "head": ["Every save.", "One library."],
+        "sub": "Instagram, X, TikTok, YouTube and the web, in one place you can actually search.",
     },
     {
-        # Blue, not green: the Browse grid is a wall of saturated topic tiles,
-        # several of them green. A green panel behind it flattened the whole
-        # image. Blue barely appears in the taxonomy hues, so the grid pops.
-        "shot": "browse.png",
-        "top": "#3E96F5", "bottom": "#12559E",
-        "head": ["It files itself", "as you save."],
-        "sub": "50 topics, 600+ subtopics. Change anything it gets wrong.",
-    },
-    {
-        # Warm amber against the topic page's own tint band, which is green
-        # for Fitness — the two would fight if the panel were green too.
-        "shot": "topic.png",
-        "top": "#F5A623", "bottom": "#C46A05",
-        "head": ["Every topic,", "already sorted."],
-        "sub": "Open a topic and it opens on its own art, with every save under it.",
-    },
-    {
-        "shot": "revisit.png",
-        "top": "#2FBF87", "bottom": "#127150",
-        "head": ["What's worth", "another look."],
-        "sub": "What you saved and never opened, what you keep coming back to, what you were reading a month ago.",
+        "shot": "dial.png",
+        "top": "#EBEFE5", "bottom": "#D7DECC", "rule": "#42563B",
+        "head": ["Filed in", "one tap."],
+        "sub": "Save from any app and a dial suggests the topic. Tap to file it, then pick a subtopic if you like.",
     },
     {
         "shot": "scoped.png",
-        "top": "#8B6BFF", "bottom": "#4F2FC4",
-        "head": ["Find it again", "in seconds."],
+        "top": "#EFE9DA", "bottom": "#E0D6BE", "rule": "#5A4E38",
+        "head": ["Find anything", "you saved."],
         "sub": "Search everything at once, or narrow it to topics, subtopics or tags.",
     },
+    {
+        "shot": "import.png",
+        "top": "#E8EDF3", "bottom": "#D3DDE9", "rule": "#3D5A7A",
+        "head": ["Bring the", "thousands you", "already have."],
+        "sub": "Download your saves from Instagram, X, TikTok, YouTube or your browser, and drop the file in.",
+    },
+    {
+        "shot": "topic.png",
+        "top": "#F5EBD3", "bottom": "#EAD9B2", "rule": "#7A5A1E",
+        "head": ["Every topic,", "already sorted."],
+        "sub": "Open a topic and it opens on its own art, with every save under it.",
+    },
 ]
+
+INK = (25, 21, 16)        # Brand.ink
+META = (110, 101, 90)     # Brand.inkSecondary
 
 # ── Layout ───────────────────────────────────────────────────────────────────
 
@@ -88,8 +101,19 @@ CORNER = 108           # screen corner radius at full size
 TILT = -5.0            # degrees; negative leans left like the reference
 
 
-def font(size: int, weight: str = "Bold") -> ImageFont.FreeTypeFont:
-    """System font at a given weight, falling back through what macOS ships."""
+FONTS = ROOT / "App" / "Fonts"
+
+
+def font(size: int, weight: str = "Bold", face: str = "head") -> ImageFont.FreeTypeFont:
+    """The app's own faces (Bricolage for heads, Instrument Sans for text),
+    falling back through what macOS ships."""
+    path = FONTS / ("BricolageGrotesque.ttf" if face == "head" else "InstrumentSans.ttf")
+    try:
+        f = ImageFont.truetype(str(path), size)
+        f.set_variation_by_name(weight)
+        return f
+    except (OSError, ValueError):
+        pass
     try:
         f = ImageFont.truetype("/System/Library/Fonts/SFNS.ttf", size)
         try:
@@ -164,8 +188,13 @@ def framed(shot: Image.Image) -> Image.Image:
     return canvas.rotate(TILT, resample=Image.BICUBIC, expand=True)
 
 
+def capture(panel: dict, shots: pathlib.Path) -> pathlib.Path:
+    twin = shots / panel["shot"].replace(".png", "-neutral.png")
+    return twin if NEUTRAL and twin.exists() else shots / panel["shot"]
+
+
 def build(panel: dict, shots: pathlib.Path, index: int) -> pathlib.Path:
-    shot = Image.open(shots / panel["shot"])
+    shot = Image.open(capture(panel, shots))
     if shot.size != (W, H):
         raise SystemExit(f"{panel['shot']} is {shot.size}, expected {(W, H)} — "
                          "capture on an iPhone 17 Pro Max simulator.")
@@ -174,8 +203,8 @@ def build(panel: dict, shots: pathlib.Path, index: int) -> pathlib.Path:
     glow(base)
     draw = ImageDraw.Draw(base)
 
-    head = font(HEAD_SIZE, "Bold")
-    sub = font(SUB_SIZE, "Regular")
+    head = font(HEAD_SIZE, "Bold", "head")
+    sub = font(SUB_SIZE, "Medium", "text")
 
     y = HEAD_TOP
     for line in panel["head"]:
@@ -189,17 +218,17 @@ def build(panel: dict, shots: pathlib.Path, index: int) -> pathlib.Path:
                 f"{panel['shot']}: headline line {line!r} is {width:.0f}px wide, "
                 f"which is past the {W - MARGIN * 2}px the panel has. Break it differently."
             )
-        draw.text((MARGIN, y), line, font=head, fill=(255, 255, 255))
+        draw.text((MARGIN, y), line, font=head, fill=INK)
         y += HEAD_LEAD
 
     # Short rule under the headline — echoes the app's accent underline.
     y += 18
     draw.rounded_rectangle([MARGIN, y, MARGIN + 120, y + 9], radius=5,
-                           fill=(255, 255, 255, 200))
+                           fill=panel.get("rule", "#FF5A2D"))
     y += 52
 
     for line in wrap(panel["sub"], sub, W - MARGIN * 2, draw):
-        draw.text((MARGIN, y), line, font=sub, fill=(255, 255, 255, 214))
+        draw.text((MARGIN, y), line, font=sub, fill=META)
         y += SUB_SIZE + 14
 
     device = framed(shot)
@@ -232,7 +261,7 @@ def main() -> None:
     if not SHOTS.exists():
         raise SystemExit(f"No captures in {SHOTS} — run Scripts/capture_screenshots.sh first")
     for i, panel in enumerate(PANELS, start=1):
-        print("wrote", build(panel, SHOTS, i))
+        print("wrote", build(panel, SHOTS, i), "from", capture(panel, SHOTS).name)
 
 
 if __name__ == "__main__":
@@ -244,7 +273,7 @@ def also_65(path):
     from PIL import Image
     im = Image.open(path).convert("RGB").resize((1284, 2790), Image.LANCZOS)
     im = im.crop((0, 6, 1284, 2784))
-    out = path.parent.parent / "screenshots-6.5" / path.name
+    out = path.parent.with_name(path.parent.name + "-6.5") / path.name
     out.parent.mkdir(parents=True, exist_ok=True)
     im.save(out, optimize=True)
     print("wrote", out)

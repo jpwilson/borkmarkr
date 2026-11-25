@@ -36,8 +36,8 @@ struct RevisitQueueSheet: View {
             if position < queue.count {
                 ScrollView {
                     BorkQueueCard(bookmark: queue[position])
-                        .padding(.horizontal, 18)
-                        .padding(.top, 6)
+                        .padding(.horizontal, Tokens.gutter)
+                        .padding(.top, 8)
                         .padding(.bottom, 24)
                         .id(queue[position].id)
                         .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -49,7 +49,7 @@ struct RevisitQueueSheet: View {
             }
         }
         .background(Tokens.paper)
-        .presentationDragIndicator(.visible)
+        .claySheet()
         .confirmationDialog("Delete this bork?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { deleteCurrent(queue) }
             Button("Cancel", role: .cancel) {}
@@ -58,20 +58,27 @@ struct RevisitQueueSheet: View {
         }
     }
 
+    /// A's sheet header: "Saved, never opened", the position under it, Done.
     private func topBar(_ queue: [Bookmark]) -> some View {
-        HStack {
-            Text(position < queue.count ? "\(position + 1) of \(queue.count)" : "All caught up")
-                .font(Typo.ui(13, .semibold))
-                .foregroundStyle(Tokens.inkMeta)
-                .monospacedDigit()
-            Spacer()
-            Button("Done") { dismiss() }
-                .font(Typo.ui(15, .bold))
-                .foregroundStyle(accent.deep)
+        VStack(alignment: .leading, spacing: 0) {
+            Color.clear.frame(height: 18)
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Saved, never opened")
+                        .font(.custom("Instrument Sans", size: 17, relativeTo: .headline).weight(.semibold))
+                        .foregroundStyle(Tokens.ink)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(position < queue.count ? "\(position + 1) of \(queue.count)" : "All caught up")
+                        .textRole(.meta)
+                        .monospacedDigit()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Button("Done") { dismiss() }
+                    .buttonStyle(.clayQuiet)
+            }
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 18)
-        .padding(.bottom, 10)
+        .padding(.horizontal, Tokens.gutter)
+        .padding(.bottom, 4)
     }
 
     private func actions(_ bookmark: Bookmark, isLast: Bool) -> some View {
@@ -80,16 +87,11 @@ struct RevisitQueueSheet: View {
                 BorkOpener.open(bookmark, in: context, using: openURL)
             } label: {
                 HStack(spacing: 7) {
-                    Text(bookmark.platform.openLabel).font(Typo.ui(15, .bold))
-                    Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .bold))
+                    Text(bookmark.platform.openLabel)
+                    Image(systemName: "arrow.up.right").font(.system(size: 13, weight: .semibold))
                 }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                .shadow(color: accent.base.opacity(0.32), radius: 14, y: 8)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.clayPrimary)
             .accessibilityIdentifier("queue-open")
 
             HStack(spacing: 10) {
@@ -97,15 +99,9 @@ struct RevisitQueueSheet: View {
                     confirmingDelete = true
                 } label: {
                     Label("Delete", systemImage: "trash")
-                        .font(Typo.ui(14, .semibold))
                         .foregroundStyle(Tokens.destructive)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous)
-                            .stroke(Tokens.hairline, lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(SecondaryButtonStyle(height: 48))
 
                 Button {
                     Haptics.tap()
@@ -113,46 +109,37 @@ struct RevisitQueueSheet: View {
                 } label: {
                     Label(isLast ? "Finish" : "Next", systemImage: isLast ? "checkmark" : "arrow.right")
                         .labelStyle(TrailingIconLabel())
-                        .font(Typo.ui(14, .bold))
-                        .foregroundStyle(Tokens.ink)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous)
-                            .stroke(Tokens.hairline, lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(SecondaryButtonStyle(height: 48))
                 .accessibilityIdentifier("queue-next")
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
-        .background(.ultraThinMaterial)
+        .padding(.horizontal, Tokens.gutter)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background(Tokens.paper)
+        .overlay(alignment: .top) { Tokens.hairline.frame(height: 1) }
     }
 
     private var finished: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             Spacer()
-            QuestArt(motif: .scroll)
+            ClayArtImage(source: .quest(.scroll))
                 .frame(width: 148, height: 148)
-                .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+                .background(Tokens.clayGround)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             Text("That's the pile.")
-                .font(Typo.display(24, .bold))
-                .foregroundStyle(Tokens.ink)
+                .textRole(.screenTitle, color: Tokens.ink)
+                .padding(.top, 8)
             Text("Everything you'd saved and never opened, looked at.")
-                .font(Typo.ui(14))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-            Button("Done") { dismiss() }
-                .font(Typo.ui(15, .bold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 28)
-                .padding(.vertical, 12)
-                .background(accent.base, in: Capsule())
-                .padding(.top, 6)
             Spacer()
+            Button("Done") { dismiss() }
+                .buttonStyle(.clayPrimary)
         }
+        .padding(.horizontal, Tokens.gutter)
+        .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
     }
 
@@ -171,15 +158,11 @@ struct RevisitQueueSheet: View {
 private struct BorkQueueCard: View {
     let bookmark: Bookmark
 
-    private var palette: CategoryPalette {
-        bookmark.category?.palette ?? NeutralPalette.value
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if !bookmark.isTextPost {
                 ZStack(alignment: .topLeading) {
-                    CoverImage(url: bookmark.imageURL, palette: palette)
+                    CoverImage(url: bookmark.imageURL, topicID: bookmark.categoryID)
                         .frame(height: bookmark.isMedia ? 340 : 200)
                         .frame(maxWidth: .infinity)
                         .clipped()
@@ -196,25 +179,21 @@ private struct BorkQueueCard: View {
                         PlatformBadge(platform: bookmark.platform, size: 22, pageURL: bookmark.url)
                     }
                     Text(bookmark.displayAuthor ?? bookmark.platform.name)
-                        .font(Typo.ui(13, .semibold))
-                        .foregroundStyle(Tokens.inkSecondary)
+                        .textRole(.meta)
                         .lineLimit(1)
                     Spacer(minLength: 0)
                     Text("Saved \(RelativeDate.label(for: bookmark.savedAt).lowercased())")
-                        .font(Typo.ui(12, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .textRole(.meta)
                 }
 
                 Text(bookmark.isTextPost ? (bookmark.text ?? bookmark.displayTitle) : bookmark.displayTitle)
-                    .font(bookmark.isTextPost ? Typo.ui(16) : Typo.display(19, .bold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(bookmark.isTextPost ? .body : .sectionTitle, color: Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if !bookmark.isTextPost, let caption = SavedContent.excerpt(bookmark.text),
                    caption != bookmark.displayTitle {
                     Text(caption)
-                        .font(Typo.ui(13.5))
-                        .foregroundStyle(Tokens.bodyOnWhite)
+                        .textRole(.body, color: Tokens.bodyOnWhite)
                         .lineLimit(5)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -223,15 +202,14 @@ private struct BorkQueueCard: View {
 
                 if let note = bookmark.noteText, !note.isEmpty {
                     Text("“\(note)”")
-                        .font(Typo.ui(13, .medium))
-                        .foregroundStyle(Tokens.inkSecondary)
+                        .textRole(.meta)
                         .padding(.top, 2)
                 }
             }
             .padding(16)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(strong: bookmark.isMedia)
+        .cardSurface()
     }
 }
 

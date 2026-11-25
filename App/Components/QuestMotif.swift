@@ -155,7 +155,9 @@ struct QuestCoverArt: View {
     }
 }
 
-/// Bundled clay scene, or paper if the imageset is missing.
+/// Bundled clay scene, or the bare clay ground if the imageset is missing —
+/// the colour every scene is shot on, so a missing one reads as art still
+/// to come rather than as a hole in the card.
 struct ClayArt: View {
     let name: String
     var contentMode: ContentMode = .fill
@@ -166,7 +168,7 @@ struct ClayArt: View {
                 .resizable()
                 .aspectRatio(contentMode: contentMode)
         } else {
-            Tokens.paper
+            Tokens.clayGround
         }
     }
 }
@@ -198,16 +200,16 @@ enum TopicMotif {
 ///
 /// Built-ins are bundled and resolve instantly. A topic you made yourself has
 /// its scene drawn by the `topic-art` function and fetched over the network,
-/// so it cross-fades in the way a bookmark cover does — and until it arrives
-/// (or if it never does) the tile is paper, which is what it has always been.
+/// so it cross-fades in the way a bookmark cover does. Until it arrives (or
+/// if it never does) it is `ClayCover`'s fallback: the App Group thumbnail the
+/// app keeps for every topic, else the compass on the clay ground — never a
+/// gradient, never paper.
 struct TopicClayArt: View {
     let categoryID: String
     var remote: URL?
     var contentMode: ContentMode = .fill
-    /// What sits behind a scene that hasn't arrived. Browse's tiles keep the
-    /// paper default; the topic page's hero band passes the topic's own tint,
-    /// so a band with no art still reads as that topic rather than as a blank
-    /// strip across the top of the screen.
+    /// Kept so 1.3 call sites compile. The fallback no longer takes a tint:
+    /// design/SYSTEM.md has no gradients and no empty art.
     var fallbackTint: Color? = nil
 
     var body: some View {
@@ -215,25 +217,15 @@ struct TopicClayArt: View {
         if UIImage(named: asset) != nil {
             ClayArt(name: asset, contentMode: contentMode)
         } else {
-            backdrop
-                // An overlay takes the backdrop's bounds and reports no size
-                // of its own. The old ZStack let a `.fill` bitmap adopt its
-                // pixel size and push the tile out of its grid column.
+            // An overlay-built cover: it takes the frame it is given and
+            // reports no size of its own, so a `.fill` bitmap can never push
+            // a tile out of its grid column.
+            // The full-size remote scene fades in over the small thumbnail.
+            ClayCover(topicID: categoryID)
                 .overlay {
                     if let remote { RemoteImage(url: remote, contentMode: contentMode) }
                 }
-                .frame(maxWidth: .infinity)
                 .clipped()
-        }
-    }
-
-    @ViewBuilder
-    private var backdrop: some View {
-        if let fallbackTint {
-            LinearGradient(colors: [fallbackTint, fallbackTint.opacity(0.45)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-        } else {
-            Tokens.paper
         }
     }
 }

@@ -19,8 +19,23 @@ import Observation
 /// The model files nothing itself. `onConfirm` hands the choice to whoever
 /// owns the save (the extension re-enqueues it, the app writes it), and
 /// `onUndo` takes it back.
+///
+/// **Two modes.** `.once` is triage: one filing and the ring folds away.
+/// `.refine` is the Add sheet and the share sheet: a filing *chooses*, the
+/// ring stays live, and another topic re-chooses (`onConfirm` runs every
+/// time). `filed` keeps its name in both; in `.refine` it is what has been
+/// chosen. A subtopic chip changes only the subtopic (`toggleSubtopic`), and
+/// a late answer after a choice never moves it: it may only add a ✨ and new
+/// subtopic suggestions (`latest`).
 @MainActor @Observable
 final class QuickFileModel {
+
+    enum Mode: Sendable {
+        /// One tap files and folds the ring: triage.
+        case once
+        /// A tap chooses and the ring stays: Add and share.
+        case refine
+    }
 
     /// The eighth seat, at 10:30: the full topic list.
     static let moreSlot = 7
@@ -44,14 +59,21 @@ final class QuickFileModel {
     private(set) var aiChip: FilingCandidate?
     /// The ring topic a late answer agreed with. It wears a ✨.
     private(set) var sparkle: String?
-    /// What was filed. Nil until then, and again after Undo.
+    /// What was filed. Nil until then, and again after Undo. In `.refine`,
+    /// what is chosen.
     private(set) var filed: FilingCandidate?
+    /// The newest ranking a late answer offered, also after a choice, when
+    /// `ranking` stays frozen. Its subtopics join `suggestedSubs`.
+    private(set) var latest: FilingRanking
+    let mode: Mode
 
     /// Bumps once per selection tick (rate-limited), confirm and undo, for
     /// `.sensoryFeedback`.
     private(set) var tick = 0
     private(set) var confirmations = 0
     private(set) var undos = 0
+    /// Bumps when a choice changes only its subtopic.
+    private(set) var refinements = 0
     /// The last turn's direction: 1 clockwise, -1 anticlockwise.
     private(set) var direction = 1
     /// False while turning faster than six notches a second.
@@ -74,11 +96,22 @@ final class QuickFileModel {
     @ObservationIgnored private var lastTurn = Date.distantPast
     @ObservationIgnored private var lastTick = Date.distantPast
     @ObservationIgnored private var centreChange: (at: Date, before: FilingCandidate?)?
+    /// The subtopic chips each topic has shown, so they never reorder.
+    @ObservationIgnored private var shownSubs: [String: [String]] = [:]
 
-    init(ranking: FilingRanking, input: FilingInput) {
+    /// `chosen` starts a `.refine` dial already chosen, without calling
+    /// `onConfirm`: a save you had already filed.
+    init(ranking: FilingRanking, input: FilingInput, mode: Mode = .once, chosen: FilingCandidate? = nil) {
         self.ranking = ranking
+        self.latest = ranking
         self.input = input
+        self.mode = mode
         self.highlighted = Self.preselected(in: ranking)
+        if mode == .refine, let chosen {
+            filed = chosen
+            touched = true
+            highlighted = ranking.candidates.prefix(Self.moreSlot).firstIndex { $0.categoryID == chosen.categoryID }
+        }
     }
 
     // MARK: Reading
@@ -94,6 +127,26 @@ final class QuickFileModel {
     var centre: FilingCandidate? { highlighted.flatMap { candidate(at: $0) } }
 
     var isOnMore: Bool { highlighted == Self.moreSlot }
+
+    /// Triage's filing: the ring has folded and nothing more is taken.
+    var isFolded: Bool { mode == .once && filed != nil }
+
+    /// Add or share, with a topic chosen: the refine panel is up.
+    var isChosen: Bool { mode == .refine && filed != nil }
+
+    /// What the hub shows. In `.refine` with a choice: the choice while the
+    /// light is on its topic (or on nothing), otherwise whatever the light
+    /// is on, nil on More….
+    var shown: FilingCandidate? {
+        guard let filed else { return centre }
+        if mode == .once { return filed }
+        guard let seat = highlighted else { return filed }
+        if let lit = candidate(at: seat), lit.categoryID != filed.categoryID { return lit }
+        return seat == Self.moreSlot ? nil : filed
+    }
+
+    /// The hub shows what is filed, so it wears the check.
+    var showsCheck: Bool { filed != nil && shown?.categoryID == filed?.categoryID }
 
     /// The lit seat is the guess the ranking offered.
     var showsBestGuess: Bool { highlighted != nil && highlighted == ranking.preselect }
@@ -118,9 +171,37 @@ final class QuickFileModel {
                                altSubs: [], creator: nil, creatorPicks: 0, matched: nil)
     }
 
+    /// The subtopics suggested for a topic: the ring's own candidate for it
+    /// (its subtopic, then the others with evidence), then any a late answer
+    /// added. Earlier entries never move, so new ones only append.
+    func suggestedSubs(for topicID: String) -> [String] {
+        var out: [String] = []
+        for source in [ranking, latest] {
+            guard let known = source.candidates.first(where: { $0.categoryID == topicID }) else { continue }
+            for sub in [known.subcategory].compactMap({ $0 }) + known.altSubs
+            where !out.contains(where: { $0.caseInsensitiveCompare(sub) == .orderedSame }) {
+                out.append(sub)
+            }
+        }
+        return out
+    }
+
+    /// A topic's subtopic chips in the order they were first shown, with any
+    /// that `fresh` adds since at the end: chips never reorder under a thumb.
+    func subtopicRow(for topicID: String, fresh: [String]) -> [String] {
+        let shown = shownSubs[topicID] ?? []
+        let row = shown.filter { fresh.contains($0) } + fresh.filter { !shown.contains($0) }
+        if row != shown { shownSubs[topicID] = row }
+        return row
+    }
+
     /// The dial's VoiceOver value: "Fitness, Running, suggested, 1 of 7".
     var spokenValue: String {
-        if let filed { return QuickFileCopy.filed(filed) }
+        if let filed, mode == .once || showsCheck { return QuickFileCopy.filed(filed) }
+        if filed != nil {
+            guard let seat = highlighted, let candidate = candidate(at: seat) else { return QuickFileCopy.moreTopics }
+            return "\(QuickFileCopy.spoken(candidate)), \(seat + 1) of \(candidates.count), \(QuickFileCopy.fileHereInstead)"
+        }
         guard let seat = highlighted else { return QuickFileCopy.nothingChosen }
         guard let candidate = candidate(at: seat) else { return QuickFileCopy.moreTopics }
         var parts = [QuickFileCopy.spoken(candidate)]
@@ -140,7 +221,7 @@ final class QuickFileModel {
     /// through More…. From nothing, the first clockwise notch is the best
     /// guess and the first anticlockwise one is More….
     func turn(_ notches: Int) {
-        guard filed == nil, notches != 0 else { return }
+        guard !isFolded, notches != 0 else { return }
         touch()
         let seats = Array(candidates.indices) + [Self.moreSlot]
         let from = highlighted.flatMap { seats.firstIndex(of: $0) } ?? (notches > 0 ? -1 : seats.count)
@@ -160,18 +241,21 @@ final class QuickFileModel {
     }
 
     /// A tap on a seat: lights it and files it in one go, or opens More….
+    /// In `.refine`, a tap on the topic already chosen only lights it, so a
+    /// subtopic set by a chip stays.
     func tap(_ seat: Int) {
-        guard filed == nil else { return }
+        guard !isFolded else { return }
         touch()
         if seat == Self.moreSlot { return more() }
         guard let candidate = candidate(at: seat) else { return }
         if highlighted != seat { highlighted = seat }
+        if isChosen, filed?.categoryID == candidate.categoryID { return }
         file(candidate)
     }
 
     /// Opens the full list.
     func more() {
-        guard filed == nil else { return }
+        guard !isFolded else { return }
         touch()
         if highlighted != Self.moreSlot { highlighted = Self.moreSlot }
         onMore()
@@ -180,7 +264,8 @@ final class QuickFileModel {
     /// The centre: files what it shows. Nothing chosen, or More…, opens the
     /// full list instead.
     func confirm() {
-        guard filed == nil else { return }
+        guard !isFolded else { return }
+        if isChosen, showsCheck { return touch() }
         if let change = centreChange, Date().timeIntervalSince(change.at) < Self.changeGuard {
             centreChange = nil
             if let before = change.before { return file(before) }
@@ -190,14 +275,38 @@ final class QuickFileModel {
     }
 
     /// Files `candidate`: tap 2. A chip, the full list and the "Also likely"
-    /// chip all come through here.
+    /// chip all come through here. In `.refine` it (re-)chooses: the same
+    /// topic and subtopic again is nothing, a new topic is a confirmation
+    /// and a new subtopic of the same topic a refinement.
     func file(_ candidate: FilingCandidate) {
-        guard filed == nil else { return }
+        guard !isFolded else { return }
         touch()
+        guard mode == .refine else {
+            filed = candidate
+            confirmations &+= 1
+            QuickFileSettings.noteFiled()
+            return onConfirm(candidate)
+        }
+        let before = filed
+        if before?.categoryID == candidate.categoryID, before?.subcategory == candidate.subcategory { return }
         filed = candidate
-        confirmations &+= 1
-        QuickFileSettings.noteFiled()
+        let seat = candidates.firstIndex { $0.categoryID == candidate.categoryID }
+        if highlighted != seat { highlighted = seat }
+        if before?.categoryID == candidate.categoryID {
+            refinements &+= 1
+        } else {
+            confirmations &+= 1
+        }
+        if before == nil { QuickFileSettings.noteFiled() }
         onConfirm(candidate)
+    }
+
+    /// A subtopic chip under a choice: sets that subtopic, or clears it when
+    /// it is the one already set.
+    func toggleSubtopic(_ name: String) {
+        guard isChosen, let filed else { return }
+        let same = filed.subcategory?.caseInsensitiveCompare(name) == .orderedSame
+        file(candidate(topicID: filed.categoryID, subcategory: same ? nil : name))
     }
 
     /// Takes the filing back. The ring returns to the seat it was on.
@@ -213,6 +322,15 @@ final class QuickFileModel {
     /// where it is and only gains a ✨ or an "Also likely" chip.
     func offer(_ next: FilingRanking, input: FilingInput? = nil) {
         if let input { self.input = input }
+        if latest != next { latest = next }
+        if isChosen {
+            // Never moves a choice: a ✨ on another ring topic it prefers, at most.
+            guard next.preselect != nil, let best = next.candidates.first,
+                  best.categoryID != filed?.categoryID,
+                  candidates.contains(where: { $0.categoryID == best.categoryID }) else { return }
+            if sparkle != best.categoryID { sparkle = best.categoryID }
+            return
+        }
         guard filed == nil, next != ranking else { return }
 
         if !touched {

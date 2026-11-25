@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-itunes-app" content="app-id=6799805479">
 <title>bookmarker Pro — unlimited saves</title>
 <meta name="description" content="bookmarker Pro is unlimited saves on iPhone and the web. It isn't on sale yet: pick a plan and leave your email to hold its price.">
 <link rel="canonical" href="https://bookmarker.lol/pro/">
@@ -29,7 +30,7 @@
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
   /* PostHog — product analytics + session replay (inputs masked). Public
      project token by design; the privacy policy discloses this. */
@@ -45,57 +46,49 @@
   } catch (e) {}
 </script>
 <style>
-  /* The web app's tokens (docs/index.html), light paper as always. */
-  :root {
-    --paper: #F6F3EE; --surface: #FFFFFF; --ink: #191510; --ink-2: #5B554D; --meta: #8A8378;
-    --faint: #A39A8D; --hairline: #EAE4DA; --dashed: #D7CDBD;
-    --coral: #FF5A2D; --accent-text: #C93A12; --tint: #FFE9E1; --destructive: #C0392B;
-    --shadow-card: 0 1px 2px rgba(25,21,16,.04), 0 10px 26px -14px rgba(25,21,16,.16);
-    --ease-out: cubic-bezier(.2, .7, .2, 1);
-    --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  }
+  /* Colours, radii and type roles from /tokens.css ("Quiet clay"): flat
+     hairline cards and the coral pill. */
   * { box-sizing: border-box; }
   html { color-scheme: light; -webkit-text-size-adjust: 100%; }
-  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--font-body);
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 500 15px/1.55 var(--font-body);
     -webkit-tap-highlight-color: transparent; }
-  a { color: var(--accent-text); text-decoration: none; }
+  a { color: var(--coral-deep); text-decoration: none; }
+  b, strong { font-weight: 600; }
   [hidden] { display: none !important; }
   :focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
-  .nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 84%, transparent);
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--hairline); }
-  .nav-in { display: flex; align-items: center; height: 60px; max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-  .brand { display: flex; align-items: center; gap: 9px; font-family: var(--font-head); font-weight: 800; font-size: 19px; color: var(--ink); }
+  .nav { position: sticky; top: 0; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--hairline); }
+  .nav-in { display: flex; align-items: center; height: 64px; max-width: 1120px; margin: 0 auto; padding: 0 var(--gutter); }
+  .brand { display: flex; align-items: center; gap: 9px; font: 700 19px/1 var(--font-head); color: var(--ink); }
   .brand img { width: 28px; height: 28px; border-radius: 8px; }
-  main { max-width: 540px; margin: 0 auto; padding: 26px 20px 48px; }
+  main { max-width: 540px; margin: 0 auto; padding: 26px var(--gutter) 48px; }
 
   /* The name and the promise, beside the clay phone that won't stop borking. */
   .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; margin: 0 0 22px; }
-  .hero h1 { font-family: var(--font-head); font-size: clamp(28px, 8.6vw, 44px); line-height: 1; letter-spacing: -.035em; margin: 0 0 10px; }
+  .hero h1 { font-family: var(--font-head); font-size: clamp(28px, 8.6vw, 44px); line-height: 1; letter-spacing: -.02em; font-weight: 700; margin: 0 0 10px; }
   .hero h1 span { color: var(--coral); }
   .lede { color: var(--ink-2); font-size: 16.5px; line-height: 1.45; margin: 0; }
-  .hero-art { width: 108px; height: 108px; border-radius: 26px; object-fit: cover; display: block; }
+  .hero-art { width: 108px; height: 108px; border-radius: 24px; object-fit: cover; display: block; background: var(--clay-ground); }
 
   /* The three plans: radios dressed as the app's cards. The one you picked
      (or arrived with) gets the coral edge and the accent tint. */
   .plans { border: 0; margin: 0; padding: 0; min-width: 0; }
-  .plans legend { padding: 0; margin: 0 0 10px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+  .plans legend { padding: 0; margin: 0 0 10px; font: 700 11px/14px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--meta); }
   .plan-list { display: grid; gap: 10px; }
   .plan { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center;
     align-content: center; column-gap: 12px; row-gap: 2px; min-height: 72px; padding: 12px 16px 12px 14px; background: var(--surface);
-    border: 1.5px solid var(--hairline); border-radius: 18px; box-shadow: var(--shadow-card); cursor: pointer;
+    border: 1.5px solid var(--hairline); border-radius: var(--r-card); box-shadow: none; cursor: pointer;
     -webkit-user-select: none; user-select: none; transition: border-color .15s ease, background-color .15s ease; }
   .plan input { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
   .dot { grid-column: 1; grid-row: 1 / span 2; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--dashed);
     background: var(--surface); transition: border .15s ease; }
   .plan-name { grid-column: 2; grid-row: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
-    font-family: var(--font-head); font-weight: 800; font-size: 17px; line-height: 1.2; letter-spacing: -.01em; }
-  .badge { font: 700 11px/1 var(--font-body); letter-spacing: .01em; color: var(--accent-text); background: var(--tint);
+    font-family: var(--font-head); font-weight: 700; font-size: 17px; line-height: 1.2; letter-spacing: -.01em; }
+  .badge { font: 600 11.5px/1 var(--font-body); letter-spacing: .01em; color: var(--coral-deep); background: var(--tint);
     border-radius: 999px; padding: 5px 8px; }
   .plan-note { grid-column: 2; grid-row: 2; color: var(--meta); font-size: 13px; line-height: 1.35; }
   .plan-price { grid-column: 3; grid-row: 1 / span 2; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
-  .plan-price b { font-family: var(--font-head); font-size: 21px; line-height: 1.1; letter-spacing: -.02em; }
-  .plan-price span { color: var(--meta); font-size: 12.5px; font-weight: 600; }
+  .plan-price b { font-family: var(--font-head); font-weight: 700; font-size: 21px; line-height: 1.1; letter-spacing: -.02em; }
+  .plan-price span { color: var(--meta); font-size: 13px; font-weight: 500; }
   .plan.on { border-color: var(--coral); background: color-mix(in srgb, var(--tint) 60%, var(--surface)); }
   .plan.on .dot { border: 7px solid var(--coral); }
   .plan.on .badge { background: var(--surface); }
@@ -104,52 +97,53 @@
   .plans:disabled .plan:not(.on) { opacity: .5; }
 
   /* What happens next: the honest part, then the thank-you. */
-  .card { margin: 16px 0 0; background: var(--surface); border: 1px solid var(--hairline); border-radius: 22px;
-    padding: 22px 20px 20px; box-shadow: var(--shadow-card); animation: rise .32s var(--ease-out); }
+  .card { margin: 16px 0 0; background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-card);
+    padding: 22px 20px 20px; box-shadow: none; animation: rise .32s var(--ease-out); }
   @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
-  .picked { margin: 0 0 4px; color: var(--accent-text); font-size: 13px; font-weight: 700; }
-  .card h2 { font-family: var(--font-head); font-size: 23px; line-height: 1.15; letter-spacing: -.02em; margin: 0 0 6px; }
+  .picked { margin: 0 0 4px; color: var(--coral-deep); font: 700 11px/14px var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
+  .card h2 { font-family: var(--font-head); font-weight: 700; font-size: 23px; line-height: 1.15; letter-spacing: -.02em; margin: 0 0 6px; }
   .say { color: var(--ink-2); margin: 0 0 16px; }
   .say b { color: var(--ink); }
-  .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin: 0 0 6px; }
-  .field { width: 100%; height: 50px; border: 1px solid var(--hairline); border-radius: 14px; padding: 0 14px;
+  .field-label { display: block; font: 700 11px/14px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--meta); margin: 0 0 8px; }
+  .field { width: 100%; height: 48px; border: 1px solid var(--hairline); border-radius: var(--r-search); padding: 0 14px;
     background: var(--surface); font: inherit; font-size: 16px; color: var(--ink); outline: none; -webkit-appearance: none; appearance: none; }
   .field:focus-visible { border-color: var(--coral); box-shadow: 0 0 0 3px var(--tint); }
-  .go { width: 100%; height: 52px; margin-top: 12px; border: 0; border-radius: 14px; background: var(--coral); color: #fff;
-    font: inherit; font-weight: 800; font-size: 16px; cursor: pointer; box-shadow: 0 8px 18px -10px rgba(255,90,45,.8); }
+  .go { width: 100%; height: 54px; margin-top: 14px; border: 0; border-radius: var(--r-chip); background: var(--coral); color: #fff;
+    font: 600 16px/1 var(--font-body); cursor: pointer; }
+  .go:hover { background: var(--coral-dark); }
   .go[disabled] { opacity: .6; cursor: default; }
   .err { color: var(--destructive); font-size: 13px; min-height: 18px; margin: 8px 0 0; }
-  .fine { color: var(--meta); font-size: 12.5px; line-height: 1.5; margin: 4px 0 0; }
+  .fine { color: var(--meta); font-size: 13px; line-height: 1.5; margin: 4px 0 0; }
   .fine a { font-weight: 600; }
   #done { text-align: center; padding: 26px 22px 22px; }
   #done h2:focus { outline: none; }
   #done p { color: var(--ink-2); margin: 0; }
   #done .fine { margin-top: 12px; }
-  .tick { width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%; background: var(--tint); color: var(--accent-text);
+  .tick { width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%; background: var(--tint); color: var(--coral-deep);
     display: grid; place-items: center; }
   .tick svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-  .back { display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; font-weight: 700; }
+  .back { display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; font-weight: 600; }
 
   .includes { margin: 28px 0 0; padding: 20px 0 0; border-top: 1px solid var(--hairline); }
-  .includes h2 { font-family: var(--font-head); font-size: 17px; letter-spacing: -.01em; margin: 0 0 4px; }
+  .includes h2 { font-family: var(--font-head); font-weight: 700; font-size: 19px; letter-spacing: -.01em; margin: 0 0 4px; }
   .includes ul { list-style: none; padding: 0; margin: 0; }
   .includes li { position: relative; padding-left: 26px; margin: 9px 0; font-weight: 500; }
-  .includes li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-text); font-weight: 800; }
-  .includes li span { color: var(--meta); font-weight: 400; }
+  .includes li::before { content: "✓"; position: absolute; left: 0; color: var(--coral-deep); font-weight: 700; }
+  .includes li span { color: var(--meta); font-weight: 500; }
 
   footer { border-top: 1px solid var(--hairline); }
-  .foot { max-width: 540px; margin: 0 auto; padding: 18px 20px calc(36px + env(safe-area-inset-bottom));
-    color: var(--faint); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .foot { max-width: 540px; margin: 0 auto; padding: 18px var(--gutter) calc(36px + env(safe-area-inset-bottom));
+    color: var(--meta); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
   .foot a { color: var(--ink-2); font-weight: 600; }
 
   @media (max-width: 359px) {
     .hero { gap: 12px; }
-    .hero-art { width: 84px; height: 84px; border-radius: 22px; }
+    .hero-art { width: 84px; height: 84px; border-radius: 20px; }
   }
   @media (min-width: 600px) {
     main { padding-top: 46px; }
     .hero { gap: 24px; margin-bottom: 28px; }
-    .hero-art { width: 140px; height: 140px; border-radius: 32px; }
+    .hero-art { width: 140px; height: 140px; border-radius: 28px; }
     .card { padding: 26px 26px 22px; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -157,6 +151,7 @@
     .plan, .dot { transition: none; }
   }
 </style>
+<link rel="stylesheet" href="/tokens.css">
 </head>
 <body>
 <header class="nav"><div class="nav-in">
@@ -184,16 +179,16 @@
       <label class="plan" data-plan="yearly">
         <input type="radio" name="plan" value="yearly">
         <span class="dot" aria-hidden="true"></span>
-        <span class="plan-name">Yearly <span class="badge">2 months free</span></span>
-        <span class="plan-note">$8.33 a month, billed yearly</span>
-        <span class="plan-price"><b>$99.99</b><span>a year</span></span>
+        <span class="plan-name">Yearly <span class="badge">5 months free</span></span>
+        <span class="plan-note">$5.83 a month, billed yearly</span>
+        <span class="plan-price"><b>$69.99</b><span>a year</span></span>
       </label>
       <label class="plan" data-plan="lifetime">
         <input type="radio" name="plan" value="lifetime">
         <span class="dot" aria-hidden="true"></span>
         <span class="plan-name">Lifetime</span>
         <span class="plan-note">Pay once, Pro for good</span>
-        <span class="plan-price"><b>$199.99</b><span>once</span></span>
+        <span class="plan-price"><b>$109</b><span>once</span></span>
       </label>
     </div>
   </fieldset>
@@ -249,8 +244,8 @@ const ANON_KEY = "sb_publishable_z0wBO4NZrMW3T0ZywSDfJA_UoFRHMKb";
    nothing is sold, so there is no checkout to send anyone to. */
 const PLANS = {
   monthly: { name: "Monthly", price: "$9.99 a month" },
-  yearly: { name: "Yearly", price: "$99.99 a year" },
-  lifetime: { name: "Lifetime", price: "$199.99 once" },
+  yearly: { name: "Yearly", price: "$69.99 a year" },
+  lifetime: { name: "Lifetime", price: "$109 once" },
 };
 const $ = (id) => document.getElementById(id);
 const query = new URLSearchParams(location.search);

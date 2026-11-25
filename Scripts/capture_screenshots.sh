@@ -12,6 +12,8 @@
 #   Scripts/capture_screenshots.sh
 #   venv/bin/python Scripts/make_screenshots.py
 #
+# or all of it, website images included: bash Scripts/refresh_screenshots.sh
+#
 set -euo pipefail
 
 BUNDLE="com.jpwilson.borkmarkr"
@@ -41,7 +43,9 @@ xcrun simctl status_bar "$SIM" override \
 # Wipe first so DebugSeed actually seeds (it no-ops on a non-empty store).
 xcrun simctl uninstall "$SIM" "$BUNDLE"
 xcrun simctl install "$SIM" "$DD/Build/Products/Debug-iphonesimulator/borkmarkr.app"
-xcrun simctl launch "$SIM" "$BUNDLE" -seed >/dev/null
+# Seed signed in: the seeded custom topic (Trail running) is only created for
+# an account, and without it its borks read "Races" with no topic.
+xcrun simctl launch "$SIM" "$BUNDLE" -seed -signedIn >/dev/null
 sleep 5
 
 # Card covers are real remote thumbnails (see `DebugSeed.Cover`), so a screen
@@ -69,7 +73,10 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
 #   -query "protein"      pre-fills the search field at the top of Browse
 #   -scopes "topics,tags" pre-selects the scope chips under it
 #   -topic fitness        opens Browse straight onto a topic page (hero band)
+#   -add URL -quickFileChosen   the Quick File dial for URL, a topic chosen
+#   -importSheet          the You tab with the import sheet up
 #   -dumpShareCard PATH   writes the rendered topic share card to a PNG
+#   -neutralCovers        draws every cover as its topic's clay, no thumbnails
 #
 # and, for the signed-out save limit (Core/SaveLimit.swift), whose surfaces
 # appear only at particular library sizes:
@@ -85,23 +92,35 @@ shoot() { # shoot <name> <startingTab> [extra launch args...]
 # None of these are parsed outside DEBUG, so no launch argument can put a
 # shipped build into one of these states.
 
-echo "Capturing to Marketing/captures:"
-# `-signedIn` on the two screens that carry the sign-in card. The seed is 39
-# borks, which is past the signed-out limit of 20, so signed out these two
-# capture the app mid-nag: "39 borks on this phone — sign up to keep saving."
-# That is a true state of the app and a terrible first frame for a store
-# listing. Signed in is equally true and is what the screens are actually for.
+echo "Capturing to $OUT:"
+# Every screen passes `-signedIn`. The seed is 50 borks, past the signed-out
+# limit of 20, so signed out each capture carries "50 borks on this phone —
+# sign up to keep saving." True, and a terrible first frame for a store
+# listing. Signed in is equally true and is what the screens are for.
 shoot library library -signedIn
-shoot browse  browse
+# Each screen with creator thumbnails has a `-neutral` twin: the same launch
+# with every cover drawn as its topic's clay. The website shows the Library
+# pair cross-fading (Scripts/make_web_screenshots.py diffs the two to find the
+# covers), and a neutral App Store set can be composed from the twins. A twin
+# is shot straight after its original, before anything changes the store.
+shoot library-neutral library -signedIn -neutralCovers
+# The dial after a topic is chosen (1.4's Quick File). Showing it saves the
+# link, so it comes after the Library shot; the title has no "protein" in
+# it, so the search shot below is unchanged by it.
+shoot dial    library -signedIn -add "https://www.tiktok.com/@kaylawalks/video/7299999" -quickFileChosen
+shoot browse  browse  -signedIn -browseAxis topics
 # The topic page is reachable only by tapping a tile, so `-topic` is the only
-# reproducible way to capture it — and the hero band and the share menu both
-# live there.
-shoot topic   browse -topic fitness
-# Search is no longer a tab: the field lives at the top of Browse, and -query
-# pre-fills it so the capture shows results rather than the topic grid.
-shoot search  browse -query "protein"
-shoot scoped  browse -query "run" -scopes "tags"
+# reproducible way to capture it.
+shoot topic   browse  -signedIn -topic fitness
+shoot topic-neutral  browse -signedIn -topic fitness -neutralCovers
+# Search lives at the top of Browse (and the Library); -query pre-fills it so
+# the capture shows results rather than the topic grid.
+shoot search  browse  -signedIn -query "protein"
+shoot search-neutral browse -signedIn -query "protein" -neutralCovers
+shoot scoped  browse  -signedIn -query "run" -scopes "tags"
+shoot scoped-neutral browse -signedIn -query "run" -scopes "tags" -neutralCovers
+shoot import  you     -signedIn -importSheet
 shoot revisit revisit -signedIn
-shoot you     you
+shoot you     you     -signedIn
 
 echo "Now: venv/bin/python Scripts/make_screenshots.py"

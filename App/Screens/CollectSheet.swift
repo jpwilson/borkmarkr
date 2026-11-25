@@ -71,7 +71,12 @@ struct CollectSheet: View {
     private var overLimit: Bool { bookmarks.count > Self.itemLimit }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            ClaySheetHeader(
+                title: stage == .done ? "Your link is ready" : "Share as one link",
+                onClose: stage == .working ? nil : { dismiss() }
+            )
+            .padding(.horizontal, Tokens.gutter)
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     switch stage {
@@ -81,26 +86,20 @@ struct CollectSheet: View {
                     }
                     if let message {
                         Text(message)
-                            .font(Typo.ui(12.5))
-                            .foregroundStyle(Tokens.destructive)
+                            .textRole(.meta, color: Tokens.destructive)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(18)
-                .padding(.bottom, 24)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Tokens.gutter)
+                .padding(.top, 12)
+                .padding(.bottom, 28)
             }
-            .background(Tokens.paper)
-            .navigationTitle(stage == .done ? "Your link is ready" : "Share as one link")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(stage == .done ? "Done" : "Cancel") { dismiss() }
-                        .disabled(stage == .working)
-                }
-            }
+            .scrollDismissesKeyboard(.interactively)
         }
+        .background(Tokens.paper)
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
         .interactiveDismissDisabled(stage == .working)
         .task(id: signedIn) {
             await loadDisplayName()
@@ -138,50 +137,47 @@ struct CollectSheet: View {
 
             field("Name") {
                 TextField("Name this link", text: $name)
-                    .font(Typo.ui(16, .semibold))
+                    .textRole(.cardTitle, color: Tokens.ink)
                     .submitLabel(.done)
             }
 
             field("A line under the title", optional: true) {
                 TextField("Why these, or who they're for", text: $note, axis: .vertical)
-                    .font(Typo.ui(15))
+                    .textRole(.body, color: Tokens.ink)
                     .lineLimit(1...4)
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Link open for")
-                    .font(Typo.ui(12, .heavy)).tracking(0.4)
-                    .foregroundStyle(Tokens.mutedHeading)
-                Picker("Link open for", selection: $expiry) {
-                    ForEach(CollectionShare.Expiry.allCases) { choice in
-                        Text(choice.label).tag(choice)
-                    }
-                }
-                .pickerStyle(.segmented)
+                    .textRole(.label, color: Tokens.inkSecondary)
+                    .padding(.leading, 4)
+                ClaySegmented(
+                    selection: $expiry,
+                    options: CollectionShare.Expiry.allCases.map { ($0, $0.label) }
+                )
                 Text(expiry.explanation)
-                    .font(Typo.ui(12.5))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
+                    .padding(.leading, 4)
             }
 
             if needsDisplayName {
                 field("Your name") {
                     TextField("How the page should say who shared it", text: $displayNameDraft)
-                        .font(Typo.ui(16, .semibold))
+                        .textRole(.cardTitle, color: Tokens.ink)
                         .textContentType(.name)
                         .submitLabel(.done)
                 }
                 Text("The page prints “by \(CollectionShare.cleanDisplayName(displayNameDraft) ?? "you")”. Asked once; change it on the web any time.")
-                    .font(Typo.ui(12.5))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 4)
                     .padding(.top, -8)
             }
 
             // What `collection_by_slug` serves: the bork's public face and the
             // post's own text — never `note_text`, which is yours.
             Text("Anyone with the link can see these \(Copy.countedBorks(shareable.count)) — titles, links, covers and the posts' own text. Never your notes. You can turn the link off any time.")
-                .font(Typo.ui(12.5))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.meta)
                 .fixedSize(horizontal: false, vertical: true)
 
             actions
@@ -193,19 +189,15 @@ struct CollectSheet: View {
     private var whatGoesIn: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(Copy.countedBorks(shareable.count))
-                .font(Typo.display(22, .heavy))
-                .tracking(-0.4)
-                .foregroundStyle(Tokens.ink)
+                .textRole(.screenTitle, color: Tokens.ink)
             if let line = sourcesLine {
                 Text(line)
-                    .font(Typo.ui(13, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
+                    .textRole(.meta)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if shareable.count < bookmarks.count {
                 Text("\(bookmarks.count - shareable.count) of the ones you picked are still waiting for an account. Sign up and they'll be included.")
-                    .font(Typo.ui(12.5))
-                    .foregroundStyle(Tokens.inkSecondary)
+                    .textRole(.meta)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 4)
             }
@@ -225,8 +217,7 @@ struct CollectSheet: View {
     private var actions: some View {
         if overLimit {
             Text("A link holds at most \(Self.itemLimit) borks — you've picked \(bookmarks.count). Take some out and try again.")
-                .font(Typo.ui(13, .semibold))
-                .foregroundStyle(Tokens.destructive)
+                .textRole(.body, color: Tokens.destructive)
                 .fixedSize(horizontal: false, vertical: true)
         } else if signedIn {
             primaryButton("Make the link", enabled: canCreate) { Task { await create() } }
@@ -235,36 +226,20 @@ struct CollectSheet: View {
             // because the page is served from the server, and the server can
             // only show borks it has.
             Text("A link needs a free account — the page is built from your backed-up borks, so they have to be backed up first.")
-                .font(Typo.ui(13))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
-                Button {
+                Button("Sign up") {
                     authMode = .signUp
                     showingAuth = true
-                } label: {
-                    Text("Sign up")
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(accent.base, in: Capsule())
                 }
-                .buttonStyle(PressableStyle())
+                .buttonStyle(.clayPrimary)
 
-                Button {
+                Button("Sign in") {
                     authMode = .signIn
                     showingAuth = true
-                } label: {
-                    Text("Sign in")
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(accent.deep)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(accent.tint, in: Capsule())
-                        .overlay(Capsule().stroke(accent.base.opacity(0.35), lineWidth: 1))
                 }
-                .buttonStyle(PressableStyle())
+                .buttonStyle(.claySecondary)
             }
         }
     }
@@ -282,12 +257,10 @@ struct CollectSheet: View {
             HStack(spacing: 12) {
                 ProgressView().tint(accent.base)
                 Text(progress)
-                    .font(Typo.ui(15, .semibold))
-                    .foregroundStyle(Tokens.ink)
+                    .textRole(.cardTitle, color: Tokens.ink)
             }
             Text("Every bork in a link has to be on the server first, so a first share can take a moment.")
-                .font(Typo.ui(12.5))
-                .foregroundStyle(Tokens.inkMeta)
+                .textRole(.meta)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.top, 8)
@@ -301,20 +274,16 @@ struct CollectSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(name)
-                        .font(Typo.display(22, .heavy))
-                        .tracking(-0.4)
-                        .foregroundStyle(Tokens.ink)
+                        .textRole(.screenTitle, color: Tokens.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("\(Copy.countedBorks(created.added)) on the page · \(CollectionShare.openUntilLine(expiresAt: created.expiresAt))")
-                        .font(Typo.ui(13, .medium))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .textRole(.meta)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 if created.added < shareable.count {
                     Text("\(shareable.count - created.added) of the \(shareable.count) you picked weren't on the server yet, so they're not on the page. Back up again from the You tab and make a new link to include them.")
-                        .font(Typo.ui(12.5, .semibold))
-                        .foregroundStyle(Tokens.destructive)
+                        .textRole(.meta, color: Tokens.destructive)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -325,37 +294,26 @@ struct CollectSheet: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer(minLength: 8)
-                    Button {
+                    FilterChip(copied ? "Copied" : "Copy", isOn: copied,
+                               symbol: copied ? "checkmark" : "doc.on.doc") {
                         UIPasteboard.general.string = created.url
                         Haptics.tap()
                         withAnimation(Motion.gentle) { copied = true }
-                    } label: {
-                        Text(copied ? "Copied" : "Copy")
-                            .font(Typo.ui(13, .bold))
-                            .foregroundStyle(copied ? Tokens.inkSecondary : accent.deep)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(copied ? Tokens.mutedControl : accent.tint, in: Capsule())
                     }
-                    .buttonStyle(ChipStyle())
                     .accessibilityLabel(copied ? "Link copied" : "Copy link")
                 }
-                .padding(14)
-                .cardSurface(radius: 16)
+                .padding(.leading, 16)
+                .padding(.trailing, 10)
+                .padding(.vertical, 6)
+                .cardSurface()
 
                 ShareLink(item: shareMessage, subject: Text(name)) {
                     Label("Share the link", systemImage: "square.and.arrow.up")
-                        .font(Typo.ui(15.5, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
                 }
-                .buttonStyle(PressableStyle())
+                .buttonStyle(.clayPrimary)
 
                 Button("See all the links you've shared") { showingList = true }
-                    .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(accent.deep)
+                    .buttonStyle(.clayQuiet)
             }
         }
     }
@@ -372,37 +330,29 @@ struct CollectSheet: View {
                                       @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Text(label.uppercased())
-                    .font(Typo.ui(10, .heavy)).tracking(0.6)
-                    .foregroundStyle(Tokens.mutedHeading)
+                Text(label)
+                    .textRole(.label, color: Tokens.inkSecondary)
                 if optional {
-                    Text("optional")
-                        .font(Typo.ui(10, .medium))
-                        .foregroundStyle(Tokens.inkFaint)
+                    Text("optional").textRole(.meta)
                 }
             }
+            .padding(.leading, 4)
             content()
-                .padding(14)
-                .cardSurface(radius: 16)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 13)
+                .frame(minHeight: 48)
+                .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Tokens.fieldRadius, style: .continuous)
+                    .strokeBorder(Tokens.hairline, lineWidth: 1))
         }
     }
 
-    /// `enabled` is drawn, not just enforced: `PressableStyle` does not dim a
-    /// disabled button on its own, and a full-colour button that ignores a
-    /// tap reads as broken rather than as waiting for a field.
+    /// The shared primary pill; it dims itself when disabled.
     private func primaryButton(_ title: String, enabled: Bool = true,
                                action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Typo.ui(15.5, .bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(accent.base, in: RoundedRectangle(cornerRadius: Tokens.buttonRadius, style: .continuous))
-        }
-        .buttonStyle(PressableStyle())
-        .disabled(!enabled)
-        .opacity(enabled ? 1 : 0.45)
+        Button(title, action: action)
+            .buttonStyle(.clayPrimary)
+            .disabled(!enabled)
     }
 
     // MARK: - The steps
@@ -459,7 +409,8 @@ struct CollectSheet: View {
 
             progress = "Backing up your borks first…"
             if let error = await account.syncAndWait(context: context) {
-                throw Problem("Couldn't back up your borks first: \(error) A link is built from the backed-up copies, so try again in a moment.")
+                // `error` is already a plain sentence (`PlainError`, via Account).
+                throw Problem("\(error) A link is built from the backed-up copies of your borks.")
             }
 
             let ids = shareable.map(\.id)
@@ -484,7 +435,7 @@ struct CollectSheet: View {
         } catch let problem as Problem {
             fail(problem.text)
         } catch {
-            fail("Couldn't make the link: \(error.localizedDescription)")
+            fail(PlainError.message(error, doing: "make the link"))
         }
     }
 
@@ -528,44 +479,36 @@ struct SelectionBar: View {
     var body: some View {
         VStack(spacing: 6) {
         if count == 0 {
-            Text("Tap borks to pick them")
-                .font(Typo.ui(12.5, .medium))
-                .foregroundStyle(Tokens.inkMeta)
+            Text("Tap borks to pick them").textRole(.meta)
         }
         HStack(spacing: 12) {
             Button("Cancel", action: onCancel)
-                .font(Typo.ui(14, .semibold))
+                .font(.custom("Instrument Sans", size: 15, relativeTo: .subheadline).weight(.semibold))
                 .foregroundStyle(Tokens.inkSecondary)
-                .frame(minHeight: 44)
+                .frame(minHeight: Tokens.minTapTarget)
 
             Spacer(minLength: 0)
 
-            Button(action: onShare) {
-                Text(count == 0 ? "Share link" : "Share link (\(count))")
-                    .font(Typo.ui(14, .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .frame(minHeight: 44)
-                    .background(count == 0 ? Tokens.inkFaint : accent.base, in: Capsule())
-            }
-            .buttonStyle(PressableStyle())
-            .disabled(count == 0)
+            Button(count == 0 ? "Share link" : "Share link (\(count))", action: onShare)
+                .buttonStyle(PrimaryButtonStyle(height: 44))
+                .fixedSize()
+                .disabled(count == 0)
         }
         }
         .padding(.leading, 18)
         .padding(.trailing, 8)
         .padding(.vertical, 8)
+        // It floats over the feed, so it is one of the few things that lifts.
         .background(
             RoundedRectangle(cornerRadius: Tokens.dockRadius, style: .continuous)
                 .fill(Tokens.surface)
                 .overlay(
                     RoundedRectangle(cornerRadius: Tokens.dockRadius, style: .continuous)
-                        .stroke(Tokens.hairline, lineWidth: 1)
+                        .strokeBorder(Tokens.hairline, lineWidth: 1)
                 )
-                .shadow(color: Color(hex: "191510").opacity(0.18), radius: 18, y: 10)
+                .lift(.toast)
         )
-        .padding(.horizontal, 14)
+        .padding(.horizontal, Tokens.gutter)
     }
 }
 

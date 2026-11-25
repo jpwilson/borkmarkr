@@ -9,39 +9,53 @@ import UIKit
 /// It is built to feel like a hardware control. Turning is relative, like a
 /// click wheel: drag round the ring anywhere and every 45° is one detent, with
 /// 8° of slack so a resting thumb never chatters between two. Each detent
-/// ticks (`.selection`, never closer than 45 ms), a coral bead springs round
-/// the rim to the lit key, and the centre slides 6 pt the way you turned. A
-/// tap files: the centre files what it shows, a key files that key. Filing
-/// presses the hub in, folds the ring away, closes the evidence ring and
-/// draws a coral check, with one firm `.impact`.
+/// ticks (`.selection`, never closer than 45 ms), the lit slab fills with its
+/// topic's deep colour and lifts a few points off the ring, and the centre
+/// slides 6 pt the way you turned. A tap files: the centre files what it
+/// shows, a slab files that topic. Filing presses the hub in, folds the ring
+/// away, closes the evidence ring and draws the check, with one firm `.impact`.
 ///
-/// The ring never rotates and its keys never reorder under a thumb. With
+/// The look is design/SYSTEM.md's direction B, "Quiet clay": eight clay slabs
+/// in their topics' tints, each with its clay object in a disc and the topic
+/// and subtopic in the deep colour; a raised white hub with the topic's art.
+/// No gradients, no backplate, no bead: the lit slab is the cue.
+///
+/// The ring never rotates and its slabs never reorder under a thumb. With
 /// Reduce Motion everything is a short crossfade; at accessibility text sizes
 /// the dial becomes a ranked list; under VoiceOver it is one adjustable
 /// element (swipe up or down to turn, double-tap to file).
+///
+/// On the Add and share sheets (`QuickFileModel.Mode.refine`) a filing
+/// chooses rather than folds: the ring stays live, the chosen topic's slab
+/// wears a small check, and the hub shows the choice with its check whenever
+/// the light is on it. Turning away shows another topic, which a tap files
+/// instead.
 struct QuickFileDial: View {
     let model: QuickFileModel
     var style: QuickFileStyle
     var diameter: CGFloat
     /// VoiceOver's "Not now" action. Nil leaves it out.
     var onLater: (() -> Void)?
+    /// VoiceOver's "Done" action once something is chosen. Nil leaves it out.
+    var onDone: (() -> Void)?
 
     @Environment(\.dynamicTypeSize) private var typeSize
 
     init(model: QuickFileModel, style: QuickFileStyle = .system, diameter: CGFloat = 300,
-         onLater: (() -> Void)? = nil) {
+         onLater: (() -> Void)? = nil, onDone: (() -> Void)? = nil) {
         self.model = model
         self.style = style
         self.diameter = diameter
         self.onLater = onLater
+        self.onDone = onDone
     }
 
     var body: some View {
         if typeSize.isAccessibilitySize {
             QuickFileRankedList(model: model, style: style)
         } else {
-            QuickFileRing(model: model, style: style, diameter: diameter, onLater: onLater)
-                // Fixed geometry: the keys can't grow with the text.
+            QuickFileRing(model: model, style: style, diameter: diameter, onLater: onLater, onDone: onDone)
+                // Fixed geometry: the slabs can't grow with the text.
                 .dynamicTypeSize(...DynamicTypeSize.large)
         }
     }
@@ -51,30 +65,70 @@ struct QuickFileDial: View {
 
 /// Where everything on a dial of a given diameter sits. Angles are measured
 /// clockwise from 12 o'clock.
+///
+/// Referenced to direction B's 360 pt artboard (B-QuickFile.dc.html), so its
+/// numbers copy straight across: B draws each slab to r 159 / r 85 with an
+/// 18 pt round-join stroke, so the visible slab runs from 76 to 168 with 9 pt
+/// corners and a 7 pt parallel gap. Hit regions follow the same radii
+/// (`Tests/QuickFileDialGeometryTests.swift` pins them).
 struct QuickFileDialGeometry {
     let size: CGFloat
 
+    /// B's artboard.
+    static let reference: CGFloat = 360
+
     init(diameter: CGFloat) { size = diameter }
 
-    /// 1 at the 300 pt reference size.
-    var scale: CGFloat { size / 300 }
+    /// 1 at the 360 pt reference size.
+    var scale: CGFloat { size / Self.reference }
     var centre: CGPoint { CGPoint(x: size / 2, y: size / 2) }
-    /// Room at the rim for the lit key to lift into.
-    var outer: CGFloat { size / 2 - 4 * scale }
-    var inner: CGFloat { size * 0.235 }
-    var hub: CGFloat { size * 0.205 }
-    var gap: CGFloat { 4 * scale }
+    /// The slabs' outer edge, leaving room at the rim for the lit one to lift.
+    var outer: CGFloat { 168 * scale }
+    var inner: CGFloat { 76 * scale }
+    /// The raised white hub (B: a 132 pt disc).
+    var hub: CGFloat { 66 * scale }
+    /// Between neighbouring slabs, parallel-sided.
+    var gap: CGFloat { 7 * scale }
     var corner: CGFloat { 9 * scale }
-    var ringWidth: CGFloat { 5 * scale }
-    /// Between the hub's edge and the evidence ring.
-    var ringGap: CGFloat { 1 * scale }
-    var art: CGFloat { 56 * scale }
-    var labelRadius: CGFloat { (inner + outer) / 2 + 1 * scale }
-    var labelWidth: CGFloat { 66 * scale }
-    var labelHeight: CGFloat { 58 * scale }
-    var beadRadius: CGFloat { outer - 9 * scale }
+    /// How far a lit or chosen slab lifts off the ring, outward.
+    var lift: CGFloat { 5 * scale }
+    /// The evidence ring: 2 pt, just outside the hub.
+    var ringWidth: CGFloat { 2 }
+    var ringRadius: CGFloat { hub + 3 * scale }
+    /// The clay object on each slab, and the hub's.
+    var slabArt: CGFloat { 36 * scale }
+    var hubArt: CGFloat { 84 * scale }
+    var badge: CGFloat { 30 * scale }
+    var labelWidth: CGFloat { 96 * scale }
+    var labelHeight: CGFloat { 84 * scale }
+    /// The slab labels' text follows the dial down only so far: on a small
+    /// dial (triage, a short sheet) B's 9.5 pt caps would fall under 8.2 pt.
+    /// Past that, the label's minimum scale factor fits the box instead.
+    var textScale: CGFloat { max(scale, 0.86) }
     /// Closer to the centre than this, a finger's angle is too jumpy to turn by.
     var steadyRadius: CGFloat { size * 0.12 }
+
+    /// A centre tap: inside the hub and halfway across the gap to the slabs.
+    var hubReach: CGFloat { (hub + inner) / 2 }
+    /// Taps a little past the rim still count as the slab's.
+    var rimReach: CGFloat { outer + 16 * scale }
+
+    /// The label's centre. B sets the 96 × 84 label boxes a little further out
+    /// at 12 and 6 o'clock (r 124) than at 3 and 9 (r 117), so the tall stack
+    /// sits square in the slab whichever way it runs.
+    func labelRadius(seat: Int) -> CGFloat {
+        (121 + 3.5 * CGFloat(cos(Double(seat) * .pi / 2))) * scale
+    }
+
+    func labelPoint(seat: Int) -> CGPoint {
+        point(degrees: Double(seat) * 45, radius: labelRadius(seat: seat))
+    }
+
+    /// The lit slab's offset: straight out from the centre.
+    func liftOffset(seat: Int) -> CGSize {
+        let p = point(degrees: Double(seat) * 45, radius: lift)
+        return CGSize(width: p.x - centre.x, height: p.y - centre.y)
+    }
 
     func distance(_ point: CGPoint) -> CGFloat {
         hypot(point.x - centre.x, point.y - centre.y)
@@ -93,8 +147,8 @@ struct QuickFileDialGeometry {
 
     func region(at point: CGPoint) -> QuickFileDialRegion {
         let r = distance(point)
-        if r <= (hub + inner) / 2 { return .hub }
-        guard r <= outer + 16 * scale else { return .outside }
+        if r <= hubReach { return .hub }
+        guard r <= rimReach else { return .outside }
         let degrees = angle(of: point) * 180 / .pi
         let turned = (degrees + 22.5 + 720).truncatingRemainder(dividingBy: 360)
         return .seat(Int(turned / 45) % 8)
@@ -162,14 +216,26 @@ final class QuickFileDragTracker {
 
 // MARK: - Shapes
 
-/// One key of the ring: an annular sector with parallel-sided gaps to its
-/// neighbours and softly rounded corners, like a keycap.
-struct QuickFileRingKey: Shape {
+/// One slab of the ring: an annular sector with parallel-sided gaps to its
+/// neighbours and softly rounded corners, like a keycap of clay.
+struct QuickFileSlab: Shape {
     var seat: Int
     var inner: CGFloat
     var outer: CGFloat
     var gap: CGFloat
     var corner: CGFloat
+
+    init(seat: Int, geometry g: QuickFileDialGeometry) {
+        self.init(seat: seat, inner: g.inner, outer: g.outer, gap: g.gap, corner: g.corner)
+    }
+
+    init(seat: Int, inner: CGFloat, outer: CGFloat, gap: CGFloat, corner: CGFloat) {
+        self.seat = seat
+        self.inner = inner
+        self.outer = outer
+        self.gap = gap
+        self.corner = corner
+    }
 
     func path(in rect: CGRect) -> Path {
         let c = CGPoint(x: rect.midX, y: rect.midY)
@@ -219,6 +285,19 @@ struct QuickFileRingKey: Shape {
     }
 }
 
+/// A shape's top edge, `depth` deep: what is left of it once a copy moved
+/// down by `depth` is cut away. B's `inset 0 1px 0 rgba(255,255,255,.7)`
+/// highlight (its `bInner` filter), drawn as a path rather than a filter.
+struct QuickFileTopEdge<Base: Shape>: Shape {
+    var base: Base
+    var depth: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let full = base.path(in: rect)
+        return full.subtracting(full.offsetBy(dx: 0, dy: depth))
+    }
+}
+
 /// The confirm tick, drawn by trimming.
 struct QuickFileCheck: Shape {
     func path(in rect: CGRect) -> Path {
@@ -230,8 +309,8 @@ struct QuickFileCheck: Shape {
     }
 }
 
-/// A topic's clay picture in a circle, or its colour disc and initial when
-/// there is no picture to be had.
+/// A topic's clay picture in a circle, or its tint and initial when there is
+/// no picture to be had.
 struct QuickFileArtDisc: View {
     let topicID: String
     let size: CGFloat
@@ -247,8 +326,7 @@ struct QuickFileArtDisc: View {
                     .scaledToFill()
             } else {
                 ZStack {
-                    LinearGradient(colors: [palette.tint, palette.dot.opacity(0.6)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                    palette.tint
                     Text(QuickFileCopy.initial(topicID))
                         .font(style.display(size * 0.44))
                         .foregroundStyle(palette.deep)
@@ -257,9 +335,18 @@ struct QuickFileArtDisc: View {
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
-        .overlay(Circle().strokeBorder(Color.black.opacity(0.06), lineWidth: 1))
         .accessibilityHidden(true)
     }
+}
+
+/// B's shadows, in Core so the Share Extension draws the same depth as the
+/// app (the app's `Lift` lives in App/, which the extension doesn't compile).
+enum QuickFileDepth {
+    static let warm = Brand.shadow
+    /// The ring of resting slabs: `feDropShadow dy 8, σ 9, .16`.
+    static let ringOpacity = 0.16
+    /// A lit slab, in its own deep colour: `dy 8, σ 7, .28`.
+    static let litOpacity = 0.28
 }
 
 // MARK: - The ring
@@ -269,12 +356,12 @@ private struct QuickFileRing: View {
     let style: QuickFileStyle
     let diameter: CGFloat
     let onLater: (() -> Void)?
+    let onDone: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
     @State private var held: QuickFileDialRegion?
     @State private var tracker = QuickFileDragTracker()
-    @State private var beadAngle: Double = 0
     @State private var ringClosed: CGFloat = 0
     @State private var checkDrawn: CGFloat = 0
     @State private var bump: CGFloat = 1
@@ -283,21 +370,21 @@ private struct QuickFileRing: View {
     var body: some View {
         let g = QuickFileDialGeometry(diameter: diameter)
         ZStack {
-            Circle()
-                .fill(Color.white)
-                .frame(width: g.outer * 2 + 4 * g.scale, height: g.outer * 2 + 4 * g.scale)
-                .overlay(Circle().strokeBorder(QuickFileStyle.hairline, lineWidth: 1))
-                .shadow(color: QuickFileStyle.ink.opacity(0.04), radius: 2, y: 1)
-                .shadow(color: QuickFileStyle.ink.opacity(0.10), radius: 18, y: 10)
-                .scaleEffect(appeared ? 1 : 0.94)
-                .opacity(appeared ? 1 : 0)
-                .animation(appearAnimation(delay: 0), value: appeared)
-            ForEach(0..<8, id: \.self) { seat in
-                key(seat, g)
+            // One shadow for the whole ring, not eight.
+            ZStack {
+                ForEach(0..<8, id: \.self) { seat in
+                    slab(seat, g)
+                }
             }
-            // Above the lit key, which lifts to z 1.
-            bead(g)
-                .zIndex(2)
+            .frame(width: g.size, height: g.size)
+            .compositingGroup()
+            .shadow(color: QuickFileDepth.warm.opacity(QuickFileDepth.ringOpacity), radius: 9, y: 8)
+            ForEach(0..<8, id: \.self) { seat in
+                label(seat, g)
+            }
+            ForEach(0..<8, id: \.self) { seat in
+                mark(seat, g)
+            }
             hub(g)
                 .zIndex(3)
         }
@@ -305,8 +392,11 @@ private struct QuickFileRing: View {
         .contentShape(Rectangle())
         .gesture(drag(g))
         .onAppear { appear() }
-        .onChange(of: model.highlighted) { _, seat in moveBead(to: seat) }
-        .onChange(of: model.filed) { _, filed in filedChanged(filed) }
+        .onChange(of: model.confirmations) { _, _ in landCheck() }
+        .onChange(of: model.showsCheck) { _, shows in checkShown(shows) }
+        .onChange(of: model.refinements) { _, _ in
+            if let filed = model.filed { UIAccessibility.post(notification: .announcement, argument: QuickFileCopy.filed(filed)) }
+        }
         .onChange(of: model.revision) { _, _ in
             if let line = model.updateAnnouncement {
                 UIAccessibility.post(notification: .announcement, argument: line)
@@ -315,6 +405,7 @@ private struct QuickFileRing: View {
         .sensoryFeedback(.selection, trigger: model.tick)
         .sensoryFeedback(.impact(weight: .medium), trigger: model.confirmations)
         .sensoryFeedback(.selection, trigger: model.undos)
+        .sensoryFeedback(.selection, trigger: model.refinements)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(QuickFileCopy.dialLabel)
         .accessibilityValue(model.spokenValue)
@@ -328,8 +419,13 @@ private struct QuickFileRing: View {
         }
         .accessibilityAction { model.confirm() }
         .accessibilityActions {
-            if model.filed != nil {
+            if model.isFolded {
                 Button(QuickFileCopy.undo) { model.undo() }
+            } else if model.isChosen {
+                if let onDone {
+                    Button(QuickFileCopy.done) { onDone() }
+                }
+                Button(QuickFileCopy.moreTopics) { model.more() }
             } else {
                 Button(QuickFileCopy.moreTopics) { model.more() }
                 if let onLater {
@@ -339,129 +435,197 @@ private struct QuickFileRing: View {
         }
     }
 
-    // MARK: Keys
+    // MARK: Slabs
 
-    @ViewBuilder
-    private func key(_ seat: Int, _ g: QuickFileDialGeometry) -> some View {
+    private struct SeatState {
+        let candidate: FilingCandidate?
+        let isMore: Bool
+        let lit: Bool
+        let pressed: Bool
+        let palette: CategoryPalette
+
+        /// Resting: the topic's tint; More… off-white; an empty seat paper.
+        var rest: Color {
+            if isMore { return Brand.offWhite }
+            return candidate != nil ? palette.tint : Brand.paper
+        }
+        /// Lit: the deep colour, behind white text.
+        var deep: Color { isMore ? Brand.sandInk : palette.deep }
+        /// Text on the resting slab.
+        var ink: Color { isMore ? Brand.sandInk : palette.deep }
+    }
+
+    private func state(_ seat: Int) -> SeatState {
         let candidate = model.candidate(at: seat)
-        let isMore = seat == QuickFileModel.moreSlot
-        let folded = model.filed != nil
-        let lit = !folded && model.highlighted == seat
-        let pressed = held == .seat(seat)
-        let palette = candidate.map { QuickFileStyle.palette(for: $0.categoryID) } ?? NeutralPalette.value
-        let shape = QuickFileRingKey(seat: seat, inner: g.inner, outer: g.outer, gap: g.gap, corner: g.corner)
+        return SeatState(
+            candidate: candidate,
+            isMore: seat == QuickFileModel.moreSlot,
+            lit: !model.isFolded && model.highlighted == seat,
+            pressed: held == .seat(seat),
+            palette: candidate.map { QuickFileStyle.palette(for: $0.categoryID) } ?? NeutralPalette.value
+        )
+    }
 
-        ZStack {
-            shape.fill(Color.white)
-            if isMore {
-                shape.fill(QuickFileStyle.mutedControl)
-            } else if candidate != nil {
-                shape.fill(RadialGradient(colors: [palette.tint.opacity(0.26), palette.tint.opacity(0.66)],
-                                          center: .center, startRadius: g.inner, endRadius: g.outer))
-            } else {
-                shape.fill(QuickFileStyle.paper)
+    private func slab(_ seat: Int, _ g: QuickFileDialGeometry) -> some View {
+        let s = state(seat)
+        let shape = QuickFileSlab(seat: seat, geometry: g)
+        return ZStack {
+            shape.fill(s.rest)
+            shape.fill(s.deep).opacity(s.lit ? 1 : 0)
+            QuickFileTopEdge(base: shape, depth: 1.5 * g.scale)
+                .fill(Color.white.opacity(s.lit ? 0.32 : 0.7))
+        }
+        .frame(width: g.size, height: g.size)
+        .shadow(color: s.deep.opacity(s.lit ? QuickFileDepth.litOpacity : 0), radius: s.lit ? 7 : 0, y: s.lit ? 8 : 0)
+        .modifier(seatMotion(seat, s, g))
+        .zIndex(s.lit ? 1 : 0)
+    }
+
+    private func label(_ seat: Int, _ g: QuickFileDialGeometry) -> some View {
+        let s = state(seat)
+        let k = g.scale
+        let colour = s.lit ? Color.white : s.ink
+        return VStack(spacing: 0) {
+            if s.isMore {
+                ZStack {
+                    Circle().fill(Color.white)
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16 * k, weight: .medium))
+                        .foregroundStyle(Brand.sandInk)
+                }
+                .frame(width: g.slabArt, height: g.slabArt)
+                .shadow(color: QuickFileDepth.warm.opacity(0.16), radius: 5 * k, y: 4 * k)
+                Color.clear.frame(height: 6 * k)
+                caps(QuickFileCopy.allTopics, k: g.textScale, lit: s.lit)
+                Color.clear.frame(height: 1 * k)
+                Text("More…")
+                    .font(style.ui(13.5 * g.textScale, .bold))
+                    .lineLimit(1)
+            } else if let candidate = s.candidate {
+                QuickFileArtDisc(topicID: candidate.categoryID, size: g.slabArt, style: style)
+                    .background(Circle().fill(Color.white).padding(-2 * k))
+                    .shadow(color: QuickFileDepth.warm.opacity(0.20), radius: 5 * k, y: 4 * k)
+                Color.clear.frame(height: 6 * k)
+                let name = QuickFileCopy.topicName(candidate.categoryID)
+                if let sub = candidate.subcategory {
+                    caps(name, k: g.textScale, lit: s.lit)
+                    Color.clear.frame(height: 1 * k)
+                    Text(sub)
+                        .font(style.ui(13.5 * g.textScale, .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                } else {
+                    Text(name)
+                        .font(style.ui(13.5 * g.textScale, .bold))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+                }
             }
-            shape
-                .fill(RadialGradient(colors: isMore ? [QuickFileStyle.ink, Color(white: 0.30)]
-                                                    : [palette.coverBottom, palette.coverTop],
-                                     center: .center, startRadius: g.inner, endRadius: g.outer))
-                .opacity(lit ? 1 : 0)
-            label(seat, candidate: candidate, palette: palette, lit: lit, g: g)
-                .id("\(seat)-\(model.revision)")
-                .transition(.opacity)
-            if let candidate, !folded, model.sparkle == candidate.categoryID {
+        }
+        .foregroundStyle(colour)
+        .multilineTextAlignment(.center)
+        .frame(width: g.labelWidth, height: g.labelHeight)
+        .id("\(seat)-\(model.revision)")
+        .transition(.opacity)
+        .animation(.easeInOut(duration: 0.16), value: model.revision)
+        .position(g.labelPoint(seat: seat))
+        .frame(width: g.size, height: g.size)
+        .modifier(seatMotion(seat, s, g))
+        .zIndex(s.lit ? 1 : 0)
+        .allowsHitTesting(false)
+    }
+
+    /// The topic in small caps over its subtopic: 9.5 bold, +0.07 em.
+    private func caps(_ text: String, k: CGFloat, lit: Bool) -> some View {
+        Text(text.uppercased())
+            .font(style.ui(9.5 * k, .bold))
+            .tracking(0.665 * k)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .opacity(lit ? 0.86 : 1)
+    }
+
+    /// The chosen topic's small deep check once the light has turned away
+    /// from its slab; otherwise a late ✨ for a topic the model just added.
+    @ViewBuilder
+    private func mark(_ seat: Int, _ g: QuickFileDialGeometry) -> some View {
+        let s = state(seat)
+        let chosenHere = model.isChosen && !s.lit && s.candidate != nil
+            && model.filed?.categoryID == s.candidate?.categoryID
+        let at = g.point(degrees: Double(seat) * 45 + 13, radius: g.outer - 14 * g.scale)
+        ZStack {
+            if chosenHere {
+                slabCheck(g, palette: s.palette)
+                    .position(at)
+                    .transition(.scale.combined(with: .opacity))
+            } else if let candidate = s.candidate, !model.isFolded, model.sparkle == candidate.categoryID {
                 Text("✨")
                     .font(.system(size: 11 * g.scale))
                     .frame(width: 20 * g.scale, height: 20 * g.scale)
                     .background(Circle().fill(Color.white))
-                    .shadow(color: QuickFileStyle.ink.opacity(0.18), radius: 3, y: 1)
-                    .position(g.point(degrees: Double(seat) * 45 + 13, radius: g.outer - 13 * g.scale))
+                    .shadow(color: QuickFileDepth.warm.opacity(0.2), radius: 3, y: 1)
+                    .position(at)
                     .transition(.scale.combined(with: .opacity))
             }
         }
         .frame(width: g.size, height: g.size)
-        .shadow(color: (isMore ? QuickFileStyle.ink : palette.deep).opacity(lit ? 0.28 : 0),
-                radius: lit ? 9 : 0, y: lit ? 4 : 0)
-        .scaleEffect(lit && !reduceMotion ? 1.035 : (pressed && !reduceMotion ? 0.97 : 1))
-        .animation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.24, dampingFraction: 0.74), value: lit)
-        .animation(.easeOut(duration: 0.1), value: pressed)
-        .animation(.easeInOut(duration: 0.16), value: model.revision)
         .animation(.easeOut(duration: 0.2), value: model.sparkle)
-        .zIndex(lit ? 1 : 0)
-        .scaleEffect(reduceMotion ? 1 : (folded ? 0.82 : (appeared ? 1 : 0.9)))
-        .opacity(folded ? 0 : (appeared ? 1 : 0))
-        .animation(folded ? .easeIn(duration: reduceMotion ? 0.12 : 0.16) : appearAnimation(delay: 0), value: folded)
-        .animation(appearAnimation(delay: Double(seat) * 0.018), value: appeared)
+        .animation(.easeOut(duration: 0.18), value: chosenHere)
+        .modifier(seatMotion(seat, s, g))
+        .zIndex(2)
         .allowsHitTesting(false)
     }
 
-    private func label(_ seat: Int, candidate: FilingCandidate?, palette: CategoryPalette, lit: Bool,
-                       g: QuickFileDialGeometry) -> some View {
-        let k = g.scale
-        return VStack(spacing: 2 * k) {
-            if seat == QuickFileModel.moreSlot {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 15 * k, weight: .bold))
-                Text("More…")
-                    .font(style.ui(12.5 * k, .semibold))
-            } else if let candidate {
-                let name = QuickFileCopy.topicName(candidate.categoryID)
-                if let sub = candidate.subcategory {
-                    Text(name.uppercased())
-                        .font(style.ui(9.5 * k, .heavy))
-                        .tracking(0.4 * k)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                        .opacity(0.8)
-                    Text(sub)
-                        .font(style.ui(12.5 * k, .semibold))
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.8)
-                } else {
-                    Text(name)
-                        .font(style.ui(12.5 * k, .semibold))
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.8)
-                }
-            }
+    private func slabCheck(_ g: QuickFileDialGeometry, palette: CategoryPalette) -> some View {
+        ZStack {
+            Circle().fill(palette.deep)
+            Circle().strokeBorder(Color.white, lineWidth: 2 * g.scale)
+            QuickFileCheck()
+                .stroke(Color.white, style: StrokeStyle(lineWidth: 2 * g.scale, lineCap: .round, lineJoin: .round))
+                .frame(width: 9 * g.scale, height: 9 * g.scale)
         }
-        .foregroundStyle(lit ? Color.white : (seat == QuickFileModel.moreSlot ? QuickFileStyle.inkSecondary : palette.deep))
-        .multilineTextAlignment(.center)
-        .frame(width: g.labelWidth, height: g.labelHeight)
-        .position(g.point(degrees: Double(seat) * 45, radius: g.labelRadius))
+        .frame(width: 22 * g.scale, height: 22 * g.scale)
+        .shadow(color: palette.deep.opacity(0.25), radius: 3, y: 2)
     }
 
-    // MARK: Bead
-
-    private func bead(_ g: QuickFileDialGeometry) -> some View {
-        let size = 10 * g.scale
-        let visible = model.highlighted != nil && model.filed == nil
-        return Circle()
-            .fill(style.accent)
-            .overlay(Circle().stroke(Color.white, lineWidth: 2 * g.scale))
-            .frame(width: size, height: size)
-            .shadow(color: style.accent.opacity(0.45), radius: 3, y: 1)
-            .scaleEffect(visible ? 1 : 0.3)
-            .opacity(visible ? 1 : 0)
-            .animation(.easeOut(duration: 0.14), value: visible)
-            .offset(y: -g.beadRadius)
-            .rotationEffect(.degrees(beadAngle))
-            .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.82), value: beadAngle)
-            .allowsHitTesting(false)
+    /// Lit lifts out; pressed sinks a little; appear, fold and Reduce Motion
+    /// are the same for a slab, its label and its mark.
+    private func seatMotion(_ seat: Int, _ s: SeatState, _ g: QuickFileDialGeometry) -> SeatMotion {
+        SeatMotion(lift: s.lit ? g.liftOffset(seat: seat) : .zero, lit: s.lit, pressed: s.pressed,
+                   folded: model.isFolded, appeared: appeared, reduceMotion: reduceMotion,
+                   appearAnimation: appearAnimation(delay: Double(seat) * 0.018),
+                   foldAnimation: model.isFolded ? .easeIn(duration: reduceMotion ? 0.12 : 0.16) : appearAnimation(delay: 0))
     }
 
-    private func moveBead(to seat: Int?) {
-        guard let seat else { return }
-        var delta = (Double(seat) * 45 - beadAngle).truncatingRemainder(dividingBy: 360)
-        if delta > 180 { delta -= 360 } else if delta < -180 { delta += 360 }
-        beadAngle += delta
+    private struct SeatMotion: ViewModifier {
+        let lift: CGSize
+        let lit: Bool
+        let pressed: Bool
+        let folded: Bool
+        let appeared: Bool
+        let reduceMotion: Bool
+        let appearAnimation: Animation
+        let foldAnimation: Animation
+
+        func body(content: Content) -> some View {
+            content
+                .offset(lift)
+                .animation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.24, dampingFraction: 0.74),
+                           value: lit)
+                .scaleEffect(pressed && !reduceMotion ? 0.97 : 1)
+                .animation(.easeOut(duration: 0.1), value: pressed)
+                .scaleEffect(reduceMotion ? 1 : (folded ? 0.82 : (appeared ? 1 : 0.9)))
+                .opacity(folded ? 0 : (appeared ? 1 : 0))
+                .animation(foldAnimation, value: folded)
+                .animation(appearAnimation, value: appeared)
+        }
     }
 
     // MARK: Hub
 
     private var hubKey: String {
-        let shown = model.filed ?? model.centre
-        let seat = model.filed == nil ? (model.highlighted.map(String.init) ?? "none") : "filed"
+        let shown = model.shown
+        let seat = model.showsCheck ? "filed" : (model.highlighted.map(String.init) ?? "none")
         return "\(seat)|\(shown?.categoryID ?? "")|\(shown?.subcategory ?? "")|\(model.revision)"
     }
 
@@ -472,28 +636,46 @@ private struct QuickFileRing: View {
                            removal: .offset(x: shift).combined(with: .opacity))
     }
 
+    /// How the hub lays out what it shows: the art alone (a slab is lit and
+    /// says the rest), the art over the topic's name (nothing on the ring is
+    /// lit, so the hub must say it), or the art over the first-use hint.
+    private enum HubLayout { case art, named, hint }
+
+    private func hubLayout(_ shown: FilingCandidate) -> HubLayout {
+        if showsHint && model.filed == nil { return .hint }
+        guard let seat = model.highlighted, let lit = model.candidate(at: seat),
+              lit.categoryID == shown.categoryID else { return .named }
+        return .art
+    }
+
+    /// The art's size and its centre's height above the hub's, per layout.
+    private func hubArt(_ layout: HubLayout, _ g: QuickFileDialGeometry) -> (size: CGFloat, y: CGFloat) {
+        switch layout {
+        case .art: (g.hubArt, 0)
+        case .named: (60 * g.scale, -13 * g.scale)
+        case .hint: (66 * g.scale, -9 * g.scale)
+        }
+    }
+
     private func hub(_ g: QuickFileDialGeometry) -> some View {
-        let shown = model.filed ?? model.centre
-        let onMore = model.filed == nil && model.isOnMore
+        let shown = model.shown
+        let onMore = shown == nil && model.isOnMore && !model.isFolded
+        let art = shown.map { hubArt(hubLayout($0), g) } ?? (g.hubArt, 0)
         return ZStack {
-            Circle()
-                .fill(LinearGradient(colors: [Color.white, QuickFileStyle.paper], startPoint: .top, endPoint: .bottom))
-                .overlay(Circle().strokeBorder(QuickFileStyle.hairline, lineWidth: 1))
-                .shadow(color: QuickFileStyle.ink.opacity(0.06), radius: 1.5, y: 1)
-                .shadow(color: QuickFileStyle.ink.opacity(0.13), radius: 12, y: 6)
+            hubDisc(g)
             evidenceRing(g, shown: shown, onMore: onMore)
             hubContent(g, shown: shown, onMore: onMore)
                 .id(hubKey)
                 .transition(hubTransition)
-            if model.filed != nil {
-                checkBadge(g)
+            if model.showsCheck, let shown {
+                checkBadge(g, palette: QuickFileStyle.palette(for: shown.categoryID), art: art)
                     .transition(.scale(scale: 0.4).combined(with: .opacity))
             }
         }
         .frame(width: g.hub * 2, height: g.hub * 2)
         .animation(.easeOut(duration: reduceMotion ? 0.12 : 0.14), value: hubKey)
         .animation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.3, dampingFraction: 0.62),
-                   value: model.filed != nil)
+                   value: model.showsCheck)
         .scaleEffect(held == .hub && !reduceMotion ? 0.95 : bump)
         .animation(.easeOut(duration: 0.1), value: held == .hub)
         .scaleEffect(appeared || reduceMotion ? 1 : 0.92)
@@ -502,17 +684,39 @@ private struct QuickFileRing: View {
         .allowsHitTesting(false)
     }
 
+    /// B's raised disc: white, a soft shade inside its lower edge, and two
+    /// warm drops (`0 14 28 / .20`, `0 2 4 / .10`).
+    private func hubDisc(_ g: QuickFileDialGeometry) -> some View {
+        let k = g.scale
+        return Circle()
+            .fill(Color.white)
+            .overlay {
+                // inset 0 -3px 6px rgba(120,84,50,.08)
+                Circle()
+                    .stroke(QuickFileDepth.warm.opacity(0.10), lineWidth: 8 * k)
+                    .padding(-4 * k)
+                    .offset(y: -3 * k)
+                    .blur(radius: 3 * k)
+                    .mask(Circle())
+            }
+            .shadow(color: QuickFileDepth.warm.opacity(0.10), radius: 2 * k, y: 2 * k)
+            .shadow(color: QuickFileDepth.warm.opacity(0.20), radius: 14 * k, y: 14 * k)
+    }
+
     private enum RingLook { case solid, dashed, faint }
 
     private func ringLook(_ shown: FilingCandidate?, onMore: Bool) -> RingLook {
         guard let shown, !onMore else { return .faint }
-        if model.filed != nil || shown.reasons.first == .yours { return .solid }
+        if model.showsCheck || shown.reasons.first == .yours { return .solid }
         return model.showsBestGuess && model.ranking.evidence == .strong ? .solid : .dashed
     }
 
+    /// How sure the guess is, as a 2 pt line round the hub in the topic's
+    /// mid: solid when it's yours or strong, dashed for a thin guess, faint
+    /// when the hub shows nothing to be sure of.
     private func evidenceRing(_ g: QuickFileDialGeometry, shown: FilingCandidate?, onMore: Bool) -> some View {
-        let diameter = (g.hub + g.ringGap + g.ringWidth / 2) * 2
-        let colour = shown.map { QuickFileStyle.palette(for: $0.categoryID).dot } ?? QuickFileStyle.inkFaint
+        let diameter = g.ringRadius * 2
+        let colour = shown.map { QuickFileStyle.palette(for: $0.categoryID).mid } ?? QuickFileStyle.inkFaint
         return ZStack {
             switch ringLook(shown, onMore: onMore) {
             case .solid:
@@ -535,31 +739,53 @@ private struct QuickFileRing: View {
     @ViewBuilder
     private func hubContent(_ g: QuickFileDialGeometry, shown: FilingCandidate?, onMore: Bool) -> some View {
         let k = g.scale
+        let width = g.hub * 1.6
         if onMore {
-            VStack(spacing: 4 * k) {
+            VStack(spacing: 5 * k) {
                 ZStack {
-                    Circle().fill(QuickFileStyle.mutedControl)
+                    Circle().fill(Brand.offWhite)
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: 22 * k, weight: .bold))
-                        .foregroundStyle(QuickFileStyle.inkSecondary)
+                        .font(.system(size: 22 * k, weight: .medium))
+                        .foregroundStyle(Brand.sandInk)
                 }
-                .frame(width: g.art * 0.9, height: g.art * 0.9)
+                .frame(width: 56 * k, height: 56 * k)
                 Text(QuickFileCopy.moreTopics)
-                    .font(style.display(17 * k))
+                    .font(style.display(16 * k))
                     .foregroundStyle(QuickFileStyle.ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                Text(QuickFileCopy.moreSubtitle)
-                    .font(style.ui(12 * k, .semibold))
-                    .foregroundStyle(QuickFileStyle.inkSecondary)
             }
-            .frame(width: g.hub * 1.62)
+            .frame(width: width)
         } else if let shown {
-            ViewThatFits(in: .horizontal) {
-                hubStack(shown, g: g, art: g.art, twoLines: false)
-                hubStack(shown, g: g, art: g.art * 0.72, twoLines: true)
+            let layout = hubLayout(shown)
+            let art = hubArt(layout, g)
+            let palette = QuickFileStyle.palette(for: shown.categoryID)
+            // Placed, not stacked, so the badge can find the art (`checkBadge`).
+            ZStack {
+                QuickFileArtDisc(topicID: shown.categoryID, size: art.size, style: style)
+                    .offset(y: art.y)
+                switch layout {
+                case .art:
+                    EmptyView()
+                case .named:
+                    Text(QuickFileCopy.topicName(shown.categoryID))
+                        .font(style.display(17 * k))
+                        .foregroundStyle(palette.deep)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .frame(width: 100 * k)
+                        .offset(y: art.y + art.size / 2 + 14 * k)
+                case .hint:
+                    Text(QuickFileCopy.tapToFile)
+                        .font(style.ui(11 * k, .bold))
+                        .foregroundStyle(style.accentDeep)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(width: 96 * k)
+                        .offset(y: art.y + art.size / 2 + 11 * k)
+                }
             }
-            .frame(width: g.hub * 1.62)
+            .frame(width: width, height: g.hub * 2)
         } else {
             VStack(spacing: 6 * k) {
                 ZStack {
@@ -569,76 +795,33 @@ private struct QuickFileRing: View {
                         .font(style.display(26 * k))
                         .foregroundStyle(QuickFileStyle.inkSecondary)
                 }
-                .frame(width: g.art * 0.86, height: g.art * 0.86)
+                .frame(width: 56 * k, height: 56 * k)
                 Text(QuickFileCopy.turnToChoose)
-                    .font(style.ui(13 * k, .semibold))
+                    .font(style.ui(12.5 * k, .semibold))
                     .foregroundStyle(QuickFileStyle.inkSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
-            .frame(width: g.hub * 1.62)
+            .frame(width: width)
         }
     }
 
-    /// The centre's picture, name and subtopic, sized to stay inside the hub's
-    /// circle: one-line names get the full 56 pt picture, two-line names a
-    /// smaller one, and the first-use "Tap to file" line shrinks it a little.
-    private func hubStack(_ shown: FilingCandidate, g: QuickFileDialGeometry, art: CGFloat, twoLines: Bool) -> some View {
-        let k = g.scale
-        let width = g.hub * 1.62
-        let palette = QuickFileStyle.palette(for: shown.categoryID)
-        let name = QuickFileCopy.topicName(shown.categoryID)
-        let hint = showsHint && !twoLines && model.filed == nil
-        return VStack(spacing: (hint || twoLines ? 2 : 3) * k) {
-            QuickFileArtDisc(topicID: shown.categoryID, size: hint ? art * 0.86 : art, style: style)
-            Group {
-                if twoLines {
-                    Text(name)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.7)
-                        .frame(width: width)
-                } else {
-                    Text(name)
-                        .lineLimit(1)
-                        .fixedSize()
-                }
-            }
-            .font(style.display((twoLines ? 17 : 19) * k))
-            .foregroundStyle(palette.deep)
-            .multilineTextAlignment(.center)
-            if let sub = shown.subcategory {
-                Text(sub)
-                    .font(style.ui(13 * k, .semibold))
-                    .foregroundStyle(QuickFileStyle.inkSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-                    .frame(maxWidth: width * (twoLines ? 0.72 : 0.9))
-            }
-            if hint {
-                Text(QuickFileCopy.tapToFile)
-                    .font(style.ui(10.5 * k, .bold))
-                    .foregroundStyle(style.accentDeep)
-                    .lineLimit(1)
-                    .frame(maxWidth: width * 0.7)
-            }
-        }
-    }
-
-    private func checkBadge(_ g: QuickFileDialGeometry) -> some View {
-        let size = 26 * g.scale
-        let radius = g.hub + g.ringGap + g.ringWidth / 2
+    /// The chosen topic's check, in its deep colour with a 3 pt white ring,
+    /// at the art's lower right (B: right −4, bottom −2 on the 84 pt art).
+    private func checkBadge(_ g: QuickFileDialGeometry, palette: CategoryPalette,
+                            art: (size: CGFloat, y: CGFloat)) -> some View {
+        let size = g.badge * max(0.8, art.size / g.hubArt)
         return ZStack {
-            Circle()
-                .fill(style.accent)
-                .shadow(color: style.accent.opacity(0.45), radius: 4, y: 2)
-            Circle().strokeBorder(Color.white, lineWidth: 2 * g.scale)
+            Circle().fill(Color.white).padding(-3 * g.scale)
+            Circle().fill(palette.deep)
             QuickFileCheck()
                 .trim(from: 0, to: checkDrawn)
-                .stroke(Color.white, style: StrokeStyle(lineWidth: 2.6 * g.scale, lineCap: .round, lineJoin: .round))
+                .stroke(Color.white, style: StrokeStyle(lineWidth: 2.5 * g.scale, lineCap: .round, lineJoin: .round))
                 .frame(width: size * 0.5, height: size * 0.5)
         }
         .frame(width: size, height: size)
-        .offset(x: radius * 0.7071, y: -radius * 0.7071)
+        .shadow(color: palette.deep.opacity(0.25), radius: 4 * g.scale, y: 4 * g.scale)
+        .offset(x: art.size / 2 * 0.738, y: art.y + art.size / 2 * 0.69)
     }
 
     // MARK: Gesture
@@ -650,7 +833,7 @@ private struct QuickFileRing: View {
                 if !tracker.active {
                     tracker.begin(at: value.startLocation, geometry: g)
                     model.touch()
-                    if tracker.region != .outside, model.filed == nil { held = tracker.region }
+                    if tracker.region != .outside, !model.isFolded { held = tracker.region }
                 }
                 if !tracker.turning,
                    hypot(value.translation.width, value.translation.height) >= QuickFileDragTracker.tapTravel {
@@ -685,19 +868,27 @@ private struct QuickFileRing: View {
         var still = Transaction()
         still.disablesAnimations = true
         withTransaction(still) {
-            beadAngle = Double(model.highlighted ?? 0) * 45
-            if model.filed != nil { ringClosed = 1; checkDrawn = 1 }
+            if model.showsCheck { ringClosed = 1; checkDrawn = 1 }
         }
         appeared = true
     }
 
-    private func filedChanged(_ filed: FilingCandidate?) {
-        guard filed != nil else {
-            withAnimation(.easeOut(duration: 0.18)) {
-                ringClosed = 0
-                checkDrawn = 0
-            }
-            return
+    /// The check comes and goes with what the hub shows: in `.refine`,
+    /// turning off the chosen topic takes it away and turning back brings it.
+    private func checkShown(_ shows: Bool) {
+        guard !shows || ringClosed == 0 else { return }
+        withAnimation(.easeOut(duration: 0.18)) {
+            ringClosed = shows ? 1 : 0
+            checkDrawn = shows ? 1 : 0
+        }
+    }
+
+    /// A filing, or a choice of a new topic: the hub presses in and the
+    /// check draws.
+    private func landCheck() {
+        guard model.filed != nil else { return }
+        if model.mode == .refine, let filed = model.filed {
+            UIAccessibility.post(notification: .announcement, argument: QuickFileCopy.chosen(filed))
         }
         if reduceMotion {
             ringClosed = 1
@@ -724,6 +915,8 @@ struct QuickFileHeader: View {
     let model: QuickFileModel
     var style: QuickFileStyle
 
+    @ScaledMetric(relativeTo: .footnote) private var size: CGFloat = 13.5
+
     init(model: QuickFileModel, style: QuickFileStyle = .system) {
         self.model = model
         self.style = style
@@ -732,11 +925,12 @@ struct QuickFileHeader: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: QuickFileCopy.headerSymbol(model.ranking, yours: model.yours))
-                .font(.system(size: 12, weight: .bold))
+                .font(.system(size: size * 0.9, weight: .semibold))
             Text(model.header)
-                .font(style.ui(13.5, .bold))
+                .font(style.ui(size, .semibold))
         }
         .foregroundStyle(style.accentDeep)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         .animation(.easeOut(duration: 0.2), value: model.header)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
@@ -749,6 +943,10 @@ struct QuickFileHeader: View {
 struct QuickFileDialFooter: View {
     let model: QuickFileModel
     var style: QuickFileStyle
+
+    @ScaledMetric(relativeTo: .footnote) private var lineFont: CGFloat = 13.5
+    @ScaledMetric(relativeTo: .subheadline) private var chipFont: CGFloat = 14
+    @ScaledMetric(relativeTo: .subheadline) private var chipHeight: CGFloat = 36
 
     init(model: QuickFileModel, style: QuickFileStyle = .system) {
         self.model = model
@@ -774,13 +972,15 @@ struct QuickFileDialFooter: View {
         VStack(spacing: 10) {
             reasonLine
             chipsRow
-                .frame(height: 36)
+                .frame(height: max(44, chipHeight + 8))
             if let suggestion = model.aiChip, model.filed == nil {
                 alsoLikely(suggestion)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.easeOut(duration: 0.2), value: model.aiChip)
+        // The ring above it is fixed; past this the chips would crowd it.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
     private var reasonContent: (symbol: String?, text: String) {
@@ -796,10 +996,10 @@ struct QuickFileDialFooter: View {
         return HStack(spacing: 6) {
             if let symbol = content.symbol {
                 Image(systemName: symbol)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: lineFont * 0.9, weight: .semibold))
             }
             Text(content.text)
-                .font(style.ui(13.5, .medium))
+                .font(style.ui(lineFont, .medium))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
         }
@@ -852,12 +1052,14 @@ struct QuickFileDialFooter: View {
         let palette = QuickFileStyle.palette(for: topicID)
         return Button(action: action) {
             Text(title)
-                .font(style.ui(13, .semibold))
+                .font(style.ui(chipFont, .semibold))
                 .lineLimit(1)
-                .foregroundStyle(muted ? QuickFileStyle.inkSecondary : palette.deep)
-                .padding(.horizontal, 13)
-                .frame(height: 34)
-                .background(muted ? QuickFileStyle.mutedControl : palette.tint.opacity(0.55), in: Capsule())
+                .fixedSize()
+                .foregroundStyle(muted ? Brand.sandInk : palette.deep)
+                .padding(.horizontal, 14)
+                .frame(height: chipHeight)
+                .background(muted ? Brand.sand : palette.tint, in: Capsule())
+                .frame(minHeight: 44)
                 .contentShape(Capsule())
         }
         .buttonStyle(QuickFilePressStyle())
@@ -870,15 +1072,15 @@ struct QuickFileDialFooter: View {
             HStack(spacing: 6) {
                 Text("✨")
                 Text(QuickFileCopy.alsoLikely(candidate))
-                    .font(style.ui(13, .semibold))
+                    .font(style.ui(chipFont, .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
             .foregroundStyle(palette.deep)
             .padding(.horizontal, 14)
-            .frame(height: 36)
-            .background(palette.tint.opacity(0.55), in: Capsule())
-            .overlay(Capsule().strokeBorder(palette.dot.opacity(0.5), lineWidth: 1))
+            .frame(height: chipHeight)
+            .background(palette.tint, in: Capsule())
+            .overlay(Capsule().strokeBorder(palette.mid.opacity(0.6), lineWidth: 1))
         }
         .buttonStyle(QuickFilePressStyle())
         .accessibilityLabel(QuickFileCopy.fileUnder(candidate.categoryID, candidate.subcategory))
@@ -888,63 +1090,80 @@ struct QuickFileDialFooter: View {
 // MARK: - Ranked list (accessibility text sizes)
 
 /// The dial as a list, for text too large for a ring: the same candidates in
-/// rank order, each one tap to file, then More….
+/// rank order, each one tap to file, then More…. Each row is a clay slab in
+/// its topic's tint; the lit one fills with the deep colour, as on the ring.
 private struct QuickFileRankedList: View {
     let model: QuickFileModel
     let style: QuickFileStyle
+
+    @ScaledMetric(relativeTo: .headline) private var art: CGFloat = 36
+    @ScaledMetric(relativeTo: .headline) private var titleSize: CGFloat = 17
+    @ScaledMetric(relativeTo: .subheadline) private var reasonSize: CGFloat = 15
 
     var body: some View {
         VStack(spacing: 8) {
             ForEach(Array(model.candidates.enumerated()), id: \.element.id) { seat, candidate in
                 Button { model.tap(seat) } label: { row(candidate, seat: seat) }
                     .buttonStyle(QuickFilePressStyle())
-                    .disabled(model.filed != nil)
-                    .accessibilityAddTraits(model.highlighted == seat ? .isSelected : [])
+                    .disabled(model.isFolded)
+                    .accessibilityAddTraits(model.highlighted == seat || model.filed?.categoryID == candidate.categoryID
+                                            ? .isSelected : [])
             }
             Button { model.more() } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(.title3, design: .rounded).weight(.bold))
-                        .foregroundStyle(QuickFileStyle.inkSecondary)
+                    ZStack {
+                        Circle().fill(Color.white)
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: art * 0.45, weight: .medium))
+                            .foregroundStyle(Brand.sandInk)
+                    }
+                    .frame(width: art, height: art)
                     Text(QuickFileCopy.moreTopics)
-                        .font(.system(.headline, design: .rounded))
-                        .foregroundStyle(QuickFileStyle.ink)
+                        .font(style.ui(titleSize, .bold))
+                        .foregroundStyle(Brand.sandInk)
                     Spacer(minLength: 0)
                 }
-                .padding(14)
-                .background(QuickFileStyle.mutedControl, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(12)
+                .background(Brand.offWhite, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(QuickFileStyle.hairline, lineWidth: 1))
             }
             .buttonStyle(QuickFilePressStyle())
-            .disabled(model.filed != nil)
+            .disabled(model.isFolded)
         }
     }
 
     private func row(_ candidate: FilingCandidate, seat: Int) -> some View {
         let palette = QuickFileStyle.palette(for: candidate.categoryID)
         let filedHere = model.filed?.categoryID == candidate.categoryID
+        let lit = model.highlighted == seat
+        let text = lit ? Color.white : palette.deep
         return HStack(spacing: 12) {
-            QuickFileArtDisc(topicID: candidate.categoryID, size: 44, style: style)
+            QuickFileArtDisc(topicID: candidate.categoryID, size: art, style: style)
+                .background(Circle().fill(Color.white).padding(-2))
             VStack(alignment: .leading, spacing: 2) {
                 Text(QuickFileCopy.label(candidate))
-                    .font(.system(.headline, design: .rounded))
-                    .foregroundStyle(QuickFileStyle.ink)
+                    .font(style.ui(titleSize, .bold))
+                    .foregroundStyle(text)
                 if let reason = model.reason(for: candidate) {
                     Text(reason)
-                        .font(.system(.subheadline, design: .rounded))
-                        .foregroundStyle(QuickFileStyle.inkSecondary)
+                        .font(style.ui(reasonSize, .medium))
+                        .foregroundStyle(text)
                 }
             }
             Spacer(minLength: 0)
             if filedHere {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(.title2, design: .rounded))
-                    .foregroundStyle(style.accent)
+                ZStack {
+                    Circle().fill(lit ? Color.white : palette.deep)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: art * 0.36, weight: .bold))
+                        .foregroundStyle(lit ? palette.deep : Color.white)
+                }
+                .frame(width: art * 0.8, height: art * 0.8)
             }
         }
         .padding(12)
-        .background(model.highlighted == seat ? palette.tint.opacity(0.5) : Color.white,
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(QuickFileStyle.hairline, lineWidth: 1))
+        .background(lit ? palette.deep : palette.tint, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityHint(seat == model.ranking.preselect ? "Suggested" : "")
     }

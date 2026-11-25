@@ -1,0 +1,427 @@
+{
+ "_rules": {
+  "subtopicChips(all, suggested, used)": "Only names found in `all`, matched case-insensitively and shown in `all`'s spelling. Order: suggested (as given), then used (as given), then the rest of `all` in the order given (callers pass it A-Z). A name appears once (first place wins, case-insensitive). Empty `all` gives [].",
+  "tagChips(chosen, suggested, recent)": "Every tag is trimmed and lowercased; empty ones are skipped. Order: chosen tags that are in neither suggested nor recent (as given), then suggested, then recent. A tag appears once (first place wins). Site names (Platform.isSiteName / Filer.isSiteName) are dropped from suggested and recent, never from chosen. on = the tag is in chosen.",
+  "cleanTag(raw)": "Remove every '#', trim, lowercase, collapse runs of whitespace to one space, keep the first 30 characters, trim again. Empty gives null."
+ },
+ "subtopics": [
+  {
+   "name": "suggested, then used, then the rest",
+   "all": [
+    "Cycling",
+    "Running",
+    "Swimming",
+    "Yoga"
+   ],
+   "suggested": [
+    "Running"
+   ],
+   "used": [
+    "Yoga"
+   ],
+   "expect": [
+    "Running",
+    "Yoga",
+    "Cycling",
+    "Swimming"
+   ]
+  },
+  {
+   "name": "case-insensitive match keeps the canonical spelling",
+   "all": [
+    "Running",
+    "Trail running"
+   ],
+   "suggested": [
+    "running"
+   ],
+   "used": [
+    "TRAIL RUNNING"
+   ],
+   "expect": [
+    "Running",
+    "Trail running"
+   ]
+  },
+  {
+   "name": "a suggestion not in all is dropped",
+   "all": [
+    "Bread",
+    "Pasta"
+   ],
+   "suggested": [
+    "Zumba",
+    "Pasta"
+   ],
+   "used": [
+    "Sourdough"
+   ],
+   "expect": [
+    "Pasta",
+    "Bread"
+   ]
+  },
+  {
+   "name": "duplicates appear once, first place wins",
+   "all": [
+    "Cycling",
+    "Running",
+    "Yoga"
+   ],
+   "suggested": [
+    "Running",
+    "running"
+   ],
+   "used": [
+    "Running",
+    "Yoga",
+    "yoga"
+   ],
+   "expect": [
+    "Running",
+    "Yoga",
+    "Cycling"
+   ]
+  },
+  {
+   "name": "empty all gives nothing",
+   "all": [],
+   "suggested": [
+    "Running"
+   ],
+   "used": [
+    "Yoga"
+   ],
+   "expect": []
+  },
+  {
+   "name": "used keeps its order",
+   "all": [
+    "Cycling",
+    "Running",
+    "Swimming",
+    "Yoga"
+   ],
+   "suggested": [],
+   "used": [
+    "Swimming",
+    "Cycling"
+   ],
+   "expect": [
+    "Swimming",
+    "Cycling",
+    "Running",
+    "Yoga"
+   ]
+  },
+  {
+   "name": "nothing suggested or used",
+   "all": [
+    "Cycling",
+    "Running"
+   ],
+   "suggested": [],
+   "used": [],
+   "expect": [
+    "Cycling",
+    "Running"
+   ]
+  },
+  {
+   "name": "duplicate entries in all",
+   "all": [
+    "Running",
+    "running",
+    "Yoga"
+   ],
+   "suggested": [],
+   "used": [],
+   "expect": [
+    "Running",
+    "Yoga"
+   ]
+  },
+  {
+   "name": "the rest keeps all's order",
+   "all": [
+    "Yoga",
+    "Cycling",
+    "Running"
+   ],
+   "suggested": [
+    "Running"
+   ],
+   "used": [],
+   "expect": [
+    "Running",
+    "Yoga",
+    "Cycling"
+   ]
+  },
+  {
+   "name": "several suggestions keep their order",
+   "all": [
+    "Cycling",
+    "Running",
+    "Swimming",
+    "Yoga"
+   ],
+   "suggested": [
+    "Yoga",
+    "Cycling"
+   ],
+   "used": [
+    "Cycling",
+    "Running"
+   ],
+   "expect": [
+    "Yoga",
+    "Cycling",
+    "Running",
+    "Swimming"
+   ]
+  }
+ ],
+ "tags": [
+  {
+   "name": "chosen on, the rest off",
+   "chosen": [
+    "run"
+   ],
+   "suggested": [
+    "run",
+    "fitness"
+   ],
+   "recent": [
+    "cardio"
+   ],
+   "expect": [
+    {
+     "tag": "run",
+     "on": true
+    },
+    {
+     "tag": "fitness",
+     "on": false
+    },
+    {
+     "tag": "cardio",
+     "on": false
+    }
+   ]
+  },
+  {
+   "name": "a typed tag comes first",
+   "chosen": [
+    "mine",
+    "run"
+   ],
+   "suggested": [
+    "run"
+   ],
+   "recent": [],
+   "expect": [
+    {
+     "tag": "mine",
+     "on": true
+    },
+    {
+     "tag": "run",
+     "on": true
+    }
+   ]
+  },
+  {
+   "name": "case-insensitive, shown lowercase",
+   "chosen": [
+    "Run"
+   ],
+   "suggested": [
+    "RUN"
+   ],
+   "recent": [
+    "run",
+    "Cardio"
+   ],
+   "expect": [
+    {
+     "tag": "run",
+     "on": true
+    },
+    {
+     "tag": "cardio",
+     "on": false
+    }
+   ]
+  },
+  {
+   "name": "site names are dropped from suggestions and recents",
+   "chosen": [],
+   "suggested": [
+    "TikTok",
+    "run"
+   ],
+   "recent": [
+    "instagram",
+    "x",
+    "YouTube",
+    "cardio"
+   ],
+   "expect": [
+    {
+     "tag": "run",
+     "on": false
+    },
+    {
+     "tag": "cardio",
+     "on": false
+    }
+   ]
+  },
+  {
+   "name": "a chosen site name stays",
+   "chosen": [
+    "tiktok"
+   ],
+   "suggested": [
+    "tiktok",
+    "dance"
+   ],
+   "recent": [],
+   "expect": [
+    {
+     "tag": "tiktok",
+     "on": true
+    },
+    {
+     "tag": "dance",
+     "on": false
+    }
+   ]
+  },
+  {
+   "name": "all empty",
+   "chosen": [],
+   "suggested": [],
+   "recent": [],
+   "expect": []
+  },
+  {
+   "name": "a recent that is also suggested appears once",
+   "chosen": [],
+   "suggested": [
+    "pasta"
+   ],
+   "recent": [
+    "dinner",
+    "pasta"
+   ],
+   "expect": [
+    {
+     "tag": "pasta",
+     "on": false
+    },
+    {
+     "tag": "dinner",
+     "on": false
+    }
+   ]
+  },
+  {
+   "name": "a chosen tag that is recent sits with the recents",
+   "chosen": [
+    "dinner"
+   ],
+   "suggested": [
+    "pasta"
+   ],
+   "recent": [
+    "dinner"
+   ],
+   "expect": [
+    {
+     "tag": "pasta",
+     "on": false
+    },
+    {
+     "tag": "dinner",
+     "on": true
+    }
+   ]
+  },
+  {
+   "name": "blank entries are skipped and spaces trimmed",
+   "chosen": [
+    " "
+   ],
+   "suggested": [
+    "",
+    "  "
+   ],
+   "recent": [
+    " yoga "
+   ],
+   "expect": [
+    {
+     "tag": "yoga",
+     "on": false
+    }
+   ]
+  },
+  {
+   "name": "duplicates within chosen",
+   "chosen": [
+    "mine",
+    "Mine"
+   ],
+   "suggested": [],
+   "recent": [
+    "mine"
+   ],
+   "expect": [
+    {
+     "tag": "mine",
+     "on": true
+    }
+   ]
+  }
+ ],
+ "clean": [
+  {
+   "raw": "#Run ",
+   "expect": "run"
+  },
+  {
+   "raw": "  Trail   Running ",
+   "expect": "trail running"
+  },
+  {
+   "raw": "##",
+   "expect": null
+  },
+  {
+   "raw": "",
+   "expect": null
+  },
+  {
+   "raw": "#c#a#t",
+   "expect": "cat"
+  },
+  {
+   "raw": "Tab\tand\nline",
+   "expect": "tab and line"
+  },
+  {
+   "raw": "abcdefghijklmnopqrstuvwxyzabcdefghi",
+   "expect": "abcdefghijklmnopqrstuvwxyzabcd"
+  },
+  {
+   "raw": "abcdefghijklmnopqrstuvwxyzabc xyz",
+   "expect": "abcdefghijklmnopqrstuvwxyzabc"
+  },
+  {
+   "raw": "MealPrep",
+   "expect": "mealprep"
+  }
+ ]
+}

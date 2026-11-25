@@ -111,9 +111,10 @@ struct QuickFileMoreList: View {
             }
         }
         .padding(.horizontal, 14)
-        .frame(height: 46)
-        .background(Color.white, in: Capsule())
-        .overlay(Capsule().strokeBorder(QuickFileStyle.hairline, lineWidth: 1))
+        .frame(height: 48)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .strokeBorder(QuickFileStyle.hairline, lineWidth: 1))
     }
 
     private func row(_ topic: Topic, open: Bool) -> some View {
@@ -127,15 +128,13 @@ struct QuickFileMoreList: View {
                 }
             } label: {
                 HStack(spacing: 10) {
-                    Circle()
-                        .fill(palette.dot)
-                        .frame(width: 10, height: 10)
+                    QuickFileArtDisc(topicID: topic.id, size: 32, style: style)
                     Text(topic.name)
                         .font(style.ui(15, .semibold))
                         .foregroundStyle(QuickFileStyle.ink)
                     if !Self.builtIn.contains(topic.id) {
                         Text("yours")
-                            .font(style.ui(10, .bold))
+                            .font(style.ui(11, .semibold))
                             .foregroundStyle(palette.deep)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -143,20 +142,20 @@ struct QuickFileMoreList: View {
                     }
                     Spacer(minLength: 8)
                     Text("\(list.count)")
-                        .font(style.ui(12, .medium))
+                        .font(style.ui(13, .medium))
                         .foregroundStyle(QuickFileStyle.inkSecondary)
                     Image(systemName: open ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(QuickFileStyle.inkFaint)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(QuickFileStyle.inkSecondary)
                 }
-                .frame(minHeight: 34)
+                .frame(minHeight: 36)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityHint(open ? "Hides its subtopics" : "Shows its subtopics")
 
             if open {
-                QuickFileFlow(spacing: 7) {
+                QuickFileFlow(spacing: 8) {
                     pickChip(QuickFileCopy.just(topic.id), palette: palette, muted: true, hit: false) {
                         onPick(topic.id, nil)
                     }
@@ -168,22 +167,24 @@ struct QuickFileMoreList: View {
                 }
             }
         }
-        .padding(12)
-        .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(QuickFileStyle.hairline, lineWidth: 1))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(QuickFileStyle.hairline, lineWidth: 1))
     }
 
     private func pickChip(_ title: String, palette: CategoryPalette, muted: Bool, hit: Bool,
                           action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(style.ui(13, hit ? .bold : .semibold))
+                .font(style.ui(14, .semibold))
                 .lineLimit(1)
-                .foregroundStyle(muted ? QuickFileStyle.inkSecondary : palette.deep)
+                .foregroundStyle(muted ? Brand.sandInk : palette.deep)
                 .padding(.horizontal, 12)
                 .frame(height: 36)
-                .background(muted ? QuickFileStyle.mutedControl : palette.tint.opacity(hit ? 1 : 0.5), in: Capsule())
-                .overlay(Capsule().strokeBorder(hit ? palette.deep.opacity(0.55) : Color.clear, lineWidth: 1.5))
+                .background(muted ? Brand.sand : palette.tint, in: Capsule())
+                .overlay(Capsule().strokeBorder(hit ? palette.deep : Color.clear, lineWidth: 1.5))
+                .frame(minHeight: 44)
                 .contentShape(Capsule())
         }
         .buttonStyle(QuickFilePressStyle())

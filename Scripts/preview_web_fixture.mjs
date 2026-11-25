@@ -81,7 +81,16 @@ const tables={
   missions:[{id:"fixture-quest",owner_id:owner,title:"Improve mobility",detail:"A synthetic goal",category_id:"fitness",bookmark_ids:["fixture-0"],todos:[],completed_days:[],is_archived:false,created_at:now,updated_at:now,deleted_at:null}],
   custom_topics:[],custom_subtopics:[],bookmark_opens:[],topic_art:[],collections:[]
 };
-const mime={".html":"text/html",".js":"text/javascript",".css":"text/css",".jpg":"image/jpeg",".png":"image/png",".svg":"image/svg+xml",".json":"application/json"};
+const mime={".html":"text/html",".js":"text/javascript",".css":"text/css",".jpg":"image/jpeg",".png":"image/png",".webp":"image/webp",".svg":"image/svg+xml",".json":"application/json"};
+async function cleanPath(pathname){
+  const exists=async(p)=>{try{return (await fs.stat(p)).isFile();}catch{return false;}};
+  const base=path.resolve(root,"."+pathname);
+  if(pathname.endsWith("/")) return path.join(base,"index.html");
+  if(path.extname(pathname)) return base;
+  if(await exists(base+".html")) return base+".html";
+  if(await exists(path.join(base,"index.html"))) return path.join(base,"index.html");
+  return base;
+}
 http.createServer(async(req,res)=>{
   const url=new URL(req.url,origin);
   const send=(body,status=200)=>{res.writeHead(status,{"Content-Type":"application/json","Cache-Control":"no-store"});res.end(JSON.stringify(body));};
@@ -104,7 +113,9 @@ http.createServer(async(req,res)=>{
       if(req.method==="PATCH"){Object.assign(tables[name][0],body);return send([tables[name][0]]);}
       const offset=Number(url.searchParams.get("offset")||0);return send(tables[name].slice(offset,offset+1000));
     }
-    const file=path.resolve(root,"."+(url.pathname==="/"?"/index.html":url.pathname));
+    // Clean URLs, as the live host serves them: /x/ → x/index.html, /x → x.html
+    // (or x/index.html when that is what exists).
+    const file=await cleanPath(url.pathname);
     if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}
     let bytes=await fs.readFile(file);
     if(file.endsWith("index.html")) bytes=Buffer.from(bytes.toString().replace(/const SUPABASE_URL = "[^"]*";/,`const SUPABASE_URL = "${origin}/fixture-api";`).replace(/const ANON_KEY = "[^"]*";/,'const ANON_KEY = "local-fixture-only";').replace("<title>","<title>SYNTHETIC QA · "));

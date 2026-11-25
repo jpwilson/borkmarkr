@@ -1,67 +1,72 @@
 /* bookmarker — Quick File on the web: the dial, the Add sheet once the link
    is saved, the "Drop to bork it" overlay and the "Sort your borks" deck.
 
-   Loaded after library-layout.css. Light paper, always, in the iPhone's own
-   tokens (the page's :root). Motion is transform and opacity only, nothing on
-   the save or file path runs past 300 ms, and under reduced motion (the media
-   query, or .qf-reduced on an ancestor) everything is a short crossfade. */
+   Loaded after library-layout.css. Light paper, always, in the "Quiet clay"
+   tokens (docs/tokens.css). The wheel is direction B (design/SYSTEM.md and
+   B-QuickFile.dc.html): its numbers are B's 360 px artboard, in cqw of the
+   dial (1cqw = 3.6 px at full size). Motion is transform and opacity only,
+   nothing on the save or file path runs past 300 ms, and under reduced
+   motion (the media query, or .qf-reduced on an ancestor) everything is a
+   short crossfade. */
 
 /* ── The dial ─────────────────────────────────────────────────────────── */
-/* --qf-rest: how much of a topic's tint a resting segment shows over warm
-   white. The iPhone's tints are strong pastels, made for chips; seven of them
-   round a ring want softening so the highlighted segment and the clay art lead. */
-.qf { --qf-size: clamp(272px, 78vw, 340px); --qf-rest: 56%; --qf-white: #FFFCF7;
+.qf { --qf-size: 360px; --qf-white: #fff;
   container: qf / inline-size; width: 100%; display: flex; flex-direction: column; align-items: center;
   text-align: center; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-.qf[data-mode="triage"] { --qf-size: clamp(256px, 72vw, 316px); }
+.qf[data-mode="triage"] { --qf-size: 340px; }
 .qf-dial { position: relative; container: qfd / inline-size; flex: 0 0 auto;
   width: min(var(--qf-size), 100cqw); aspect-ratio: 1; }
-/* The contact shadow: the ring sits on the paper like a clay coin. */
-.qf-dial::before { content: ""; position: absolute; inset: 1.5%; border-radius: 50%; pointer-events: none;
-  box-shadow: 0 20px 38px -20px rgba(25,21,16,.42), 0 3px 8px -3px rgba(25,21,16,.14); }
 .qf-ring { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
 
-.qf-seg { --qf-c: var(--control, #EEE8DE); --qf-on: var(--ink, #191510);
-  fill: color-mix(in srgb, var(--qf-c) var(--qf-rest), var(--qf-white)); stroke: color-mix(in srgb, var(--qf-c) var(--qf-rest), var(--qf-white));
-  stroke-width: 6; stroke-linejoin: round; transform-box: view-box; transform-origin: 0 0;
-  transition: fill .14s ease, stroke .14s ease, transform .2s cubic-bezier(.3,1.4,.5,1), opacity .16s ease; }
-.qf-seg.is-on { fill: var(--qf-on); stroke: var(--qf-on); transform: scale(1.025); }
-.qf-seg.is-pressed { transform: scale(.975); }
-.qf-seg.is-on.is-pressed { transform: scale(1.01); }
+/* Slabs: the topic's clay tint with B's white top edge, one warm drop under
+   the whole ring. The lit one is its deep colour, raised 5 px, with a drop in
+   that colour. */
+.qf-segs { filter: var(--qf-rest-f); }
+.qf-seg { --qf-c: var(--sand, #ECE5D8); --qf-on: var(--sand-ink, #5A4E38);
+  fill: var(--qf-c); stroke: var(--qf-c); stroke-width: 10; stroke-linejoin: round;
+  filter: var(--qf-edge-f); transform-box: view-box; transform-origin: 0 0;
+  transition: fill .14s ease, stroke .14s ease, transform .2s cubic-bezier(.3,1.3,.5,1), opacity .16s ease; }
+.qf-seg.is-on { fill: var(--qf-on); stroke: var(--qf-on); filter: var(--qf-lit-f); transform: translateY(-2.8px); }
+.qf-seg.is-pressed { transform: scale(.98); }
+.qf-seg.is-on.is-pressed { transform: translateY(-1.4px) scale(.99); }
 .qf-seg.is-empty { fill: var(--paper, #F6F3EE); stroke: var(--paper, #F6F3EE); }
-.qf-seg-more { fill: var(--control, #EEE8DE); stroke: var(--control, #EEE8DE); }
-.qf-seg-more.is-on { fill: var(--ink, #191510); stroke: var(--ink, #191510); }
-.qf-sheen { pointer-events: none; transition: opacity .12s ease; }
+.qf-seg-more { --qf-c: var(--off-white, #FBF8F2); }
+.qf-lit-drop { flood-color: var(--qf-lit, #2A3A24); }
 
-/* The evidence ring round the middle: solid is a strong guess, dashed a thin
-   one, a faint hairline nothing at all. */
-.qf-ev { fill: none; stroke: var(--dashed, #D7CDBD); stroke-width: 2.9; transition: stroke .16s ease; }
-.qf-ev.is-thin { stroke-dasharray: 2.9 2.35; }
-.qf-ev.is-none { stroke: var(--dashed, #D7CDBD) !important; stroke-width: 1.3; stroke-dasharray: 2 2.6; }
+/* The evidence ring round the middle, 2 px in the topic's mid: solid is a
+   strong guess, dashed a thin one, a faint dashed hairline nothing at all. */
+.qf-ev { fill: none; stroke: var(--dashed, #D7CDBD); stroke-width: 1.1; transition: stroke .16s ease; }
+.qf-ev.is-thin { stroke-dasharray: 2.4 1.9; }
+.qf-ev.is-none { stroke: var(--dashed, #D7CDBD) !important; stroke-width: .8; stroke-dasharray: 1.6 2.2; }
 
-/* The bead: coral, white-rimmed, riding just outside the rim by the
-   highlighted segment, clear of every label. */
-.qf-bead-arm { transform-box: view-box; transform-origin: 0 0;
-  transition: transform .2s cubic-bezier(.3,1.45,.5,1), opacity .14s ease; }
-.qf-bead-arm.is-instant { transition: opacity .14s ease; }
-.qf-bead-arm.is-off { opacity: 0; }
-.qf-bead { fill: var(--coral, #FF5A2D); stroke: #fff; stroke-width: 1.7;
-  filter: drop-shadow(0 1px 1.4px rgba(25,21,16,.38)); }
-
-/* Labels: always horizontal, the topic in small caps over the subtopic. */
+/* Labels: always horizontal. The art disc, the topic in small caps, the
+   subtopic under it, all in the topic's deep colour (white when lit). */
 .qf-labels { position: absolute; inset: 0; pointer-events: none; }
-.qf-lab { position: absolute; width: 24%; transform: translate(-50%, -50%); display: flex; flex-direction: column;
-  align-items: center; gap: 1px; color: var(--qf-ink, var(--ink-2, #5B554D)); line-height: 1.12; transition: color .14s ease; }
+.qf-lab { position: absolute; width: 26.7%; height: 23.3%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--qf-ink, var(--sand-ink, #5A4E38)); transition: color .14s ease, transform .2s cubic-bezier(.3,1.3,.5,1); }
+.qf-lab.is-on { color: #fff; transform: translate(-50%, calc(-50% - 1.39cqw)); }
+.qf-disc { flex: 0 0 auto; display: grid; place-items: center; width: 10cqw; height: 10cqw; margin-bottom: 1.67cqw;
+  border-radius: 50%; object-fit: cover; background: var(--clay-ground, #E8E0CB);
+  box-shadow: 0 0 0 2px #fff, 0 4px 10px rgba(120,84,50,.20); font-style: normal; }
+.qf-disc-ini { background: #fff; color: var(--qf-ink, var(--sand-ink, #5A4E38));
+  font: 700 clamp(13px, 4.4cqw, 16px)/1 var(--font-head); }
+.qf-lab.is-on .qf-disc-ini { color: var(--qf-on, var(--ink)); }
+.qf-disc-more { background: #fff; color: var(--sand-ink, #5A4E38); box-shadow: 0 4px 10px rgba(120,84,50,.16); }
+.qf-disc-more .qf-mag { width: 50%; height: 50%; stroke-width: 1.75; }
 .qf-lab small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font: 800 clamp(8.5px, 3cqw, 10.5px)/1.15 var(--font-body); letter-spacing: .055em; text-transform: uppercase; opacity: .8; }
-.qf-lab b { max-width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  overflow-wrap: anywhere; font: 650 clamp(10.5px, 3.8cqw, 13px)/1.14 var(--font-body); }
-.qf-lab b.qf-solo { font-weight: 750; }
-.qf-lab.is-on { color: #fff; }
-.qf-lab-more { color: var(--ink-2, #5B554D); gap: 3px; }
-.qf-lab-more .qf-mag { display: block; width: clamp(13px, 4.6cqw, 17px); height: clamp(13px, 4.6cqw, 17px); }
-.qf-lab-more b { font-weight: 700; }
-.qf-badge { position: absolute; top: -9px; right: 4%; font-style: normal; font-size: 12px; line-height: 1;
+  font: 700 clamp(8px, 2.64cqw, 9.5px)/1.26 var(--font-body); letter-spacing: .07em; text-transform: uppercase; }
+.qf-lab.is-on small { opacity: .86; }
+.qf-lab b { max-width: 100%; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 700 clamp(11px, 3.75cqw, 13.5px)/1.19 var(--font-body); }
+/* A long subtopic gets two short lines rather than an ellipsis. */
+.qf-lab.is-long b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow-wrap: anywhere; font-size: clamp(10px, 3.3cqw, 12px); line-height: 1.12; }
+.qf-lab.is-long .qf-disc { width: 8.6cqw; height: 8.6cqw; margin-bottom: 1.2cqw; }
+.qf-lab-more { color: var(--sand-ink, #5A4E38); }
+.qf-ico { flex: none; vertical-align: -0.2em; }
+#add-sorted-icon { display: inline-flex; }
+.qf-badge { position: absolute; top: -2px; right: 8%; font-style: normal; font-size: 12px; line-height: 1;
   filter: drop-shadow(0 1px 1px rgba(25,21,16,.25)); }
 
 /* The listbox lies over the ring: it takes focus, pointers and keys. */
@@ -72,76 +77,96 @@
 .qf-opt, .qf-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
   clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
-/* The middle: a raised paper button with the topic's clay picture in it. */
-.qf-hub { position: absolute; left: 29%; top: 29%; z-index: 2; width: 42%; height: 42%; padding: 0; border: 0;
+/* The middle: a raised white disc with the topic's clay art (84 of 132). */
+.qf-hub { position: absolute; left: 31.67%; top: 31.67%; z-index: 2; width: 36.67%; height: 36.67%; padding: 0; border: 0;
   border-radius: 50%; background: var(--surface, #fff); color: var(--ink, #191510); overflow: hidden;
   display: grid; place-items: center; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -2px 6px rgba(25,21,16,.05),
-    0 12px 22px -12px rgba(25,21,16,.5), 0 0 0 1px rgba(25,21,16,.06);
+  box-shadow: var(--lift-hub, inset 0 2px 0 rgba(255,255,255,.9), inset 0 -3px 6px rgba(120,84,50,.08), 0 14px 28px rgba(120,84,50,.20), 0 2px 4px rgba(120,84,50,.10));
   transition: transform .1s ease, background-color .18s ease; }
-.qf-hub:active { transform: scale(.95); }
+.qf-hub:active { transform: scale(.97); }
 .qf-hub:focus-visible { outline: 3px solid var(--coral, #FF5A2D); outline-offset: 3px; }
-.qf-hub-in { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 84%; padding-top: 1%; }
-.qf-art { position: relative; flex: 0 0 auto; width: clamp(38px, 16.5cqw, 56px); aspect-ratio: 1; margin-bottom: 4%;
-  border-radius: 50%; overflow: hidden; display: grid; place-items: center; color: var(--ink-2, #5B554D);
-  background: color-mix(in srgb, var(--qf-art-bg, #EEE8DE) 50%, #fff);
-  box-shadow: inset 0 0 0 1px rgba(25,21,16,.05); }
-.qf-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.3);
-  mix-blend-mode: multiply; }
-.qf-ini { font: 800 clamp(15px, 6cqw, 22px)/1 var(--font-head); font-style: normal; }
-/* The letter is only the fallback: the clay multiplies, so it would show through. */
+.qf-hub-in { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 84%; }
+.qf-art { position: relative; flex: 0 0 auto; width: 23.33cqw; aspect-ratio: 1; max-width: 100%;
+  border-radius: 50%; overflow: hidden; display: grid; place-items: center; color: var(--qf-art-ink, var(--sand-ink, #5A4E38));
+  background: var(--clay-ground, #E8E0CB); box-shadow: inset 0 0 0 1px rgba(0,0,0,.02);
+  transition: width .16s ease; }
+.qf-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.qf-ini { font: 700 clamp(20px, 8cqw, 30px)/1 var(--font-head); font-style: normal; }
 .qf-art:has(img:not([hidden])) .qf-ini { visibility: hidden; }
-.qf-art .qf-mag { display: none; width: 46%; height: 46%; }
-.qf-mag { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.qf-art .qf-mag { display: none; width: 42%; height: 42%; stroke-width: 1.9; }
+.qf-mag { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.qf-art.is-more { background: var(--sand, #ECE5D8); }
 .qf-art.is-more .qf-mag { display: block; }
 .qf-art.is-none { background: var(--paper, #F6F3EE); box-shadow: inset 0 0 0 1.5px var(--dashed, #D7CDBD); }
-.qf-art.is-none .qf-ini { color: var(--meta, #8A8378); font-size: clamp(18px, 7cqw, 26px); }
-.qf-hub-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font: 800 clamp(14px, 5.6cqw, 19px)/1.06 var(--font-head); letter-spacing: -.02em; }
+.qf-hub-name, .qf-hub-sub { display: none; }
+/* Named (no slab lit): a smaller picture and the topic in Bricolage. */
+.qf-hub.is-named .qf-art { width: 14cqw; }
+.qf-hub.is-named .qf-hub-name { display: block; }
+.qf-hub.is-named .qf-hub-sub:not([hidden]) { display: block; }
+.qf-hub-name { max-width: 100%; margin-top: 2.2cqw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 700 clamp(13px, 4.7cqw, 17px)/1.08 var(--font-head); letter-spacing: -.01em; }
 .qf-hub-name.is-long { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  font-size: clamp(12px, 4.3cqw, 15.5px); line-height: 1.04; }
-.qf-hub-sub { max-width: 100%; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font: 600 clamp(10.5px, 3.8cqw, 13px)/1.15 var(--font-body); color: var(--ink-2, #5B554D); }
-.qf-hub-tip { margin-top: 5px; font: 800 clamp(7.5px, 2.6cqw, 9.5px)/1 var(--font-body); letter-spacing: .08em;
-  text-transform: uppercase; color: var(--accent-text, #C93A12); }
-.qf-hub.is-none .qf-hub-name { font-size: clamp(12px, 4.3cqw, 15px); color: var(--ink-2, #5B554D); }
+  font-size: clamp(11.5px, 3.9cqw, 14px); line-height: 1.04; }
+.qf-hub.is-named .qf-hub-name.is-long { display: -webkit-box; }
+.qf-hub-sub { max-width: 100%; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 500 clamp(10.5px, 3.4cqw, 12.5px)/1.15 var(--font-body); color: var(--meta, #6E655A); }
+.qf-hub.is-none .qf-hub-name { font: 600 clamp(11.5px, 3.6cqw, 13px)/1.15 var(--font-body); letter-spacing: 0; color: var(--meta, #6E655A); }
+/* "Tap to file", for the first three filings: small caps in the band under the picture. */
+.qf-hub-tip { position: absolute; left: 0; right: 0; bottom: 5.5%; font: 700 clamp(7.5px, 2.3cqw, 8.5px)/1 var(--font-body);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--coral-deep, #AE3512); pointer-events: none; }
+.qf-hub.is-named .qf-hub-tip { display: none; }
 .qf-hub-done { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 3px;
   color: #fff; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
-.qf-hub-done svg { width: 38%; height: auto; fill: none; stroke: currentColor; stroke-width: 2.6;
+.qf-hub-done svg { width: 36%; height: auto; fill: none; stroke: currentColor; stroke-width: 2.5;
   stroke-linecap: round; stroke-linejoin: round; }
 .qf-hub-done path { stroke-dasharray: 24; stroke-dashoffset: 24; }
-.qf-hub-done b { font: 800 clamp(12px, 4.2cqw, 15px)/1 var(--font-head); letter-spacing: -.01em; }
+.qf-hub-done b { font: 700 clamp(12px, 4.2cqw, 15px)/1 var(--font-head); }
 
-/* Under the dial: why, the subtopics, and anything that arrived late. */
-.qf-reason { min-height: 1.45em; max-width: 100%; margin: 18px 0 0; padding: 0 8px;
-  color: var(--ink-2, #5B554D); font-size: 13.5px; font-weight: 600; line-height: 1.45; }
-.qf-reason.is-filed { color: #1F7A4D; font-weight: 700; }
-.qf-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; max-width: 100%; min-height: 36px; margin-top: 9px; }
-.qf-chip { max-width: 100%; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap; font: 650 13px/1 var(--font-body); cursor: pointer;
-  background: color-mix(in srgb, var(--qf-c, var(--control, #EEE8DE)) var(--qf-rest), var(--qf-white)); }
-.qf-chip-just { background: var(--surface, #fff); color: var(--ink-2, #5B554D); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
+/* Under the dial (triage and the lab): why, the subtopics, and anything that
+   arrived late. Subtopic chips are topic chips: tint and deep. */
+.qf-reason { min-height: 1.45em; max-width: 100%; margin: 16px 0 0; padding: 0 8px;
+  color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); }
+.qf-reason.is-filed { color: var(--ink, #191510); font-weight: 600; }
+.qf-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 100%; min-height: 36px; margin-top: 10px; }
+.qf-chip { max-width: 100%; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; font: 600 14px/1 var(--font-body); cursor: pointer;
+  background: var(--qf-c, var(--sand, #ECE5D8)); }
+.qf-chip-just { background: var(--surface, #fff); color: var(--ink, #191510); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
+.qf-chip:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
 .qf-also-row:not(:empty) { margin-top: 8px; }
-.qf-also { height: 34px; padding: 0 14px; border-radius: 999px; cursor: pointer; background: var(--tint, #FFE9E1);
-  border: 1.5px dashed color-mix(in srgb, var(--coral, #FF5A2D) 50%, transparent); color: var(--accent-text, #C93A12);
-  font: 650 13px/1 var(--font-body); }
+.qf-also { height: 36px; padding: 0 14px; border-radius: 999px; cursor: pointer; background: var(--surface, #fff);
+  border: 1.5px dashed var(--dashed, #D7CDBD); color: var(--coral-deep, #AE3512); font: 600 13.5px/1 var(--font-body); }
 .qf-also i { font-style: normal; }
-.qf-also b { font-weight: 800; }
-.qf-help { margin: 8px 0 0; color: var(--meta, #8A8378); font-size: 12px; transition: opacity .2s ease; }
+.qf-also b { font-weight: 700; }
+.qf-help { margin: 8px 0 0; color: var(--meta, #6E655A); font: 500 12px/16px var(--font-body); transition: opacity .2s ease; }
 .qf.is-touched .qf-help { opacity: 0; }
 .qf[data-mode="triage"] .qf-help { display: none; }   /* the deck says it once, over the cards */
 
-/* Filed: the ring folds into the middle, which fills and ticks. */
+/* Filed (triage, the lab): the ring folds into the middle, which fills with
+   the topic's deep colour and ticks. */
 .qf.is-filed .qf-seg { transform: scale(.82); opacity: 0; transition: transform .16s ease-in, opacity .16s ease-in; }
-.qf.is-filed .qf-lab, .qf.is-filed .qf-bead-arm, .qf.is-filed .qf-sheen { opacity: 0; transition: opacity .1s ease; }
+.qf.is-filed .qf-lab { opacity: 0; transition: opacity .1s ease; }
 .qf.is-filed .qf-hub { background: var(--qf-filled, var(--ink, #191510)); transform: none; }
 .qf.is-filed .qf-hub-in { opacity: 0; transition: opacity .1s ease; }
 .qf.is-filed .qf-hub-done { opacity: 1; }
 .qf.is-filed .qf-hub-done path { animation: qf-check .22s .05s cubic-bezier(.2,.7,.2,1) forwards; }
 .qf.is-filed.is-instant .qf-hub-done path { animation: none; stroke-dashoffset: 0; }
-.qf.is-filed .qf-ev { stroke: var(--qf-filled, var(--ink)) !important; stroke-dasharray: none; stroke-width: 3.4; }
+.qf.is-filed .qf-ev { stroke: var(--qf-filled, var(--ink)) !important; stroke-dasharray: none; stroke-width: 1.6; }
 .qf.is-filed .qf-chips, .qf.is-filed .qf-also-row, .qf.is-filed .qf-help { visibility: hidden; }
 .qf.is-filed .qf-list { cursor: default; }
+/* Chosen (the Add sheet's refine): nothing folds. The ring stays live for a
+   re-choice, a check badge in the topic's deep colour sits on the picture's
+   shoulder while the middle shows the choice, and the host's panel takes the
+   place of the line and the chips. 30 of 360, centred 31, 29 off the middle. */
+.qf-hub-check { position: absolute; left: 58.6%; top: 58.1%; z-index: 3; width: 8.33%; aspect-ratio: 1;
+  transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center; pointer-events: none;
+  background: var(--qf-check, var(--ink, #191510)); color: #fff;
+  box-shadow: 0 0 0 3px #fff, 0 4px 8px color-mix(in srgb, var(--qf-check, #191510) 25%, transparent); }
+.qf-hub-check[hidden] { display: none; }
+.qf-hub-check svg { width: 53%; height: auto; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+/* With the name showing, the picture is smaller and the badge moves in with it. */
+.qf-dial:has(.qf-hub.is-named) .qf-hub-check { left: 54.9%; top: 51.4%; width: 6.1%; box-shadow: 0 0 0 2.5px #fff, 0 3px 6px color-mix(in srgb, var(--qf-check, #191510) 25%, transparent); }
+.qf.is-chosen .qf-reason, .qf.is-chosen .qf-chips, .qf.is-chosen .qf-also-row, .qf.is-chosen .qf-help { display: none; }
 @keyframes qf-check { to { stroke-dashoffset: 0; } }
 @keyframes qf-seg-in { from { transform: scale(.9); opacity: 0; } }
 @keyframes qf-hub-in { from { transform: scale(.92); opacity: 0; } }
@@ -154,51 +179,55 @@
   .qf-chip, .qf-also { transition: transform .12s ease; }
   .qf-chip:active, .qf-also:active { transform: scale(.96); }
 }
-/* Reduced motion: crossfades of 120 ms, nothing scales, the check is just there. */
+/* Reduced motion: crossfades of 120 ms. The lit slab still sits raised (that
+   is its state, not a movement); it just gets there without travelling. */
 @media (prefers-reduced-motion: reduce) {
   .qf-seg { transition: fill .12s ease, stroke .12s ease, opacity .12s ease; }
-  .qf-seg.is-on, .qf-seg.is-pressed, .qf-seg.is-on.is-pressed, .qf.is-filed .qf-seg { transform: none; }
-  .qf-bead-arm { transition: opacity .12s ease; }
+  .qf-lab { transition: color .12s ease; }
+  .qf-seg.is-pressed, .qf.is-filed .qf-seg { transform: none; }
+  .qf-seg.is-on.is-pressed { transform: translateY(-2.8px); }
   .qf-hub:active { transform: none; }
   .qf.is-filed .qf-hub-done path { animation: none; stroke-dashoffset: 0; }
 }
 .qf-reduced .qf-seg { transition: fill .12s ease, stroke .12s ease, opacity .12s ease; }
-.qf-reduced .qf-seg.is-on, .qf-reduced .qf-seg.is-pressed, .qf-reduced .qf.is-filed .qf-seg { transform: none; }
-.qf-reduced .qf-bead-arm { transition: opacity .12s ease; }
+.qf-reduced .qf-lab { transition: color .12s ease; }
+.qf-reduced .qf-seg.is-pressed, .qf-reduced .qf.is-filed .qf-seg { transform: none; }
+.qf-reduced .qf-seg.is-on.is-pressed { transform: translateY(-2.8px); }
 .qf-reduced .qf-hub:active { transform: none; }
 .qf-reduced .qf.is-in .qf-seg, .qf-reduced .qf.is-in .qf-hub, .qf-reduced .qf.is-in .qf-lab { animation: qf-fade .12s ease-out backwards; }
 .qf-reduced .qf.is-filed .qf-hub-done path { animation: none; stroke-dashoffset: 0; }
 
-/* Under 300 px there is no room for a ring: the same listbox, as a ranked list. */
+/* Under 300 px there is no room for a ring: the same listbox, as a ranked
+   list of hairline rows (.qf-list-mode forces it, for the lab). */
 @container qf (max-width: 299px) {
   .qf-dial { width: 100%; aspect-ratio: auto; }
-  .qf-dial::before, .qf-ring, .qf-labels, .qf-hub, .qf-help { display: none; }
-  .qf-list { position: static; display: flex; flex-direction: column; gap: 6px; padding: 3px; border-radius: 16px;
+  .qf-ring, .qf-labels, .qf-hub, .qf-hub-check, .qf-help { display: none !important; }
+  .qf-list { position: static; display: flex; flex-direction: column; gap: 6px; padding: 3px; border-radius: 18px;
     clip-path: none; touch-action: auto; }
   .qf-list:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
   .qf-opt { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; clip-path: none;
-    white-space: normal; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px;
-    border-radius: 14px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); text-align: left; }
+    white-space: normal; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 12px;
+    border-radius: 18px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); text-align: left; }
   .qf-opt[aria-selected="true"] { box-shadow: inset 0 0 0 2px var(--ink, #191510); }
   .qf-opt[hidden] { display: none; }
 }
 .qf-list-mode .qf-dial { width: 100%; aspect-ratio: auto; }
-.qf-list-mode .qf-dial::before, .qf-list-mode .qf-ring, .qf-list-mode .qf-labels, .qf-list-mode .qf-hub, .qf-list-mode .qf-help { display: none; }
-.qf-list-mode .qf-list { position: static; display: flex; flex-direction: column; gap: 6px; padding: 3px; border-radius: 16px;
+.qf-list-mode .qf-ring, .qf-list-mode .qf-labels, .qf-list-mode .qf-hub, .qf-list-mode .qf-hub-check, .qf-list-mode .qf-help { display: none !important; }
+.qf-list-mode .qf-list { position: static; display: flex; flex-direction: column; gap: 6px; padding: 3px; border-radius: 18px;
   clip-path: none; touch-action: auto; }
 .qf-list-mode .qf-list:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
 .qf-list-mode .qf-opt { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; clip-path: none;
-  white-space: normal; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px;
-  border-radius: 14px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); text-align: left; }
+  white-space: normal; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 12px;
+  border-radius: 18px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); text-align: left; }
 .qf-list-mode .qf-opt[aria-selected="true"] { box-shadow: inset 0 0 0 2px var(--ink, #191510); }
 .qf-list-mode .qf-opt[hidden] { display: none; }
-.qf-opt-dot { flex: 0 0 auto; width: 12px; height: 12px; border-radius: 50%; }
-.qf-opt-dot.qf-opt-more { width: 22px; height: 22px; display: grid; place-items: center; background: var(--control, #EEE8DE); }
+.qf-opt-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; }
+.qf-opt-dot.qf-opt-more { width: 24px; height: 24px; display: grid; place-items: center; background: var(--sand, #ECE5D8); color: var(--sand-ink, #5A4E38); }
 .qf-opt-dot .qf-mag { width: 13px; height: 13px; }
 .qf-opt-t { display: flex; flex-direction: column; min-width: 0; }
-.qf-opt-t b { font-size: 14px; font-weight: 700; }
-.qf-opt-t b span { color: var(--ink-2, #5B554D); font-weight: 600; }
-.qf-opt-t small { color: var(--meta, #8A8378); font-size: 12px; }
+.qf-opt-t b { font: 600 15px/20px var(--font-body); }
+.qf-opt-t b span { color: var(--meta, #6E655A); font-weight: 500; }
+.qf-opt-t small { color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); }
 .qf-opt .qf-badge { position: static; margin-left: auto; }
 
 /* ── The Add sheet, once the link is saved ────────────────────────────── */
@@ -212,19 +241,84 @@
 #add-dialog .add-saved .add-card-body { flex: 1; min-width: 0; padding: 0; }
 #add-dialog .add-saved .add-card-title { -webkit-line-clamp: 2; font-size: 14.5px; line-height: 1.28; }
 .add-ok { display: inline-flex; align-items: center; gap: 4px; height: 20px; margin-bottom: 4px; padding: 0 8px;
-  border-radius: 999px; background: #E3F4EA; color: #1F7A4D; font-size: 11px; font-weight: 800; letter-spacing: .02em; }
+  border-radius: 999px; background: #E3F4EA; color: #1F7A4D; font: 700 11px/1 var(--font-body); letter-spacing: .02em; }
 .add-filing-h { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 14px 0 2px;
-  color: var(--accent-text, #C93A12); font-size: 13px; font-weight: 800; }
-#add-dial { margin: 0 auto; padding-top: 18px; }   /* room for the bead at twelve o'clock */
+  color: var(--coral-deep, #AE3512); font: 600 13px/18px var(--font-body); }
+/* The wheel may use 14 of the sheet's 22 px of padding each side, so on a
+   phone it is B's 360 and a little wider than the refine slab under it. */
+#add-dial { margin: 0 -14px; padding-top: 6px; }   /* room for the lit slab's lift at twelve o'clock */
 .add-more { margin-top: 14px; border-top: 1px solid var(--hairline, #EAE4DA); }
 .add-more > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 46px; cursor: pointer;
-  color: var(--ink-2, #5B554D); font-size: 13.5px; font-weight: 700; }
+  color: var(--ink-2, #6E655A); font: 600 14px/1.3 var(--font-body); }
 .add-more > summary::-webkit-details-marker { display: none; }
 .add-more > summary::after { content: ""; width: 8px; height: 8px; margin: 0 4px 0 auto; border: solid currentColor;
   border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-2px, -2px); transition: transform .16s ease; }
 .add-more[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
 .add-more .sorted { margin-top: 4px; }
-#add-remove { background: var(--surface, #fff); color: var(--destructive, #C0392B); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
+/* Refine: under the dial once a topic is chosen, on B's white slab (radius
+   28, 20/16/16). "Filed to …"; the topic's subtopics as a two-row grid that
+   scrolls sideways (late chips only ever join the end); a hairline; the tags,
+   one row that scrolls; "+ Tag" dashed. The markup is docs/index.html's
+   (#add-refine…); every rule here goes by its ids and classes. */
+.add-refine { margin: 2px -2px 0; padding: 20px 16px 16px; text-align: left;
+  background: var(--surface, #fff); border-radius: var(--r-slab, 28px);
+  box-shadow: var(--lift-slab, inset 0 1px 0 rgba(255,255,255,.7), 0 10px 24px rgba(120,84,50,.12)); }
+.add-refine[hidden] { display: none; }
+.add-refine-h { margin: 0 2px; color: var(--ink, #191510); font: 700 17px/22px var(--font-head); letter-spacing: -.01em;
+  overflow-wrap: anywhere; }
+/* If the host wraps the path ("Filed to <b>Fitness › Mobility</b>"), the
+   lead-in drops to Instrument 15/600 in secondary, as in B. */
+.add-refine-h:has(b) { color: var(--meta, #6E655A); font: 600 15px/20px var(--font-body); letter-spacing: 0; }
+.add-refine-h b { color: var(--ink, #191510); font: 700 17px/20px var(--font-head); letter-spacing: -.01em; }
+.refine-row { display: flex; flex-wrap: nowrap; gap: 8px; margin: 12px -16px 0; padding: 2px 16px 10px; overflow-x: auto;
+  scrollbar-width: none; overscroll-behavior-x: contain; scroll-padding-inline: 16px; }
+.refine-row::-webkit-scrollbar { display: none; }
+.refine-row[hidden] { display: none; }
+#add-refine-subs { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, 44px); grid-auto-columns: max-content;
+  justify-content: start; justify-items: stretch; gap: 8px; padding-bottom: 12px; }
+#add-refine-subs[hidden] { display: none; }
+/* The hairline between subtopics and tags, inset to the slab's text. */
+#add-refine-tags { position: relative; margin-top: 2px; padding-top: 14px; gap: 6px; }
+#add-refine-subs:not([hidden]) + #add-refine-tags { background: linear-gradient(var(--hairline, #EAE4DA), var(--hairline, #EAE4DA)) 18px 0 / calc(100% - 36px) 1px no-repeat; }
+.refine-row .qf-chip, .refine-row .tag-chip, .refine-row input { flex: 0 0 auto; }
+#add-refine .qf-chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; max-width: 70vw; height: 44px; padding: 0 15px;
+  border-radius: 22px; font: 600 14.5px/1 var(--font-body);
+  box-shadow: var(--lift-pill, inset 0 1px 0 rgba(255,255,255,.7), 0 3px 8px rgba(120,84,50,.10)); }
+#add-refine .qf-chip.is-on { background: var(--qf-on, var(--ink, #191510)); color: #fff !important; padding-left: 13px;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.28), 0 6px 12px color-mix(in srgb, var(--qf-on, #191510) 22%, transparent); }
+/* The check in front of the chosen subtopic. */
+#add-refine .qf-chip.is-on::before { content: ""; flex: 0 0 auto; width: 16px; height: 16px; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.5 12.5l4 4L18.5 7.5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.5 12.5l4 4L18.5 7.5'/%3E%3C/svg%3E") center / contain no-repeat; }
+/* Tags: "#tag" pills, off on sand, on in ink. */
+#add-refine .tag-chip { display: inline-flex; align-items: center; height: 44px; min-height: 44px; padding: 0 13px; border: 0;
+  border-radius: 22px; cursor: pointer; background: var(--sand, #ECE5D8); color: var(--ink, #191510);
+  font: 600 14px/1 var(--font-body); white-space: nowrap;
+  box-shadow: var(--lift-pill, inset 0 1px 0 rgba(255,255,255,.7), 0 3px 8px rgba(120,84,50,.10)); }
+#add-refine .tag-chip.on { background: var(--ink, #191510); color: #fff;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.18), 0 6px 12px rgba(25,21,16,.18); }
+#add-refine .tag-chip:focus-visible, #add-refine .qf-chip:focus-visible { outline: 2px solid var(--coral, #FF5A2D); outline-offset: 2px; }
+#add-refine .tag-chip.refine-plus { padding: 0 14px 0 12px; background: transparent !important; color: var(--meta, #6E655A) !important;
+  box-shadow: none; border: 1.5px dashed var(--dashed, #D7CDBD); }
+#add-refine .refine-row input { width: 9.5em; height: 44px; padding: 0 14px; border: 1px solid var(--hairline, #EAE4DA); border-radius: 22px;
+  background: var(--surface, #fff); color: var(--ink, #191510); font: 600 14px/1 var(--font-body); outline: none; }
+#add-refine .refine-row input:focus { border-color: var(--coral, #FF5A2D); }
+.refine-row input[hidden] { display: none; }
+/* Done: the coral pill, 58 tall. It drains: a white 18% band across the
+   button shrinks to nothing over the six seconds before the sheet closes by
+   itself. A transition, never an animation: closeDlg waits on the dialog's
+   animationend, and those bubble. */
+#add-done { position: relative; overflow: hidden; isolation: isolate; height: 58px; min-height: 58px; border: 0;
+  border-radius: 28px; background: var(--coral, #FF5A2D); color: #fff; font: 600 17px/1 var(--font-body);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.4), 0 10px 20px rgba(200,80,40,.28); }
+/* At rest the band is full and invisible, so stopping a drain changes where
+   the transform ends and the running transition is dropped, not finished. */
+#add-done::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: rgba(255,255,255,.18); opacity: 0; transform: scaleX(1); transform-origin: left center; }
+#add-done.is-full::before { opacity: 1; }
+#add-done.is-full.is-draining::before { transform: scaleX(0); transition: transform 6s linear; }
+#add-remove { height: 58px; min-height: 58px; border: 0; border-radius: 28px; background: var(--surface, #fff); color: var(--destructive, #C0392B);
+  box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); font: 600 16px/1 var(--font-body); }
 
 /* ── "Drop to bork it": a link dragged over the page ──────────────────── */
 #drop-overlay { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; pointer-events: none;
@@ -233,11 +327,11 @@
 #drop-overlay::before { content: ""; position: absolute; inset: 14px; border-radius: 30px;
   border: 2.5px dashed color-mix(in srgb, var(--coral, #FF5A2D) 70%, transparent); }
 .drop-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 22px 34px 26px; border-radius: 30px; background: var(--surface, #fff); text-align: center;
-  box-shadow: 0 34px 70px -30px rgba(25,21,16,.5), 0 0 0 1px var(--hairline, #EAE4DA); }
-.drop-card img { width: 176px; height: 176px; margin-bottom: 6px; border-radius: 26px; object-fit: cover; }
-.drop-card b { font: 800 27px/1.1 var(--font-head); letter-spacing: -.025em; }
-.drop-card span { color: var(--ink-2, #5B554D); font-size: 14px; }
+  padding: 22px 34px 26px; border-radius: var(--r-sheet, 28px); background: var(--surface, #fff); text-align: center;
+  box-shadow: var(--lift-sheet, 0 -8px 30px rgba(25,21,16,.10)), 0 0 0 1px var(--hairline, #EAE4DA); }
+.drop-card img { width: 176px; height: 176px; margin-bottom: 6px; border-radius: 24px; object-fit: cover; background: var(--clay-ground, #E8E0CB); }
+.drop-card b { font: 700 27px/1.1 var(--font-head); letter-spacing: -.02em; }
+.drop-card span { color: var(--meta, #6E655A); font: 500 14px/1.4 var(--font-body); }
 @media (prefers-reduced-motion: no-preference) {
   #drop-overlay:not([hidden]) { animation: qf-fade .16s ease-out; }
   #drop-overlay:not([hidden]) .drop-card { animation: drop-pop .3s cubic-bezier(.3,1.4,.5,1); }
@@ -253,73 +347,74 @@ dialog.triage[open] { display: flex; flex-direction: column; }
 dialog.triage::backdrop { background: rgba(25,21,16,.5); }
 .tri-top { flex: 0 0 auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
   padding: 14px 18px 8px; }
-.tri-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px;
+.tri-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 44px; padding: 0 18px;
   border: 0; border-radius: 999px; background: var(--surface, #fff); color: var(--ink, #191510); cursor: pointer;
-  box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); font: 700 14px/1 var(--font-body); white-space: nowrap; }
+  box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); font: 600 15px/1 var(--font-body); white-space: nowrap; }
 .tri-btn[disabled] { opacity: .45; cursor: default; }
 .tri-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.tri-btn kbd { font: 700 10.5px/1 var(--font-body); padding: 3px 5px; border-radius: 5px; background: var(--control, #EEE8DE); color: var(--ink-2, #5B554D); }
-.tri-done { justify-self: start; background: var(--ink, #191510); color: var(--paper, #F6F3EE); box-shadow: none; }
+.tri-btn kbd { font: 600 10.5px/1 var(--font-body); padding: 3px 5px; border-radius: 5px; background: var(--sand, #ECE5D8); color: var(--sand-ink, #5A4E38); }
+.tri-done { justify-self: start; }
 .tri-undo { justify-self: end; }
 .tri-title { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
-.tri-title h2 { margin: 0; font: 800 21px/1.1 var(--font-head); letter-spacing: -.025em; white-space: nowrap; }
-.tri-count { display: flex; align-items: center; gap: 9px; color: var(--meta, #8A8378); font-size: 12.5px; font-weight: 700;
+.tri-title h2 { margin: 0; font: 700 19px/24px var(--font-head); white-space: nowrap; }
+.tri-count { display: flex; align-items: center; gap: 9px; color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body);
   font-variant-numeric: tabular-nums; }
 .tri-bar { width: 120px; height: 5px; border-radius: 999px; background: var(--hairline, #EAE4DA); overflow: hidden; }
 .tri-bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--coral, #FF5A2D);
   transition: width .24s var(--ease-out, ease); }
 .tri-decks { flex: 0 0 auto; display: flex; gap: 3px; width: min(440px, calc(100% - 36px)); margin: 6px auto 0; padding: 3px;
   border-radius: 999px; background: var(--control, #EEE8DE); }
-.tri-decks button { flex: 1; min-width: 0; height: 36px; border: 0; border-radius: 999px; background: none; cursor: pointer;
-  color: var(--ink-2, #5B554D); font: 650 13.5px/1 var(--font-body); white-space: nowrap; }
+.tri-decks button { flex: 1; min-width: 0; height: 38px; border: 0; border-radius: 999px; background: none; cursor: pointer;
+  color: var(--ink-2, #6E655A); font: 600 14px/1 var(--font-body); white-space: nowrap; }
 .tri-decks button[aria-selected="true"] { background: var(--surface, #fff); color: var(--ink, #191510); box-shadow: 0 1px 2px rgba(25,21,16,.08); }
-.tri-decks .n { margin-left: 4px; opacity: .55; font-weight: 600; }
+.tri-decks .n { margin-left: 4px; opacity: .7; font-weight: 500; }
 .tri-tally { flex: 0 0 auto; display: flex; justify-content: center; gap: 6px; min-height: 30px; margin: 12px 18px 0;
   overflow-x: auto; scrollbar-width: none; }
 .tri-tally::-webkit-scrollbar { display: none; }
-.tri-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px 0 4px;
-  border-radius: 999px; font-size: 12.5px; font-weight: 700; }
-.tri-chip img, .tri-chip .tri-chip-ini { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; mix-blend-mode: multiply;
-  background: rgba(255,255,255,.55); }
-.tri-chip .tri-chip-ini { display: grid; place-items: center; mix-blend-mode: normal; font: 800 11px/1 var(--font-head); }
-.tri-chip b { font-weight: 800; font-variant-numeric: tabular-nums; }
-.tri-hint { margin: 0; color: var(--meta, #8A8378); font-size: 12.5px; font-weight: 600; align-self: center; }
+.tri-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 4px;
+  border-radius: 999px; font: 600 13px/1 var(--font-body); }
+.tri-chip img, .tri-chip .tri-chip-ini { width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
+  background: var(--clay-ground, #E8E0CB); box-shadow: 0 0 0 1.5px #fff; }
+.tri-chip .tri-chip-ini { display: grid; place-items: center; background: #fff; font: 700 11px/1 var(--font-head); }
+.tri-chip b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.tri-hint { margin: 0; color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); align-self: center; }
 .tri-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center; gap: clamp(20px, 4vw, 56px); padding: 8px clamp(18px, 4vw, 48px) 20px; overflow-y: auto; }
 .tri-stack { position: relative; justify-self: end; width: min(360px, 100%); display: grid; }
 .tri-stack > * { grid-area: 1 / 1; }
-.tri-peek { align-self: end; height: 80px; border-radius: 22px; background: var(--surface, #fff);
-  box-shadow: var(--shadow-card), 0 0 0 1px var(--hairline, #EAE4DA); transform-origin: 50% 100%;
+.tri-peek { align-self: end; height: 80px; border-radius: var(--r-card, 18px); background: var(--surface, #fff);
+  box-shadow: 0 0 0 1px var(--hairline, #EAE4DA); transform-origin: 50% 100%;
   transform: translateY(calc(var(--k) * 11px)) scale(calc(1 - var(--k) * .05)); opacity: calc(1 - var(--k) * .28); }
-.tri-card { position: relative; z-index: 2; overflow: hidden; border-radius: 22px; background: var(--surface, #fff);
-  box-shadow: 0 1px 2px rgba(25,21,16,.05), 0 22px 44px -22px rgba(25,21,16,.4), 0 0 0 1px var(--hairline, #EAE4DA); }
-.tri-cover { position: relative; aspect-ratio: 7 / 8; max-height: 260px; width: 100%; overflow: hidden; }
+/* The card in hand: a flat card, white with a hairline, as everywhere. */
+.tri-card { position: relative; z-index: 2; overflow: hidden; border-radius: var(--r-card, 18px); background: var(--surface, #fff);
+  box-shadow: 0 0 0 1px var(--hairline, #EAE4DA); }
+.tri-cover { position: relative; aspect-ratio: 4 / 3; max-height: 270px; width: 100%; overflow: hidden; background: var(--clay-ground, #E8E0CB); }
 .tri-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
 .tri-card .badge { z-index: 1; }
 .tri-dur { position: absolute; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px;
-  border-radius: 999px; background: rgba(25,21,16,.66); color: #fff; font-size: 10.5px; font-weight: 800; }
-.tri-card-body { padding: 14px 16px 16px; }
-.tri-who { display: flex; align-items: center; gap: 6px; color: var(--meta, #8A8378); font-size: 12px; font-weight: 700; min-width: 0; }
+  border-radius: 6px; background: rgba(25,21,16,.72); color: #fff; font: 600 11.5px/1 var(--font-body); font-variant-numeric: tabular-nums; }
+.tri-card-body { padding: 12px 16px 16px; }
+.tri-who { display: flex; align-items: center; gap: 6px; color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); min-width: 0; }
 .tri-who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tri-who .pg { width: 12px; height: 12px; flex: 0 0 auto; }
-.tri-title-t { margin-top: 5px; font: 700 16px/1.3 var(--font-body); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+.tri-title-t { margin-top: 4px; font: 600 16px/21px var(--font-body); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
   overflow: hidden; overflow-wrap: anywhere; }
-.tri-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; color: var(--meta, #8A8378); font-size: 12px; font-weight: 600; }
-.tri-filed { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 750; }
-.tri-filed.is-none { background: var(--paper, #F6F3EE); color: var(--ink-2, #5B554D); box-shadow: inset 0 0 0 1px var(--dashed, #D7CDBD); }
-/* A poster: no picture, so the topic's tint and a clay stamp do the work. */
+.tri-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; color: var(--meta, #6E655A); font: 500 13px/18px var(--font-body); }
+.tri-filed { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font: 600 12.5px/1 var(--font-body); }
+.tri-filed.is-none { background: var(--surface, #fff); color: var(--ink-2, #6E655A); box-shadow: inset 0 0 0 1px var(--dashed, #D7CDBD); }
+/* A poster: no picture, so the topic's clay tint and its art do the work. */
 .tri-poster { display: flex; flex-direction: column; min-height: 230px; padding: 18px 18px 16px;
-  background: radial-gradient(120% 80% at 15% 0%, rgba(255,255,255,.55), transparent 60%), var(--tri-tint, #F1EBE1); color: var(--tri-deep, #5B554D); }
-.tri-poster.is-unfiled { background: radial-gradient(120% 80% at 15% 0%, rgba(255,255,255,.7), transparent 60%), #F1EBE1;
-  box-shadow: 0 1px 2px rgba(25,21,16,.05), 0 22px 44px -22px rgba(25,21,16,.4), inset 0 0 0 1.5px var(--dashed, #D7CDBD); }
-.tri-poster-top { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 750; min-width: 0; }
+  background: var(--tri-tint, #ECE5D8); color: var(--tri-deep, #5A4E38); }
+.tri-poster.is-unfiled { box-shadow: 0 0 0 1px var(--hairline, #EAE4DA); }
+.tri-poster-top { display: flex; align-items: center; gap: 8px; font: 600 13px/18px var(--font-body); min-width: 0; }
 .tri-poster-top .badge { position: static; flex: 0 0 auto; }
 .tri-poster-top span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tri-poster-title { flex: 1; margin: 18px 0 16px; color: var(--ink, #191510); font: 800 22px/1.14 var(--font-head);
-  letter-spacing: -.02em; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.tri-poster-foot { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
-.tri-stamp { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.6); display: grid; place-items: center; }
-.tri-stamp img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.3); mix-blend-mode: multiply; }
+.tri-poster-title { flex: 1; margin: 18px 0 16px; color: var(--ink, #191510); font: 700 22px/1.16 var(--font-head);
+  letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.tri-poster-foot { display: flex; align-items: center; gap: 8px; font: 600 13px/18px var(--font-body); }
+.tri-stamp { width: 36px; height: 36px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; background: #fff; display: grid; place-items: center;
+  box-shadow: 0 0 0 2px #fff; }
+.tri-stamp img { width: 100%; height: 100%; object-fit: cover; }
 .tri-stamp .pg { width: 14px; height: 14px; }
 .tri-poster-foot .when { margin-left: auto; opacity: .75; }
 /* The platform's mark, large and faint in the corner: a poster, not an empty box. */
@@ -329,19 +424,19 @@ dialog.triage::backdrop { background: rgba(25,21,16,.5); }
 .tri-wm .pg-txt { font-size: 64px; }
 .tri-poster > :not(.tri-wm) { position: relative; }
 .tri-side { justify-self: start; width: min(380px, 100%); display: flex; flex-direction: column; align-items: center; }
-.tri-head { margin: 0 0 20px; color: var(--accent-text, #C93A12); font-size: 13px; font-weight: 800; }
+.tri-head { display: flex; align-items: center; gap: 6px; margin: 0 0 14px; color: var(--coral-deep, #AE3512); font: 600 13px/18px var(--font-body); }
 .tri-dial { width: 100%; }
 .tri-actions { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
 .tri-remove { color: var(--destructive, #C0392B); }
 /* The end: the compass, and how long it took. */
 .tri-end { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 6px; padding: 24px; text-align: center; }
-.tri-end-art { width: min(220px, 52vw); aspect-ratio: 1; border-radius: 32px; object-fit: cover; margin-bottom: 10px;
-  box-shadow: 0 24px 48px -26px rgba(25,21,16,.45); }
-.tri-end h2 { margin: 0; font: 800 clamp(26px, 4vw, 34px)/1.08 var(--font-head); letter-spacing: -.03em; }
-.tri-end-sub { margin: 2px 0 14px; color: var(--ink-2, #5B554D); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tri-end-art { width: min(220px, 52vw); aspect-ratio: 1; border-radius: 28px; object-fit: cover; margin-bottom: 10px;
+  background: var(--clay-ground, #E8E0CB); }
+.tri-end h2 { margin: 0; font: 700 30px/34px var(--font-head); letter-spacing: -.02em; }
+.tri-end-sub { margin: 2px 0 14px; color: var(--meta, #6E655A); font: 500 15px/21px var(--font-body); font-variant-numeric: tabular-nums; }
 .tri-end-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.tri-end-acts .btn { width: auto; min-width: 180px; padding: 0 22px; }
+.tri-end-acts .btn { width: auto; min-width: 180px; height: 54px; padding: 0 24px; border-radius: 999px; font: 600 16px/1 var(--font-body); }
 .tri-end-acts .btn.ghost { background: var(--surface, #fff); color: var(--ink, #191510); box-shadow: inset 0 0 0 1px var(--hairline, #EAE4DA); }
 
 @media (prefers-reduced-motion: no-preference) {

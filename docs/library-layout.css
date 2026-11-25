@@ -1,57 +1,52 @@
-/* Library mirrors the app's hierarchy; desktop uses the available width. */
+/* Library mirrors the app's hierarchy; desktop uses the available width.
+   Quiet clay (1.4): colours, radii and type come from /tokens.css. */
 main, main > section, .you-col, .card-body { min-width: 0; }
 /* ── The library home: one set of sections, three layouts ──
-   Phones: the intro, the sort card, a strip of side quests, then the feed.
-   761–1099px: the intro beside the sort card, the strip under them. From
-   1100px the same sections are a 280px rail that stays beside the feed, so
-   the grid starts right under the nav, and the page may grow to 1440px. */
-.lib-intro { margin:2px 0 16px; }
-.lib-hello h1 { font-family:var(--font-head); font-size:clamp(28px,3vw,38px); letter-spacing:-.04em; line-height:1.05; margin:0 0 6px; }
-.account-title { font-family:var(--font-head); font-size:clamp(28px,3vw,40px); letter-spacing:-.04em; margin:0 0 6px; }
-.lib-hello p { margin:0 0 14px; color:var(--meta); font-size:14px; }
-.library-search { display:flex; align-items:center; gap:10px; width:100%; min-height:46px; text-align:left; border:1px solid var(--hairline); border-radius:16px; padding:11px 14px; background:var(--surface); color:var(--meta); }
-.library-search:hover { border-color:var(--dashed); color:var(--ink-2); }
-.library-search svg { width:18px; height:18px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
-.lib-card { border-radius:22px; margin:0 0 18px; min-width:0; }
-.library-insight { display:flex; align-items:center; gap:14px; background:#E1F2E9; border:1px solid #B8DECB; padding:18px; }
-.library-insight b { display:block; font-family:var(--font-head); font-size:19px; line-height:1.15; margin-bottom:6px; }
-.library-insight p { font-size:13.5px; line-height:1.45; margin:0; color:#386A53; }
-.library-insight img { width:84px; height:84px; border-radius:20px; flex-shrink:0; }
-/* Saves waiting for a home: coral tint, the clay compass, one button. */
-.lib-sort { display:flex; align-items:center; gap:14px; padding:14px 16px 14px 14px; background:var(--tint); border:1px solid color-mix(in srgb, var(--coral) 24%, transparent); }
-.lib-sort img { width:68px; height:68px; border-radius:18px; flex:0 0 auto; object-fit:cover; }
-.lib-sort-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
-.lib-sort-text b { font-family:var(--font-head); font-size:18px; line-height:1.15; letter-spacing:-.015em; }
-.lib-sort-text span { color:var(--accent-text); font-size:13px; font-weight:600; }
-.lib-sort-more { align-self:flex-start; border:0; background:none; padding:5px 0 0; color:var(--ink-2); font-size:12.5px; font-weight:700; text-align:left; }
-.lib-sort .btn-sm { flex:0 0 auto; padding:0 20px; }
-.lib-quests { margin:0 0 4px; }
-#home-sections .h-row { margin:2px 0 10px; }
-#home-sections .quests { display:flex; overflow-x:auto; gap:12px; padding:2px 2px 16px; scroll-snap-type:x proximity; }
-#home-sections .quest-card { flex:0 0 168px; display:flex; flex-direction:column; gap:0; padding:0; border-radius:20px; overflow:hidden; scroll-snap-align:start; align-items:stretch; }
-#home-sections .quest-art { width:100%; height:112px; object-fit:cover; border-radius:0; }
-#home-sections .quest-card > span { display:block; flex:1; background:var(--quest-tint,var(--tint)); padding:12px 14px 14px; min-height:74px; }
-#home-sections .quest-t { font-size:15px; line-height:1.2; }
-#home-sections .quest-m { margin-top:5px; }
-#home-sections .quest-new { flex:0 0 140px; min-height:150px; border-radius:20px; white-space:normal; }
-.lib-topics { display:none; }
-.library-tools { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin:4px 0 18px; }
-.feed-actions { display:flex; gap:10px; align-items:center; }
-.density { display:flex; background:var(--control); padding:4px; border-radius:999px; }
-.density button { display:inline-flex; align-items:center; gap:6px; border:0; background:none; border-radius:999px; padding:8px 12px; min-height:40px; font-weight:600; color:var(--ink-2); }
-.density button[aria-pressed=true] { background:var(--surface); color:var(--ink); box-shadow:0 1px 3px #19151012; }
+   Phones: the title, the count, search, at most one slim action row, then
+   the source chips and the feed, with the side quests after its second row.
+   761–1099px: the title beside the action row. From 1100px the same
+   sections are a 300px rail beside the feed — title, the action row, side
+   quests and top topics as slim rows — so the grid starts right under the
+   nav, and the page may grow to 1440px. */
+.lib-intro { margin:0 0 12px; }
+.lib-hello h1 { font:700 30px/34px var(--font-head); letter-spacing:-.02em; margin:0; }
+.account-title { font:700 30px/34px var(--font-head); letter-spacing:-.02em; margin:0 0 6px; }
+.lib-hello p { margin:4px 0 16px; color:var(--meta); font-size:13px; line-height:18px; font-weight:500; }
+/* The search field (SearchFieldSurface): 48px, white, hairline, radius 14. */
+.library-search { display:flex; align-items:center; gap:10px; width:100%; height:48px; text-align:left; border:1px solid var(--hairline); border-radius:var(--r-search); padding:0 14px; background:var(--surface); color:var(--meta); font-size:15px; font-weight:500; }
+.library-search:hover { border-color:var(--dashed); }
+.library-search svg { width:20px; height:20px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; }
+.lib-card { margin:0 0 12px; min-width:0; }
+/* The one slim action row (SlimActionRow): saves waiting for a home — the
+   clay compass, two lines, a quiet "Sort ›". */
+.lib-sort { display:flex; align-items:center; gap:12px; min-height:56px; padding:8px 6px 8px 12px; background:var(--surface); border:1px solid var(--hairline); border-radius:var(--r-card); }
+.lib-sort img { width:36px; height:36px; border-radius:var(--r-thumb); flex:0 0 auto; object-fit:cover; }
+.lib-sort-text { flex:1; min-width:0; display:flex; flex-direction:column; }
+.lib-sort-text b { font:600 15px/20px var(--font-body); }
+.lib-sort-text span { color:var(--meta); font-size:13px; line-height:18px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lib-sort-more { border:0; background:none; padding:0; color:var(--coral-deep); font:inherit; font-weight:600; }
+.lib-sort-go { flex:0 0 auto; display:inline-flex; align-items:center; gap:2px; height:44px; padding:0 8px 0 14px; border:0; background:none; color:var(--coral-deep); font-size:15px; font-weight:600; }
+.lib-sort-go svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.lib-quests, .lib-topics { display:none; }
+#home-sections .h-row { margin:2px 0 8px; }
+.library-tools { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin:0 0 12px; }
+.feed-actions { display:flex; gap:6px; align-items:center; }
+/* Grid · Compact · List: the segmented control's track, the chosen one on white. */
+.density { display:flex; background:var(--control); padding:3px; border-radius:999px; }
+.density button { display:inline-flex; align-items:center; gap:6px; border:0; background:none; border-radius:999px; padding:0 12px; min-height:38px; font-weight:600; font-size:14px; color:var(--ink-2); }
+.density button[aria-pressed=true] { background:var(--surface); color:var(--ink); box-shadow:0 0 0 1px var(--hairline); }
 .density svg { width:15px; height:15px; flex:0 0 auto; fill:currentColor; }
-#platform-chips, #topic-refinements .chips { position:static; margin:0; padding:0 0 14px; }
-#topic-refinements { margin:16px 0; }
+#platform-chips, #topic-refinements .chips { position:static; margin:0; padding:5px 0 10px; }
+#topic-refinements { margin:10px 0 8px; }
 @media (min-width:761px) and (max-width:1099px) {
-  #home-sections:not(:empty) { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:24px; align-items:center; }
-  .lib-intro { grid-column:1; margin:0 0 18px; }
-  .lib-card { grid-column:2; }
-  .lib-quests { grid-column:1 / -1; }
+  #home-sections:not(:empty) { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:24px; align-items:end; margin-bottom:14px; }
+  .lib-intro { grid-column:1; margin:0; }
+  .lib-intro .library-search { display:none; }
+  .lib-card { grid-column:2; margin:0; }
 }
 @media (min-width:1100px) {
   main, .nav-in { max-width:1440px; }
-  #view-library { display:grid; grid-template-columns:minmax(0,1fr) 280px; grid-template-areas:"feed rail"; column-gap:32px; align-items:start; }
+  #view-library { display:grid; grid-template-columns:minmax(0,1fr) 300px; grid-template-areas:"feed rail"; column-gap:32px; align-items:start; }
   #view-library:has(> #home-sections:empty) { grid-template-columns:minmax(0,1fr); grid-template-areas:"feed"; }
   #home-sections { grid-area:rail; position:sticky; top:calc(var(--banner-h) + var(--nav-h) + 18px); max-height:calc(100vh - var(--banner-h) - var(--nav-h) - 30px);
     overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; margin:0 -4px; padding:2px 4px 24px; }
@@ -59,127 +54,105 @@ main, main > section, .you-col, .card-body { min-width: 0; }
   .lib-feed { grid-area:feed; min-width:0; display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:16px; align-items:start; }
   .lib-feed > .grid, .lib-feed > .state { grid-column:1 / -1; }
   #platform-chips { grid-column:1; grid-row:1; }
-  #library-tools { grid-column:2; grid-row:1; margin:0 0 14px; }
+  #library-tools { grid-column:2; grid-row:1; margin:0 0 12px; }
   #library-tools .h-title, #home-sections .library-search { display:none; }
-  .lib-hello h1 { font-size:32px; }
-  .lib-hello p { margin-bottom:18px; }
-  .lib-sort { display:grid; grid-template-columns:56px minmax(0,1fr); gap:12px; padding:14px; }
-  .lib-sort img { width:56px; height:56px; border-radius:16px; }
-  .lib-sort .btn-sm { grid-column:1 / -1; width:100%; }
-  .library-insight { align-items:flex-start; padding:16px; gap:12px; }
-  .library-insight b { font-size:17px; }
-  .library-insight img { width:60px; height:60px; border-radius:16px; }
-  #home-sections .quests { flex-direction:column; overflow:visible; gap:8px; padding:0 0 4px; scroll-snap-type:none; }
-  #home-sections .quest-card { flex:0 0 auto; flex-direction:row; align-items:center; gap:12px; padding:8px 12px 8px 8px; border-radius:18px; }
-  #home-sections .quest-art { width:56px; height:56px; border-radius:14px; flex:0 0 auto; }
-  #home-sections .quest-card > span { background:none; padding:0; min-height:0; }
-  #home-sections .quest-t { font-size:14px; }
-  #home-sections .quest-new { flex:0 0 auto; min-height:44px; border-radius:16px; padding:10px 14px; }
-  #home-sections .quest-starter { flex-direction:column; align-items:flex-start; margin:0 0 8px; }
-  .lib-topics { display:block; margin-top:16px; }
-  .lib-topics .topic-pills { flex-wrap:wrap; gap:8px; padding:0 0 4px; }
-  .lib-topics .topic-pill { height:40px; padding:0 13px 0 4px; font-size:13px; }
-  .lib-topics .pill-art { width:32px; height:32px; }
+  .lib-intro { margin:0 0 16px; }
+  .lib-hello p { margin-bottom:0; }
+  /* The rail: every section a list of slim rows. */
+  .lib-quests, .lib-topics { display:block; margin-top:var(--section-gap); }
+  #home-sections .quests { flex-direction:column; overflow:visible; gap:8px; padding:0; }
+  #home-sections .quest-card { flex:0 0 auto; flex-direction:row; align-items:center; gap:12px; min-height:56px; padding:9px 12px 9px 10px; background:var(--surface); }
+  #home-sections .quest-art { width:36px; height:36px; aspect-ratio:auto; border-radius:var(--r-thumb); flex:0 0 auto; }
+  #home-sections .quest-card > span { padding:0; }
+  #home-sections .quest-t { -webkit-line-clamp:1; }
+  #home-sections .quest-m { color:var(--meta); margin-top:0; }
+  #home-sections .quest-new { flex:0 0 auto; min-height:48px; padding:0 14px; }
+  #home-sections .quest-starter { flex-direction:column; align-items:flex-start; }
+  .lib-topics .topic-pills { flex-wrap:wrap; gap:8px; padding:0; }
 }
-/* List density: the app's rows. */
-.grid.list-mode { display:flex; flex-direction:column; align-items:stretch; }
-.card.feed-row { display:flex; align-items:center; gap:14px; padding:12px 14px; min-width:0; contain-intrinsic-size:auto 92px; }
-.feed-thumb { position:relative; width:64px; height:64px; border-radius:16px; flex:0 0 64px; overflow:hidden; display:grid; place-items:center; background:var(--control); }
-.feed-thumb img { width:100%; height:100%; object-fit:cover; object-position:50% 30%; }
-.feed-thumb.art { background:color-mix(in srgb, var(--pt, #EEE8DE) 45%, #fff); }
-.feed-thumb.art img { transform:scale(1.2); }
-.feed-thumb.quote { background:linear-gradient(135deg,#2A2C33,#111318); color:rgba(255,255,255,.62); font:800 36px/1 var(--font-head); padding-top:14px; }
-.feed-thumb.unfiled { background:var(--paper); border:1.5px dashed var(--dashed); color:var(--ink-2); }
-.feed-row .card-body { flex:1; padding:0; }
-.feed-row .card-author .pbadge { width:18px; height:18px; border-radius:6px; }
+/* List density: the app's rows (BookmarkRow) — a 56px cover at radius 10, the
+   title, the filing line, "@who · when". */
+.grid.list-mode { display:flex; flex-direction:column; align-items:stretch; gap:8px; }
+.card.feed-row { flex-direction:row; align-items:center; gap:12px; padding:10px; min-width:0; contain-intrinsic-size:auto 78px; }
+.feed-thumb { position:relative; width:56px; height:56px; border-radius:var(--r-thumb); flex:0 0 56px; overflow:hidden; background:var(--clay-ground); }
+.feed-thumb img { width:100%; height:100%; object-fit:cover; object-position:50% 35%; display:block; }
+.feed-row .card-body { flex:1; padding:0; gap:2px; }
+.feed-row .card-title { height:auto; -webkit-line-clamp:1; display:-webkit-box; }
+.feed-row .card-author { order:3; }
+.feed-row .card-author .pbadge { width:18px; height:18px; border-radius:5px; }
 .feed-row .card-author .pbadge .pg { width:10px; height:10px; }
-.feed-row .card-title { font-size:15.5px; }
-.feed-row .card-meta { margin-top:6px; }
+.feed-row .card-meta { flex-wrap:wrap; row-gap:3px; height:auto; }
+.feed-row .card-meta .filing-path { white-space:normal; overflow-wrap:anywhere; }
+.card-tags { font-size:13px; font-weight:500; color:var(--meta); overflow-wrap:anywhere; }
 .selecting .feed-row { padding-right:50px; }
+/* ── You ── */
 #view-you { max-width:1060px; margin:0 auto; }
-.account-title { margin:8px 0 22px; }
-#view-you .you-grid { max-width:none; grid-template-columns:1fr 1fr; gap:22px; }
+.account-title { margin:4px 0 20px; }
+#view-you .you-grid { max-width:none; grid-template-columns:1fr 1fr; gap:16px; }
 #view-you .you-col { display:contents; }
-#view-you .you-card { padding:26px; border-radius:24px; }
-#view-you .account-identity { grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:28px; background:#EEEDE2; box-shadow:none; }
+#view-you .you-card { padding:20px; }
+#view-you .account-identity { grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:28px; }
 .account-identity .stats { border:0; margin:0; padding:0; }
-.account-art { width:100px; height:100px; border-radius:24px; float:right; margin:0 0 12px 18px; }
-.account-status { color:var(--ink-2); line-height:1.6; }
-#view-you .account-links { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:10px 24px; border-top:1px solid var(--hairline); padding-top:20px; margin:0; }
-#view-you .account-links a { min-height:44px; display:inline-flex; align-items:center; }
-#view-you summary { cursor:pointer; padding:12px 0; color:var(--meta); }
+.account-art { width:72px; height:72px; border-radius:14px; float:right; margin:0 0 12px 16px; background:var(--clay-ground); }
+.account-status { color:var(--ink-2); line-height:1.55; font-weight:500; }
+#view-you .account-links { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:4px 24px; border-top:1px solid var(--hairline); padding-top:16px; margin:0; }
+#view-you .account-links a { min-height:44px; display:inline-flex; align-items:center; color:var(--ink-2); font-weight:600; }
+#view-you summary { cursor:pointer; padding:12px 0; color:var(--meta); font-weight:500; min-height:44px; }
 .has-select-bar main { padding-bottom:180px; }
-.quest-guide { display:grid; grid-template-columns:minmax(200px, .8fr) 1.2fr; gap:40px; background:#EEEDE2; border:1px solid var(--hairline); padding:32px; border-radius:28px; max-width:1060px; margin:20px 0 40px; align-items:center; }
-.quest-guide > img { width:100%; border-radius:24px; }
-.quest-guide h1 { font-family:var(--font-head); font-size:32px; letter-spacing:-.03em; margin:0 0 14px; }
-.quest-guide p, .quest-guide-more p { color:var(--meta); margin:6px 0 20px; }
+/* ── Side quests (Browse) ── */
+.quest-guide { display:grid; grid-template-columns:minmax(200px, .8fr) 1.2fr; gap:36px; background:var(--surface); border:1px solid var(--hairline); padding:28px; border-radius:var(--r-card); max-width:1060px; margin:8px 0 32px; align-items:center; }
+.quest-guide > img { width:100%; border-radius:14px; background:var(--clay-ground); }
+.quest-guide h1 { font:700 30px/34px var(--font-head); letter-spacing:-.02em; margin:0 0 10px; }
+.quest-guide p, .quest-guide-more p { color:var(--meta); margin:4px 0 18px; font-weight:500; }
 .quest-guide ol, .quest-guide-more ol { padding-left:22px; }
 .quest-guide li { padding-left:6px; }
-.quest-guide-more { padding:22px 0; }
-.quest-guide-more summary { cursor:pointer; font-weight:600; min-height:44px; }
-.quest-board { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:16px; }
-.quest-board .quest-card { width:100%; padding:20px; }
-.quest-board .quest-art { width:90px; height:90px; border-radius:18px; }
-.quest-board .quest-t { font-size:20px; }
-#quests-list > .h-row { flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+.quest-guide li b, .quest-guide-more li b { font-weight:600; }
+/* With quests on the board, the guide folds into one slim row under it. */
+.quest-guide-more { margin:12px 0 0; padding:0 16px; background:var(--surface); border:1px solid var(--hairline); border-radius:var(--r-card); }
+.quest-guide-more summary { cursor:pointer; font-weight:600; min-height:56px; display:flex; align-items:center; justify-content:space-between; gap:12px; list-style:none; }
+.quest-guide-more summary::-webkit-details-marker { display:none; }
+.quest-guide-more summary::after { content:""; width:8px; height:8px; margin-right:4px; border:solid var(--meta); border-width:0 2px 2px 0; transform:rotate(45deg) translate(-2px,-2px); transition:transform .15s var(--ease-out); }
+.quest-guide-more[open] summary::after { transform:rotate(-135deg) translate(-2px,-2px); }
+.quest-guide-more ol { margin:0; padding-bottom:12px; }
+.quest-board { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:12px; }
+/* A quest on the board: the same card on its side — art left, the tint behind the words. */
+.quest-board .quest-card { width:100%; flex-direction:row; align-items:stretch; }
+.quest-board .quest-art { width:128px; flex:0 0 128px; }
+.quest-board .quest-card > span { display:flex; flex-direction:column; justify-content:center; padding:12px 14px; }
+.quest-board .quest-t { font:700 19px/24px var(--font-head); letter-spacing:-.01em; }
+#quests-list > .h-row { flex-wrap:wrap; gap:10px; margin-bottom:16px; }
 #quest-suggest { max-height:320px; overflow:auto; overscroll-behavior:contain; margin-top:12px; }
 #quest-suggest .qb-row > div { min-width:0; flex:1; }
 #quest-dialog .qb-add { flex-shrink:0; min-height:44px; }
-#quest-dialog .account-art { float:none; width:100%; height:150px; object-fit:cover; margin:0 0 18px; }
-.quest-brief { background:var(--paper); padding:16px; border-radius:18px; margin:18px 0; }
-.quest-brief h3 { margin:0 0 8px; font-family:var(--font-head); }
+#quest-dialog .account-art { float:none; width:100%; height:140px; object-fit:cover; margin:0 0 16px; border-radius:var(--r-card); }
+.quest-brief { background:var(--surface); border:1px solid var(--hairline); padding:16px; border-radius:var(--r-card); margin:18px 0; }
+.quest-brief h3 { margin:0 0 8px; font:700 19px/24px var(--font-head); }
 .quest-brief p { line-height:1.5; }
 .quest-brief .linkish { display:block; text-align:left; white-space:normal; }
-.brief-step { display:block; border:1px solid var(--hairline); background:var(--surface); color:var(--ink); text-align:left; padding:12px; border-radius:12px; margin:8px 0; width:100%; min-height:44px; }
+.brief-step { display:block; border:1px solid var(--hairline); background:var(--surface); color:var(--ink); text-align:left; padding:12px; border-radius:var(--r-search); margin:8px 0; width:100%; min-height:44px; }
 #select-bar { white-space:normal; width:max-content; }
 #select-count { max-width:150px; }
 @media(max-width:760px) {
-  .nav-in { gap:10px; }
-  .quest-guide { grid-template-columns:1fr; padding:22px; gap:20px; }
-  .quest-guide > img { width:130px; height:130px; }
-  .quest-guide h1 { font-size:28px; }
+  .nav-in { gap:10px; padding:0 var(--gutter); }
+  .quest-guide { grid-template-columns:1fr; padding:20px; gap:18px; }
+  .quest-guide > img { width:120px; height:120px; }
+  .quest-guide h1 { font-size:26px; line-height:30px; }
+  .quest-board .quest-art { width:104px; flex-basis:104px; }
+  .quest-board .quest-t { font:600 15px/20px var(--font-body); }
   /* A phone gets to the feed sooner: the same sections, tighter. */
-  .lib-intro { margin:0 0 12px; }
-  .lib-hello h1 { font-size:28px; margin-bottom:4px; }
-  .lib-hello p { margin-bottom:10px; font-size:13.5px; }
-  .library-search { min-height:44px; padding:10px 13px; }
-  .lib-card { border-radius:20px; margin-bottom:14px; }
-  .library-insight { padding:14px; }
-  .library-insight b { font-size:17px; }
-  .library-insight img { width:56px; height:56px; border-radius:15px; }
-  .lib-sort { padding:10px 12px 10px 10px; gap:12px; }
-  .lib-sort img { width:52px; height:52px; border-radius:14px; }
-  .lib-sort-text b { font-size:16.5px; }
-  #home-sections .h-row { margin:0 0 8px; }
-  #home-sections .quests { gap:10px; padding-bottom:12px; }
-  #home-sections .quest-card { flex-basis:132px; border-radius:18px; }
-  #home-sections .quest-art { height:80px; }
-  #home-sections .quest-card > span { min-height:0; padding:9px 11px 11px; }
-  #home-sections .quest-t { font-size:13.5px; }
-  #home-sections .quest-new { flex-basis:118px; min-height:124px; border-radius:18px; }
-  #platform-chips { padding-bottom:10px; }
-  .library-tools { margin:0 0 12px; }
-  .library-tools .h-title { font-size:17px; }
-  .density button { min-width:44px; padding:8px 11px; justify-content:center; }
+  #home-sections .quests { gap:10px; }
+  #home-sections .quest-card { flex-basis:150px; }
+  .density button { min-width:44px; padding:0 11px; justify-content:center; }
   .density button span { display:none; }
-  .card-body { padding:9px 10px 11px; }
-  .card-title { font-size:13.5px; }
-  .card-meta { font-size:11px; }
-  .poster { padding:11px; gap:8px; }
-  .poster-title { font-size:16.5px; }
-  .card-text .card-title { font-size:13.5px; }
-  .tabbar { left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); height:70px; padding:0 5px; border:1px solid var(--hairline); border-radius:30px; background:color-mix(in srgb,var(--control) 94%,transparent); box-shadow:0 12px 32px #19151026; grid-template-columns:1fr 1fr 64px 1fr 1fr; }
-  .tabbar .fab-mobile { width:56px; height:56px; justify-self:center; transform:translateY(-15px); border:3px solid var(--paper); }
-  .tab { font-size:11px; min-height:48px; }
-  main { padding-bottom:calc(120px + env(safe-area-inset-bottom)); }
-  .has-select-bar main { padding-bottom:calc(210px + env(safe-area-inset-bottom)); }
-  #select-bar { bottom:calc(98px + env(safe-area-inset-bottom)); border-radius:22px; padding:8px 12px; gap:8px; }
+  .library-tools .h-title { font-size:19px; }
+  .has-select-bar main { padding-bottom:calc(var(--tabbar-h) + 100px + env(safe-area-inset-bottom)); }
+  #select-bar { bottom:calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom)); border-radius:22px; padding:8px 12px; gap:8px; }
   #select-bar .btn-sm, #select-bar .bar-x { min-height:44px; }
-  #select-count { font-size:12px; max-width:100px; }
-  .has-select-bar #toast { bottom:calc(174px + env(safe-area-inset-bottom)); }
-  #view-you .you-grid { grid-template-columns:1fr; gap:16px; }
-  #view-you .account-identity { grid-template-columns:1fr; gap:22px; }
-  #view-you .you-card { padding:20px; }
+  #select-count { font-size:13px; max-width:100px; }
+  .has-select-bar #toast { bottom:calc(var(--tabbar-h) + 76px + env(safe-area-inset-bottom)); }
+  #view-you .you-grid { grid-template-columns:1fr; gap:12px; }
+  #view-you .account-identity { grid-template-columns:1fr; gap:18px; }
+  #view-you .you-card { padding:18px; }
   input.field, textarea.field, select.field { font-size:16px; }
 }
 /* The download link stays in the footer; keep the brand and account reachable

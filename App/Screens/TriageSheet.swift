@@ -148,7 +148,7 @@ struct TriageSheet: View {
         }
         .background(Tokens.paper.ignoresSafeArea())
         .presentationDetents([.large])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .claySheet()
         .onAppear(perform: start)
         .onDisappear(perform: finish)
         .sheet(isPresented: $showingPicker, onDismiss: filePick) {
@@ -160,20 +160,21 @@ struct TriageSheet: View {
     // MARK: Layout
 
     /// The card takes whatever the dial leaves, between 120 and 260 pt; on a
-    /// short phone the dial gives up a little first, never below 220 pt.
+    /// short phone the dial gives up a little first, never below 260 pt.
     private struct Layout {
         let dial: CGFloat
         let card: CGFloat
         let width: CGFloat
 
         init(size: CGSize) {
-            // Top bar, progress, tallies, header, footer, actions and gaps.
-            let fixed: CGFloat = 268
+            // Top bar (under the 18 pt grabber band), progress, tallies, header,
+            // footer (44 pt chips), actions and gaps.
+            let fixed: CGFloat = 300
             let peeks: CGFloat = 20
-            var dial = min(280, size.width - 64)
+            var dial = min(340, size.width - 40)
             var card = size.height - fixed - peeks - dial
             if card < 150 {
-                dial = max(220, dial - (150 - card))
+                dial = max(260, dial - (150 - card))
                 card = size.height - fixed - peeks - dial
             }
             self.dial = dial
@@ -195,8 +196,9 @@ struct TriageSheet: View {
 
             VStack(spacing: 1) {
                 Text("Sort your borks")
-                    .font(Typo.display(17, .heavy))
+                    .font(.custom("Instrument Sans", size: 17, relativeTo: .headline).weight(.semibold))
                     .foregroundStyle(Tokens.ink)
+                    .accessibilityAddTraits(.isHeader)
                 deckMenu
             }
 
@@ -217,7 +219,7 @@ struct TriageSheet: View {
             .accessibilityHint("Takes back the last filing, skip or removal")
         }
         .padding(.horizontal, 18)
-        .padding(.top, 8)
+        .padding(.top, 18)
     }
 
     private var counterLine: String {
@@ -278,16 +280,15 @@ struct TriageSheet: View {
         HStack(spacing: 6) {
             if tallies.isEmpty {
                 Text("Filed borks gather here")
-                    .font(Typo.ui(12, .medium))
-                    .foregroundStyle(Tokens.inkFaint)
+                    .textRole(.meta)
             } else {
                 if tallies.count > 4 {
                     Text("+\(tallies.count - 4)")
-                        .font(Typo.ui(12.5, .bold))
-                        .foregroundStyle(Tokens.inkMeta)
+                        .font(Typo.ui(12.5, .semibold))
+                        .foregroundStyle(Tokens.sandInk)
                         .padding(.horizontal, 10)
-                        .frame(height: 30)
-                        .background(Tokens.mutedControl, in: Capsule())
+                        .frame(height: 32)
+                        .background(Tokens.sand, in: Capsule())
                 }
                 ForEach(tallies.suffix(4)) { tally in
                     tallyChip(tally)
@@ -307,7 +308,7 @@ struct TriageSheet: View {
             QuickFileArtDisc(topicID: tally.id, size: 22, style: style)
                 .overlay {
                     if let landing, landing.topic == tally.id {
-                        CoverImage(url: landing.card.imageURL, palette: landing.card.category?.palette ?? palette)
+                        CoverImage(url: landing.card.imageURL, topicID: landing.card.categoryID ?? tally.id)
                             .frame(width: 22, height: 22)
                             .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                             .matchedGeometryEffect(id: landing.card.id, in: flight)
@@ -317,15 +318,15 @@ struct TriageSheet: View {
                 .font(Typo.ui(12.5, .semibold))
                 .lineLimit(1)
             Text("\(tally.count)")
-                .font(Typo.ui(12.5, .heavy))
+                .font(Typo.ui(12.5, .bold))
                 .monospacedDigit()
                 .contentTransition(.numericText())
         }
         .foregroundStyle(palette.deep)
-        .padding(.leading, 4)
-        .padding(.trailing, 11)
-        .frame(height: 30)
-        .background(palette.tint.opacity(0.6), in: Capsule())
+        .padding(.leading, 5)
+        .padding(.trailing, 12)
+        .frame(height: 32)
+        .background(palette.tint, in: Capsule())
         .scaleEffect(bumped == tally.id && !reduceMotion ? 1.08 : 1)
         .animation(.spring(response: 0.25, dampingFraction: 0.55), value: bumped)
         .accessibilityElement(children: .combine)
@@ -343,7 +344,7 @@ struct TriageSheet: View {
                 TriageCard(bookmark: card, width: layout.width, height: layout.card)
                     // The cards behind recede into the paper.
                     .overlay {
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        RoundedRectangle(cornerRadius: Tokens.cardRadius, style: .continuous)
                             .fill(Tokens.paper.opacity(depth == 0 ? 0 : (depth == 1 ? 0.45 : 0.7)))
                     }
                     .matchedGeometryEffect(id: card.id, in: flight)
@@ -416,16 +417,13 @@ struct TriageSheet: View {
             QuestArt(motif: .compass)
                 .frame(width: 228, height: 228)
                 .clipShape(RoundedRectangle(cornerRadius: 40, style: .continuous))
-                .shadow(color: Tokens.ink.opacity(0.12), radius: 22, y: 14)
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
                 .accessibilityHidden(true)
                 .padding(.bottom, 10)
 
             Text(cards.isEmpty ? (shown == .unfiled ? "Every bork has a topic." : "Nothing to check.")
                  : (skippedAny ? "All caught up." : "Everything has a home."))
-                .font(Typo.display(28, .heavy))
-                .tracking(-0.6)
-                .foregroundStyle(Tokens.ink)
+                .textRole(.screenTitle, color: Tokens.ink)
                 .multilineTextAlignment(.center)
 
             Group {
@@ -437,8 +435,7 @@ struct TriageSheet: View {
                     Text("Skipped ones wait here for next time.")
                 }
             }
-            .font(Typo.ui(15, .medium))
-            .foregroundStyle(Tokens.inkSecondary)
+            .textRole(.body, color: Tokens.inkSecondary)
             .multilineTextAlignment(.center)
 
             Spacer(minLength: 12)
@@ -450,9 +447,7 @@ struct TriageSheet: View {
             }
 
             Button("Done") { dismiss() }
-                .font(Typo.ui(15, .semibold))
-                .foregroundStyle(accent.deep)
-                .frame(minHeight: 44)
+                .buttonStyle(.clayQuiet)
                 .padding(.bottom, 10)
         }
         .padding(.horizontal, 24)
@@ -460,16 +455,8 @@ struct TriageSheet: View {
     }
 
     private func endButton(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Typo.ui(16, .bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(accent.base, in: Capsule())
-                .shadow(color: accent.base.opacity(0.3), radius: 14, y: 7)
-        }
-        .buttonStyle(PressableStyle(scale: 0.97))
+        Button(title, action: action)
+            .buttonStyle(.clayPrimary)
     }
 
     // MARK: Session
@@ -742,7 +729,7 @@ private struct TriageCard: View {
 
     private var palette: CategoryPalette? { bookmark.category?.palette }
     private var hasPicture: Bool { bookmark.imageURL != nil }
-    private var radius: CGFloat { 22 }
+    private var radius: CGFloat { Tokens.cardRadius }
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -752,7 +739,7 @@ private struct TriageCard: View {
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .strokeBorder(Color.black.opacity(0.06), lineWidth: 1)
+                .strokeBorder(Tokens.hairline, lineWidth: 1)
         )
         .overlay(alignment: .topLeading) {
             PlatformBadge(platform: bookmark.platform, size: 24, pageURL: bookmark.url)
@@ -760,18 +747,19 @@ private struct TriageCard: View {
                 .padding(11)
         }
         .overlay(alignment: .topTrailing) { playChip }
+        // The deck floats over the sheet, so the top card casts the slab's
+        // soft warm drop; nothing else on the card does.
         .background(
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(Tokens.surface)
-                .shadow(color: Tokens.ink.opacity(0.04), radius: 2, y: 1)
-                .shadow(color: Tokens.ink.opacity(0.12), radius: 18, y: 12)
+                .shadow(color: Brand.shadow.opacity(0.12), radius: 12, y: 10)
         )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
     }
 
     private var picture: some View {
-        CoverImage(url: bookmark.imageURL, palette: palette ?? NeutralPalette.value)
+        CoverImage(url: bookmark.imageURL, topicID: bookmark.categoryID)
             .overlay {
                 LinearGradient(stops: [
                     .init(color: .clear, location: 0.38),
@@ -788,15 +776,7 @@ private struct TriageCard: View {
     private var poster: some View {
         let ink = palette?.deep ?? Tokens.ink
         return ZStack(alignment: .topLeading) {
-            if let palette {
-                LinearGradient(colors: [palette.tint, palette.tint.opacity(0.5)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-            } else {
-                LinearGradient(colors: [Tokens.surface, Tokens.paper],
-                               startPoint: .top, endPoint: .bottom)
-            }
-            RadialGradient(colors: [.white.opacity(0.55), .clear],
-                           center: .topTrailing, startRadius: 0, endRadius: height)
+            (palette?.tint ?? Tokens.surface)
             VStack(alignment: .leading, spacing: 8) {
                 Spacer(minLength: 40)
                 if bookmark.isTextPost, let body = bookmark.text, !body.isEmpty {

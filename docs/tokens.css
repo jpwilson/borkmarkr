@@ -1,0 +1,145 @@
+/* bookmarker — "Quiet clay" tokens and base classes (design/SYSTEM.md, 1.4).
+ *
+ * The web twin of App/DesignSystem/Tokens.swift + Core/BrandTokens.swift.
+ * Linked as the LAST stylesheet in every page's <head> (and in
+ * Scripts/seo-pages/tpl.py), so these values win over any older inline
+ * :root while the screen builders move pages across. Pages keep their own
+ * layout variables (--nav-h, --tabbar-h, --banner-h); this file never sets them.
+ *
+ * Topic colours are not here: they come from docs/palette.js (Palette.of(hue)
+ * → { tint, mid, deep }). Pass them in as --pt / --pm / --pd on an element and
+ * .c-tchip / .c-dot pick them up.
+ */
+:root {
+  /* Base — unchanged from 1.3 except where noted */
+  --paper: #F6F3EE;
+  --surface: #FFFFFF;
+  --hairline: #EAE4DA;
+  --ink: #191510;
+  --ink-2: #6E655A;          /* was #5B554D: secondary text is one colour now */
+  --meta: #6E655A;           /* was #8A8378 (3.5:1 on paper — failed) */
+  --faint: #A39A8D;          /* decorative only, never information */
+  --coral: #FF5A2D;
+  --coral-dark: #E8451C;
+  --coral-deep: #AE3512;     /* small coral text on paper / white: 6.6:1 */
+  --accent-text: #AE3512;    /* was #C93A12 */
+  --tint: #FFE9E1;
+  --destructive: #C0392B;
+  --control: #EEE8DE;
+  --dashed: #D7CDBD;
+  --grabber: #DBD2C4;
+  --sand: #ECE5D8;           /* avatar, off tag pills, "not filed" tint */
+  --sand-ink: #5A4E38;
+  --clay-ground: #E8E0CB;    /* under clay art: covers, tiles, banners */
+  --off-white: #FBF8F2;      /* the wheel's More… slab */
+  --toast: #191510;
+  --note-top: #FFFBEA; --note-bottom: #FFF5D8; --note-border: #F0E0AC; --note-ink: #4A4130;
+
+  /* Shape */
+  --radius: 18px;            /* cards, rows, slim rows, tiles */
+  --r-card: 18px;
+  --r-chip: 999px;
+  --r-sheet: 28px;
+  --r-slab: 28px;
+  --r-thumb: 10px;
+  --r-search: 14px;
+
+  /* Spacing and sizes */
+  --gutter: 20px;
+  --section-gap: 28px;
+  --gap: 12px;
+  --chip-gap: 8px;
+  --chip-h: 34px;            /* filter chips; topic chips 36; refine pills 44 */
+  --hit: 44px;               /* minimum hit area */
+  --slim-h: 56px;
+  --tabbar-row: 56px;
+  --add-size: 52px;
+
+  /* Elevation: only things that float. Cards, rows, chips, the tab bar: none. */
+  --shadow-card: none;
+  --lift-slab: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 24px rgba(120,84,50,.12);
+  --lift-pill: inset 0 1px 0 rgba(255,255,255,.7), 0 3px 8px rgba(120,84,50,.10);
+  --lift-hub: inset 0 2px 0 rgba(255,255,255,.9), inset 0 -3px 6px rgba(120,84,50,.08), 0 14px 28px rgba(120,84,50,.20), 0 2px 4px rgba(120,84,50,.10);
+  --lift-sheet: 0 -8px 30px rgba(25,21,16,.10);
+  --lift-toast: 0 8px 32px rgba(0,0,0,.25);
+
+  /* Type */
+  --font-head: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+}
+
+/* ── Type roles (TextRole on iOS). Nothing bolder than 700; meta never bold. ── */
+.t-screen { margin: 0; font: 700 30px/34px var(--font-head); letter-spacing: -0.02em; color: var(--ink); }
+.t-section { margin: 0; font: 700 19px/24px var(--font-head); color: var(--ink); }
+.t-card { font: 600 15px/20px var(--font-body); color: var(--ink); }
+.t-body { font: 500 15px/21px var(--font-body); color: var(--ink); }
+.t-meta { font: 500 13px/18px var(--font-body); color: var(--meta); }
+.t-label { font: 700 11px/14px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--meta); }
+
+/* ── Card: white, hairline, radius 18, no shadow; a 4:3 cover flush to the top ── */
+.c-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: var(--r-card); overflow: hidden; color: var(--ink); text-decoration: none; box-shadow: none; }
+.c-cover { position: relative; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; background: var(--clay-ground); }
+.c-cover > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.c-cover .c-mark { position: absolute; top: 8px; left: 8px; width: 22px; height: 22px; border-radius: 6px; }
+.c-cover .c-dur { position: absolute; right: 8px; bottom: 8px; height: 20px; padding: 0 6px; border-radius: 6px;
+  background: rgba(25,21,16,.72); color: #fff; font: 600 11.5px/20px var(--font-body); font-variant-numeric: tabular-nums; }
+.c-card-body { display: flex; flex-direction: column; gap: 4px; padding: 9px 12px 11px; }
+.c-card-title { font: 600 15px/20px var(--font-body); height: 40px; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.c-filing { display: flex; align-items: center; gap: 6px; font: 500 13px/18px var(--font-body); color: var(--meta);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--pm, var(--faint)); flex: none; }
+
+/* ── Row: the card's content in one row, a 56 px cover at radius 10 ── */
+.c-row { display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--surface);
+  border: 1px solid var(--hairline); border-radius: var(--r-card); color: var(--ink); text-decoration: none; }
+.c-row > .c-thumb { width: 56px; height: 56px; border-radius: var(--r-thumb); object-fit: cover; flex: none;
+  background: var(--clay-ground); }
+
+/* ── Chips: 34–44 px pills inside a ≥ 44 px hit area ── */
+.c-chip, .c-tchip, .c-tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  min-height: var(--chip-h); padding: 0 12px; border-radius: var(--r-chip); box-sizing: border-box;
+  font: 600 14px/1 var(--font-body); white-space: nowrap; cursor: pointer; border: 1px solid transparent;
+  background-clip: padding-box; position: relative; }
+.c-chip::before, .c-tchip::before, .c-tag::before { content: ""; position: absolute; inset: -5px 0; } /* hit area */
+.c-chip { background: var(--surface); color: var(--ink); border-color: var(--hairline); }
+.c-chip.on, .c-chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.c-tchip { min-height: 36px; background: var(--pt, var(--sand)); color: var(--pd, var(--sand-ink)); }
+.c-tchip.on, .c-tchip[aria-pressed="true"] { background: var(--pd, var(--sand-ink)); color: #fff; }
+.c-tchip.on::after, .c-tchip[aria-pressed="true"]::after { content: "✓"; order: -1; font-size: 12px; }
+.c-tag { min-height: 44px; padding: 0 13px; background: var(--sand); color: var(--ink); }
+.c-tag.on, .c-tag[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.c-tag.add { background: transparent; color: var(--meta); border: 1.5px dashed var(--dashed); }
+
+/* ── Buttons ── */
+.c-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 54px;
+  padding: 0 22px; border-radius: var(--r-chip); border: 1px solid var(--coral); background: var(--coral);
+  color: #fff; font: 600 16px/1.2 var(--font-body); cursor: pointer; text-decoration: none; }
+.c-btn.secondary { background: var(--surface); color: var(--ink); border-color: var(--hairline); }
+.c-btn.quiet { background: none; border-color: transparent; color: var(--coral-deep); min-height: var(--hit);
+  padding: 0 10px; font-size: 15px; }
+.c-btn:disabled { opacity: .4; cursor: default; }
+
+/* ── Slim action row: one per screen at most ── */
+.c-slim { display: flex; align-items: center; gap: 12px; min-height: var(--slim-h); padding: 0 6px 0 12px;
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-card); }
+.c-slim > img { width: 36px; height: 36px; border-radius: var(--r-thumb); object-fit: cover; flex: none; }
+.c-slim .c-slim-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.c-slim .c-slim-title { font: 600 15px/20px var(--font-body); color: var(--ink); }
+.c-slim .c-slim-sub { font: 500 13px/18px var(--font-body); color: var(--meta); }
+
+/* ── Section header: Bricolage 19/24 with an optional quiet action ── */
+.c-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.c-section-head > h2, .c-section-head > h3 { margin: 0; font: 700 19px/24px var(--font-head); color: var(--ink); }
+
+/* ── Search field: 48 px, white, hairline, radius 14 ── */
+.c-search { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; box-sizing: border-box;
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-search); }
+.c-search input { flex: 1; min-width: 0; border: 0; outline: none; background: none; padding: 0;
+  font: 500 15px/21px var(--font-body); color: var(--ink); }
+
+/* ── Sheets / dialogs drawn on paper ── */
+.c-sheet { background: var(--paper); border-radius: var(--r-sheet); box-shadow: var(--lift-sheet); }
+.c-slab { background: var(--surface); border-radius: var(--r-slab); box-shadow: var(--lift-slab); }

@@ -1529,6 +1529,12 @@ Group (`FilingSnapshot`, `quickfile/snapshot-v1.json`) and draws topic art
 from 240 px thumbnails the app copies there. `project.yml` is unchanged: the
 extension keeps SF Rounded rather than bundling Bricolage.
 
+*Note, 2026-11-11 (design/quiet-clay):* no longer true. The extension now
+bundles both brand faces (`BricolageGrotesque.ttf` and `InstrumentSans.ttf`,
+in its own `UIAppFonts`), in a commit of its own so it can be reverted if
+device memory disagrees, and falls back to SF Rounded if they don't register.
+See "Quiet clay: the 1.4 look" below.
+
 **One ranking, written twice and held together.** `Core/FilingSuggest.swift`
 and `docs/filing-suggest.js` score each topic as keywords
 (`Categorizer.scores` / `Filer.scores`), plus on-screen text at half weight
@@ -1856,3 +1862,269 @@ the share sheet sends none. The gateway let the publishable key through
 anyway, so the quota checks were always the gate. `SessionKeychain.save` now
 updates the session in place instead of deleting and re-adding it, because a
 crash between the two signed the person out.
+
+## Quick File: pick, refine, done (feat/quick-file-refine)
+
+**A tap on the dial now chooses, and the sheet stays.** The owner, after
+using Quick File: "if you select, you can't select the subtopic. Also you
+can't add tags." This reverses "files and leaves". Tap 1 is unchanged: the
+link is saved at once with the best guess. A tap on a topic (a ring key, the
+centre, a subtopic chip, "Also likely", More…) is written as `"user"` at
+once, as before, but the Add sheet, the share sheet and the web's Add dialog
+stay up. The ring stays live, and another topic re-chooses. Under the dial a
+refine panel replaces the reason line: "Filed to Fitness › Running", one
+sideways row of that topic's subtopics (tap sets, tap again clears), and one
+of tags (tap toggles, "+ Tag" types one in place). Every change is written
+as it happens. Triage keeps one tap per card (`QuickFileModel.Mode.once`).
+
+**Done closes, and drains by itself only if nothing is touched.** After the
+first choice, Done drains over six seconds and closes the sheet. Any touch
+after that choice stops the drain for good. The share sheet's minute-long
+cap still closes an idle sheet. Under VoiceOver or Switch Control nothing is
+timed. On the Add sheet, Done is pinned to the bottom so it rides above the
+keyboard, and a tag still in the field is kept.
+
+**The share sheet's Undo is gone.** It appeared for under a second and
+brought the dial back; now the dial never goes away, so changing the choice
+is just another tap. The Add sheet and the web keep the toast's Undo, which
+now also puts back the tags as they were before the first choice. A bork the
+sheet created is still tombstoned.
+
+**Late answers never move a choice.** The page, the on-screen text and the
+model are still asked after a quick choice while the sheet is up. They can
+add a ✨, new subtopic chips (only appended, so the row never reorders under
+a thumb) and tags, which join only until the person touches a tag.
+
+**The share sheet takes tags off with a list.** The extension can't see a
+bork's existing tags, so a tag turned off there travels as
+`BookmarkDraft.tagsRemoved`, and `Store.save` takes it off the bork's own.
+The snapshot gains your most-used subtopics and recent tags per filing
+(`subUse`, `recentTags`, both optional, so it stays version 1).
+
+**One fixture for both platforms.** The chip order and the tag cleaning are
+pinned by `Scripts/fixtures/quick_file_refine_cases.json`, which
+`Scripts/test_quick_file_refine.swift` and `Scripts/test_quick_file_refine.mjs`
+both read (workflow `quick-file-refine-tests.yml`).
+
+## Quiet clay: the 1.4 look (design/quiet-clay)
+
+**The owner chose "A's Library with B's wheel" from three directions, on
+2026-11-11.** Two things in 1.3 had stopped working. The neon topic colours
+fought the clay art they sat beside, so every screen with a picture on it
+looked like two products. And the Library opened on chrome: a wordmark, an
+insight card, banners and toggles all came before the first save. Direction A
+put the saves first on a quiet paper page; direction B drew the dial as a
+wheel of clay slabs. The 1.4 look is the two together, on the iPhone and on
+the web. Behaviour didn't change: this is a restyle plus the layout moves the
+design system names.
+
+**Every colour comes from one recipe.** A topic's tint, mid and deep come from
+its stored hue through `ClayRecipe`, an OKLCH table anchored on the seven
+reference rows of the design system, each pinned at the hue of the topic it
+was drawn for (Health, Cars & motors, Recipes, Garden, Nutrition, Travel,
+AI). No stored hue changed, so Fitness comes out sage-teal and Cars
+terracotta. Sand is the colour of anything not filed. `Core/ClayPalette.swift`
+and `docs/palette.js` agree byte for byte on all 360 hues, pinned by
+`Scripts/fixtures/clay_palette_cases.json`, and the tests require deep on
+tint and white on deep to reach 4.5:1 for every hue. The web reads its values
+from `docs/tokens.css` alone. Cards are flat with a hairline and no shadow;
+only things that float (wheel slabs, the hub, toasts) get a `Lift`. Nothing
+is bolder than 700. The tab bar is a bottom safe-area inset rather than a
+floating layer, so nothing scrolls under it, and a paper band sits behind the
+status bar on every tab, so scrolled cards disappear under it cleanly.
+
+**Errors are sentences, never codes.** `Core/PlainError.swift` translates
+whatever reaches the screen, and sync failures are stored already
+translated, so the You tab and the share sheet both say "Couldn't back up —
+please sign in again." while the raw text goes to the debug log. Sign-in
+names the likely mistake ("That code didn't work") and leaves network
+trouble to `PlainError`, because an expired code is not an expired session.
+
+**The Library shows saves first, and at most one prompt.** Under the search
+field sits one slim action row at most, chosen by `Core/LibraryPrompt.swift`
+(pinned by `Scripts/test_library_prompt.swift`) in the order waiting, backup,
+sort, dial hint. Waiting borks come first because they are saves the person
+already made and can't see working; the backup countdown next, because past
+ten borks it is the only warning before a save stops working. Each prompt
+keeps its own snooze, so the next appears when the one above it goes. The
+rows are shorter than 1.3's banners, but VoiceOver still reads `SaveLimit`'s
+full sentences. Every card is now one shape (a 4:3 cover that is the save's
+own picture, else its topic's clay art, else the compass on clay ground; two
+title lines; the dot with "Topic › Sub"), so the masonry gave way to a plain
+grid, which is what lets the side-quest rail sit after the second row. The
+insight card moved to Revisit and You. The source chips fade out before the
+view menu instead of being cut mid-word, and the avatar opens You.
+
+**Browse and the topic pages lost their colour blocks.** Browse has one
+segmented control, its sort is a menu in the list header, and its scope chips
+show only while searching. A topic page opens on its clay art, running up
+under the status bar with the back button on the scene, then the title on
+paper. A source page drops its dark brand gradient for the platform's own
+mark on paper. Text posts (X, Threads) use the same card with the topic's
+art as cover. Wherever art is missing, it falls back to the clay ground or
+the compass, never paper, an initial or a gradient.
+
+**Revisit, You and the sheets.** The weekly read opens Revisit as one compact
+card; You keeps the full one. Every sheet is paper with one shared header and
+close button rather than a navigation bar, which is also what fixed the
+narrow shared-links column: the navigation container was painting the white
+bands. A library past the signed-out limit says "50 borks on this phone",
+not "50 of 20". On the Pro sheet each plan still opens the website in one
+tap; Yearly is marked with an ink ring rather than pre-selected, because a
+select-then-confirm step would change what a tap does. "Delete account"
+moved to the foot of You, beside the welcome tour, so the account card holds
+only the counts and the backup state.
+
+**The wheel is direction B, everywhere.** Quick File is drawn as B's clay
+wheel on the Add sheet, in triage, in the Share Extension, in the topic
+picker and on the web. Eight slabs in their topics' tints each carry the
+topic's clay object, the topic in small caps and the subtopic in the deep
+colour. The lit or chosen slab fills with its deep colour and lifts 5 pt
+outward from the centre, so the slabs at six o'clock don't ride into the
+hub. There is no bead, no backplate and no gradient: the lit slab is the
+cue. The hub is a raised white disc with the topic's art and a check in its
+deep colour. The evidence ring stays, 2 pt in the topic's mid: solid when
+it's yours or strong, dashed for a thin guess. Geometry is referenced to B's
+360 pt artboard, and the hit regions are pinned by
+`QuickFileDialGeometryTests`. Seats, detents, VoiceOver, the drag maths, the
+dial's web options and the chip order did not change. The refine panel is a
+white slab: subtopics in two packed rows that scroll sideways together and
+only ever grow at the end, so the panel's height never changes and no chip
+moves under a thumb; tags in one row with "+ Tag" first. Done is the coral
+pill with its drain, which on the web stays a CSS transition because the
+dialog closes on `animationend`. Quick File's text now scales with Dynamic
+Type exactly once in both targets (the app's style had been scaling twice),
+and the filing-state header uses stroke icons, not emoji. The Share
+Extension bundles the two brand faces, in a commit of its own so it can be
+reverted, and falls back to SF Rounded if they don't register.
+
+**The web app follows the iPhone.** The web Library draws the same card in a
+CSS grid in reading order, with the side quests after the second row; the
+arrow keys move by one across and by a row down. From 1100 px the rail beside
+the feed is slim rows and topic chips. All colour comes from `Palette`, with
+unfiled as `Palette.of(null)`; no HSL remains, and no initial is drawn under
+art, which is what showed through as the stray "F" on the topic banner. Art
+that fails to load becomes the compass, once. Browse's sort became a native
+menu at the right of the list header. Done moves into the refine slab only
+while it is showing, because the same button is needed before anything is
+filed.
+
+**The written pages share the tokens.** The guides, /pro, /app, /lifetime,
+privacy, terms, 404, press and /get take their colours from `tokens.css`
+alone: flat cards with a hairline and the coral pill as the main action. The
+written-page header keeps "Get the app" on its first line at every width, and
+on a phone its links move to a second row that scrolls sideways. Content,
+analytics and prices were left alone: Lifetime is still $30 on /lifetime and
+in the FAQ, and $199.99 on /pro, until the owner decides.
+
+**Second pass (1.4).** The side-quest sheets use the shared clay sheet: the
+title in the header, Cancel or ✕, a coral Create or Done, and delete, rename
+and share as quiet circles. The three alternative accents became plum, dusty
+blue and sage, with white on base at 4.5:1 or better; their keys are
+unchanged, so a saved choice still resolves, and coral is still the default.
+Custom topics are installed when the app starts, so the first frame of cards
+names them ("Trail running › Races", not "Races"). The store screenshots
+follow the listing's order on clay grounds in the brand fonts, and the
+website's own screenshots show 1.4.
+
+## Typing a tag under the wheel, and a wheel that fits (design/quiet-clay, 1.4 build 21)
+
+The owner, on 1.4 (20): "you can type in a tag but there's no way to press
+Enter. You either have to exit out." Reproduced with a UI test
+(`UITests/QuickFileTagEntryTests.swift`): in the Add sheet the tag field lived
+inside the details ScrollView, and with the first typed character the scroll
+position jumped and left the field behind the keyboard. Return did add the
+tag, but neither the field nor the new chip could be seen, and the return key
+was drawn as a blue tick (`.submitLabel(.done)`), which doesn't read as Enter.
+The share sheet's wheel never had the problem: its panel sits in a fixed
+layout above the keys.
+
+- **While a tag is typed, the field is not in a ScrollView.** Tapping "+ Tag"
+  in the Add sheet drops the scroll content to the saved row and docks a
+  second `QuickFileRefinePanel` (`startsTyping`) in the bottom inset above the
+  pinned Done, which rides on the keyboard, as the share sheet's layout
+  already did. When the field loses focus the resting layout returns. Keyboard
+  avoidance inside a ScrollView is not stable once text changes, so nothing
+  that takes typing under the wheel may depend on it.
+- **Two plain ways to add.** The field has a normal return key
+  (`.submitLabel(.return)`) and, once there is text, a round accent + inside
+  its capsule ("Add tag"). Both add the tag and stay in the field for the next
+  one; return on an empty field closes it. Done still keeps whatever is in the
+  field (`finishChosen` commits the draft). Same field in both hosts.
+- **The Add sheet's wheel is sized by height too.** It was sized by width
+  only, so on 390- and 402-point-wide phones the tag row sat under the pinned
+  Done and "+ Tag" could not be seen without scrolling. `dialDiameter(size,
+  below:)` now follows `QuickFileShareView.diameter`: at most 360 pt, never
+  under 232, measured from the sheet's resting size (outside the inset,
+  ignoring the keyboard) so the wheel never resizes. The 440-wide phone keeps
+  its 360 pt wheel; a 402-wide phone gets about 283 and a 390-wide one about
+  256. A smaller wheel was chosen over a tag row nobody can find.
+- The UI test types on the real on-screen keyboard at three sizes and checks
+  that the field and each new chip stay above the keys. It runs locally, not
+  in CI, like the other UI tests.
+
+## Fitness is sage, and Lifetime is $109 (design/quiet-clay, 1.4 build 22)
+
+Two owner calls on 25 Nov 2026, both delegated ("you decide and go with it").
+
+- **Fitness moves from teal (hue 152) to sage (hue 96)**, the recipe's Sage
+  reference row exactly (#E3EADB / #8FA37E / #3F5237), on iOS, the web, the
+  store screenshots and the website images; the store's dial panel ground
+  follows it. Why sage: it is the colour in the approved artboards; its warm
+  grey-green sits more quietly on the paper than the cool mint tint did; and
+  Fitness and Nutrition, which stand side by side in most libraries and in
+  every store screenshot, stop being the same colour (they were 0.4 apart in
+  OKLab terms, i.e. identical). The cost is that Fitness now shares its
+  colour with Garden and is close to Outdoors. Sage and teal are only about 5
+  apart themselves, so no choice in the green arc separates Fitness from every
+  neighbour; with fifty topics on one circle, families share a colour by
+  design. No other topic changed.
+- **Lifetime is $109 everywhere it is written**: the app's Pro sheet, /pro,
+  /lifetime, /app, the FAQ and the llms files. It was $199.99 on /pro and in
+  the app and $30 on /lifetime and the FAQ. Monthly $9.99 and Yearly $99.99
+  are unchanged, which leaves Lifetime only $9 above a year; the owner has
+  been told that this will pull demand-test taps away from Yearly. Still a
+  demand test: nothing is on sale. People who joined the /lifetime list before
+  this change were told the price "stays $30 for you"; honouring that is the
+  owner's call when a checkout exists.
+
+## Live covers: creators' thumbnails only as motion (web/live-covers, on trial)
+
+The owner, 25 Nov 2026, about the real creators' thumbnails in the
+screenshots: "every 3 or 4 seconds … a subtle smooth transition from neutral
+to the creator thumbnail, back to the neutral one. They should all do it, not
+at the exact same time."
+
+- Each screen whose capture shows creators' thumbnails is shot twice from the
+  same store, the second time with the DEBUG-only `-neutralCovers` launch
+  argument, which makes `CoverImage` draw the topic's clay instead of the
+  picture. The website publishes the neutral shot under the old file names, so
+  the indexed, static, no-JS, reduced-motion and Save-Data versions show no
+  third-party faces, and neither do the press downloads.
+- On the /app/ Library phone, `docs/live-covers.js` lays one clipped copy of
+  `/img/library-live.webp` (the thumbnail shot) over each cover and
+  cross-fades it: 1 s eased fades, each cover changing every 3.6 s, staggered
+  so no two fade together, paused off screen or by a tap, off with
+  `?covers=off`. The sheet is fetched after load.
+- Cover rectangles are found by diffing each pair, never measured by hand:
+  `Scripts/make_web_screenshots.py` fails unless a pair differs only in 4:3
+  card covers or square row covers, and it rewrites the clip table itself.
+  `Scripts/refresh_screenshots.sh` reruns the captures, the store panels and
+  the website images in one go.
+- App Store screenshots can't animate, so the owner chose the neutral set for
+  the store ("so that we don't risk Apple blocking it"): `Marketing/screenshots*`
+  are composed with `NEUTRAL=1`, and `Scripts/refresh_screenshots.sh` keeps it
+  that way. The owner approved the moving covers for the website the same day.
+- Rejected: a live HTML mock of the Library (a second UI that drifts with
+  every design change) and per-cover cropped tiles (they shimmer against the
+  base image while fading).
+
+## Yearly is $69.99 (design/quiet-clay, 1.4 build 23)
+
+The owner, 25 Nov 2026: "Let's change the yearly price to $69.99." With
+Lifetime at $109, Yearly at $99.99 was too close to it for the demand test to
+say anything about Yearly. $69.99 is about seven months of Monthly ($9.99), so
+the badge reads "5 months free" and the /pro note "$5.83 a month, billed
+yearly". Monthly $9.99 and Lifetime $109 are unchanged. Still a demand test:
+nothing is sold.
+

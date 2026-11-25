@@ -225,55 +225,22 @@ struct SignInNudgeBanner: View {
     let onSignUp: () -> Void
     let onDismiss: () -> Void
 
-    @Environment(\.accent) private var accent
+    /// "Back these up." reads as a sentence; a slim row's title is a label.
+    private var title: String {
+        headline.hasSuffix(".") ? String(headline.dropLast()) : headline
+    }
 
+    /// The Quiet clay slim row: the phone scene, the headline, the one-line
+    /// reason, and "Sign up" as the quiet coral action.
     var body: some View {
-        HStack(alignment: .top, spacing: 11) {
-            Image(systemName: "iphone")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(accent.deep)
-                .frame(width: 30, height: 30)
-                .background(accent.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(headline)
-                    .font(Typo.ui(13.5, .bold))
-                    .foregroundStyle(Tokens.ink)
-
-                Text("Sign up and it's backed up, and on the web at bookmarker.lol.")
-                    .font(Typo.ui(12, .medium))
-                    .foregroundStyle(Tokens.inkMeta)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button(action: onSignUp) {
-                    Text("Sign up")
-                        .font(Typo.ui(12.5, .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 15)
-                        .padding(.vertical, 7)
-                        .background(accent.base, in: Capsule())
-                }
-                .buttonStyle(PressableStyle())
-                .padding(.top, 4)
-            }
-
-            Spacer(minLength: 0)
-
-            if dismissable {
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Tokens.inkMeta)
-                        .frame(width: 30, height: 30)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Hide this")
-            }
-        }
-        .padding(12)
-        .cardSurface(radius: 16)
+        SlimActionRow(
+            art: .asset("welcomeHero"),
+            title: title,
+            subtitle: "Sign up and it's backed up",
+            action: "Sign up",
+            perform: onSignUp,
+            onDismiss: dismissable ? onDismiss : nil
+        )
     }
 }
 
@@ -292,70 +259,63 @@ struct SignInNudgeSheet: View {
     let onSignIn: () -> Void
     let onNotNow: () -> Void
 
-    @Environment(\.accent) private var accent
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 0) {
             Text(signedIn
                  ? "\(Copy.countedBorks(max(count, milestone))), not backed up yet"
                  : "\(Copy.countedBorks(max(count, milestone))), all on this phone")
-                .font(Typo.display(24, .heavy))
-                .tracking(-0.5)
-                .foregroundStyle(Tokens.ink)
-                .fixedSize(horizontal: false, vertical: true)
+                .modifier(LimitSheetTitle())
 
             Text(signedIn
                  ? "You have an account, but this library has never reached it. Back up now and it's safe, and on the web at bookmarker.lol."
                  : "Sign up and they're backed up, and on the web at bookmarker.lol. Nothing else changes.")
-                .font(Typo.ui(14))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 20)
 
             HStack(spacing: 10) {
-                Button(action: onSignUp) {
-                    Text(signedIn ? "Back up now" : "Sign up")
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(accent.base, in: Capsule())
-                }
-                .buttonStyle(PressableStyle())
-
+                Button(signedIn ? "Back up now" : "Sign up", action: onSignUp)
+                    .buttonStyle(.clayPrimary)
                 if !signedIn {
-                    Button(action: onSignIn) {
-                        Text("Sign in")
-                            .font(Typo.ui(15, .bold))
-                            .foregroundStyle(accent.deep)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
-                            .background(accent.tint, in: Capsule())
-                            .overlay(Capsule().stroke(accent.base.opacity(0.35), lineWidth: 1))
-                    }
-                    .buttonStyle(PressableStyle())
+                    Button("Sign in", action: onSignIn)
+                        .buttonStyle(.claySecondary)
                 }
             }
 
             Button(action: onNotNow) {
                 Text("Not now")
-                    .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
+                    .textRole(.button, color: Tokens.inkSecondary)
                     .frame(maxWidth: .infinity)
-                    .frame(height: Tokens.minTapTarget)
+                    .frame(minHeight: Tokens.minTapTarget)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .padding(.top, 6)
         }
-        .padding(20)
+        .padding(.horizontal, Tokens.gutter)
+        .padding(.top, 30)
+        .padding(.bottom, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Tokens.paper)
         // Small on purpose: title, one line, three ways out. The second
         // detent is the escape hatch for large Dynamic Type sizes, which the
         // fixed height would otherwise clip.
-        .presentationDetents([.height(272), .medium])
-        .presentationCornerRadius(Tokens.sheetRadius)
+        .presentationDetents([.height(262), .medium])
+        .claySheet()
+    }
+}
+
+/// The save-limit sheets' headline: Bricolage 700 at 24, the sheet-sized
+/// step between a section title and a screen title.
+private struct LimitSheetTitle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.custom("Bricolage Grotesque", size: 24, relativeTo: .title2).weight(.bold))
+            .tracking(-0.4)
+            .foregroundStyle(Tokens.ink)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -410,123 +370,67 @@ struct SaveLimitWall: View {
     let onSignIn: () -> Void
     let onMakeRoom: () -> Void
 
-    @Environment(\.accent) private var accent
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 0) {
             Text(SaveLimit.wallHeadline(liveCount: liveCount))
-                .font(Typo.display(24, .heavy))
-                .tracking(-0.5)
-                .foregroundStyle(Tokens.ink)
-                .fixedSize(horizontal: false, vertical: true)
+                .modifier(LimitSheetTitle())
 
             Text(SaveLimit.wallBody)
-                .font(Typo.ui(14))
-                .foregroundStyle(Tokens.inkSecondary)
+                .textRole(.body, color: Tokens.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
 
             // Its own paragraph, on its own ground. Buried in the body it
             // reads as a disclaimer; given a card it reads as the promise it
             // is, and it is the sentence that answers the actual objection.
-            VStack(alignment: .leading, spacing: 2) {
-                Text(SaveLimit.privacyLead)
-                    .font(Typo.ui(13.5, .bold))
-                    .foregroundStyle(Tokens.ink)
-                Text(SaveLimit.privacyBody)
-                    .font(Typo.ui(13))
-                    .foregroundStyle(Tokens.inkSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Tokens.sandInk)
+                    .frame(width: 32, height: 32)
+                    .background(Tokens.sand, in: Circle())
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(SaveLimit.privacyLead)
+                        .textRole(.cardTitle, color: Tokens.ink)
+                    Text(SaveLimit.privacyBody)
+                        .textRole(.meta)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(13)
-            .background(accent.tint.opacity(0.55), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(accent.base.opacity(0.25), lineWidth: 1)
-            )
+            .padding(14)
+            .cardSurface()
             .accessibilityElement(children: .combine)
+            .padding(.top, 16)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 20)
 
             HStack(spacing: 10) {
-                Button(action: onSignUp) {
-                    Text("Sign up")
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(accent.base, in: Capsule())
-                }
-                .buttonStyle(PressableStyle())
-
-                Button(action: onSignIn) {
-                    Text("Sign in")
-                        .font(Typo.ui(15, .bold))
-                        .foregroundStyle(accent.deep)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(accent.tint, in: Capsule())
-                        .overlay(Capsule().stroke(accent.base.opacity(0.35), lineWidth: 1))
-                }
-                .buttonStyle(PressableStyle())
+                Button("Sign up", action: onSignUp)
+                    .buttonStyle(.clayPrimary)
+                Button("Sign in", action: onSignIn)
+                    .buttonStyle(.claySecondary)
             }
 
             Button(action: onMakeRoom) {
                 Text("Make room instead")
-                    .font(Typo.ui(13.5, .semibold))
-                    .foregroundStyle(Tokens.inkSecondary)
+                    .textRole(.button, color: Tokens.inkSecondary)
                     .frame(maxWidth: .infinity)
-                    .frame(height: Tokens.minTapTarget)
+                    .frame(minHeight: Tokens.minTapTarget)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .padding(.top, 6)
         }
-        .padding(20)
+        .padding(.horizontal, Tokens.gutter)
+        .padding(.top, 30)
+        .padding(.bottom, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Tokens.paper)
-        // Taller than the milestone sheet by exactly the privacy card, and
-        // measured rather than guessed — a detent with slack in it reads as a
-        // sheet that failed to load its own content. `.large` is the Dynamic
-        // Type escape hatch, as on the milestone sheet.
-        .presentationDetents([.height(330), .large])
-        .presentationCornerRadius(Tokens.sheetRadius)
-    }
-}
-
-/// "3 borks waiting — sign up to keep them." Sits at the very top of the
-/// Library, above everything, because it is about borks the user has already
-/// sent and cannot yet see working.
-struct WaitingBanner: View {
-    let count: Int
-    let onTap: () -> Void
-
-    @Environment(\.accent) private var accent
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 11) {
-                Image(systemName: "clock.badge.exclamationmark")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(accent.deep)
-                    .frame(width: 30, height: 30)
-                    .background(accent.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .accessibilityHidden(true)
-
-                Text(SaveLimit.waitingBanner(count: count) ?? "")
-                    .font(Typo.ui(13, .bold))
-                    .foregroundStyle(Tokens.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading)
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Tokens.inkMeta)
-            }
-            .padding(12)
-            .cardSurface(radius: 16)
-        }
-        .buttonStyle(PressableStyle())
+        // Measured, not guessed — a detent with slack in it reads as a sheet
+        // that failed to load its own content. `.large` is the Dynamic Type
+        // escape hatch, as on the milestone sheet.
+        .presentationDetents([.height(362), .large])
+        .claySheet()
     }
 }
