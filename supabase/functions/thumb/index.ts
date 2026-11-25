@@ -16,7 +16,7 @@
 // has its 2xx from PostgREST. Every failure path releases the job with a
 // reason and a backoff, and the next drain tries again.
 
-import { checkURL, pageImage, readBytes, USER_AGENT } from "../_shared/fetchguard.ts";
+import { checkURL, guardedFetch, pageImage, readBytes, USER_AGENT } from "../_shared/fetchguard.ts";
 
 const MAX_IMAGE_BYTES = 1_500_000;   // the bucket enforces 2MB as a backstop
 const IMAGE_TIMEOUT_MS = 10_000;
@@ -60,12 +60,12 @@ async function download(raw: string): Promise<Download> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
+    const got = await guardedFetch(url, {
       signal: controller.signal,
       headers: { "User-Agent": USER_AGENT, Accept: "image/*" },
     });
-    if (!checkURL(res.url || url.href)) return { error: "redirect-refused" };
+    if (!got) return { error: "redirect-refused" };
+    const { res } = got;
     if (!res.ok) return { error: `http-${res.status}` };     // an expired signature is a 403 here
     if (Number(res.headers.get("content-length") || 0) > MAX_IMAGE_BYTES) return { error: "too-large" };
     const bytes = await readBytes(res, MAX_IMAGE_BYTES + 1);
