@@ -495,7 +495,7 @@ const TAXONOMY = [
  {
   "id": "fitness",
   "name": "Fitness",
-  "hue": 152.0,
+  "hue": 96.0,
   "subs": [
    "Running",
    "Strength",

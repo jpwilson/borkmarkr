@@ -68,7 +68,7 @@ JSON-LD mirrors the visible text and nothing more:
 
 - The only price that may appear is the real one. The app is free on the App
   Store (`price: "0"`, USD), confirmed against the live iTunes lookup for app
-  id `6799805479`. The `$30` on `/lifetime` is a *reservation* for a future
+  id `6799805479`. The `$109` on `/lifetime` is a *reservation* for a future
   paid version — payments are not switched on and no card is taken — so it is
   never an `Offer`.
 - **No `aggregateRating`, ever.** The App Store listing has a single rating.

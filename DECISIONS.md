@@ -2063,3 +2063,28 @@ layout above the keys.
   that the field and each new chip stay above the keys. It runs locally, not
   in CI, like the other UI tests.
 
+## Fitness is sage, and Lifetime is $109 (design/quiet-clay, 1.4 build 22)
+
+Two owner calls on 25 Nov 2026, both delegated ("you decide and go with it").
+
+- **Fitness moves from teal (hue 152) to sage (hue 96)**, the recipe's Sage
+  reference row exactly (#E3EADB / #8FA37E / #3F5237), on iOS, the web, the
+  store screenshots and the website images; the store's dial panel ground
+  follows it. Why sage: it is the colour in the approved artboards; its warm
+  grey-green sits more quietly on the paper than the cool mint tint did; and
+  Fitness and Nutrition, which stand side by side in most libraries and in
+  every store screenshot, stop being the same colour (they were 0.4 apart in
+  OKLab terms, i.e. identical). The cost is that Fitness now shares its
+  colour with Garden and is close to Outdoors. Sage and teal are only about 5
+  apart themselves, so no choice in the green arc separates Fitness from every
+  neighbour; with fifty topics on one circle, families share a colour by
+  design. No other topic changed.
+- **Lifetime is $109 everywhere it is written**: the app's Pro sheet, /pro,
+  /lifetime, /app, the FAQ and the llms files. It was $199.99 on /pro and in
+  the app and $30 on /lifetime and the FAQ. Monthly $9.99 and Yearly $99.99
+  are unchanged, which leaves Lifetime only $9 above a year; the owner has
+  been told that this will pull demand-test taps away from Yearly. Still a
+  demand test: nothing is on sale. People who joined the /lifetime list before
+  this change were told the price "stays $30 for you"; honouring that is the
+  owner's call when a checkout exists.
+

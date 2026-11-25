@@ -27,7 +27,7 @@ const str = (v: unknown, max: number): string => (typeof v === "string" ? v : ""
 function signupMail(b: Body) {
   const email = str(b.email, 200) || "?";
   const source = str(b.source, 60) || "?";
-  const label = source === "lifetime30" ? "💰 LIFETIME ($30 reserved)" : `📥 ${source}`;
+  const label = source === "lifetime30" ? "💰 LIFETIME ($109 reserved)" : `📥 ${source}`;
   return {
     subject: `${label} — ${email}`,
     text: `New signup on bookmarker.lol\n\nEmail:  ${email}\nSource: ${source}\nWhen:   ${b.at ?? new Date().toISOString()}\n\n— the notify function`,

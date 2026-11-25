@@ -37,11 +37,8 @@ Try it on the web
 
 Free on the App Store, iOS 17 or later. No account for your first 20 saves.
 
-New
-Explore Library IslandYour saves as an island: every topic its own zone, every link a camp
+NewExplore Library IslandYour saves as an island: every topic its own zone, every link a camp
 →
-
-© 2026 bookmarker · Get the app · Library Island · Privacy · Terms · hello@bookmarker.lol
 
 bookmarker
 
@@ -77,8 +74,6 @@ By continuing you agree to the Terms of Use and Privacy Policy.
 Continue
 Send a new code
 Use a different email
-
-© 2026 bookmarker · Get the app · Library Island · Privacy · Terms
 
 ### What is bookmarker?
 
@@ -332,7 +327,7 @@ the device. Your notes never do.
 bookmarker is free on the App Store. Your first 20 saves work with no account at all. Past 20, saving asks
 you to sign up — that is also free, an email address and a six-digit code — and signing up makes the library
 unlimited, backs it up, and makes it readable on the web. There is no paid tier in the app and nothing in it
-costs money. A one-time founding-member price of $30 is being reserved for a future
+costs money. A one-time founding-member price of $109 is being reserved for a future
 paid version; payments are not switched on, and no card is taken.
 
 ### Where to go next
@@ -559,7 +554,7 @@ Website
 
 Founders price
 
-### Own it forever — $30
+### Own it forever — $109
 
 One payment, no subscription: the iPhone app, the web app, the AI filing, and every future feature. The founders price is capped at the first hundred people.
 
@@ -640,7 +635,7 @@ failed to find it, that is the audience.
 It is free on the App Store. The first 20 saves need no account. Past 20, saving asks you to sign up,
 which is also free — an email address and a six-digit code — and makes the library unlimited, backed up and
 readable on the web. There is no paid tier in the app and nothing in it costs money. A one-time
-founding-member price of $30 is being reserved for a future paid version; payments are
+founding-member price of $109 is being reserved for a future paid version; payments are
 not switched on yet and no card is taken.
 
 ### Which apps can I save from?
@@ -2571,7 +2566,7 @@ bookmarker
 
 Pay once. Every save, every device, forever.
 
-$30one time · no subscription
+$109one time · no subscription
 
 - iPhone app + web app, synced
 
@@ -2593,7 +2588,7 @@ nothing is charged. We'll email you a payment link when it goes live, and you ca
 ### You're on the founders list
 
 We saved your spot at . When payments go live you'll
-get one email with a real checkout link — the price stays $30 for you even if it goes up later.
+get one email with a real checkout link — the price stays $109 for you even if it goes up later.
 
 ← Back to your library
 
@@ -2695,11 +2690,11 @@ below are downsized for web use.
 
 - Share card (1200×630) Download — JPG, 117 KB
 
-- Screenshot — Library Download — JPG, 46 KB
+- Screenshot — Library Download — JPG, 43 KB
 
-- Screenshot — Browse Download — JPG, 44 KB
+- Screenshot — Browse Download — JPG, 25 KB
 
-- Screenshot — Search Download — JPG, 33 KB
+- Screenshot — Search Download — JPG, 22 KB
 
 ### Founder
 

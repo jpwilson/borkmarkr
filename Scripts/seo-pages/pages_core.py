@@ -89,7 +89,7 @@ no way to answer the only question you ever actually ask: <em>where did I see th
 <p>bookmarker is free on the App Store. Your first 20 saves work with no account at all. Past 20, saving asks
 you to sign up — that is also free, an email address and a six-digit code — and signing up makes the library
 unlimited, backs it up, and makes it readable on the web. There is no paid tier in the app and nothing in it
-costs money. A one-time <a href="/lifetime">founding-member price of $30</a> is being reserved for a future
+costs money. A one-time <a href="/lifetime">founding-member price of $109</a> is being reserved for a future
 paid version; payments are not switched on, and no card is taken.</p>
 
 <h2>Where to go next</h2>
@@ -118,7 +118,7 @@ FAQ = [
   """<p>It is free on the App Store. The first 20 saves need no account. Past 20, saving asks you to sign up,
   which is also free — an email address and a six-digit code — and makes the library unlimited, backed up and
   readable on the web. There is no paid tier in the app and nothing in it costs money. A one-time
-  <a href="/lifetime">founding-member price of $30</a> is being reserved for a future paid version; payments are
+  <a href="/lifetime">founding-member price of $109</a> is being reserved for a future paid version; payments are
   not switched on yet and no card is taken.</p>"""),
  ("Which apps can I save from?",
   """<p>Any app with an iOS share sheet. bookmarker recognises Instagram, X (Twitter), TikTok, YouTube, YouTube

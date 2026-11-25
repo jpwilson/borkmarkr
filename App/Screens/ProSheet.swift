@@ -121,7 +121,7 @@ extension ProSheet {
             switch self {
             case .monthly: "$9.99"
             case .yearly: "$99.99"
-            case .lifetime: "$199.99"
+            case .lifetime: "$109"
             }
         }
 

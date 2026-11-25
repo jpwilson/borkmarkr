@@ -48,7 +48,7 @@ PANELS = [
     },
     {
         "shot": "dial.png",
-        "top": "#E2EFEC", "bottom": "#C9DED9", "rule": "#2E5E57",
+        "top": "#EBEFE5", "bottom": "#D7DECC", "rule": "#42563B",
         "head": ["Filed in", "one tap."],
         "sub": "Save from any app and a dial suggests the topic. Tap to file it, then pick a subtopic if you like.",
     },
